@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     let config: Config = toml::from_str(&contents)
         .map_err(|err| Error::Custom(format!("Couldn't parse config file: {err}")))?;
 
-    // let _ = args.parse_puzzle(&config)?;
+    let _ = args.parse_puzzle(&config)?;
     let (puzzle, rules, style) = args.parse_puzzle(&config)?;
     dbg!(&rules);
 

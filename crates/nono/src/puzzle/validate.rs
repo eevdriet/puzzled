@@ -97,6 +97,7 @@ impl Puzzle {
         for offset in 0..=n {
             let pos = LinePosition::new(line, offset as u16);
 
+            #[allow(clippy::needless_range_loop)]
             for r in 0..=m {
                 // Cannot fit another run if previous runs already do not fit
                 if !dp[offset][r] {
