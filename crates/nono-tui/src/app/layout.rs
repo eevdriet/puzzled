@@ -46,9 +46,9 @@ impl ComputeLayout for App {
 
         tracing::debug!("Puzzle size: {puzzle_size:?}");
 
-        let max_cols = puzzle_size.width + rules_width + 2;
+        let max_cols = puzzle_size.width + rules_width;
 
-        let col_perc = 80 * root.width / 100;
+        let col_perc = 90 * root.width / 100;
         let width = max_cols.min(col_perc);
 
         let [outer, _] = Layout::default()
@@ -59,7 +59,7 @@ impl ComputeLayout for App {
         tracing::debug!("Outer: {outer:?}");
 
         // Try to display the full puzzle + top rules if possible, otherwise clamp to root
-        let max_rows = puzzle_size.height + rules_height + 2;
+        let max_rows = puzzle_size.height + rules_height;
         let height = max_rows.min(root.height);
 
         let [inner] = Layout::default()

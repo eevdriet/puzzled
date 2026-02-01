@@ -1,3 +1,4 @@
+use nono::Axis;
 use ratatui::layout::{Position, Rect};
 
 use crate::MotionRange;
@@ -5,22 +6,28 @@ use crate::MotionRange;
 #[derive(Debug, Default, Clone, Copy)]
 pub enum SelectionKind {
     #[default]
-    Block,
+    Cells,
 
-    Rows,
-    Cols,
+    Lines,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Selection {
-    kind: SelectionKind,
+    pub axis: Axis,
+    pub kind: SelectionKind,
+
     start: Option<Position>,
     end: Option<Position>,
 }
 
 impl Selection {
-    pub fn empty() -> Self {
-        Self::default()
+    pub fn empty(axis: Axis) -> Self {
+        Self {
+            axis,
+            kind: SelectionKind::default(),
+            start: None,
+            end: None,
+        }
     }
 
     pub fn reset(&mut self) {
@@ -44,7 +51,7 @@ impl Selection {
         };
 
         match self.kind {
-            SelectionKind::Block => {
+            SelectionKind::Cells => {
                 let x1 = start.x.min(end.x);
                 let y1 = start.y.min(end.y);
                 let x2 = start.x.max(end.x);
@@ -54,18 +61,18 @@ impl Selection {
                 MotionRange::Block(block)
             }
 
-            SelectionKind::Rows => {
-                let y1 = start.y.min(end.y);
-                let y2 = start.y.max(end.y);
-                MotionRange::Rows { start: y1, end: y2 }
-            }
-
-            SelectionKind::Cols => {
-                let x1 = start.x.min(end.x);
-                let x2 = start.x.max(end.x);
-                MotionRange::Cols { start: x1, end: x2 }
-            }
+            SelectionKind::Lines => match self.axis {
+                Axis::Col => {
+                    let y1 = start.y.min(end.y);
+                    let y2 = start.y.max(end.y);
+                    MotionRange::Rows { start: y1, end: y2 }
+                }
+                Axis::Row => {
+                    let x1 = start.x.min(end.x);
+                    let x2 = start.x.max(end.x);
+                    MotionRange::Cols { start: x1, end: x2 }
+                }
+            },
         }
     }
 }
-

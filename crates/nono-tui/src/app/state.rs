@@ -1,5 +1,5 @@
-use nono::{Fill, Puzzle, Rules};
-use ratatui::layout::{Direction, Position as AppPosition};
+use nono::{Axis, Fill, Puzzle, Rules};
+use ratatui::layout::Position as AppPosition;
 
 use crate::{Action, ActionInput, Focus, PuzzleState, PuzzleStyle, RuleState, Selection, Settings};
 
@@ -25,8 +25,8 @@ impl AppState {
             settings,
             puzzle: PuzzleState::new(puzzle, style, start_fill),
             focus: Focus::default(),
-            rules_left: RuleState::new(rules.rows.clone(), Direction::Vertical),
-            rules_top: RuleState::new(rules.cols.clone(), Direction::Horizontal),
+            rules_left: RuleState::new(rules.rows.clone(), Axis::Row),
+            rules_top: RuleState::new(rules.cols.clone(), Axis::Col),
         }
     }
 
@@ -47,12 +47,16 @@ impl AppState {
     pub fn switch_focus(&mut self, input: ActionInput) {
         let action = input.action;
         let focus = match (self.focus, action) {
+            (Focus::Footer, Action::FocusUp) => Focus::Puzzle,
+            (Focus::Footer, Action::FocusLeft) => Focus::RulesLeft,
+            // (Focus::Puzzle, Action::FocusDown) => Focus::Footer,
             (Focus::Puzzle, Action::FocusLeft) => Focus::RulesLeft,
             (Focus::Puzzle, Action::FocusUp) => Focus::RulesTop,
-            (Focus::Puzzle, Action::FocusDown) => Focus::Footer,
             (Focus::RulesLeft, Action::FocusRight) => Focus::Puzzle,
+            (Focus::RulesLeft, Action::FocusUp) => Focus::RulesTop,
+            // (Focus::RulesLeft, Action::FocusDown) => Focus::RulesTop,
             (Focus::RulesTop, Action::FocusDown) => Focus::Puzzle,
-            (Focus::Footer, Action::FocusUp) => Focus::Puzzle,
+            (Focus::RulesTop, Action::FocusLeft) => Focus::RulesLeft,
             _ => {
                 tracing::debug!(
                     "Unknown focus request encountered with action {action:?} (prev focus {:?})",

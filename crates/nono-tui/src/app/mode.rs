@@ -17,9 +17,8 @@ impl TryFrom<Action> for Mode {
             Action::EnterNormal => Mode::Normal,
             Action::EnterInsert => Mode::Insert,
             Action::ExitInsert => Mode::Normal,
-            Action::EnterBlockVisual => Mode::Visual(SelectionKind::Block),
-            Action::EnterRowsVisual => Mode::Visual(SelectionKind::Rows),
-            Action::EnterColsVisual => Mode::Visual(SelectionKind::Cols),
+            Action::EnterCellsVisual => Mode::Visual(SelectionKind::Cells),
+            Action::EnterLinesVisual => Mode::Visual(SelectionKind::Lines),
             Action::ExitVisual => Mode::Normal,
             _ => return Err(()),
         };
@@ -27,4 +26,3 @@ impl TryFrom<Action> for Mode {
         Ok(mode)
     }
 }
-

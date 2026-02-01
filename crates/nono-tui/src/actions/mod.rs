@@ -92,9 +92,8 @@ pub enum Action {
     ExitNormal,
     EnterInsert,
     ExitInsert,
-    EnterBlockVisual,
-    EnterRowsVisual,
-    EnterColsVisual,
+    EnterCellsVisual,
+    EnterLinesVisual,
     ExitVisual,
 }
 
@@ -113,8 +112,8 @@ impl Action {
             Fill | Cross | DeleteSingle | Delete | Measure => ActionKind::Operator,
 
             // Modes
-            EnterNormal | ExitNormal | EnterInsert | ExitInsert | EnterBlockVisual
-            | EnterRowsVisual | EnterColsVisual | ExitVisual => ActionKind::Mode,
+            EnterNormal | ExitNormal | EnterInsert | ExitInsert | EnterCellsVisual
+            | EnterLinesVisual | ExitVisual => ActionKind::Mode,
 
             // Motions
             Click | Drag | FindFillBackwards | FindFillForwards | FindTilFillBackwards

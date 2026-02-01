@@ -42,7 +42,7 @@ impl ActionEngine {
 
             // Drag starts visual mode
             Action::Drag if !is_visual => {
-                self.enter_visual(SelectionKind::Block, *state.cursor(), state);
+                self.enter_visual(SelectionKind::Cells, *state.cursor(), state);
             }
             _ => {
                 return match self.mode {
@@ -160,7 +160,7 @@ impl ActionEngine {
                 self.handle_operator(handler, input, Some(range), state)
             }
             ActionKind::Mode => self.switch_mode(input.action, state),
-            _ => Ok(ActionOutcome::Consumed),
+            ActionKind::Command => handler.handle_command(input, state),
         }
     }
 
