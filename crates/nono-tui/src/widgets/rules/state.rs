@@ -43,8 +43,7 @@ impl RuleState {
     }
 
     pub fn width(&self) -> u16 {
-        let rows: Vec<_> = self
-            .rules
+        self.rules
             .iter()
             .map(|rule: &Rule| {
                 let runs = rule.runs();
@@ -55,9 +54,8 @@ impl RuleState {
                         .map(|run| run.count.to_string().len() as u16)
                         .sum::<u16>()
             })
-            .collect();
-
-        rows.iter().max().copied().unwrap_or_default()
+            .max()
+            .unwrap_or_default()
     }
 
     pub fn follow_puzzle_cursor(&mut self, cursor: Position) {

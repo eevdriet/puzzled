@@ -64,6 +64,8 @@ impl PuzzleWidget {
         let range = state.selection.range();
         let selection = range.positions(&bounds);
 
+        tracing::debug!("Viewporttt: {vp:?}");
+
         for row in vp.row_start..vp.row_end {
             let mut x = x_start;
 

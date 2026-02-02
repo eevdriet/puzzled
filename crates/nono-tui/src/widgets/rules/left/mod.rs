@@ -117,10 +117,13 @@ impl RowRulesWidget {
         // Skip grid dividor row
         let mut width = 0;
 
+        tracing::info!("Drawing runs for {area:?}");
+
         for (r, run) in runs.iter().enumerate() {
             let text = run.count.to_string();
 
             let len = text.len() as u16;
+            tracing::info!("\tRun {r:?} has len {len} (current width {width:?}, run {run:?})");
 
             // Don't overflow the area if the rule is too long to draw
             if width >= area.width {
@@ -128,6 +131,7 @@ impl RowRulesWidget {
             }
             // Instead hide the remaining runs
             else if width + len >= area.width {
+                tracing::info!("\tDrawing overflow and quitting");
                 spans.push(Span::raw("⋯"));
                 break;
             } else {

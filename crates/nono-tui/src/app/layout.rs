@@ -38,25 +38,32 @@ impl ComputeLayout for App {
         tracing::debug!("Root: {root:?}");
 
         // Determine how many columns it takes to display the full puzzle + rules
-        // Add 2 for border around puzzle and space between puzzle and rules
         let puzzle_size = self.state.puzzle.size();
-        let rules_width = self.state.rules_left.width();
-        let rules_height = self.state.rules_top.height();
+
+        // Rules based their length on the run digits and spacing for status column/row
+        let rules_width = self.state.rules_left.width() + 1;
+        let rules_height = self.state.rules_top.height() + 3;
+
+        let cell_width = self.state.puzzle.style.cell_width;
+        let cell_height = self.state.puzzle.style.cell_height;
+
+        // The width is the left rules + puzzle + offset rule + spacing
+        let width = puzzle_size.width + rules_width + cell_width + 2;
+        let width = root.width.min(width);
+
+        // Calculate the offset to horizontally center the puzzle
+        let center_width = root.width.saturating_sub(puzzle_size.width) / 2;
+        let center_offset = center_width.saturating_sub(rules_width);
 
         tracing::debug!("Rules width: {rules_width}");
         tracing::debug!("Rules height: {rules_height}");
 
         tracing::debug!("Puzzle size: {puzzle_size:?}");
 
-        let max_cols = puzzle_size.width + rules_width + 1;
-        let cell_width = self.state.puzzle.style.cell_width;
-        let width = max_cols.min(root.width - cell_width);
-
-        // let center_offset = root.width.saturating_sub(width) / 2;
-
-        let [outer, rules_top_overflow_area] = Layout::default()
+        let [_, outer, rules_top_overflow_area] = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
+                Constraint::Length(center_offset),
                 Constraint::Length(width),
                 Constraint::Length(cell_width),
             ])
@@ -64,27 +71,29 @@ impl ComputeLayout for App {
 
         tracing::debug!("Outer: {outer:?}");
 
-        // Try to display the full puzzle + top rules if possible, otherwise clamp to root
-        let max_rows = puzzle_size.height + rules_height + FOOTER_HEIGHT;
-        let cell_height = self.state.puzzle.style.cell_height;
-        let height = max_rows.min(root.height - cell_height);
+        // Also Calculate the offset to vertically center the puzzle
+        let center_height = root.height.saturating_sub(puzzle_size.height) / 2;
+        let center_offset = center_height.saturating_sub(rules_height);
 
-        let [inner] = Layout::default()
+        // Try to display the full puzzle + top rules if possible, otherwise clamp to root
+        let height = puzzle_size.height + rules_height + cell_height + FOOTER_HEIGHT;
+        let height = root.height.min(height);
+
+        let [_, inner] = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(height)])
+            .constraints(vec![
+                Constraint::Length(center_offset),
+                Constraint::Length(height),
+            ])
             .areas(outer);
 
         tracing::debug!("Inner: {inner:?}");
 
-        // Try to display all row rules and fill the remainder with the puzzle
-        // Otherwise, fill the space smartly based on both dimensions
-        let width = rules_width.min(inner.width);
-
         let [left, right] = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
-                Constraint::Length(width),
-                Constraint::Max(puzzle_size.width),
+                Constraint::Length(rules_width),
+                Constraint::Length(puzzle_size.width),
             ])
             .areas(inner);
 

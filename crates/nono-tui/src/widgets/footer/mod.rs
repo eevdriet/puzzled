@@ -167,8 +167,6 @@ impl FooterWidget {
         let row_rule = &state.rules_left.rules[cursor.y as usize];
         let col_rule = &state.rules_top.rules[cursor.x as usize];
 
-        tracing::info!("Run selection span: {range:?}");
-
         let text = match (state.focus, range) {
             /* -- Rules -- */
             // Show the selected runs on the active left rule
