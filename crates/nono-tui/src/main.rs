@@ -37,12 +37,12 @@ fn main() -> Result<()> {
         .map_err(|err| Error::Custom(format!("Couldn't parse config file: {err}")))?;
 
     let nonogram = args.parse_puzzle()?;
-    dbg!(&nonogram.rules);
 
     let puzzle = nonogram.puzzle;
     let rules = nonogram.rules;
     let style = PuzzleStyle {
         colors: nonogram.colors,
+        grid_size: config.styles.grid_size,
         ..Default::default()
     };
 

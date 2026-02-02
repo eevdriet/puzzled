@@ -1,6 +1,6 @@
 mod actions;
 
-use nono::{Fill, Line, LineValidation, Rule, Run};
+use nono::{Fill, Line, Rule, Run};
 use ratatui::{
     layout::Alignment,
     prelude::{Buffer, Rect},
@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, StatefulWidgetRef, TitlePosition, Widget},
 };
 
-use crate::{AppState, Focus, run_style, status_info};
+use crate::{AppState, Focus, run_style, status_info, widgets::rules::RuleInfo};
 
 #[derive(Debug)]
 pub struct ColRulesWidget {
@@ -61,7 +61,7 @@ impl ColRulesWidget {
 
         let vp = puz_state.viewport.clone();
         let cols = puz_state.puzzle.cols();
-        let cell_width = puz_state.style.cell_width as usize;
+        let cell_width = puz_state.style.cell_width;
 
         // Keep track of the horizontal position
         let mut x = vp.area.x;
@@ -76,31 +76,36 @@ impl ColRulesWidget {
             let line = Line::Col(col);
             let validation = puz_state.puzzle.validate(rule, line);
 
+            let info = RuleInfo {
+                rule,
+                line,
+                validation,
+            };
+
             let run_area = Rect {
                 x,
                 y,
-                width: 1,
+                width: cell_width,
                 height: area.height,
             };
 
-            self.draw_runs(rule, &validation, line, run_area, buf, state);
+            self.draw_runs(&info, false, run_area, buf, state);
 
             if cursor.x == col && !matches!(state.focus, Focus::RulesLeft) {
-                let o = &rule_state.overflow_area;
+                let o = rule_state.overflow_area;
                 let run_area = Rect {
-                    x: o.x,
                     y,
-                    width: 1,
-                    height: o.height - y.abs_diff(o.y),
+                    width: 2 * cell_width,
+                    ..o
                 };
 
-                self.draw_runs(rule, &validation, line, run_area, buf, state);
+                self.draw_runs(&info, true, run_area, buf, state);
             }
 
-            self.draw_status(line, &validation, x, area, buf, state);
+            self.draw_status(&info, x, area, buf, state);
 
             // Advance to next viewport column and skip grid dividors
-            x += cell_width as u16;
+            x += cell_width;
 
             if let Some(size) = puz_state.style.grid_size
                 && (col + 1).is_multiple_of(size)
@@ -113,13 +118,14 @@ impl ColRulesWidget {
 
     fn draw_runs(
         &self,
-        rule: &Rule,
-        validation: &LineValidation,
-        line: Line,
+        info: &RuleInfo,
+        continue_to_right: bool,
         area: Rect,
         buf: &mut Buffer,
         state: &AppState,
-    ) -> bool {
+    ) {
+        let RuleInfo { rule, line, .. } = info;
+
         let runs = match rule.runs().len() {
             0 => &vec![Run {
                 count: 0,
@@ -131,45 +137,49 @@ impl ColRulesWidget {
         //
         let cell_width = state.puzzle.style.cell_width as usize;
         let len = runs.len() as u16;
-        let height = area.height.min(len);
 
-        let x = area.x;
+        let mut x = area.x;
         let mut y = area.y;
 
-        for r in 0..height {
+        // tracing::info!("[{continue_to_right}] Drawing {len} runs in {area:?} ({line:?})");
+
+        for r in 0..len {
             if y >= area.bottom() {
-                return false;
+                if !continue_to_right {
+                    // tracing::info!("\tReached bottom");
+                    return;
+                }
+
+                // tracing::info!("\tContinue to right");
+                x += cell_width as u16;
+                y = area.y;
             }
 
-            if r + 1 < height && y + 2 >= area.bottom() {
-                let text = format!("{:>cell_width$}", "⋯");
-                buf.set_string(x, y, text, Style::default());
+            if r + 1 < len && y + 2 >= area.bottom() {
+                if !continue_to_right {
+                    // tracing::info!("\tNo more space ⋯⋯");
+                    let text = format!("{:>cell_width$}", "⋯");
+                    buf.set_string(x, y, text, Style::default());
+                    return;
+                }
 
-                return false;
+                // tracing::info!("\tContinue to right");
+                x += cell_width as u16;
+                y = area.y;
             }
 
             let run = runs[r as usize];
             let text = format!("{:>cell_width$}", run.count);
-            let style = run_style(run.fill, rule, r, line, validation, state);
+            let style = run_style(info, run.fill, r, state);
 
             buf.set_string(x, y, text, style);
             y += 1;
         }
-
-        true
     }
 
-    fn draw_status(
-        &self,
-        line: Line,
-        validation: &LineValidation,
-        x: u16,
-        area: Rect,
-        buf: &mut Buffer,
-        state: &AppState,
-    ) {
+    fn draw_status(&self, info: &RuleInfo, x: u16, area: Rect, buf: &mut Buffer, state: &AppState) {
         let cell_width = state.puzzle.style.cell_width;
-        let (style, symbol) = status_info(line, validation, state);
+        let (style, symbol) = status_info(info, state);
 
         let area = Rect {
             x,

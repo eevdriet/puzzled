@@ -15,14 +15,17 @@ use ratatui::{
 
 use crate::{AppState, Focus};
 
-pub fn run_style(
-    fill: Fill,
-    _rule: &Rule,
-    idx: u16,
+pub struct RuleInfo<'a> {
+    rule: &'a Rule,
     line: Line,
-    validation: &LineValidation,
-    state: &AppState,
-) -> Style {
+    validation: LineValidation,
+}
+
+pub fn run_style(info: &RuleInfo, fill: Fill, idx: u16, state: &AppState) -> Style {
+    let RuleInfo {
+        line, validation, ..
+    } = info;
+
     let color = state
         .puzzle
         .style
@@ -48,8 +51,8 @@ pub fn run_style(
     let focus = state.focus;
     let cursor = state.cursor();
     let pos = match line {
-        Line::Row(row) => Position::new(idx, row),
-        Line::Col(col) => Position::new(col, idx),
+        Line::Row(row) => Position::new(idx, *row),
+        Line::Col(col) => Position::new(*col, idx),
     };
     let is_left = matches!(line, Line::Row(_)) && matches!(focus, Focus::RulesLeft);
     let is_top = matches!(line, Line::Col(_)) && matches!(focus, Focus::RulesTop);
@@ -57,8 +60,8 @@ pub fn run_style(
     let is_active = match focus {
         // Highlight all runs in the active row/column when puzzle focused
         Focus::Puzzle => match line {
-            Line::Row(row) => cursor.y == row,
-            Line::Col(col) => cursor.x == col,
+            Line::Row(row) => cursor.y == *row,
+            Line::Col(col) => cursor.x == *col,
         },
 
         // Highlight the cursor run in the active line when rules focused
@@ -80,7 +83,11 @@ pub fn run_style(
     style
 }
 
-pub fn status_info(line: Line, validation: &LineValidation, state: &AppState) -> (Style, char) {
+pub fn status_info(info: &RuleInfo, state: &AppState) -> (Style, char) {
+    let RuleInfo {
+        line, validation, ..
+    } = info;
+
     let cursor = state.puzzle.cursor;
     let base = Style::default().fg(Color::White);
 
@@ -92,9 +99,11 @@ pub fn status_info(line: Line, validation: &LineValidation, state: &AppState) ->
 
     let is_active = match line {
         Line::Row(row) => {
-            cursor.y == row && matches!(state.focus, Focus::Puzzle | Focus::RulesLeft)
+            cursor.y == *row && matches!(state.focus, Focus::Puzzle | Focus::RulesLeft)
         }
-        Line::Col(col) => cursor.x == col && matches!(state.focus, Focus::Puzzle | Focus::RulesTop),
+        Line::Col(col) => {
+            cursor.x == *col && matches!(state.focus, Focus::Puzzle | Focus::RulesTop)
+        }
     };
 
     if is_active {

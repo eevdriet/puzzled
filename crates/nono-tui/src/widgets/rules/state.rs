@@ -30,16 +30,16 @@ impl RuleState {
     }
 
     pub fn height(&self) -> u16 {
-        let heights: Vec<_> = self
-            .rules
+        self.rules
             .iter()
             .map(|rule: &Rule| rule.runs().len() as u16)
-            .collect();
+            .max()
+            .unwrap_or_default()
 
-        match self.display {
-            RuleDisplay::Auto => median(heights),
-            _ => heights.iter().max().copied().unwrap_or_default(),
-        }
+        // match self.display {
+        //     RuleDisplay::Auto => median(heights),
+        //     _ => heights.iter().max().copied().unwrap_or_default(),
+        // }
     }
 
     pub fn width(&self) -> u16 {

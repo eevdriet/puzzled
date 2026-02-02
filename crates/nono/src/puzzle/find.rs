@@ -29,7 +29,7 @@ impl Puzzle {
             .last()
             .map(|start| LinePosition::new(line, start as u16));
 
-        tracing::info!("Start {start:?} found from {pos:?}");
+        tracing::debug!("Start {start:?} found from {pos:?}");
         start
     }
 
@@ -43,17 +43,13 @@ impl Puzzle {
 
         let fill = self[pos];
 
-        let end = self
-            .iter_line(line)
+        self.iter_line(line)
             .enumerate()
             .skip(usize::from(offset))
             .take_while(|(_, f)| **f == fill)
             .map(|(i, _)| i)
             .last()
-            .map(|start| LinePosition::new(pos.line, start as u16));
-
-        tracing::info!("End {end:?} found from {pos:?}");
-        end
+            .map(|start| LinePosition::new(pos.line, start as u16))
     }
 
     pub fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
@@ -80,10 +76,7 @@ impl Puzzle {
             FindDirection::Backwards if pos == start => self.find_run_start(start - 1),
 
             // Jump one past the current end to reach the next run
-            FindDirection::Forwards if end.offset < len - 1 => {
-                tracing::info!("Forward start past");
-                self.find_run_start(end + 1)
-            }
+            FindDirection::Forwards if end.offset < len - 1 => self.find_run_start(end + 1),
 
             // Avoid jumping past the last run; jump to its end
             FindDirection::Forwards if end.offset >= len - 1 => Some(end.with_offset(len - 1)),
@@ -144,14 +137,7 @@ impl Puzzle {
         line: Line,
         direction: FindDirection,
     ) -> Option<LinePosition> {
-        tracing::info!("Finding first non blank on {line:?} going {direction:?}");
-
         let mut iter = self.iter_line(line).enumerate();
-        tracing::info!(
-            "Trying to find within {:?}",
-            self.iter_line(line).collect::<Vec<_>>()
-        );
-
         let non_blank = |fill: &Fill| !matches!(fill, Fill::Blank);
 
         match direction {

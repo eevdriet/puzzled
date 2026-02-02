@@ -64,8 +64,6 @@ impl HandleAction for &ColRulesWidget {
             _ => (pos, false),
         };
 
-        tracing::info!("{pos:?} -> {end:?}");
-
         let cursor = puzzle_to_app(end);
         rule_state.cursor = cursor;
 

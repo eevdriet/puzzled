@@ -49,12 +49,14 @@ impl Puzzle {
         }
 
         // Then validate whether the line can satisfy the rule
-        if !self.validate_dp(rule, line) {
-            return LineValidation::Invalid;
-        }
+        // if !self.validate_dp(rule, line) {
+        //     return LineValidation::Invalid;
+        // }
 
         // If so, check if it solve the rule
-        self.validate_iter(rule, line)
+        // self.validate_iter(rule, line)
+
+        LineValidation::Valid
     }
 
     fn validate_iter(&self, rule: &Rule, line: Line) -> LineValidation {

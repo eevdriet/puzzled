@@ -197,8 +197,8 @@ impl PuzzleState {
         let vp = &self.viewport;
         let (vis_cols, vis_rows) = (vp.visible_cols(), vp.visible_rows());
 
-        tracing::info!("Viewport {vp:?} has {vis_rows} visable rows");
-        tracing::info!("Viewport {vp:?} has {vis_cols} visable columns");
+        tracing::debug!("Viewport {vp:?} has {vis_rows} visable rows");
+        tracing::debug!("Viewport {vp:?} has {vis_cols} visable columns");
 
         let scroll = &mut self.scroll;
 

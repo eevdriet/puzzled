@@ -211,7 +211,7 @@ impl ActionEngine {
     fn enter_visual(&mut self, kind: SelectionKind, cursor: AppPosition, state: &mut AppState) {
         self.mode = Mode::Visual(kind);
 
-        tracing::info!("Starting {kind:?} with cursor {cursor:?}");
+        tracing::debug!("Starting {kind:?} with cursor {cursor:?}");
         state.mut_selection().start(cursor, kind);
     }
 

@@ -199,9 +199,9 @@ impl HandleAction for &PuzzleWidget {
             _ => pos,
         };
 
-        tracing::info!("Puzzle end: {end:?}");
+        tracing::debug!("Puzzle end: {end:?}");
         let cursor = puzzle_to_app(end);
-        tracing::info!("App end: {cursor:?}");
+        tracing::debug!("App end: {cursor:?}");
 
         state.rules_left.follow_puzzle_cursor(end);
         state.rules_top.follow_puzzle_cursor(end);
@@ -225,7 +225,6 @@ impl HandleAction for &PuzzleWidget {
             && let Some(fill) = state.puzzle.style.fill_from_key(key)
         {
             state.puzzle.fill = fill;
-            tracing::info!("Switched to fill {fill:?}");
             return Ok(ActionOutcome::Consumed);
         }
 
@@ -289,7 +288,6 @@ fn handle_jumps(
     count: u16,
 ) -> Position {
     let mut pos = pos;
-    tracing::info!("HANDLE JUMP {pos:?} with count {count:?} (start = {to_start})");
 
     for _ in 0..count {
         // Try to jump to the next position
@@ -297,7 +295,6 @@ fn handle_jumps(
             true => puzzle.find_directed_run_start(pos, direction),
             false => puzzle.find_directed_run_end(pos, direction),
         };
-        tracing::info!("NEXT POS {next_pos:?}");
 
         // If not possible, the start/end is reached: stop
         let Some(next_pos) = next_pos else {
