@@ -1,12 +1,8 @@
 use std::ops::Deref;
 
 use bitvec::vec::BitVec;
-use derive_more::Debug;
 
 use crate::{ColorId, Fill};
-
-/// Mask that represents all cells within a line that have been filled (1) or not (0)
-pub type LineMask = BitVec;
 
 /// Mask that represents a collection of filles that have been used (1) or not (0)
 /// The

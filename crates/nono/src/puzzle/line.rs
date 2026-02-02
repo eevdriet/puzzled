@@ -1,5 +1,7 @@
 use std::ops;
 
+use bitvec::vec::BitVec;
+
 use crate::Position;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -7,6 +9,8 @@ pub enum Line {
     Row(u16),
     Col(u16),
 }
+
+pub type LineMask = BitVec;
 
 impl Line {
     pub fn line(&self) -> u16 {

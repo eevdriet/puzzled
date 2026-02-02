@@ -1,9 +1,11 @@
-mod color;
+mod mask;
 
-pub use color::*;
+pub use mask::*;
 
 use serde::Deserialize;
 use std::fmt::Debug;
+
+use crate::ColorId;
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub enum Fill {
