@@ -20,12 +20,8 @@ impl PuzzleLoader for JsonLoader {
 #[derive(Debug, Deserialize)]
 pub struct JsonNonogram {
     pub colors: Vec<(u8, u8, u8)>,
-
-    pub rows: u16,
-    pub cols: u16,
-
-    pub row_rules: Vec<Vec<RawRun>>,
-    pub col_rules: Vec<Vec<RawRun>>,
+    pub rows: Vec<Vec<RawRun>>,
+    pub cols: Vec<Vec<RawRun>>,
 
     #[serde(default)]
     pub puzzle: Vec<Vec<u16>>,
@@ -48,46 +44,47 @@ impl TryFrom<JsonNonogram> for Nonogram {
             .map(|id| Fill::Color(*id))
             .collect();
 
-        // let puzzle = Puzzle::empty(data.rows, data.cols);
+        let rows = data.rows.len() as u16;
+        let cols = data.cols.len() as u16;
+
+        let row_rules: Vec<_> = data
+            .rows
+            .into_iter()
+            .map(|raw| {
+                let runs: Vec<_> = raw
+                    .iter()
+                    .map(|run| Run::new(Fill::Color(run.fill), run.count))
+                    .collect();
+
+                let mut rule = Rule::new(runs, cols);
+                rule.generate_constraints();
+
+                rule
+            })
+            .collect();
+
+        let col_rules: Vec<_> = data
+            .cols
+            .into_iter()
+            .map(|raw| {
+                let runs: Vec<_> = raw
+                    .iter()
+                    .map(|run| Run::new(Fill::Color(run.fill), run.count))
+                    .collect();
+
+                let mut rule = Rule::new(runs, rows);
+                rule.generate_constraints();
+
+                rule
+            })
+            .collect();
+
+        let rules = Rules::new(row_rules, col_rules);
         let puzzle = if data.puzzle.is_empty() {
-            Puzzle::empty(data.rows, data.cols)
+            Puzzle::empty(rows, cols)
         } else {
-            Puzzle::new(data.rows, data.cols, fills)?
+            Puzzle::new(rows, cols, fills)?
         };
-
-        let rows: Vec<_> = data
-            .row_rules
-            .into_iter()
-            .map(|raw| {
-                let runs: Vec<_> = raw
-                    .iter()
-                    .map(|run| Run::new(Fill::Color(run.fill), run.count))
-                    .collect();
-
-                let mut rule = Rule::new(runs, data.cols);
-                rule.generate_constraints();
-
-                rule
-            })
-            .collect();
-
-        let cols: Vec<_> = data
-            .col_rules
-            .into_iter()
-            .map(|raw| {
-                let runs: Vec<_> = raw
-                    .iter()
-                    .map(|run| Run::new(Fill::Color(run.fill), run.count))
-                    .collect();
-
-                let mut rule = Rule::new(runs, data.rows);
-                rule.generate_constraints();
-
-                rule
-            })
-            .collect();
-
-        let rules = Rules::new(rows, cols);
 
         Ok(Nonogram {
             puzzle,
