@@ -31,7 +31,7 @@ impl HandleAction for &ColRulesWidget {
         let row = pos.row;
 
         let max_row = get_max_row(col);
-        let max_col = state.puzzle.puzzle.rows() - 1;
+        let max_col = state.puzzle.puzzle.cols() - 1;
 
         // Lose focus commands
         let (end, produce_motion) = match action {

@@ -21,7 +21,7 @@ pub fn run_style(
     idx: u16,
     line: Line,
     validation: &LineValidation,
-    state: &mut AppState,
+    state: &AppState,
 ) -> Style {
     let color = state
         .puzzle
@@ -29,7 +29,7 @@ pub fn run_style(
         .fill_color(fill)
         .expect("Fill {fill:?} should have a defined color");
 
-    let base = Style::default().fg(color).dim();
+    let base = Style::default().fg(color);
 
     let mut style = match validation {
         // Cross out solved lines
@@ -46,7 +46,7 @@ pub fn run_style(
     };
 
     let focus = state.focus;
-    let cursor = *state.cursor();
+    let cursor = state.cursor();
     let pos = match line {
         Line::Row(row) => Position::new(idx, row),
         Line::Col(col) => Position::new(col, idx),
@@ -66,7 +66,7 @@ pub fn run_style(
         _ => false,
     };
 
-    let selection = &state.selection();
+    let selection = state.selection();
     let is_selected = (is_left || is_top) && selection.contains(pos);
 
     if is_selected {
@@ -74,7 +74,6 @@ pub fn run_style(
     }
 
     if is_active || is_selected {
-        tracing::info!("Found validation {validation:?}");
         style = style.add_modifier(Modifier::BOLD).not_dim();
     }
 

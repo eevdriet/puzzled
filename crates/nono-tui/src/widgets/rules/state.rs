@@ -16,6 +16,7 @@ pub struct RuleState {
     pub axis: Axis,
 
     pub area: Rect,
+    pub overflow_area: Rect,
 }
 
 impl RuleState {
@@ -23,10 +24,8 @@ impl RuleState {
         Self {
             rules,
             axis,
-            display: RuleDisplay::default(),
-            cursor: AppPosition::default(),
             selection: Selection::empty(axis),
-            area: Rect::default(),
+            ..Default::default()
         }
     }
 

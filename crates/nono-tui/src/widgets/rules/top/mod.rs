@@ -54,13 +54,18 @@ impl ColRulesWidget {
         Self { name, rules }
     }
 
-    fn draw(&self, area: Rect, buf: &mut Buffer, state: &mut AppState) {
-        let vp = state.puzzle.viewport.clone();
-        let cols = state.puzzle.puzzle.cols();
-        let cell_width = state.puzzle.style.cell_width as usize;
+    fn draw(&self, area: Rect, buf: &mut Buffer, state: &AppState) {
+        let rule_state = &state.rules_top;
+        let puz_state = &state.puzzle;
+        let cursor = state.cursor();
+
+        let vp = puz_state.viewport.clone();
+        let cols = puz_state.puzzle.cols();
+        let cell_width = puz_state.style.cell_width as usize;
 
         // Keep track of the horizontal position
         let mut x = vp.area.x;
+        let y = area.y;
 
         for col in vp.col_start..vp.col_end {
             if x >= vp.area.right() {
@@ -69,15 +74,35 @@ impl ColRulesWidget {
 
             let rule = &self.rules[col as usize];
             let line = Line::Col(col);
-            let validation = state.puzzle.puzzle.validate(rule, line);
+            let validation = puz_state.puzzle.validate(rule, line);
 
-            self.draw_runs(rule, &validation, line, x, area, buf, state);
+            let run_area = Rect {
+                x,
+                y,
+                width: 1,
+                height: area.height,
+            };
+
+            self.draw_runs(rule, &validation, line, run_area, buf, state);
+
+            if cursor.x == col && !matches!(state.focus, Focus::RulesLeft) {
+                let o = &rule_state.overflow_area;
+                let run_area = Rect {
+                    x: o.x,
+                    y,
+                    width: 1,
+                    height: o.height - y.abs_diff(o.y),
+                };
+
+                self.draw_runs(rule, &validation, line, run_area, buf, state);
+            }
+
             self.draw_status(line, &validation, x, area, buf, state);
 
             // Advance to next viewport column and skip grid dividors
             x += cell_width as u16;
 
-            if let Some(size) = state.puzzle.style.grid_size
+            if let Some(size) = puz_state.style.grid_size
                 && (col + 1).is_multiple_of(size)
                 && col != cols - 1
             {
@@ -91,11 +116,10 @@ impl ColRulesWidget {
         rule: &Rule,
         validation: &LineValidation,
         line: Line,
-        x: u16,
         area: Rect,
         buf: &mut Buffer,
-        state: &mut AppState,
-    ) {
+        state: &AppState,
+    ) -> bool {
         let runs = match rule.runs().len() {
             0 => &vec![Run {
                 count: 0,
@@ -107,28 +131,32 @@ impl ColRulesWidget {
         //
         let cell_width = state.puzzle.style.cell_width as usize;
         let len = runs.len() as u16;
-        let height = area.height;
+        let height = area.height.min(len);
 
+        let x = area.x;
         let mut y = area.y;
 
-        for r in 0..len.min(height) {
+        for r in 0..height {
             if y >= area.bottom() {
-                break;
-            } else if y + 1 >= area.bottom() {
-                let text = format!("{:>cell_width$}", "⋯");
-                let style = run_style(Fill::Blank, rule, r, line, validation, state);
-
-                buf.set_string(x, y, text, style);
-                break;
-            } else {
-                let run = runs[r as usize];
-                let text = format!("{:>cell_width$}", run.count);
-                let style = run_style(run.fill, rule, r, line, validation, state);
-
-                buf.set_string(x, y, text, style);
-                y += 1;
+                return false;
             }
+
+            if r + 1 < height && y + 2 >= area.bottom() {
+                let text = format!("{:>cell_width$}", "⋯");
+                buf.set_string(x, y, text, Style::default());
+
+                return false;
+            }
+
+            let run = runs[r as usize];
+            let text = format!("{:>cell_width$}", run.count);
+            let style = run_style(run.fill, rule, r, line, validation, state);
+
+            buf.set_string(x, y, text, style);
+            y += 1;
         }
+
+        true
     }
 
     fn draw_status(
@@ -138,7 +166,7 @@ impl ColRulesWidget {
         x: u16,
         area: Rect,
         buf: &mut Buffer,
-        state: &mut AppState,
+        state: &AppState,
     ) {
         let cell_width = state.puzzle.style.cell_width;
         let (style, symbol) = status_info(line, validation, state);

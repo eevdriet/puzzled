@@ -29,9 +29,9 @@ impl StatefulWidgetRef for &FooterWidget {
         };
 
         // Progress
-        self.render_colors(rect(0), buf, state);
-        self.render_stats(rect(1), buf, state);
-        self.render_progress(rect(2), buf, state);
+        self.render_colors(rect(1), buf, state);
+        self.render_stats(rect(2), buf, state);
+        self.render_progress(rect(3), buf, state);
     }
 }
 
@@ -142,8 +142,8 @@ impl FooterWidget {
             .render(area, buf);
 
         // Middle
-        let rule_span = self.rule_selection_span(state).into_centered_line();
-        rule_span.render(area, buf);
+        let selection_span = self.selection_span(state).into_centered_line();
+        selection_span.render(area, buf);
 
         // Right
         // Show the dimensions of the puzzle
@@ -159,8 +159,8 @@ impl FooterWidget {
         .render(area, buf);
     }
 
-    fn rule_selection_span(&self, state: &mut AppState) -> Span<'_> {
-        let cursor = *state.cursor();
+    fn selection_span(&self, state: &mut AppState) -> Span<'_> {
+        let cursor = state.cursor();
         let style = Style::default().fg(Color::White);
         let range = state.selection().range();
 
@@ -169,29 +169,47 @@ impl FooterWidget {
 
         tracing::info!("Run selection span: {range:?}");
 
-        match (state.focus, range) {
+        let text = match (state.focus, range) {
+            /* -- Rules -- */
             // Show the selected runs on the active left rule
             (Focus::RulesLeft, MotionRange::Block(Rect { x, width, .. })) => {
-                let len = row_rule.slice(x..x + width).len();
-                Span::styled(len.to_string(), style)
+                row_rule.slice(x..x + width).len().to_string()
             }
             // Show the selected runs on the active top rule
             (Focus::RulesTop, MotionRange::Block(Rect { y, height, .. })) => {
-                let len = col_rule.slice(y..y + height).len();
-                Span::styled(len.to_string(), style)
+                col_rule.slice(y..y + height).len().to_string()
             }
-
-            // Show the length of both rules
-            (Focus::Puzzle, _) => {
-                Span::styled(format!("{}R, {}C", row_rule.len(), col_rule.len()), style)
-            }
-
             // Show length of the active rule
-            (Focus::RulesLeft, _) => Span::styled(row_rule.len().to_string(), style),
-            (Focus::RulesTop, _) => Span::styled(col_rule.len().to_string(), style),
+            (Focus::RulesLeft, _) => row_rule.len().to_string(),
+            (Focus::RulesTop, _) => col_rule.len().to_string(),
+
+            /* -- Puzzle -- */
+            (Focus::Puzzle, MotionRange::Single(pos)) => format!("{},{}", pos.y, pos.x),
+
+            (Focus::Puzzle, MotionRange::Block(rect)) => format!(
+                "{},{} -> {},{}",
+                rect.y,
+                rect.x,
+                rect.y + rect.height - 1,
+                rect.x + rect.width - 1
+            ),
+
+            (
+                Focus::Puzzle,
+                MotionRange::Rows { start, end } | MotionRange::Cols { start, end },
+            ) => {
+                format!("{start} -> {end}")
+            }
+
+            // Show the length of both rules if nothing selected in the puzzle
+            (Focus::Puzzle, _) => format!("{}R, {}C", row_rule.len(), col_rule.len()),
+
+            // Show the selection in the puzzle
 
             // Don't display anything by default
-            _ => Span::raw(""),
-        }
+            _ => String::new(),
+        };
+
+        Span::styled(text, style)
     }
 }

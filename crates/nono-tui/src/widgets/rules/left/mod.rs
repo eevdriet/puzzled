@@ -43,31 +43,55 @@ impl RowRulesWidget {
         Self { name, rules }
     }
 
-    fn draw(&self, area: Rect, buf: &mut Buffer, state: &mut AppState) {
-        let vp = &state.puzzle.viewport;
-        let rows = state.puzzle.puzzle.rows();
-        let cell_height = state.puzzle.style.cell_height;
+    fn draw(&self, area: Rect, buf: &mut Buffer, state: &AppState) {
+        let rule_state = &state.rules_left;
+        let puz_state = &state.puzzle;
+        let cursor = state.cursor();
+
+        let vp = &puz_state.viewport;
+        let rows = puz_state.puzzle.rows();
+        let cell_height = puz_state.style.cell_height;
 
         // Keep track of the vertical position
+        let x = area.x;
         let mut y = vp.area.y;
 
         for row in vp.row_start..vp.row_end {
             let rule = &self.rules[row as usize];
             let line = Line::Row(row);
-            let validation = state.puzzle.puzzle.validate(rule, line);
+            let validation = puz_state.puzzle.validate(rule, line);
 
             // NOTE: this breaks the coloring of the runs if status is drawn after the runs
             self.draw_status(line, &validation, y, area, buf, state);
-            self.draw_runs(rule, &validation, line, y, area, buf, state);
+
+            let run_area = Rect {
+                x,
+                y,
+                width: area.width,
+                height: cell_height,
+            };
+            self.draw_runs(rule, &validation, line, run_area, buf, state);
+
+            if cursor.y == row && !matches!(state.focus, Focus::RulesTop) {
+                let o = &rule_state.overflow_area;
+                let run_area = Rect {
+                    x,
+                    y: o.y,
+                    width: o.width - x.abs_diff(o.x),
+                    height: cell_height,
+                };
+
+                self.draw_runs(rule, &validation, line, run_area, buf, state);
+            }
 
             // Advance to next viewport row and skip grid dividors
             y += cell_height;
 
-            if let Some(size) = state.puzzle.style.grid_size
+            if let Some(size) = puz_state.style.grid_size
                 && (row + 1).is_multiple_of(size)
                 && row != rows - 1
             {
-                y += cell_height;
+                y += 1;
             }
         }
     }
@@ -77,13 +101,10 @@ impl RowRulesWidget {
         rule: &Rule,
         validation: &LineValidation,
         line: Line,
-        y: u16,
         area: Rect,
         buf: &mut Buffer,
-        state: &mut AppState,
+        state: &AppState,
     ) {
-        let cell_height = state.puzzle.style.cell_height;
-
         let mut spans: Vec<Span> = Vec::new();
         let runs = match rule.runs().len() {
             0 => &vec![Run {
@@ -125,13 +146,6 @@ impl RowRulesWidget {
                 }
             }
         }
-
-        let area = Rect {
-            x: area.x,
-            y,
-            width: area.width,
-            height: cell_height,
-        };
 
         TextLine::from(spans)
             .alignment(Alignment::Right)
