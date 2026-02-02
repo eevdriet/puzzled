@@ -11,7 +11,7 @@ pub enum SelectionKind {
     Lines,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Selection {
     pub axis: Axis,
     pub kind: SelectionKind,

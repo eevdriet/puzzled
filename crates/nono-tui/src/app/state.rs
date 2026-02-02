@@ -28,7 +28,15 @@ impl AppState {
         }
     }
 
-    pub fn selection(&mut self) -> &mut Selection {
+    pub fn selection(&self) -> Selection {
+        match self.focus {
+            Focus::RulesLeft => self.rules_left.selection,
+            Focus::RulesTop => self.rules_top.selection,
+            _ => self.puzzle.selection,
+        }
+    }
+
+    pub fn mut_selection(&mut self) -> &mut Selection {
         match self.focus {
             Focus::RulesLeft => &mut self.rules_left.selection,
             Focus::RulesTop => &mut self.rules_top.selection,
@@ -36,7 +44,15 @@ impl AppState {
         }
     }
 
-    pub fn cursor(&mut self) -> &mut AppPosition {
+    pub fn cursor(&self) -> AppPosition {
+        match self.focus {
+            Focus::RulesLeft => self.rules_left.cursor,
+            Focus::RulesTop => self.rules_top.cursor,
+            _ => self.puzzle.cursor,
+        }
+    }
+
+    pub fn mut_cursor(&mut self) -> &mut AppPosition {
         match self.focus {
             Focus::RulesLeft => &mut self.rules_left.cursor,
             Focus::RulesTop => &mut self.rules_top.cursor,

@@ -84,10 +84,12 @@ impl App {
 
         loop {
             // Render
-            term.draw(|frame| {
-                self.compute_layout(frame.area());
-                self.render(frame)
-            })?;
+            {
+                term.draw(|frame| {
+                    self.compute_layout(frame.area());
+                    self.render(frame)
+                })?;
+            }
 
             // Poll for events
             if t_event::poll(POLL_DURATION)? {

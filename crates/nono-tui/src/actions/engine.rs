@@ -42,7 +42,7 @@ impl ActionEngine {
 
             // Drag starts visual mode
             Action::Drag if !is_visual => {
-                self.enter_visual(SelectionKind::Cells, *state.cursor(), state);
+                self.enter_visual(SelectionKind::Cells, state.cursor(), state);
             }
             _ => {
                 return match self.mode {
@@ -141,28 +141,27 @@ impl ActionEngine {
         state: &mut AppState,
     ) -> ActionResult {
         let focus = state.focus;
-        let selection = state.selection();
 
         match input.action.kind() {
             ActionKind::Motion => {
-                let cursor_before = *state.cursor();
+                let cursor_before = state.cursor();
                 let (status, range) = handler.handle_motion(input, state)?;
 
                 if let Some(range) = range {
                     let line_range = constrain_range_to_rule_line(focus, cursor_before, range);
 
                     if let MotionRange::Single(pos) = line_range {
-                        state.selection().update(pos);
+                        state.mut_selection().update(pos);
                     }
                 } else {
-                    state.selection().reset();
+                    state.mut_selection().reset();
                 }
 
                 Ok(status)
             }
 
             ActionKind::Operator => {
-                let range = selection.range();
+                let range = state.selection().range();
                 self.exit_visual(state);
                 self.mode = Mode::Normal;
 
@@ -198,7 +197,7 @@ impl ActionEngine {
                     _ => kind,
                 };
 
-                self.enter_visual(kind, *state.cursor(), state);
+                self.enter_visual(kind, state.cursor(), state);
             }
             _ => {
                 self.exit_visual(state);
@@ -213,11 +212,11 @@ impl ActionEngine {
         self.mode = Mode::Visual(kind);
 
         tracing::info!("Starting {kind:?} with cursor {cursor:?}");
-        state.selection().start(cursor, kind);
+        state.mut_selection().start(cursor, kind);
     }
 
     fn exit_visual(&mut self, state: &mut AppState) {
-        state.selection().reset();
+        state.mut_selection().reset();
     }
 }
 
