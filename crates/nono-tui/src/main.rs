@@ -3,6 +3,7 @@ mod actions;
 mod app;
 mod args;
 mod config;
+mod error;
 mod events;
 mod log;
 mod widgets;
@@ -11,6 +12,7 @@ pub use actions::*;
 pub use app::*;
 pub use args::*;
 pub use config::*;
+pub use error::*;
 pub use events::*;
 pub use log::*;
 pub use widgets::*;
@@ -18,7 +20,6 @@ pub use widgets::*;
 use std::path::Path;
 
 use clap::Parser;
-use nono::{Error, Result};
 
 fn main() -> Result<()> {
     let args = Args::parse();
@@ -35,9 +36,15 @@ fn main() -> Result<()> {
     let config: Config = toml::from_str(&contents)
         .map_err(|err| Error::Custom(format!("Couldn't parse config file: {err}")))?;
 
-    let _ = args.parse_puzzle(&config)?;
-    let (puzzle, rules, style) = args.parse_puzzle(&config)?;
-    dbg!(&rules);
+    let nonogram = args.parse_puzzle()?;
+    dbg!(&nonogram.rules);
+
+    let puzzle = nonogram.puzzle;
+    let rules = nonogram.rules;
+    let style = PuzzleStyle {
+        colors: nonogram.colors,
+        ..Default::default()
+    };
 
     let mut term = ratatui::init();
     let mut app = App::new(puzzle, rules, style, config);

@@ -1,14 +1,17 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::path::PathBuf;
 
 use crate::PuzzleStyle;
 use clap::Parser;
-use nono::{Fill, Puzzle, Result, Rules, parse_from_rules};
+use nono::Nonogram;
+use nono_io::load_nonogram;
 
-use crate::Config;
+use crate::Result;
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    pub file: PathBuf,
+
     #[arg(short = 'x', long, default_value_t = 'X')]
     pub fill_char: char,
 
@@ -20,10 +23,6 @@ pub struct Args {
 
     #[arg(short, long)]
     pub debug: bool,
-
-    /// Read puzzle from file instead of stdin
-    #[arg(short = 'f', long)]
-    pub file: Option<PathBuf>,
 }
 
 impl Args {
@@ -31,57 +30,8 @@ impl Args {
         PuzzleStyle::default()
     }
 
-    pub fn parse_puzzle(&self, config: &Config) -> Result<(Puzzle, Rules, PuzzleStyle)> {
-        // Read the input
-        let mut buffer = String::new();
-
-        match &self.file {
-            Some(path) => {
-                let mut file = File::open(path)?;
-                file.read_to_string(&mut buffer)?;
-            }
-            None => {
-                std::io::stdin().read_to_string(&mut buffer)?;
-            }
-        }
-
-        let (puzzle, rules, raw_colors) = parse_from_rules(&buffer)?;
-        let mut styles = config.styles.clone();
-        styles.colors = raw_colors;
-
-        Ok((puzzle, rules, styles))
-    }
-
-    fn parse_from_puzzle(buffer: &str, config: &Config) -> Result<(Puzzle, Rules, PuzzleStyle)> {
-        let mut fills = Vec::<Fill>::with_capacity(buffer.len());
-        let lines = buffer.lines();
-
-        let mut rows = 0;
-        let cols = lines.map(|line| line.len() as u16).max().unwrap();
-
-        for line in buffer.lines() {
-            let mut col_count = 0;
-            rows += 1;
-
-            for ch in line.chars() {
-                col_count += 1;
-
-                let fill = match ch {
-                    cell if cell.is_whitespace() || cell == '.' => Fill::Blank,
-                    _ => Fill::Color(ch as u16),
-                };
-                fills.push(fill);
-            }
-
-            for _ in col_count..cols {
-                fills.push(Fill::Blank);
-            }
-        }
-
-        let puzzle = Puzzle::new(rows, cols, fills).expect("checked rows and cols");
-        let rules = Rules::from_puzzle(&puzzle);
-        let style = config.styles.clone();
-
-        Ok((puzzle, rules, style))
+    pub fn parse_puzzle(&self) -> Result<Nonogram> {
+        let nonogram = load_nonogram(&self.file)?;
+        Ok(nonogram)
     }
 }

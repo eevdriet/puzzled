@@ -151,11 +151,11 @@ impl App {
     }
 
     fn init(&self) -> Result<()> {
-        execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture).map_err(Error::IO)
+        execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture).map_err(Error::Io)
     }
 
     fn exit(&self) -> Result<()> {
-        execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture).map_err(Error::IO)
+        execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture).map_err(Error::Io)
     }
 
     fn render(&mut self, frame: &mut Frame) {
