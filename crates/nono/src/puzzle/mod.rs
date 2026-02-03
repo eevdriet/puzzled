@@ -130,7 +130,7 @@ impl Puzzle {
             mask.set(pos, true);
         };
 
-        let (row_pos, col_pos) = pos.into();
+        let (row_pos, col_pos) = pos.relative();
 
         set_mask(row_pos, prev, fill);
         set_mask(col_pos, prev, fill);

@@ -2,6 +2,7 @@ mod constraints;
 mod puzzle;
 mod slice;
 
+pub use constraints::*;
 pub use puzzle::*;
 pub use slice::*;
 
@@ -9,7 +10,7 @@ use std::collections::HashMap;
 
 use derive_more::Debug;
 
-use crate::{Fill, FillMask, LineMask, Run, Runs};
+use crate::{Fill, FillMask, Run, Runs};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
@@ -23,7 +24,7 @@ pub struct Rule {
     line_len: u16,
 
     #[debug(skip)]
-    constraints: HashMap<Fill, LineMask>,
+    constraints: HashMap<Fill, LineConstraint>,
 }
 
 impl Rule {
@@ -121,7 +122,7 @@ impl Rule {
         &self.runs
     }
 
-    pub fn fill_constraint(&self, fill: Fill) -> Option<LineMask> {
+    pub fn fill_constraint(&self, fill: Fill) -> Option<LineConstraint> {
         self.constraints.get(&fill).cloned()
     }
 }

@@ -19,12 +19,14 @@ impl Position {
     }
 
     pub fn along_axis(&self, axis: Axis) -> LinePosition {
-        let (row_pos, col_pos): (LinePosition, LinePosition) = (*self).into();
-
         match axis {
-            Axis::Row => row_pos,
-            Axis::Col => col_pos,
+            Axis::Row => LinePosition::row_offset(self.row, self.col),
+            Axis::Col => LinePosition::col_offset(self.col, self.row),
         }
+    }
+
+    pub fn relative(&self) -> (LinePosition, LinePosition) {
+        (self.along_axis(Axis::Row), self.along_axis(Axis::Col))
     }
 }
 

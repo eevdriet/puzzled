@@ -53,14 +53,18 @@ impl LinePosition {
             offset,
         }
     }
-}
 
-impl From<Position> for (LinePosition, LinePosition) {
-    fn from(pos: Position) -> Self {
-        (
-            LinePosition::row_offset(pos.row, pos.col),
-            LinePosition::col_offset(pos.col, pos.row),
-        )
+    pub fn absolute(&self) -> Position {
+        match self.line {
+            Line::Row(row) => Position {
+                row,
+                col: self.offset,
+            },
+            Line::Col(col) => Position {
+                col,
+                row: self.offset,
+            },
+        }
     }
 }
 

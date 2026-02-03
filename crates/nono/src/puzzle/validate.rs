@@ -1,4 +1,4 @@
-use crate::{Fill, Line, LinePosition, Puzzle, Rule};
+use crate::{Fill, Line, LineConstraint, LinePosition, Puzzle, Rule};
 
 #[derive(Debug)]
 pub enum LineValidation {
@@ -21,10 +21,8 @@ pub enum LineValidation {
 impl LineValidation {
     pub fn symbol(&self) -> char {
         match self {
-            LineValidation::Invalid
-            | LineValidation::LengthMismatch { .. }
-            | LineValidation::InvalidFill(..) => '⛌',
             LineValidation::Solved => '✓',
+            v if !v.is_valid() => '⛌',
             _ => ' ',
         }
     }
@@ -48,15 +46,19 @@ impl Puzzle {
             return LineValidation::LengthMismatch { rule_len, line_len };
         }
 
-        // Then validate whether the line can satisfy the rule
-        // if !self.validate_dp(rule, line) {
-        //     return LineValidation::Invalid;
-        // }
+        // Then do a quick validation with the rule masks
+        let validation = self.validate_masks(rule, line);
+        if !validation.is_valid() {
+            return validation;
+        }
+
+        // If still valid, validate with a DP
+        if !self.validate_dp(rule, line) {
+            return LineValidation::Invalid;
+        }
 
         // If so, check if it solve the rule
-        // self.validate_iter(rule, line)
-
-        LineValidation::Valid
+        self.validate_iter(rule, line)
     }
 
     fn validate_iter(&self, rule: &Rule, line: Line) -> LineValidation {
@@ -202,16 +204,18 @@ impl Puzzle {
         };
 
         for (&fill, mask) in masks.iter().filter(|(_, mask)| mask.any()) {
-            let set = mask.clone();
-
-            // Invalidate right away if rule doesn't include fill
-            let Some(required) = rule.fill_constraint(fill) else {
+            // Invalidate right away if rule doesn't include current fill
+            let Some(LineConstraint { required, optional }) = rule.fill_constraint(fill) else {
                 return LineValidation::InvalidFill(fill);
             };
 
-            // Make sure that all cells that are required are set
-            let required_unset = required & !set;
-            if required_unset.any() {
+            // Fill is invalid if it's not placed on one of the optional cells
+            if !(optional.clone() & mask).any() {
+                tracing::info!("Invalid fill for {line:?}");
+                tracing::info!("\tRequired bits: {required}");
+                tracing::info!("\tOptional bits: {optional}");
+                tracing::info!("\tSet:           {mask}");
+
                 return LineValidation::InvalidFill(fill);
             }
         }
