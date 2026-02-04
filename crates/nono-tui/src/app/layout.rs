@@ -78,7 +78,7 @@ impl ComputeLayout for App {
         let center_offset = center_height.saturating_sub(max_rules_height);
 
         // Try to display the full puzzle + top rules if possible, otherwise clamp to root
-        let height = puzzle_size.height + max_rules_height + cell_height + FOOTER_HEIGHT;
+        let height = max_rules_height + puzzle_size.height + 1 + cell_height + FOOTER_HEIGHT;
         let height = root.height.min(height);
 
         let [_, inner] = Layout::default()
@@ -103,7 +103,7 @@ impl ComputeLayout for App {
         let [rules_top_area, puzzle_area, _, _, footer_area] = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
-                Constraint::Length(height),
+                Constraint::Length(max_rules_height),
                 Constraint::Max(puzzle_size.height),
                 Constraint::Length(1),
                 Constraint::Length(cell_height),
@@ -164,5 +164,6 @@ impl ComputeLayout for App {
         self.state.rules_left.overflow_area = rules_left_overflow_area;
 
         self.state.footer.area = footer_area;
+        self.state.minimap.area = info_area;
     }
 }

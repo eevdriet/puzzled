@@ -203,9 +203,8 @@ impl HandleAction for &PuzzleWidget {
     fn handle_command(&self, input: ActionInput, state: &mut AppState) -> ActionResult {
         let action = input.action;
 
-        let vp = &state.puzzle.viewport;
-        let _y_scroll_max = state.puzzle.puzzle.rows() - vp.area.height;
-        let _y_half = vp.area.height / 2;
+        // let _y_scroll_max = state.puzzle.puzzle.rows() - vp.area.height;
+        // let _y_half = vp.area.height / 2;
 
         if matches!(action, Action::SwitchFill)
             && let Event::Key(key) = *input.event

@@ -2,8 +2,8 @@ use nono::{Axis, Fill, Puzzle, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
-    Action, ActionInput, Focus, FooterState, PuzzleState, PuzzleStyle, RuleState, Selection,
-    Settings,
+    Action, ActionInput, Focus, FooterState, MiniMapState, PuzzleState, PuzzleStyle, RuleState,
+    Selection, Settings,
 };
 
 pub struct AppState {
@@ -16,6 +16,7 @@ pub struct AppState {
     pub rules_left: RuleState,
     pub rules_top: RuleState,
     pub footer: FooterState,
+    pub minimap: MiniMapState,
 
     pub solver: Solver,
 }
@@ -34,6 +35,7 @@ impl AppState {
             focus: Focus::default(),
             rules_left: RuleState::new(rules.rows.clone(), Axis::Row),
             rules_top: RuleState::new(rules.cols.clone(), Axis::Col),
+            minimap: MiniMapState::default(),
             footer: FooterState::new(),
         }
     }

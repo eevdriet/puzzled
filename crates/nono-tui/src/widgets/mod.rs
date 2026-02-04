@@ -1,5 +1,6 @@
 mod footer;
 mod layout;
+mod minimap;
 mod puzzle;
 mod region;
 mod rules;
@@ -8,6 +9,7 @@ use std::fmt::Display;
 
 pub use footer::*;
 pub use layout::*;
+pub use minimap::*;
 pub use puzzle::*;
 pub use region::*;
 pub use rules::*;

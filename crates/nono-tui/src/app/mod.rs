@@ -29,8 +29,8 @@ use std::time::Duration;
 
 use crate::{
     ActionEngine, ActionInput, ActionOutcome, ActionResult, AppEvent, ColRulesWidget,
-    ComputeLayout, Config, EventEngine, FooterWidget, HandleAction, PuzzleStyle, PuzzleWidget,
-    Result, RowRulesWidget,
+    ComputeLayout, Config, EventEngine, FooterWidget, HandleAction, MiniMapWidget, PuzzleStyle,
+    PuzzleWidget, Result, RowRulesWidget,
 };
 
 const POLL_DURATION: Duration = Duration::from_millis(30);
@@ -50,6 +50,7 @@ pub struct App {
     rules_left: RowRulesWidget,
     rules_top: ColRulesWidget,
     footer: FooterWidget,
+    minimap: MiniMapWidget,
 }
 
 impl App {
@@ -70,6 +71,7 @@ impl App {
             rules_left,
             rules_top,
             footer: FooterWidget,
+            minimap: MiniMapWidget,
         }
     }
 
@@ -194,7 +196,9 @@ impl App {
             self.state.rules_top.area,
             &mut self.state,
         );
+
         frame.render_stateful_widget_ref(&self.footer, self.state.footer.area, &mut self.state);
+        frame.render_stateful_widget_ref(&self.minimap, self.state.minimap.area, &mut self.state);
     }
 
     fn draw_puzzle_scrollbars(&mut self, frame: &mut Frame, area: Rect) {
