@@ -1,4 +1,4 @@
-use std::ops;
+use std::{collections::HashMap, ops};
 
 use bitvec::vec::BitVec;
 
@@ -11,6 +11,7 @@ pub enum Line {
 }
 
 pub type LineMask = BitVec;
+pub type LineMap<T> = HashMap<Line, T>;
 
 impl Line {
     pub fn line(&self) -> u16 {

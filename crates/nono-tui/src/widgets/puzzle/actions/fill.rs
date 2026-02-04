@@ -29,7 +29,13 @@ impl CellChange {
 impl UndoAction for FillAction {
     fn execute(&mut self, state: &mut AppState) -> ActionResult {
         for change in &self.changes {
-            state.puzzle.puzzle.fill_cell(change.pos, change.after);
+            let puzzle = &mut state.puzzle.puzzle;
+
+            // Give the cell the correct fill
+            puzzle.fill_cell(change.pos, change.after);
+
+            // Then update the cell state in the solver
+            state.solver.update_cell(puzzle, change.pos, change.after);
         }
 
         Ok(ActionOutcome::Consumed)
@@ -37,10 +43,15 @@ impl UndoAction for FillAction {
 
     fn undo(&mut self, state: &mut AppState) -> ActionResult {
         for change in &self.changes {
-            state.puzzle.puzzle.fill_cell(change.pos, change.before);
+            let puzzle = &mut state.puzzle.puzzle;
+
+            // Give the cell the correct fill
+            puzzle.fill_cell(change.pos, change.before);
+
+            // Then update the cell state in the solver
+            state.solver.update_cell(puzzle, change.pos, change.before);
         }
 
         Ok(ActionOutcome::Consumed)
     }
 }
-

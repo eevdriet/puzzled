@@ -1,6 +1,6 @@
-use crate::{Fill, Line, LineConstraint, LinePosition, Puzzle, Rule};
+use crate::{Fill, Line, LineConstraint, LinePosition, Puzzle, Rule, Solver};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum LineValidation {
     /// All cells in the line are validated by the rule
     Valid,
@@ -8,8 +8,13 @@ pub enum LineValidation {
     /// All cells in the line are validated and solve the rule
     Solved,
 
+    MissingRule(Line),
+
     /// Line is validated by a rule of different length
-    LengthMismatch { rule_len: u16, line_len: u16 },
+    LengthMismatch {
+        rule_len: u16,
+        line_len: u16,
+    },
 
     /// Line includes a fill that is not include in the rule
     InvalidFill(Fill),
@@ -32,11 +37,16 @@ impl LineValidation {
     }
 }
 
-impl Puzzle {
-    pub fn validate(&self, rule: &Rule, line: Line) -> LineValidation {
+impl Solver {
+    pub fn validate(&mut self, puzzle: &Puzzle, line: Line) -> LineValidation {
+        let Some(rule) = self.rules.get(&line) else {
+            tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
+            return LineValidation::MissingRule(line);
+        };
+
         // Make sure the rule length is valid
         let rule_len = rule.line_len();
-        let line_len = self.line_len(line);
+        let line_len = puzzle.line_len(line);
 
         if rule_len != line_len {
             tracing::warn!(
@@ -47,23 +57,23 @@ impl Puzzle {
         }
 
         // Then do a quick validation with the rule masks
-        let validation = self.validate_masks(rule, line);
+        let validation = self.validate_masks(line);
         if !validation.is_valid() {
             return validation;
         }
 
         // If still valid, validate with a DP
-        if !self.validate_dp(rule, line) {
+        if !self.validate_dp(puzzle, rule, line) {
             return LineValidation::Invalid;
         }
 
         // If so, check if it solve the rule
-        self.validate_iter(rule, line)
+        self.validate_iter(puzzle, rule, line)
     }
 
-    fn validate_iter(&self, rule: &Rule, line: Line) -> LineValidation {
+    fn validate_iter(&self, puzzle: &Puzzle, rule: &Rule, line: Line) -> LineValidation {
         let rule_iter = rule.runs().iter();
-        let line_iter = self.iter_runs(line);
+        let line_iter = puzzle.iter_runs(line);
 
         if rule_iter.clone().count() != line_iter.clone().count() {
             return LineValidation::Valid;
@@ -116,9 +126,9 @@ impl Puzzle {
         // LineValidation::Valid
     }
 
-    fn validate_dp(&self, rule: &Rule, line: Line) -> bool {
+    fn validate_dp(&self, puzzle: &Puzzle, rule: &Rule, line: Line) -> bool {
         let runs = rule.runs();
-        let n = self.line_len(line) as usize;
+        let n = puzzle.line_len(line) as usize;
         let m = runs.len();
 
         // dp[offset][r]: first offset cells can fit the first r runs
@@ -136,7 +146,7 @@ impl Puzzle {
                 }
 
                 // Option 1: skip next position
-                if offset < n && matches!(self[pos], Fill::Cross | Fill::Blank) {
+                if offset < n && matches!(puzzle[pos], Fill::Cross | Fill::Blank) {
                     dp[offset + 1][r] = true;
                 }
 
@@ -164,7 +174,7 @@ impl Puzzle {
                 let mut ok = true;
 
                 for idx in 0..len {
-                    match self[pos + idx] {
+                    match puzzle[pos + idx] {
                         Fill::Cross => {
                             ok = false;
                             break;
@@ -183,7 +193,7 @@ impl Puzzle {
 
                 // Make sure to leave a space between runs with the same (colored) fill
                 if next_offset < n
-                    && matches!(self[next_pos], col @Fill::Color(_) if col == run.fill)
+                    && matches!(puzzle[next_pos], col @Fill::Color(_) if col == run.fill)
                 {
                     continue;
                 }
@@ -196,16 +206,24 @@ impl Puzzle {
         dp[n][m]
     }
 
-    fn validate_masks(&self, rule: &Rule, line: Line) -> LineValidation {
-        // Verify each of the fills in the line that are currently set
-        // Note the .filter to avoid fills that have been previously been set but not currently
+    fn validate_masks(&self, line: Line) -> LineValidation {
+        // Get the puzzle masks for the current
+        // If none are set (empty line), it is always valid
         let Some(masks) = self.masks.get(&line) else {
             return LineValidation::Valid;
         };
 
+        // Get the line constraints for the current rule
+        // If it is unconstrained, the line is always valid
+        let Some(constraints) = self.constraints.get(&line) else {
+            return LineValidation::Solved;
+        };
+
+        // Verify each of the fills in the line that are currently set
+        // Note the .filter to avoid fills that have been previously been set but not currently
         for (&fill, mask) in masks.iter().filter(|(_, mask)| mask.any()) {
             // Invalidate right away if rule doesn't include current fill
-            let Some(LineConstraint { required, optional }) = rule.fill_constraint(fill) else {
+            let Some(LineConstraint { required, optional }) = constraints.get(&fill) else {
                 return LineValidation::InvalidFill(fill);
             };
 

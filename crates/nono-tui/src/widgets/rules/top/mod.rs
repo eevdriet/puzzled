@@ -77,7 +77,7 @@ impl ColRulesWidget {
 
             let rule = &self.rules[col as usize];
             let line = Line::Col(col);
-            let validation = puz_state.puzzle.validate(rule, line);
+            let validation = state.solver[line];
 
             let info = RuleInfo {
                 rule,

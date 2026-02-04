@@ -64,7 +64,7 @@ impl RowRulesWidget {
         for row in vp.row_start..vp.row_end {
             let rule = &self.rules[row as usize];
             let line = Line::Row(row);
-            let validation = puz_state.puzzle.validate(rule, line);
+            let validation = state.solver[line];
 
             let info = RuleInfo {
                 rule,

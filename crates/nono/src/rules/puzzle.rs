@@ -2,7 +2,7 @@ use derive_more::Debug;
 
 use crate::{Puzzle, Rule};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Rules {
     pub rows: Vec<Rule>,
     pub cols: Vec<Rule>,

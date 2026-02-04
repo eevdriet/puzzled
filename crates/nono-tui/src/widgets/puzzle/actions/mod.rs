@@ -52,10 +52,13 @@ impl HandleAction for &PuzzleWidget {
             let before = state.puzzle.puzzle[pos];
 
             // Only record actual changes
-            if before != fill {
-                let change = CellChange::new(pos, before, fill);
-                changes.push(change);
+            if before == fill {
+                continue;
             }
+
+            // Record the cell change for the undoable action
+            let change = CellChange::new(pos, before, fill);
+            changes.push(change);
         }
 
         if changes.is_empty() {

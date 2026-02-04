@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use nono::{Axis, Fill, Puzzle, Rules};
+use nono::{Axis, Fill, Puzzle, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{Action, ActionInput, Focus, PuzzleState, PuzzleStyle, RuleState, Selection, Settings};
@@ -15,17 +15,20 @@ pub struct AppState {
     pub puzzle: PuzzleState,
     pub rules_left: RuleState,
     pub rules_top: RuleState,
+
+    pub solver: Solver,
 }
 
 impl AppState {
     pub fn new(puzzle: Puzzle, rules: Rules, style: PuzzleStyle, settings: Settings) -> Self {
-        let mut rules = rules;
-        rules.generate_masks();
-
         let start_fill = Fill::Color(1);
+
+        let mut solver = Solver::new();
+        solver.insert_rules(&rules);
 
         Self {
             settings,
+            solver,
             puzzle: PuzzleState::new(puzzle, style, start_fill),
             focus: Focus::default(),
             start_time: Instant::now(),

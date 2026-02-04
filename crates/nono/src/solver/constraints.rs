@@ -1,6 +1,8 @@
+use std::collections::{HashMap, hash_map::Entry};
+
 use bitvec::prelude::*;
 
-use crate::{Fill, LineMask, Rule, Rules, Run};
+use crate::{Fill, Line, LineMask, Run, Solver};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineConstraint {
@@ -8,29 +10,16 @@ pub struct LineConstraint {
     pub optional: LineMask,
 }
 
-impl Rules {
-    pub fn generate_masks(&mut self) {
-        let rows = self.rows.len();
-        let cols = self.cols.len();
+impl Solver {
+    pub fn generate_rule_constraints(&mut self, line: Line) {
+        // Find the rule to generate constraints for
+        let Some(rule) = self.rules.get(&line) else {
+            tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
+            return;
+        };
 
-        {
-            for (r, rule) in self.rows.iter_mut().enumerate() {
-                rule.generate_constraints();
-                tracing::info!("[{r}/{rows}] Generated row mask");
-            }
-        }
-
-        for (c, col) in self.cols.iter_mut().enumerate() {
-            col.generate_constraints();
-            tracing::info!("[{c}/{cols}] Generated col mask");
-        }
-    }
-}
-
-impl Rule {
-    pub fn generate_constraints(&mut self) {
-        let runs = &self.runs;
-        let line_len = self.line_len as usize;
+        let runs = rule.runs();
+        let line_len = rule.line_len() as usize;
 
         let left = fit_forwards(runs, line_len);
         let right = fit_backwards(runs, line_len);
@@ -38,7 +27,13 @@ impl Rule {
         let mut required_cross = bitvec![1; line_len];
         let mut optional_cross = bitvec![1; line_len];
 
-        for color in self.fills.iter_colors() {
+        // Generate the constraints if they do not yet exists, otherwise return early
+        let constraints = match self.constraints.entry(Line::Row(0)) {
+            Entry::Occupied(_) => return,
+            Entry::Vacant(v) => v.insert(HashMap::new()),
+        };
+
+        for color in rule.iter_colors() {
             // Find all cells that must and may be filled for a given color
             let (required, optional) = find_filled(runs, line_len, color, &left, &right);
 
@@ -48,7 +43,8 @@ impl Rule {
 
             // Register the must be filled cells for the color
             let constraint = LineConstraint { required, optional };
-            self.constraints.insert(color, constraint);
+
+            constraints.insert(color, constraint);
         }
 
         // Finally register the must be crossed out cells
@@ -56,7 +52,8 @@ impl Rule {
             required: required_cross,
             optional: optional_cross,
         };
-        self.constraints.insert(Fill::Cross, constraint);
+
+        constraints.insert(Fill::Cross, constraint);
     }
 }
 
