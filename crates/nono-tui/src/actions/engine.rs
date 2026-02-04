@@ -42,14 +42,16 @@ impl ActionEngine {
             Action::Redo if is_normal => return self.history.redo(state),
 
             // Drag starts visual mode
-            Action::Drag if !is_visual => {
-                self.enter_visual(SelectionKind::Cells, state.cursor(), state);
-            }
             _ => {
-                return match self.mode {
+                let result = match self.mode {
                     Mode::Normal => self.handle_normal(handler, input, state),
                     Mode::Visual(_) => self.handle_visual(handler, input, state),
                     Mode::Insert => self.handle_insert(handler, input, state),
+                };
+
+                return match result {
+                    Ok(ActionOutcome::Command(cmd)) => self.history.execute(cmd, state),
+                    result => result,
                 };
             }
         }
@@ -69,10 +71,7 @@ impl ActionEngine {
             return Ok(ActionOutcome::Consumed);
         }
 
-        match handler.handle_operator(input, range, state) {
-            Ok(ActionOutcome::Command(cmd)) => self.history.execute(cmd, state),
-            result => result,
-        }
+        handler.handle_operator(input, range, state)
     }
 
     fn handle_normal<H: HandleAction>(
@@ -99,11 +98,16 @@ impl ActionEngine {
                         repeat: input.repeat,
                     };
 
-                    let (_, range) = handler.handle_motion(input, state)?;
+                    let (action, range) = handler.handle_motion(input, state)?;
+                    tracing::info!("[Motion] Got {action:?} with {range:?}");
 
-                    self.handle_operator(handler, next, range, state)
+                    match action {
+                        ActionOutcome::Command(cmd) => self.history.execute(cmd, state),
+                        _ => self.handle_operator(handler, next, range, state),
+                    }
                 } else {
-                    let (status, _) = handler.handle_motion(input, state)?;
+                    let (status, range) = handler.handle_motion(input, state)?;
+                    tracing::info!("[Motion] Got {status:?} with {range:?}");
                     Ok(status)
                 }
             }

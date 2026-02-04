@@ -38,35 +38,7 @@ impl HandleAction for &PuzzleWidget {
             }
         };
 
-        let range = match range {
-            Some(range) => range,
-            None => MotionRange::Single(state.puzzle.cursor),
-        };
-
-        // Track which fills should be changed
-        let bounds = state.puzzle.bounds();
-        let mut changes = Vec::new();
-
-        for pos in range.positions(&bounds) {
-            let pos = app_to_puzzle(pos);
-            let before = state.puzzle.puzzle[pos];
-
-            // Only record actual changes
-            if before == fill {
-                continue;
-            }
-
-            // Record the cell change for the undoable action
-            let change = CellChange::new(pos, before, fill);
-            changes.push(change);
-        }
-
-        if changes.is_empty() {
-            return Ok(ActionOutcome::Consumed);
-        }
-
-        let cmd = FillAction::new(changes);
-        Ok(ActionOutcome::Command(Box::new(cmd)))
+        handle_fills(fill, range, state)
     }
 
     fn handle_motion(
@@ -77,11 +49,12 @@ impl HandleAction for &PuzzleWidget {
         let puzzle = &state.puzzle.puzzle;
 
         // Input
-        let event = input.event;
+        let event = input.event.clone();
         let action = input.action;
         let count = input.repeat.unwrap_or(1);
 
         let fill: Option<Fill> = event.clone().try_into().ok();
+        let mut cmd: Option<ActionResult> = None;
 
         // Bounds
         let max_row = puzzle.rows() - 1;
@@ -195,7 +168,11 @@ impl HandleAction for &PuzzleWidget {
 
                 let end = AppPosition::new(mouse.column, mouse.row);
                 if vp.area.contains(end) {
-                    state.puzzle.screen_to_puzzle(vp.area, end).unwrap_or(pos)
+                    let pos = state.puzzle.screen_to_puzzle(vp.area, end).unwrap_or(pos);
+                    let range = MotionRange::Single(puzzle_to_app(pos));
+
+                    cmd = Some(handle_fills(state.puzzle.fill, Some(range), state));
+                    pos
                 } else {
                     return Ok((ActionOutcome::Ignored, None));
                 }
@@ -215,7 +192,12 @@ impl HandleAction for &PuzzleWidget {
         state.puzzle.cursor = cursor;
         state.puzzle.keep_cursor_visible(cursor);
 
-        Ok((ActionOutcome::Consumed, Some(MotionRange::Single(cursor))))
+        let range = Some(MotionRange::Single(cursor));
+
+        match cmd {
+            Some(action) => action.map(|action| (action, range)),
+            None => Ok((ActionOutcome::Consumed, range)),
+        }
     }
 
     fn handle_command(&self, input: ActionInput, state: &mut AppState) -> ActionResult {
@@ -310,4 +292,38 @@ fn handle_jumps(
     }
 
     pos.into()
+}
+
+fn handle_fills(fill: Fill, range: Option<MotionRange>, state: &AppState) -> ActionResult {
+    tracing::info!("Handle {fill:?} with {range:?}");
+
+    let range = match range {
+        Some(range) => range,
+        None => MotionRange::Single(state.puzzle.cursor),
+    };
+
+    // Track which fills should be changed
+    let bounds = state.puzzle.bounds();
+    let mut changes = Vec::new();
+
+    for pos in range.positions(&bounds) {
+        let pos = app_to_puzzle(pos);
+        let before = state.puzzle.puzzle[pos];
+
+        // Only record actual changes
+        if before == fill {
+            continue;
+        }
+
+        // Record the cell change for the undoable action
+        let change = CellChange::new(pos, before, fill);
+        changes.push(change);
+    }
+
+    if changes.is_empty() {
+        return Ok(ActionOutcome::Consumed);
+    }
+
+    let cmd = FillAction::new(changes);
+    Ok(ActionOutcome::Command(Box::new(cmd)))
 }

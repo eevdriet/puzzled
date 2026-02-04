@@ -299,7 +299,12 @@ impl FooterWidget {
     ) {
         let time = state.puzzle.start_time.elapsed();
         let secs = time.as_secs();
-        let time_str = format!("{:02}:{:02}:{secs:02}", secs / 3600, secs / 60);
+        let time_str = format!(
+            "{:02}:{:02}:{:02}",
+            (secs / 3600).rem_euclid(60),
+            (secs / 60).rem_euclid(60),
+            secs.rem_euclid(60)
+        );
 
         let style = Style::default().fg(Color::Gray);
         let span = Span::styled(time_str, style);
