@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use nono::{Axis, Fill, Puzzle, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
@@ -12,7 +10,6 @@ pub struct AppState {
     // Common
     pub settings: Settings,
     pub focus: Focus,
-    pub start_time: Instant,
 
     // Widget specific
     pub puzzle: PuzzleState,
@@ -35,7 +32,6 @@ impl AppState {
             solver,
             puzzle: PuzzleState::new(puzzle, style, start_fill),
             focus: Focus::default(),
-            start_time: Instant::now(),
             rules_left: RuleState::new(rules.rows.clone(), Axis::Row),
             rules_top: RuleState::new(rules.cols.clone(), Axis::Col),
             footer: FooterState::new(),

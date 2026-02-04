@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use nono::{Axis, Fill, Position, Puzzle};
 use ratatui::layout::{Position as AppPosition, Rect, Size};
 
@@ -8,6 +10,8 @@ pub struct PuzzleState {
     pub puzzle: Puzzle,
 
     pub style: PuzzleStyle,
+
+    pub start_time: Instant,
 
     /// Selected area of the viewport
     pub selection: Selection,
@@ -39,6 +43,7 @@ impl PuzzleState {
             fill,
 
             selection: Selection::empty(axis),
+            start_time: Instant::now(),
             cursor: AppPosition::default(),
             area: Rect::default(),
             viewport: Viewport::default(),

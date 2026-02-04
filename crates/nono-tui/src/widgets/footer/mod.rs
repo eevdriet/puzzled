@@ -34,6 +34,7 @@ impl StatefulWidgetRef for &FooterWidget {
         // Progress
         self.draw_colors(line(0), Alignment::Center, buf, state);
         self.draw_current_fill(line(0), Alignment::Left, buf, state);
+        self.draw_game_time(line(0), Alignment::Right, buf, state);
 
         self.render_stats(line(1), buf, state);
         self.render_progress(line(2), buf, state);
@@ -287,5 +288,22 @@ impl FooterWidget {
         };
 
         Span::styled(text, style)
+    }
+
+    fn draw_game_time(
+        &self,
+        area: Rect,
+        alignment: Alignment,
+        buf: &mut Buffer,
+        state: &mut AppState,
+    ) {
+        let time = state.puzzle.start_time.elapsed();
+        let secs = time.as_secs();
+        let time_str = format!("{:02}:{:02}:{secs:02}", secs / 3600, secs / 60);
+
+        let style = Style::default().fg(Color::Gray);
+        let span = Span::styled(time_str, style);
+
+        Line::from(span).alignment(alignment).render(area, buf);
     }
 }
