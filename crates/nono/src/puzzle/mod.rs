@@ -1,20 +1,14 @@
 mod error;
 mod find;
 mod iter;
-mod validate;
 
-use bitvec::bitvec;
 pub use error::*;
 pub use find::*;
 pub use iter::*;
-pub use validate::*;
 
-use std::{
-    collections::HashMap,
-    ops::{Index, IndexMut},
-};
+use std::ops::{Index, IndexMut};
 
-use crate::{Error, Fill, Line, LineMask, LinePosition, Position, Result};
+use crate::{Error, Fill, Line, Position, Result};
 
 #[derive(Debug, Default)]
 pub struct Puzzle {
@@ -22,9 +16,6 @@ pub struct Puzzle {
     rows: u16,
     cols: u16,
     fills: Vec<Fill>,
-
-    // Masks for easy accessing
-    masks: HashMap<Line, HashMap<Fill, LineMask>>,
 }
 
 impl Puzzle {
@@ -40,12 +31,7 @@ impl Puzzle {
         }
 
         // Create the puzzle
-        let mut puzzle = Self {
-            rows,
-            cols,
-            fills,
-            masks: HashMap::new(),
-        };
+        let mut puzzle = Self { rows, cols, fills };
 
         // Generate the fill masks
         for row in 0..rows {
@@ -86,7 +72,7 @@ impl Puzzle {
     }
 
     // Line
-    fn line_len(&self, line: Line) -> u16 {
+    pub fn line_len(&self, line: Line) -> u16 {
         match line {
             Line::Row(_) => self.cols,
             Line::Col(_) => self.rows,
@@ -95,48 +81,8 @@ impl Puzzle {
 
     // Setters
     pub fn fill_cell(&mut self, pos: Position, fill: Fill) {
-        // Determine previous fill
-        let prev = self[pos];
-
-        // Set new fill if different
-        if prev == fill {
-            return;
-        }
-
         self[pos] = fill;
-
-        let mut set_mask = |pos: LinePosition, prev: Fill, curr: Fill| {
-            // Retrieve the masks for the given line
-            let line = pos.line;
-            let line_len = self.line_len(line) as usize;
-            let pos = pos.offset as usize;
-
-            let masks = self.masks.entry(line).or_default();
-
-            // Unset the previous fill
-            if let Some(mask) = masks.get_mut(&prev) {
-                mask.set(pos, false)
-            }
-
-            // Do not include blanks in the masks
-            if matches!(curr, Fill::Blank) {
-                return;
-            }
-
-            // Set the current fill
-            let empty_mask = bitvec![0; line_len];
-            let mask = masks.entry(curr).or_insert(empty_mask);
-
-            mask.set(pos, true);
-        };
-
-        let (row_pos, col_pos) = pos.relative();
-
-        set_mask(row_pos, prev, fill);
-        set_mask(col_pos, prev, fill);
     }
-
-    // Runs
 }
 
 impl<P> Index<P> for Puzzle

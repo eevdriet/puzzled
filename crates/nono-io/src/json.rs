@@ -56,10 +56,7 @@ impl TryFrom<JsonNonogram> for Nonogram {
                     .map(|run| Run::new(Fill::Color(run.fill), run.count))
                     .collect();
 
-                let mut rule = Rule::new(runs, cols);
-                rule.generate_constraints();
-
-                rule
+                Rule::new(runs, cols)
             })
             .collect();
 
@@ -72,10 +69,7 @@ impl TryFrom<JsonNonogram> for Nonogram {
                     .map(|run| Run::new(Fill::Color(run.fill), run.count))
                     .collect();
 
-                let mut rule = Rule::new(runs, rows);
-                rule.generate_constraints();
-
-                rule
+                Rule::new(runs, rows)
             })
             .collect();
 

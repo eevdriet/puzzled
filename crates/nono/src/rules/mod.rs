@@ -1,12 +1,8 @@
-mod constraints;
 mod puzzle;
 mod slice;
 
-pub use constraints::*;
 pub use puzzle::*;
 pub use slice::*;
-
-use std::collections::HashMap;
 
 use derive_more::Debug;
 
@@ -22,14 +18,10 @@ pub struct Rule {
     #[debug(skip)]
     prefix_lens: Vec<u16>,
     line_len: u16,
-
-    #[debug(skip)]
-    constraints: HashMap<Fill, LineConstraint>,
 }
 
 impl Rule {
     pub fn new(runs: Vec<Run>, line_len: u16) -> Self {
-        let masks = HashMap::new();
         let mut fills = FillMask::new();
         let mut prefix_lens = Vec::with_capacity(runs.len());
 
@@ -41,7 +33,6 @@ impl Rule {
                     fills,
                     line_len,
                     prefix_lens,
-                    constraints: masks,
                 };
             }
             Some(run) => run,
@@ -73,7 +64,6 @@ impl Rule {
             prefix_lens,
             fills,
             line_len,
-            constraints: masks,
         }
     }
 
@@ -92,6 +82,10 @@ impl Rule {
     // Getters
     pub fn iter_fill_runs(&self, fill: Fill) -> impl Iterator<Item = &Run> {
         self.runs.iter().filter(move |run| run.fill == fill)
+    }
+
+    pub fn iter_colors(&self) -> impl Iterator<Item = Fill> {
+        self.fills.iter_colors()
     }
 
     pub fn line_len(&self) -> u16 {
@@ -120,10 +114,6 @@ impl Rule {
 
     pub fn runs(&self) -> &Vec<Run> {
         &self.runs
-    }
-
-    pub fn fill_constraint(&self, fill: Fill) -> Option<LineConstraint> {
-        self.constraints.get(&fill).cloned()
     }
 }
 
