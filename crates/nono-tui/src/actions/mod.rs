@@ -127,6 +127,18 @@ impl Action {
         }
     }
 
+    pub fn is_mouse(&self) -> bool {
+        matches!(
+            self,
+            Action::Click
+                | Action::Drag
+                | Action::ScrollLeft
+                | Action::ScrollRight
+                | Action::ScrollDown
+                | Action::ScrollUp
+        )
+    }
+
     pub fn is_motionless_op(&self) -> bool {
         matches!(
             (self.kind(), self),

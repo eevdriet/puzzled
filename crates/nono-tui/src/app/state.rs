@@ -3,7 +3,10 @@ use std::time::Instant;
 use nono::{Axis, Fill, Puzzle, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
-use crate::{Action, ActionInput, Focus, PuzzleState, PuzzleStyle, RuleState, Selection, Settings};
+use crate::{
+    Action, ActionInput, Focus, FooterState, PuzzleState, PuzzleStyle, RuleState, Selection,
+    Settings,
+};
 
 pub struct AppState {
     // Common
@@ -15,6 +18,7 @@ pub struct AppState {
     pub puzzle: PuzzleState,
     pub rules_left: RuleState,
     pub rules_top: RuleState,
+    pub footer: FooterState,
 
     pub solver: Solver,
 }
@@ -34,6 +38,7 @@ impl AppState {
             start_time: Instant::now(),
             rules_left: RuleState::new(rules.rows.clone(), Axis::Row),
             rules_top: RuleState::new(rules.cols.clone(), Axis::Col),
+            footer: FooterState::new(),
         }
     }
 

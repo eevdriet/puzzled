@@ -1,4 +1,7 @@
 mod actions;
+mod state;
+
+pub use state::*;
 
 use nono::{Axis, Fill};
 use ratatui::{
@@ -7,10 +10,10 @@ use ratatui::{
     style::{Color, Style},
     symbols,
     text::{Line, Span},
-    widgets::{LineGauge, Paragraph, StatefulWidgetRef, Widget},
+    widgets::{LineGauge, StatefulWidgetRef, Widget},
 };
 
-use crate::{AppState, Focus, MotionRange, PuzzleState};
+use crate::{AppState, Focus, MotionRange, PuzzleState, Region, x_aligned};
 
 #[derive(Debug)]
 pub struct FooterWidget;
@@ -19,7 +22,7 @@ impl StatefulWidgetRef for &FooterWidget {
     type State = AppState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut AppState) {
-        let rect = |offset: u16| -> Rect {
+        let line = |offset: u16| -> Rect {
             Rect {
                 x: area.x,
                 y: area.y + offset,
@@ -29,15 +32,17 @@ impl StatefulWidgetRef for &FooterWidget {
         };
 
         // Progress
-        self.render_colors(rect(1), buf, state);
-        self.render_stats(rect(2), buf, state);
-        self.render_progress(rect(3), buf, state);
+        self.draw_colors(line(0), Alignment::Center, buf, state);
+        self.draw_current_fill(line(0), Alignment::Left, buf, state);
+
+        self.render_stats(line(1), buf, state);
+        self.render_progress(line(2), buf, state);
     }
 }
 
 impl FooterWidget {
-    fn create_fill_spans(&self, fill: Fill, state: &PuzzleState) -> Vec<Span<'_>> {
-        let mut spans: Vec<Span> = Vec::new();
+    fn create_fill_spans(&self, fill: Fill, state: &PuzzleState) -> Vec<(Span<'_>, Option<Fill>)> {
+        let mut spans: Vec<(Span, Option<Fill>)> = Vec::new();
 
         let mut style = match state.fill == fill {
             true => Style::default().bold().underlined(),
@@ -53,7 +58,7 @@ impl FooterWidget {
         // Color brush itself
         let symbol = fill.symbol();
         let span = Span::styled(format!("{symbol} "), style.fg(color));
-        spans.push(span);
+        spans.push((span, Some(fill)));
 
         // Id of the color
         let key = state
@@ -62,30 +67,88 @@ impl FooterWidget {
             .expect("Fill {fill:?} should define a id char");
 
         let span = Span::styled(key.to_string(), style.fg(Color::White));
-        spans.push(span);
+        spans.push((span, Some(fill)));
 
         spans
     }
 
-    fn render_colors(&self, area: Rect, buf: &mut Buffer, state: &AppState) {
+    fn draw_colors(
+        &self,
+        area: Rect,
+        alignment: Alignment,
+        buf: &mut Buffer,
+        state: &mut AppState,
+    ) {
         // Show the available colors
-        let mut spans: Vec<Span> = Vec::new();
+        let mut fill_spans: Vec<(Span, Option<Fill>)> = Vec::new();
 
         let fills: Vec<_> = (0..state.puzzle.style.colors.len())
             .map(|c| Fill::Color(c as u16 + 1))
             .collect();
 
-        for fill in fills {
-            spans.extend(self.create_fill_spans(fill, &state.puzzle));
-            spans.push(Span::raw(" "));
+        for (f, fill) in fills.iter().enumerate() {
+            fill_spans.extend(self.create_fill_spans(*fill, &state.puzzle));
+
+            if f != fills.len() - 1 {
+                fill_spans.push((Span::raw(" "), None));
+            }
         }
 
-        let line = Line::from(spans);
+        // Determine the span width
+        let width = |pos: usize| -> u16 {
+            let w = match pos.rem_euclid(3) {
+                // symbol + space
+                0 => 2,
 
-        Paragraph::new(line)
-            .alignment(Alignment::Center)
-            .render(area, buf);
+                // index (one-digit) or space
+                _ => 1,
+            };
 
+            w as u16
+        };
+
+        // Create clickable regions to set the fill
+        let spans: Vec<_> = fill_spans.iter().map(|(span, _)| span).cloned().collect();
+        let content_width: u16 = (0..spans.len()).map(width).sum();
+
+        let mut x = x_aligned(area, content_width, alignment);
+        let y = area.y;
+
+        let mut regions = Vec::new();
+
+        for (r, (_, maybe_fill)) in fill_spans.iter().enumerate() {
+            let w = width(r);
+
+            if let Some(fill) = maybe_fill {
+                let region = Region {
+                    data: *fill,
+                    area: Rect {
+                        x,
+                        y,
+                        width: w,
+                        height: 1,
+                    },
+                };
+
+                regions.push(region);
+            }
+
+            x += w;
+        }
+
+        state.footer.fill_regions = regions;
+
+        // Finally render the line
+        Line::from(spans).alignment(alignment).render(area, buf);
+    }
+
+    fn draw_current_fill(
+        &self,
+        area: Rect,
+        alignment: Alignment,
+        buf: &mut Buffer,
+        state: &mut AppState,
+    ) {
         // Show the current fill
         let fill = state.puzzle.fill;
         let fill_symbol = fill.symbol();
@@ -95,21 +158,36 @@ impl FooterWidget {
             .fill_color(fill)
             .expect("Current fill {fill:?} should have a defined color");
 
-        let axis_symbol = match state.puzzle.motion_axis {
+        let axis = state.puzzle.motion_axis;
+        let axis_symbol = match axis {
             Axis::Row => "↔",
             Axis::Col => "↕",
         };
+        let axis_span = Span::styled(axis_symbol.to_string(), Style::default().fg(Color::White));
 
+        let fill_repeat = 3;
         Line::from(vec![
             Span::styled(
-                fill_symbol.to_string().repeat(3),
+                fill_symbol.to_string().repeat(fill_repeat as usize),
                 Style::default().fg(color),
             ),
             Span::raw(" "),
-            Span::styled(axis_symbol.to_string(), Style::default().fg(Color::White)),
+            axis_span,
         ])
-        .alignment(Alignment::Left)
+        .alignment(alignment)
         .render(area, buf);
+
+        let x = x_aligned(area, fill_repeat, alignment) + fill_repeat + 1;
+
+        state.footer.axis_region = Region {
+            data: axis,
+            area: Rect {
+                x,
+                y: area.y,
+                width: 1,
+                height: 1,
+            },
+        };
     }
 
     fn render_progress(&self, area: Rect, buf: &mut Buffer, state: &AppState) {

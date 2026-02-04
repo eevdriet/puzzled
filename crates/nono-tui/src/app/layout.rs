@@ -163,6 +163,6 @@ impl ComputeLayout for App {
         self.state.rules_left.area = rules_left_area;
         self.state.rules_left.overflow_area = rules_left_overflow_area;
 
-        self.footer_area = footer_area;
+        self.state.footer.area = footer_area;
     }
 }

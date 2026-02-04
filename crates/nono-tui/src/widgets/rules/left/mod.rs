@@ -9,7 +9,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, StatefulWidgetRef, TitlePosition, Widget},
 };
 
-use crate::{AppState, Focus, Region, run_style, status_info, widgets::rules::RuleInfo};
+use crate::{AppState, Focus, Region, run_style, status_info, widgets::rules::RuleInfo, x_aligned};
 
 #[derive(Debug)]
 pub struct RowRulesWidget {
@@ -171,12 +171,7 @@ impl RowRulesWidget {
 
         let content_width: u16 = spans.iter().map(|span| span.content.len() as u16).sum();
 
-        let mut x = match alignment {
-            Alignment::Left => area.x,
-            Alignment::Right => area.right().saturating_sub(content_width),
-            Alignment::Center => area.x + (area.width.saturating_sub(content_width)) / 2,
-        };
-
+        let mut x = x_aligned(area, content_width, alignment);
         let y = area.y;
 
         let mut regions = Vec::new();

@@ -50,9 +50,6 @@ pub struct App {
     rules_left: RowRulesWidget,
     rules_top: ColRulesWidget,
     footer: FooterWidget,
-
-    // Layouts
-    footer_area: Rect,
 }
 
 impl App {
@@ -73,8 +70,6 @@ impl App {
             rules_left,
             rules_top,
             footer: FooterWidget,
-
-            footer_area: Rect::default(),
         }
     }
 
@@ -163,6 +158,9 @@ impl App {
             if self.state.rules_top.area.contains(pos) {
                 return Focus::RulesTop;
             }
+            if self.state.footer.area.contains(pos) {
+                return Focus::Footer;
+            }
         }
 
         self.state.focus
@@ -196,9 +194,7 @@ impl App {
             self.state.rules_top.area,
             &mut self.state,
         );
-        frame.render_stateful_widget_ref(&self.footer, self.footer_area, &mut self.state);
-
-        // self.draw_puzzle_scrollbars(frame, self.state.viewport);
+        frame.render_stateful_widget_ref(&self.footer, self.state.footer.area, &mut self.state);
     }
 
     fn draw_puzzle_scrollbars(&mut self, frame: &mut Frame, area: Rect) {

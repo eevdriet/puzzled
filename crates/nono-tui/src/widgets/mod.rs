@@ -12,7 +12,11 @@ pub use puzzle::*;
 pub use region::*;
 pub use rules::*;
 
-use ratatui::{buffer::Buffer, layout::Position as AppPosition, style::Style};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Alignment, Position as AppPosition, Rect},
+    style::Style,
+};
 
 pub fn safe_draw_str<T>(buf: &mut Buffer, pos: AppPosition, content: T, style: Style)
 where
@@ -30,4 +34,12 @@ where
     }
 
     buf.set_string(pos.x, pos.y, content, style);
+}
+
+pub fn x_aligned(area: Rect, width: u16, alignment: Alignment) -> u16 {
+    match alignment {
+        Alignment::Left => area.x,
+        Alignment::Right => area.right().saturating_sub(width),
+        Alignment::Center => area.x + (area.width.saturating_sub(width)) / 2,
+    }
 }
