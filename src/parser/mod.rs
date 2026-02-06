@@ -1,0 +1,94 @@
+mod checksums;
+mod clues;
+mod error;
+mod extra;
+mod grid;
+mod header;
+mod io;
+mod strings;
+
+pub(crate) use checksums::*;
+pub(crate) use error::*;
+pub(crate) use extra::*;
+pub(crate) use grid::*;
+pub(crate) use header::*;
+pub(crate) use io::*;
+pub(crate) use strings::*;
+
+use crate::Puzzle;
+
+pub struct Parser<'a> {
+    strict: bool,
+    warnings: Vec<Error>,
+
+    input: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> Parser<'a> {
+    pub fn parse(input: &'a [u8]) -> Result<Puzzle> {
+        let (puzzle, _) = Self::parse_with_warnings(input, false)?;
+        Ok(puzzle)
+    }
+
+    pub fn parse_strict(input: &'a [u8]) -> Result<Puzzle> {
+        let (puzzle, _) = Self::parse_with_warnings(input, true)?;
+        Ok(puzzle)
+    }
+
+    pub fn parse_with_warnings(input: &'a [u8], strict: bool) -> Result<(Puzzle, Vec<Error>)> {
+        // Parse and validate the main contents of the puzzle
+        let mut parser = Self::new(input, strict);
+
+        let header = parser.parse_header()?;
+        let grid = parser.parse_grid(header.width, header.height)?;
+        let strings = parser.parse_strings(header.clue_count)?;
+
+        parser.validate_checksums(&header, &grid, &strings)?;
+
+        // Derive the puzzle clues and parse extra sections
+        let clues = parser.parse_clues(&strings.clues)?;
+        let extras = parser.parse_extras(header.width, header.height)?;
+
+        // Build the puzzle with owned data
+        let puzzle = build_puzzle(header, grid, &strings, extras);
+        Ok((puzzle, parser.warnings))
+    }
+
+    fn new(input: &'a [u8], strict: bool) -> Self {
+        Self {
+            strict,
+            input,
+            warnings: Vec::new(),
+            pos: 0,
+        }
+    }
+
+    pub(crate) fn ok_or_warn<T>(&mut self, result: Result<T>) -> Result<Option<T>> {
+        match result {
+            // Pass through ok/err with strict mode normally
+            Ok(val) => Ok(Some(val)),
+            Err(err) if self.strict => Err(err),
+
+            // Warn against errors in non-strict mode
+            Err(err) => {
+                self.warnings.push(err);
+                Ok(None)
+            }
+        }
+    }
+}
+
+fn build_puzzle<'a>(
+    header: Header<'a>,
+    _grid: Grid<'a>,
+    _strings: &Strings<'a>,
+    _extras: Extras<'a>,
+) -> Puzzle {
+    Puzzle::new(
+        header.version.to_string(),
+        header.width,
+        header.height,
+        header.clue_count,
+    )
+}
