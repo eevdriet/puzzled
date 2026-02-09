@@ -46,23 +46,26 @@ impl<'a> Parser<'a> {
 
         parser.validate_checksums(&header, &grid, &strings)?;
 
-        // Derive the puzzle clues and parse extra sections
+        // Parse extra sections and the actual structure of the puzzle
         let extras = parser.parse_extras(header.width, header.height)?;
-
-        // Build the puzzle with owned data
         let cells = parser.parse_cells(&grid, &extras)?;
         let entries = parser.parse_entries(&grid, &strings.clues)?;
-        let puzzle = Puzzle::builder()
+
+        // Build the puzzle with owned data
+        let mut puzzle = Puzzle::builder()
             .entries(entries)
             .cells(cells)
             .author(parse_string(strings.author))
             .copyright(parse_string(strings.copyright))
             .notes(parse_string(strings.notes))
             .title(parse_string(strings.title))
-            .version(parse_string(header.version))
-            .build();
+            .version(parse_string(header.version));
 
-        Ok((puzzle, parser.warnings))
+        if let Some(timer) = &extras.ltim {
+            puzzle = puzzle.timer(*timer);
+        }
+
+        Ok((puzzle.build(), parser.warnings))
     }
 
     fn new(input: &'a [u8], strict: bool) -> Self {

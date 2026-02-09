@@ -1,4 +1,4 @@
-use crate::{Error, Grid, Header, Parser, Result, Strings};
+use crate::{Error, Header, Parser, PuzzleGrid, Result, Strings};
 
 const CHECKSUM_MASK: &[u8; 9] = b"ICHEATED\0";
 
@@ -6,7 +6,7 @@ impl<'a> Parser<'a> {
     pub(crate) fn validate_checksums(
         &mut self,
         header: &Header<'a>,
-        grid: &Grid<'a>,
+        grid: &PuzzleGrid<'a>,
         strings: &Strings<'a>,
     ) -> Result<()> {
         self.validate_cib_checksum(header)
@@ -24,7 +24,7 @@ impl<'a> Parser<'a> {
     fn validate_file_checksum(
         &mut self,
         header: &Header<'a>,
-        grid: &Grid<'a>,
+        grid: &PuzzleGrid<'a>,
         strings: &Strings<'a>,
     ) -> Result<Option<()>> {
         // Compute the overall file checksum
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
     fn validate_masked_checksums(
         &mut self,
         header: &Header<'a>,
-        grid: &Grid<'a>,
+        grid: &PuzzleGrid<'a>,
         strings: &Strings<'a>,
     ) -> Result<Option<()>> {
         // Collect all checksums to mask

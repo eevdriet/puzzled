@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use thiserror::Error;
 
 use crate::{Parser, Result};

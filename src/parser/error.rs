@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{ExtrasError, GridError, HeaderError, ReadError};
+use crate::{EntryId, ExtrasError, GridError, HeaderError, ReadError};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -29,6 +29,9 @@ pub enum Error {
         found: usize,
         expected: usize,
     },
+
+    #[error("Missing clue for line {id:?}")]
+    MissingClue { id: EntryId },
 }
 
 pub type Result<T> = core::result::Result<T, Error>;

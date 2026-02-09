@@ -4,8 +4,6 @@ const NON_PLAYABLE_CELL: u8 = b'-';
 
 #[derive(Debug)]
 pub(crate) struct PuzzleGrid<'a> {
-    pub width: u8,
-    pub height: u8,
     pub solution: Grid<u8>,
     pub state: Grid<u8>,
 
@@ -96,8 +94,6 @@ impl<'a> Parser<'a> {
 
         // Create the puzzle and check its validity
         let puzzle = PuzzleGrid {
-            width,
-            height,
             solution,
             solution_region,
             state,

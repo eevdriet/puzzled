@@ -8,7 +8,7 @@ pub use section::*;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::{Parser, Result, parse_string};
+use crate::{Parser, Result, Timer, parse_string};
 
 const ALLOWED_GEXT_BITS: u8 = 0x10 | 0x20 | 0x40 | 0x80; // 0xF0
 
@@ -44,7 +44,7 @@ pub struct Extras<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn parse_extras(&mut self, width: u8, height: u8) -> Result<Extras> {
+    pub(crate) fn parse_extras(&mut self, width: u8, height: u8) -> Result<Extras<'a>> {
         let size = u16::from(width) * u16::from(height);
         let mut extras = Extras::default();
         let mut parsed = true;
