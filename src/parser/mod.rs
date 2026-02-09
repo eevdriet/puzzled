@@ -1,3 +1,4 @@
+mod cells;
 mod checksums;
 mod clues;
 mod error;
@@ -7,8 +8,7 @@ mod header;
 mod read;
 mod strings;
 
-pub(crate) use checksums::*;
-pub(crate) use error::*;
+pub use error::*;
 pub(crate) use extra::*;
 pub(crate) use grid::*;
 pub(crate) use header::*;
@@ -47,11 +47,21 @@ impl<'a> Parser<'a> {
         parser.validate_checksums(&header, &grid, &strings)?;
 
         // Derive the puzzle clues and parse extra sections
-        let clues = parser.parse_clues(&strings.clues)?;
         let extras = parser.parse_extras(header.width, header.height)?;
 
         // Build the puzzle with owned data
-        let puzzle = build_puzzle(header, grid, &strings, extras);
+        let cells = parser.parse_cells(&grid, &extras)?;
+        let entries = parser.parse_entries(&grid, &strings.clues)?;
+        let puzzle = Puzzle::builder()
+            .entries(entries)
+            .cells(cells)
+            .author(parse_string(strings.author))
+            .copyright(parse_string(strings.copyright))
+            .notes(parse_string(strings.notes))
+            .title(parse_string(strings.title))
+            .version(parse_string(header.version))
+            .build();
+
         Ok((puzzle, parser.warnings))
     }
 
@@ -77,18 +87,4 @@ impl<'a> Parser<'a> {
             }
         }
     }
-}
-
-fn build_puzzle<'a>(
-    header: Header<'a>,
-    _grid: Grid<'a>,
-    _strings: &Strings<'a>,
-    _extras: Extras<'a>,
-) -> Puzzle {
-    Puzzle::new(
-        "Version".to_string(),
-        header.width,
-        header.height,
-        header.clue_count,
-    )
 }
