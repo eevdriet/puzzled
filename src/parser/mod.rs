@@ -4,7 +4,7 @@ mod error;
 mod extra;
 mod grid;
 mod header;
-mod io;
+mod read;
 mod strings;
 
 pub(crate) use checksums::*;
@@ -12,7 +12,7 @@ pub(crate) use error::*;
 pub(crate) use extra::*;
 pub(crate) use grid::*;
 pub(crate) use header::*;
-pub(crate) use io::*;
+pub(crate) use read::*;
 pub(crate) use strings::*;
 
 use crate::Puzzle;
@@ -42,7 +42,7 @@ impl<'a> Parser<'a> {
 
         let header = parser.parse_header()?;
         let grid = parser.parse_grid(header.width, header.height)?;
-        let strings = parser.parse_strings(header.clue_count)?;
+        let strings = parser.parse_strings(header.clue_count as usize)?;
 
         parser.validate_checksums(&header, &grid, &strings)?;
 
@@ -71,8 +71,8 @@ impl<'a> Parser<'a> {
             Err(err) if self.strict => Err(err),
 
             // Warn against errors in non-strict mode
-            Err(err) => {
-                self.warnings.push(err);
+            Err(warning) => {
+                self.warnings.push(warning);
                 Ok(None)
             }
         }
@@ -86,7 +86,7 @@ fn build_puzzle<'a>(
     _extras: Extras<'a>,
 ) -> Puzzle {
     Puzzle::new(
-        header.version.to_string(),
+        "Version".to_string(),
         header.width,
         header.height,
         header.clue_count,

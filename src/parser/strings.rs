@@ -1,26 +1,16 @@
-use std::borrow::Cow;
-
-use crate::{Parser, Region, Result};
+use crate::{Parser, Result};
 
 #[derive(Debug)]
 pub(crate) struct Strings<'a> {
-    // Strings
-    pub title: Cow<'a, str>,
-    pub author: Cow<'a, str>,
-    pub copyright: Cow<'a, str>,
-    pub notes: Cow<'a, str>,
-    pub clues: Vec<Cow<'a, str>>,
-
-    // Regions
-    pub title_region: Region<'a>,
-    pub author_region: Region<'a>,
-    pub copyright_region: Region<'a>,
-    pub notes_region: Region<'a>,
-    pub clue_regions: Vec<Region<'a>>,
+    pub title: &'a [u8],
+    pub author: &'a [u8],
+    pub copyright: &'a [u8],
+    pub notes: &'a [u8],
+    pub clues: Vec<&'a [u8]>,
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn parse_strings(&mut self, clue_count: u16) -> Result<Strings<'a>> {
+    pub(crate) fn parse_strings(&mut self, clue_count: usize) -> Result<Strings<'a>> {
         // | Description | Example            |
         // |:------------|:-------------------|
         // | Title       | Theme: .PUZ format |
@@ -30,38 +20,28 @@ impl<'a> Parser<'a> {
         // | ...         | ...more clues...   |
         // | Clue#n      | Quiet              |
         // | Notes       | http://mywebsite   |
-        let (title, title_region) = self.read_region(|p| p.read_str("Title"))?;
-        let (author, author_region) = self.read_region(|p| p.read_str("Author"))?;
-        let (copyright, copyright_region) = self.read_region(|p| p.read_str("copyright"))?;
+        let title = self.read_str("Title")?;
+        let author = self.read_str("Author")?;
+        let copyright = self.read_str("copyright")?;
 
         // Sequentially parse the clues
-        let mut clues = Vec::new();
-        let mut clue_regions = Vec::new();
+        let mut clues = Vec::with_capacity(clue_count);
 
         for num in 1..=clue_count {
             let context = format!("Clue #{num}");
-            let (clue, clue_region) = self.read_region(|p| p.read_str(context))?;
+            let clue = self.read_str(context)?;
 
             clues.push(clue);
-            clue_regions.push(clue_region);
         }
 
-        let (notes, notes_region) = self.read_region(|p| p.read_str("Notes"))?;
+        let notes = self.read_str("Notes")?;
 
         Ok(Strings {
-            // Strings
             title,
             author,
             copyright,
             notes,
             clues,
-
-            // Regions
-            title_region,
-            author_region,
-            copyright_region,
-            notes_region,
-            clue_regions,
         })
     }
 }

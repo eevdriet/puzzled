@@ -1,4 +1,7 @@
+mod builder;
 mod clues;
+
+pub use builder::*;
 
 pub struct Puzzle {
     version: String,

@@ -5,29 +5,35 @@ use thiserror::Error;
 use crate::{Error, Parser, Result};
 
 #[derive(Debug, Error)]
-pub enum IoError {
-    #[error("Encountered unexpected EOF while trying to parse '{context}' at position {pos}")]
+pub enum ReadError {
+    #[error("Encountered unexpected EOF while trying to read '{context}' at position {pos}")]
     UnexpectedEof { context: String, pos: usize },
-}
 
-#[derive(Debug)]
-pub(crate) struct Region<'a> {
-    pub start: usize,
-    pub end: usize,
-    pub bytes: &'a [u8],
+    #[error("Read unterminated string '{context}' of len {len} at position {pos}")]
+    UnterminatedStr {
+        context: String,
+        len: usize,
+        pos: usize,
+    },
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn read<S: AsRef<str>>(&mut self, len: usize, context: S) -> Result<&'a [u8]> {
+    pub(crate) fn take<S: AsRef<str>>(&mut self, len: usize, context: S) -> Result<&'a [u8]> {
         let end = self.pos + len;
         let slice = self.input.get(self.pos..end).ok_or_else(|| {
-            Into::<Error>::into(IoError::UnexpectedEof {
+            Into::<Error>::into(ReadError::UnexpectedEof {
                 context: context.as_ref().into(),
                 pos: self.pos,
             })
         })?;
 
-        self.pos = end;
+        Ok(slice)
+    }
+
+    pub(crate) fn read<S: AsRef<str>>(&mut self, len: usize, context: S) -> Result<&'a [u8]> {
+        let slice = self.take(len, context)?;
+        self.pos += len;
+
         Ok(slice)
     }
 
@@ -44,43 +50,49 @@ impl<'a> Parser<'a> {
         Ok(u16::from_le_bytes(bytes))
     }
 
-    pub(crate) fn read_str<S: AsRef<str> + Clone>(&mut self, context: S) -> Result<Cow<'a, str>> {
+    pub(crate) fn read_str<S: AsRef<str> + Clone>(&mut self, context: S) -> Result<&'a [u8]> {
+        // Read until the end of the string or EOF
         let start = self.pos;
 
-        while self.pos < self.input.len() && self.input[self.pos] != 0 {
+        while self.pos < self.input.len() && self.input[self.pos] != b'\0' {
             self.pos += 1;
         }
 
+        // Return error for EOF
         if self.pos >= self.input.len() {
-            return Err(IoError::UnexpectedEof {
+            return Err(ReadError::UnexpectedEof {
                 pos: self.pos,
                 context: context.as_ref().to_string(),
             }
             .into());
         }
 
+        // Otherwise, collect and parse the string (including trailing \0)
+        self.pos += 1;
         let bytes = &self.input[start..self.pos];
 
-        // Skip trailing \0
-        self.pos += 1;
-
-        Ok(parse_str(bytes))
+        Ok(bytes)
     }
 
     pub(crate) fn read_fixed_len_str<S: AsRef<str>>(
         &mut self,
         len: usize,
         context: S,
-    ) -> Result<Cow<'a, str>> {
-        // Read the requested amount of bytes for the string and optionally remove trailing \0
-        let bytes = self.read(len, context)?;
-        let bytes = bytes.strip_suffix(&[0]).unwrap_or(bytes);
+    ) -> Result<&'a [u8]> {
+        // Read the requested amount of bytes for the string
+        let pos = self.pos;
+        let bytes = self.read(len, &context)?;
 
-        Ok(parse_str(bytes))
-    }
+        // Make sure it is terminated properly with a trailing \0
+        bytes.last().filter(|&&b| b == b'\0').ok_or_else(|| {
+            Into::<Error>::into(ReadError::UnterminatedStr {
+                context: context.as_ref().into(),
+                len,
+                pos,
+            })
+        })?;
 
-    pub(crate) fn read_to_end(&mut self) -> Result<()> {
-        Ok(())
+        Ok(bytes)
     }
 
     pub(crate) fn skip(&mut self, count: usize, context: &'static str) -> Result<()> {
@@ -88,30 +100,15 @@ impl<'a> Parser<'a> {
 
         Ok(())
     }
-
-    pub(crate) fn read_region<T>(
-        &mut self,
-        f: impl FnOnce(&mut Self) -> Result<T>,
-    ) -> Result<(T, Region<'a>)> {
-        // Keep track of where the region starts and read the region
-        let start = self.pos;
-        let value = f(self)?;
-
-        // Then get the end and region from the current position
-        let end = self.pos;
-        let bytes = &self.input[start..end];
-
-        Ok((value, Region { start, end, bytes }))
-    }
 }
 
-pub(crate) fn parse_str(bytes: &[u8]) -> Cow<'_, str> {
+pub(crate) fn parse_string(bytes: &[u8]) -> String {
     match std::str::from_utf8(bytes) {
         // Check if the string can be parsed as UTF-8 directly
-        Ok(s) => Cow::Borrowed(s),
+        Ok(s) => s.to_string(),
 
         // Otherwise, apply the Windows-1252 character mapping
-        Err(_) => Cow::Owned(bytes.iter().map(|&b| windows_1252_to_char(b)).collect()),
+        Err(_) => bytes.iter().map(|&b| windows_1252_to_char(b)).collect(),
     }
 }
 

@@ -1,11 +1,11 @@
 use thiserror::Error;
 
-use crate::{ExtrasError, GridError, HeaderError, IoError};
+use crate::{ExtrasError, GridError, HeaderError, ReadError};
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Found I/O error: {0}")]
-    Io(#[from] IoError),
+    Read(#[from] ReadError),
 
     #[error("Found error while parsing header: {0}")]
     Header(#[from] HeaderError),

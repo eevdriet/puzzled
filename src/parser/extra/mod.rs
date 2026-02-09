@@ -8,7 +8,7 @@ pub use section::*;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::{Parser, Result};
+use crate::{Parser, Result, parse_string};
 
 const ALLOWED_GEXT_BITS: u8 = 0x10 | 0x20 | 0x40 | 0x80; // 0xF0
 
@@ -54,6 +54,7 @@ impl<'a> Parser<'a> {
 
             // Parse the header of the next extra section
             let header = self.read_fixed_len_str(4, "Extras section")?;
+            let header = parse_string(header);
 
             // Short-circuit if the section doesn't have the correct header
             let section = self.ok_or_warn(ExtraSection::from_str(&header).map_err(Into::into))?;
@@ -100,6 +101,7 @@ impl<'a> Parser<'a> {
     fn parse_rtbl(&mut self) -> Result<HashMap<u8, String>> {
         let mut rtbl = HashMap::default();
         let rebuses_str = self.read_str("RTBL")?;
+        let rebuses_str = parse_string(rebuses_str);
 
         for (idx, entry) in rebuses_str.split(';').enumerate() {
             let cell = idx as u16 + 1;

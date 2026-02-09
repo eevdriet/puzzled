@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{Error, ExtrasError, Parser, Result};
+use crate::{Error, ExtrasError, Parser, Result, parse_string};
 
 #[derive(Debug)]
 pub enum TimerState {
@@ -34,6 +34,8 @@ impl<'a> Parser<'a> {
     pub(crate) fn parse_ltim(&mut self) -> Result<Timer> {
         // Parse the LTIM string into its elapsed and state parts
         let ltim = self.read_str("LTIM")?;
+        let ltim = parse_string(ltim);
+
         let Some((elapsed_str, state_str)) = ltim.split_once(',') else {
             return Err(ExtrasError::InvalidTimer {
                     reason: format!(

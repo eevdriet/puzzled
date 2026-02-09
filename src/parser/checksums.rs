@@ -1,4 +1,4 @@
-use crate::{Error, Grid, Header, Parser, Region, Result, Strings};
+use crate::{Error, Grid, Header, Parser, Result, Strings};
 
 const CHECKSUM_MASK: &[u8; 9] = b"ICHEATED\0";
 
@@ -17,7 +17,7 @@ impl<'a> Parser<'a> {
     }
 
     fn validate_cib_checksum(&mut self, header: &Header<'a>) -> Result<Option<()>> {
-        let cib_checksum = find_region_checksum(&header.cib_region, 0);
+        let cib_checksum = find_region_checksum(header.cib_region, 0);
         self.validate_checksum("CIB".to_string(), cib_checksum, header.cib_checksum)
     }
 
@@ -30,9 +30,9 @@ impl<'a> Parser<'a> {
         // Compute the overall file checksum
         let mut file_checksum = header.cib_checksum;
 
-        file_checksum = find_region_checksum(&grid.solution_region, file_checksum);
-        file_checksum = find_region_checksum(&grid.state_region, file_checksum);
-        file_checksum = find_partial_board_checksum(file_checksum, strings);
+        file_checksum = find_region_checksum(grid.solution_region, file_checksum);
+        file_checksum = find_region_checksum(grid.state_region, file_checksum);
+        file_checksum = find_partial_board_checksum(strings, file_checksum);
 
         // Validate the file checksum
         self.validate_checksum("file".to_string(), file_checksum, header.file_checksum)
@@ -46,10 +46,10 @@ impl<'a> Parser<'a> {
     ) -> Result<Option<()>> {
         // Collect all checksums to mask
         let checksums = [
-            find_region_checksum(&header.cib_region, 0),    // CIB
-            find_region_checksum(&grid.solution_region, 0), // Solution
-            find_region_checksum(&grid.state_region, 0),    // Grid
-            find_partial_board_checksum(0, strings),        // Partial board
+            find_region_checksum(header.cib_region, 0),    // CIB
+            find_region_checksum(grid.solution_region, 0), // Solution
+            find_region_checksum(grid.state_region, 0),    // Grid
+            find_partial_board_checksum(strings, 0),       // Partial board
         ];
 
         // Validate against the masked low checksums
@@ -110,26 +110,27 @@ impl<'a> Parser<'a> {
     }
 }
 
-fn find_partial_board_checksum<'a>(start: u16, strings: &Strings<'a>) -> u16 {
+fn find_partial_board_checksum<'a>(strings: &Strings<'a>, start: u16) -> u16 {
     // Compute the overall file checksum
     let mut file_checksum = start;
 
-    file_checksum = find_region_checksum(&strings.title_region, file_checksum);
-    file_checksum = find_region_checksum(&strings.author_region, file_checksum);
-    file_checksum = find_region_checksum(&strings.copyright_region, file_checksum);
+    file_checksum = find_str_checksum(strings.title, file_checksum, true);
+    file_checksum = find_str_checksum(strings.author, file_checksum, true);
+    file_checksum = find_str_checksum(strings.copyright, file_checksum, true);
 
-    for clue_region in &strings.clue_regions {
-        file_checksum = find_region_checksum(clue_region, file_checksum);
+    for clue in &strings.clues {
+        let clue_without_end = &clue[0..clue.len().saturating_sub(1)];
+        file_checksum = find_str_checksum(clue_without_end, file_checksum, false);
     }
 
-    file_checksum = find_region_checksum(&strings.notes_region, file_checksum);
+    file_checksum = find_str_checksum(strings.notes, file_checksum, true);
     file_checksum
 }
 
-fn find_region_checksum<'a>(region: &Region<'a>, start: u16) -> u16 {
+fn find_region_checksum(region: &[u8], start: u16) -> u16 {
     let mut checksum = start;
 
-    for &byte in region.bytes {
+    for &byte in region {
         if checksum & 1 != 0 {
             checksum = (checksum >> 1) + 0x8000;
         } else {
@@ -139,4 +140,12 @@ fn find_region_checksum<'a>(region: &Region<'a>, start: u16) -> u16 {
     }
 
     checksum
+}
+
+fn find_str_checksum(str: &[u8], start: u16, ignore_empty: bool) -> u16 {
+    if ignore_empty && matches!(str, [] | [b'\0']) {
+        return start;
+    }
+
+    find_region_checksum(str, start)
 }

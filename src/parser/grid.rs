@@ -1,17 +1,14 @@
-use std::borrow::Cow;
+use crate::{Parser, Result};
 
-use crate::{Parser, Region, Result, parse_str};
-
-const NON_PLAYABLE_CELL: char = '-';
-const BLANK_CELL: char = '.';
+const NON_PLAYABLE_CELL: u8 = b'-';
 
 #[derive(Debug)]
 pub(crate) struct Grid<'a> {
-    pub solution: Vec<Cow<'a, str>>,
-    pub state: Vec<Cow<'a, str>>,
+    pub solution: Vec<&'a [u8]>,
+    pub state: Vec<&'a [u8]>,
 
-    pub solution_region: Region<'a>,
-    pub state_region: Region<'a>,
+    pub solution_region: &'a [u8],
+    pub state_region: &'a [u8],
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -37,7 +34,7 @@ pub enum GridError {
     CellMismatch {
         grid_non_playable: String,
         grid_other: String,
-        other_cell: char,
+        other_cell: u8,
         row: u8,
         col: u8,
     },
@@ -50,11 +47,11 @@ impl<'a> Parser<'a> {
 
         // Parse twice the puzzle size, for both the layout (solution) and state (partial user solution)
         // Then convert both to a 2D grid
-        let (solution, solution_region) = self.read_region(|p| p.read(size, "Puzzle solution"))?;
-        let solution = parse_grid(&solution, width);
+        let solution_region = self.read(size, "Puzzle solution")?;
+        let solution = parse_grid(solution_region, width);
 
-        let (state, state_region) = self.read_region(|p| p.read(size, "Player state"))?;
-        let state = parse_grid(&state, width);
+        let state_region = self.read(size, "Player state")?;
+        let state = parse_grid(state_region, width);
 
         // Create the puzzle and check its validity
         let puzzle = Grid {
@@ -67,8 +64,8 @@ impl<'a> Parser<'a> {
     }
 }
 
-fn parse_grid<'a>(bytes: &'a [u8], width: u8) -> Vec<Cow<'_, str>> {
-    bytes.chunks(width as usize).map(parse_str).collect()
+fn parse_grid(bytes: &[u8], width: u8) -> Vec<&[u8]> {
+    bytes.chunks(width as usize).collect()
 }
 
 fn validate_puzzle(puzzle: Grid, width: u8, height: u8) -> Result<Grid> {
@@ -108,7 +105,7 @@ fn validate_puzzle(puzzle: Grid, width: u8, height: u8) -> Result<Grid> {
     {
         let r = r as u8;
 
-        for (c, (layout_cell, state_cell)) in layout_row.chars().zip(state_row.chars()).enumerate()
+        for (c, (&layout_cell, &state_cell)) in layout_row.iter().zip(state_row.iter()).enumerate()
         {
             let c = c as u8;
 

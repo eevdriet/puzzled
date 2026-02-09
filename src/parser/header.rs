@@ -2,14 +2,14 @@ use std::borrow::Cow;
 
 use thiserror::Error;
 
-use crate::{Parser, Region, Result};
+use crate::{Parser, Result};
 
 const FILE_MAGIC: &[u8] = b"ACROSS&DOWN\0";
 
 #[derive(Debug)]
 pub(crate) struct Header<'a> {
     // Components
-    pub version: Cow<'a, str>,
+    pub version: &'a [u8],
     pub width: u8,
     pub height: u8,
     pub clue_count: u16,
@@ -23,7 +23,7 @@ pub(crate) struct Header<'a> {
     pub scrambled_checksum: u16,
 
     // Regions
-    pub cib_region: Region<'a>,
+    pub cib_region: &'a [u8],
 }
 
 #[derive(Debug, Error)]
@@ -76,18 +76,15 @@ impl<'a> Parser<'a> {
         self.skip(2, "Reserved1C")?;
 
         let scrambled_checksum = self.read_u16("Scrambled Checksum")?;
+        let cib_region = self.take(8, "CIB checksum region")?;
 
-        let ((width, height, clue_count, scrambled_tag), cib_region) = self.read_region(|p| {
-            let width = p.read_u8("Puzzle width")?;
-            let height = p.read_u8("Puzzle height")?;
-            let clue_count = p.read_u16("Clue count")?;
+        let width = self.read_u8("Puzzle width")?;
+        let height = self.read_u8("Puzzle height")?;
+        let clue_count = self.read_u16("Clue count")?;
 
-            p.skip(2, "Unknown Bitmask")?;
+        self.skip(2, "Unknown Bitmask")?;
 
-            let scrambled_tag = p.read_u16("Scrambled Tag")?;
-
-            Ok((width, height, clue_count, scrambled_tag))
-        })?;
+        let scrambled_tag = self.read_u16("Scrambled Tag")?;
 
         Ok(Header {
             // Components
