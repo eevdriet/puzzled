@@ -1,34 +1,6 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use crate::{Error, ExtrasError, Parser, Result, parse_string};
-
-#[derive(Debug)]
-pub enum TimerState {
-    Running,
-    Stopped,
-}
-
-impl TryFrom<u64> for TimerState {
-    type Error = ExtrasError;
-
-    fn try_from(num: u64) -> std::result::Result<Self, Self::Error> {
-        match num {
-            0 => Ok(TimerState::Running),
-            1 => Ok(TimerState::Stopped),
-            num => Err(ExtrasError::InvalidTimer {
-                reason: format!(
-                    "Number {num} does not represent a valid timer state (use 0 for running, 1 for stopped)"
-                ),
-            }),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Timer {
-    elapsed: Duration,
-    state: TimerState,
-}
+use crate::{Error, ExtrasError, Parser, Result, Timer, TimerState, parse_string};
 
 impl<'a> Parser<'a> {
     pub(crate) fn parse_ltim(&mut self) -> Result<Timer> {
@@ -59,11 +31,20 @@ impl<'a> Parser<'a> {
         })?;
 
         // Create the resulting timer
-        let state: TimerState = state_num.try_into()?;
+        let state: TimerState = match state_num {
+            0 => Ok(TimerState::Running {
+                start: Instant::now(),
+            }),
+            1 => Ok(TimerState::Stopped),
+            num => Err(ExtrasError::InvalidTimer {
+                reason: format!(
+                    "Number {num} does not represent a valid timer state (use 0 for running, 1 for stopped)"
+                ),
+            }),
+        }?;
 
-        Ok(Timer {
-            elapsed: Duration::from_secs(secs),
-            state,
-        })
+        let timer = Timer::new(Duration::from_secs(secs), state);
+
+        Ok(timer)
     }
 }
