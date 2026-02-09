@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::Position;
+
 #[derive(Debug, Error)]
 pub enum ExtrasError {
     // General
@@ -9,8 +11,8 @@ pub enum ExtrasError {
     InvalidSection { found: String },
 
     // GRBS
-    #[error("Expected RTBL to include rebus #{rebus}, but not found")]
-    MissingRebus { rebus: u8 },
+    #[error("Expected RTBL to include rebus #{rebus} at position {pos:?}, but not found")]
+    MissingRebus { pos: Position, rebus: u8 },
 
     // RTBL
     #[error("Rebus #{rebus} in the RTBL is invalid: {reason}")]
@@ -22,7 +24,7 @@ pub enum ExtrasError {
 
     // GEXT
     #[error(
-        "Encountered invalid bitmask {mask} for cell #{cell} in GEXT, only the following bits should be set: 0x10, 0x20, 0x40 and 0x80"
+        "Encountered invalid bitmask {mask} at position {pos:?} in GEXT, only the following bits should be set: 0x10, 0x20, 0x40 and 0x80"
     )]
-    InvalidBitmask { cell: u16, mask: u8 },
+    InvalidBitmask { pos: Position, mask: u8 },
 }

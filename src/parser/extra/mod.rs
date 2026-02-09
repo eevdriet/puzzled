@@ -3,24 +3,23 @@ mod ltim;
 mod section;
 
 pub use error::*;
-pub use ltim::*;
 pub use section::*;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::{Parser, Result, Timer, parse_string};
+use crate::{Grid, Parser, Result, Timer, parse_string};
 
 const ALLOWED_GEXT_BITS: u8 = 0x10 | 0x20 | 0x40 | 0x80; // 0xF0
 
 /// In some .puz files, extra sections are used to indicate additional properties on the solving state.
 #[derive(Debug, Default)]
-pub struct Extras<'a> {
+pub struct Extras {
     /// The GRBS section contains one byte per square of the board.
     /// Each byte indicates whether or not the corresponding square is a rebus.
     /// Possible values are
     /// - `0` to indicate a non-rebus square
     /// - `1+` to indicate a rebus square, the solution for which is given by the entry with key `n` in the [RTBL] section
-    pub grbs: Option<&'a [u8]>,
+    pub grbs: Option<Grid<u8>>,
 
     /// The RTBL section contains a string that represents the solutions for any rebus squares
     /// The solutions are separated by semi-colons and contain the square number and actual rebus
@@ -40,11 +39,11 @@ pub struct Extras<'a> {
     /// - `0x20` means that the square is currently marked incorrect
     /// - `0x40` means that the contents of the square were given
     /// - `0x80` means that the square is circled
-    pub gext: Option<&'a [u8]>,
+    pub gext: Option<Grid<u8>>,
 }
 
 impl<'a> Parser<'a> {
-    pub(crate) fn parse_extras(&mut self, width: u8, height: u8) -> Result<Extras<'a>> {
+    pub(crate) fn parse_extras(&mut self, width: u8, height: u8) -> Result<Extras> {
         let size = u16::from(width) * u16::from(height);
         let mut extras = Extras::default();
         let mut parsed = true;
@@ -65,7 +64,7 @@ impl<'a> Parser<'a> {
             // Otherwise, parse the next section
             match section {
                 ExtraSection::Grbs => {
-                    let grbs = self.parse_grbs(size);
+                    let grbs = self.parse_grbs(size, width);
                     extras.grbs = self.ok_or_warn(grbs)?;
 
                     parsed = true;
@@ -83,7 +82,7 @@ impl<'a> Parser<'a> {
                     parsed = true;
                 }
                 ExtraSection::Gext => {
-                    let gext = self.parse_gext(size);
+                    let gext = self.parse_gext(size, width);
                     extras.gext = self.ok_or_warn(gext)?;
 
                     parsed = true;
@@ -94,8 +93,11 @@ impl<'a> Parser<'a> {
         self.validate_extras(extras)
     }
 
-    fn parse_grbs(&mut self, size: u16) -> Result<&'a [u8]> {
-        self.read(size as usize, "GRBS")
+    fn parse_grbs(&mut self, size: u16, width: u8) -> Result<Grid<u8>> {
+        let grbs = self.read(size as usize, "GRBS")?;
+        let grid = Grid::new(grbs.to_vec(), width).expect("Read correct length region");
+
+        Ok(grid)
     }
 
     fn parse_rtbl(&mut self) -> Result<HashMap<u8, String>> {
@@ -155,19 +157,20 @@ impl<'a> Parser<'a> {
         Ok(rtbl)
     }
 
-    fn parse_gext(&mut self, size: u16) -> Result<&'a [u8]> {
-        self.read(size as usize, "GEXT")
+    fn parse_gext(&mut self, size: u16, width: u8) -> Result<Grid<u8>> {
+        let grbs = self.read(size as usize, "GEXT")?;
+        let grid = Grid::new(grbs.to_vec(), width).expect("Read correct length region");
+
+        Ok(grid)
     }
 
-    fn validate_extras(&mut self, extras: Extras<'a>) -> Result<Extras<'a>> {
+    fn validate_extras(&mut self, extras: Extras) -> Result<Extras> {
         // Iterate over all rebuses specified in GRBS
         if let (Some(grbs), Some(rtbl)) = (&extras.grbs, &extras.rtbl) {
-            for (idx, _num) in grbs.iter().enumerate().filter(|&(_, num)| *num != 0) {
-                let cell = idx as u8 + 1;
-
+            for (pos, &rebus) in grbs.iter().filter(|&(_, &rebus)| rebus != 0) {
                 // Make sure each rebus in GRBS has a definition in RTBL
-                if !rtbl.contains_key(&cell) {
-                    let err: Result<()> = Err(ExtrasError::MissingRebus { rebus: cell }.into());
+                if !rtbl.contains_key(&rebus) {
+                    let err: Result<()> = Err(ExtrasError::MissingRebus { pos, rebus }.into());
                     self.ok_or_warn(err)?;
                 }
             }
@@ -175,11 +178,9 @@ impl<'a> Parser<'a> {
 
         // Make sure each bitmask in GEXT is valid
         if let Some(gext) = &extras.gext {
-            for (idx, &mask) in gext.iter().enumerate() {
-                let cell = idx as u16 + 1;
-
+            for (pos, &mask) in gext.iter() {
                 if mask & !ALLOWED_GEXT_BITS != 0 {
-                    let err: Result<()> = Err(ExtrasError::InvalidBitmask { cell, mask }.into());
+                    let err: Result<()> = Err(ExtrasError::InvalidBitmask { pos, mask }.into());
                     self.ok_or_warn(err)?;
                 }
             }
