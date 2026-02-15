@@ -1,30 +1,27 @@
-use std::borrow::Cow;
-
 use thiserror::Error;
 
-use crate::{Error, Parser, Result};
+use crate::parse::{Error, PuzState, Result};
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone, Copy)]
 pub enum ReadError {
-    #[error("Encountered unexpected EOF while trying to read '{context}' at position {pos}")]
-    UnexpectedEof { context: String, pos: usize },
+    #[error("Unexpected EOF")]
+    UnexpectedEof,
 
-    #[error("Read unterminated string '{context}' of len {len} at position {pos}")]
-    UnterminatedStr {
-        context: String,
-        len: usize,
-        pos: usize,
-    },
+    #[error("Unterminated string of len {len}")]
+    UnterminatedStr { len: usize },
 }
 
-impl<'a> Parser<'a> {
+impl<'a> PuzState<'a> {
+    pub(crate) fn reached_eof(&self) -> bool {
+        self.pos >= self.input.len()
+    }
+
     pub(crate) fn take<S: AsRef<str>>(&mut self, len: usize, context: S) -> Result<&'a [u8]> {
         let end = self.pos + len;
-        let slice = self.input.get(self.pos..end).ok_or_else(|| {
-            Into::<Error>::into(ReadError::UnexpectedEof {
-                context: context.as_ref().into(),
-                pos: self.pos,
-            })
+        let slice = self.input.get(self.pos..end).ok_or_else(|| Error {
+            span: self.pos..self.input.len(),
+            kind: ReadError::UnexpectedEof.into(),
+            context: context.as_ref().into(),
         })?;
 
         Ok(slice)
@@ -60,11 +57,11 @@ impl<'a> Parser<'a> {
 
         // Return error for EOF
         if self.pos >= self.input.len() {
-            return Err(ReadError::UnexpectedEof {
-                pos: self.pos,
+            return Err(Error {
+                span: start..self.pos,
+                kind: ReadError::UnexpectedEof.into(),
                 context: context.as_ref().to_string(),
-            }
-            .into());
+            });
         }
 
         // Otherwise, collect and parse the string (including trailing \0)
@@ -80,16 +77,14 @@ impl<'a> Parser<'a> {
         context: S,
     ) -> Result<&'a [u8]> {
         // Read the requested amount of bytes for the string
-        let pos = self.pos;
+        let start = self.pos;
         let bytes = self.read(len, &context)?;
 
         // Make sure it is terminated properly with a trailing \0
-        bytes.last().filter(|&&b| b == b'\0').ok_or_else(|| {
-            Into::<Error>::into(ReadError::UnterminatedStr {
-                context: context.as_ref().into(),
-                len,
-                pos,
-            })
+        bytes.last().filter(|&&b| b == b'\0').ok_or_else(|| Error {
+            span: start..self.pos,
+            kind: ReadError::UnterminatedStr { len }.into(),
+            context: context.as_ref().into(),
         })?;
 
         Ok(bytes)
@@ -102,7 +97,11 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub(crate) fn parse_string(bytes: &[u8]) -> String {
+pub(crate) fn parse_string(mut bytes: &[u8]) -> String {
+    if let Some(stripped) = bytes.strip_suffix(&[0]) {
+        bytes = stripped;
+    }
+
     match std::str::from_utf8(bytes) {
         // Check if the string can be parsed as UTF-8 directly
         Ok(s) => s.to_string(),
