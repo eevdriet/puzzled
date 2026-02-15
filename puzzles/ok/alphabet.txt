@@ -3,3 +3,9 @@
 ---
 A: "The first two letters of the alphabet"
 D: "Keep it short, but cool"
+---
+title: "alphabet"
+copyright: "Copyright eevdriet, all rights reserved"
+author: "eevdriet"
+version: "2.0"
+notes: "Created on crosshare.org"
