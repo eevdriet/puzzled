@@ -42,7 +42,7 @@
 //!     By default the parser ignores [warnings](crate::parse::Warning) that come from [invalid checksums](crate::parse#validating-checksums) or [corrupted extra sections](crate::parse#extra-sections).
 //!
 //! The following all construct the same puzzle:
-//! ```no_run
+//! ```
 //! use puzzled::{clue, Grid, puzzle, Puzzle, square};
 //! use puzzled::parse::{PuzParser, TxtParser};
 //!
@@ -57,7 +57,7 @@
 //!
 //! // 2. Dynamic
 //! let squares =
-//!     Grid::new(vec![square!('A'), square!('B'), square!('C'), square!()], 2)
+//!     Grid::new(vec![square!(A), square!(B), square!(C), square!()], 2)
 //!     .expect("Grid size evenly divides columns");
 //!
 //! let clues = vec![
@@ -78,9 +78,8 @@
 //! let text = include_str!("../puzzles/ok/alphabet.txt");
 //! let puzzle4 = parser.parse(text)?;
 //!
-//! assert_eq!(puzzle1, puzzle2);
-//! assert_eq!(puzzle2, puzzle3);
-//! assert_eq!(puzzle3, puzzle4);
+//! assert_eq!(puzzle1, puzzle2, "macro <-> dyn");
+//! assert_eq!(puzzle3, puzzle4, ".puz <-> .txt");
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!

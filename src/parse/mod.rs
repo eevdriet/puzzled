@@ -376,13 +376,8 @@ mod tests {
         let result = parse_txt(path.clone());
         let puzzle = result.expect("puzzled is parsed correctly");
 
-        let puz = path.with_extension("puz");
-        if puz.exists() {
-            let result2 = parse_puz(path.with_extension("puz"), true);
-            let (puzzle2, _) = result2.expect("puzzle is parsed correctly");
-
-            assert_eq!(puzzle, puzzle2);
-        }
+        assert!(puzzle.rows() > 0);
+        assert!(puzzle.cols() > 0);
     }
 
     #[rstest]
@@ -399,5 +394,26 @@ mod tests {
         let (_, warnings) = result.expect("puzzle is parsed correctly");
 
         assert!(!warnings.is_empty());
+    }
+
+    #[rstest]
+    fn parse_same(#[files("puzzles/**/*.puz")] path: PathBuf) {
+        let result = parse_puz(path.clone(), false);
+
+        let txt_path = path.with_extension("txt");
+
+        // Make sure .puz and .txt files parse the same if both defined
+        if txt_path.exists() {
+            let result2 = parse_txt(txt_path);
+
+            match result {
+                Ok((puzzle, _)) => {
+                    assert!(result2.is_ok_and(|puzzle2| puzzle == puzzle2));
+                }
+                Err(_) => {
+                    assert!(result2.is_err());
+                }
+            }
+        }
     }
 }
