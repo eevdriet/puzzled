@@ -1,7 +1,5 @@
-use crate::{
-    Puzzle,
-    parse::{Error, ErrorKind, PuzParser, PuzState, Result, Span, TxtParser, TxtState},
-};
+use crate::Puzzle;
+use crate::io::{Error, ErrorKind, PuzParser, PuzState, Result, Span, TxtParser, TxtState};
 
 #[derive(Debug)]
 pub(crate) struct Strings<'a> {

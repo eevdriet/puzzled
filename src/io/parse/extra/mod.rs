@@ -7,7 +7,7 @@ pub use section::*;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::parse::{Error, PuzParser, PuzState, Result, Span};
+use crate::io::{Error, PuzParser, PuzState, Result, Span};
 use crate::{CellStyle, Grid, Position, Timer};
 
 /// In some .puz files, extra sections are used to indicate additional properties on the solving state.

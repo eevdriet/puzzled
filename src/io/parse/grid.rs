@@ -1,9 +1,10 @@
 use thiserror::Error;
 
-use crate::parse::{
-    Error, ErrorKind, PuzParser, PuzState, Result, Span, TxtParser, TxtState, windows_1252_to_char,
+use crate::io::{
+    Error, ErrorKind, PuzParser, PuzState, Result, SECTION_SEPARATOR, Span, TxtParser, TxtState,
+    windows_1252_to_char,
 };
-use crate::{Grid, SECTION_SEPARATOR, Square};
+use crate::{Grid, Square};
 
 pub(crate) const NON_PLAYABLE_CELL: u8 = b'.';
 
@@ -17,6 +18,7 @@ pub(crate) struct PuzzleGrid {
 }
 
 #[derive(Debug, Error, Clone)]
+
 pub enum GridError {
     #[error("Row {row} in the grid has an invalid width of {found} (expected {expected})")]
     InvalidWidth { row: u8, found: u8, expected: u8 },

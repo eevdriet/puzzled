@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 
-use crate::parse::{Error, ErrorKind, PuzParser, PuzState, Result, Strings, TxtParser, TxtState};
-use crate::{Clue, ClueId, ClueSpec, Direction, Grid, Position, SECTION_SEPARATOR, Square};
+use crate::io::{
+    Error, ErrorKind, PuzParser, PuzState, Result, SECTION_SEPARATOR, Strings, TxtParser, TxtState,
+};
+use crate::{Clue, ClueId, ClueSpec, Direction, Grid, Position, Square};
 
 impl<'a> PuzParser {
     pub(crate) fn read_clues(

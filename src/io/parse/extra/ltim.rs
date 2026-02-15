@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::parse::{Error, ExtrasError, PuzParser, PuzState, Result};
+use crate::io::{Error, ExtrasError, PuzParser, PuzState, Result};
 use crate::{Timer, TimerState};
 
 impl<'a> PuzParser {

@@ -157,6 +157,12 @@ impl Puzzle {
 impl PartialEq for Puzzle {
     fn eq(&self, other: &Self) -> bool {
         self.squares == other.squares
+            && self.clues == other.clues
+            && self.author == other.author
+            && self.version == other.version
+            && self.copyright == other.copyright
+            && self.notes == other.notes
+            && self.title == other.title
     }
 }
 

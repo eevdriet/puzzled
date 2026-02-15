@@ -1,4 +1,4 @@
-use crate::parse::{
+use crate::io::{
     Extras, NON_PLAYABLE_CELL, PuzParser, PuzzleGrid, Result, windows_1252_to_char,
 };
 use crate::{Cell, Grid, Solution, Square, Squares};

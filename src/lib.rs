@@ -38,13 +38,13 @@
 //!     In similar fashion, it takes a [square grid](`Grid`) that initializes the puzzle's [squares](Square).
 //!     After constructing the puzzle, [`Puzzle::insert_clues`] can be used to add the puzzle entries to provide clues to the squares.
 //! 3.  [`Parser::parse`] and friends let you parse a puzzle from series of bytes that represent a [*.puz file][PUZ spec].
-//!     By default the parser ignores [warnings](crate::parse::Warning) that arise from recoverable input [errors](crate::parse::Error).
-//!     By default the parser ignores [warnings](crate::parse::Warning) that come from [invalid checksums](crate::parse#validating-checksums) or [corrupted extra sections](crate::parse#extra-sections).
+//!     By default the parser ignores [warnings](crate::io::Warning) that arise from recoverable input [errors](crate::io::Error).
+//!     By default the parser ignores [warnings](crate::io::Warning) that come from [invalid checksums](crate::parse::io#validating-checksums) or [corrupted extra sections](crate::parse::io#extra-sections).
 //!
 //! The following all construct the same puzzle:
 //! ```
 //! use puzzled::{clue, Grid, puzzle, Puzzle, square};
-//! use puzzled::parse::{PuzParser, TxtParser};
+//! use puzzled::io::{PuzParser, TxtParser};
 //!
 //! // 1. Static
 //! let puzzle1 = puzzle! {
@@ -85,7 +85,7 @@
 //!
 //! # Dependencies
 //! The library currently has the following dependencies
-//!     - [thiserror] to simplify the definition of the [`Error`](crate::parse::Error) type and subtypes
+//!     - [thiserror] to simplify the definition of the [`Error`](crate::io::Error) type and subtypes
 //!     - [bitflags] to define the different [`styles`](CellStyle) that can be set for a [`square`](Cell)
 //!
 //! # Features
@@ -96,13 +96,7 @@
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 
-pub mod parse;
-pub use parse::PuzParser;
-
-pub mod write;
-pub use write::Writer;
-
 mod puzzle;
 pub use puzzle::*;
 
-pub(crate) const SECTION_SEPARATOR: &str = "---";
+pub mod io;

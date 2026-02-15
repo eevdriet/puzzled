@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::parse::{ExtrasError, GridError, HeaderError, ReadError, Span};
+use crate::io::{ExtrasError, GridError, HeaderError, ReadError, Span};
 
 #[derive(Debug, Error, Clone)]
 #[cfg_attr(
@@ -49,13 +49,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// [Errors](struct@Error) that can be recovered from when parsing in non-strict mode
 ///
 /// For [parsing](crate::Parser), these include
-/// - Ignoring [invalid checksums](crate::parse#validating-checksums)
-/// - Ignoring [invalid extra sections](crate::parse#extra-sections)
+/// - Ignoring [invalid checksums](crate::parse::io#validating-checksums)
+/// - Ignoring [invalid extra sections](crate::parse::io#extra-sections)
 pub type Warning = Error;
 
 #[cfg(feature = "miette")]
 mod miette {
-    use crate::parse::Error;
+    use crate::io::Error;
     use miette::{Diagnostic, LabeledSpan};
 
     impl Diagnostic for Error {

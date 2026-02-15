@@ -148,7 +148,6 @@
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 
-mod checksums;
 mod clues;
 mod error;
 mod extra;
@@ -158,7 +157,8 @@ mod read;
 mod squares;
 mod strings;
 
-use std::{ops::Range, str::Lines};
+use crate::io::{Span, find_file_checksum};
+use std::str::Lines;
 
 pub use error::*;
 pub(crate) use extra::*;
@@ -227,8 +227,6 @@ impl<'a> TxtParser {
     }
 }
 
-pub(crate) type Span = Range<usize>;
-
 impl<'a> PuzParser {
     pub fn new(strict: bool) -> Self {
         Self { strict }
@@ -256,7 +254,8 @@ impl<'a> PuzParser {
             Ok((grid, strings))
         })?;
 
-        self.validate_file_checksum(&file_span, &header, &grid, &strings, &mut state)?;
+        // Validate checksums
+        self.validate_file_checksum(&header, &grid, &strings, file_span, &mut state)?;
         self.validate_masked_checksums(&header, &grid, &strings, &mut state)?;
 
         // Parse extra sections and the actual structure of the puzzle
@@ -311,6 +310,10 @@ impl<'a> PuzParser {
 }
 
 impl<'a> PuzState<'a> {
+    pub(crate) fn region(&self, span: Span) -> &'a [u8] {
+        &self.input[span]
+    }
+
     pub(crate) fn read_span<T>(
         &mut self,
         f: impl FnOnce(&mut Self) -> Result<T>,
@@ -330,7 +333,7 @@ impl<'a> PuzState<'a> {
 #[cfg(test)]
 mod tests {
     use crate::Puzzle;
-    use crate::parse::{Error, PuzParser, TxtParser};
+    use crate::io::{Error, PuzParser, TxtParser};
     use rstest::rstest;
     use std::{fs, path::PathBuf};
 

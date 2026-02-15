@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::parse::ExtrasError;
+use crate::io::ExtrasError;
 
 pub enum ExtraSection {
     Grbs,

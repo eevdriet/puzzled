@@ -1,8 +1,6 @@
 use thiserror::Error;
 
-use crate::parse::{Error, PuzParser, PuzState, Result, Span, checksums::find_region_checksum};
-
-const FILE_MAGIC: &str = "ACROSS&DOWN\0";
+use crate::io::{Error, FILE_MAGIC, PuzParser, PuzState, Result, Span, find_region_checksum};
 
 #[derive(Debug)]
 pub(crate) struct Header<'a> {
@@ -16,8 +14,7 @@ pub(crate) struct Header<'a> {
     // Checksums
     pub file_checksum: u16,
     pub cib_checksum: u16,
-    pub low_checksums: &'a [u8],
-    pub high_checksums: &'a [u8],
+    pub mask_checksums: &'a [u8],
     pub scrambled_checksum: u16,
 
     // Regions
@@ -52,12 +49,7 @@ impl<'a> PuzParser {
             });
         }
         let cib_checksum = state.read_u16("CIB Checksum")?;
-        let ((low_checksums, high_checksums), masks_span) = state.read_span(|p| {
-            let low = p.read(4, "Masked Low Checksums")?;
-            let high = p.read(4, "Masked High Checksums")?;
-
-            Ok((low, high))
-        })?;
+        let (mask_checksums, masks_span) = state.read_span(|p| p.read(8, "Masked Checksums"))?;
         let version = state.read_fixed_len_str(4, "Version")?;
 
         // self.skip(2, "Reserved1C")?;
@@ -111,8 +103,7 @@ impl<'a> PuzParser {
             // Checksums
             file_checksum,
             cib_checksum,
-            low_checksums,
-            high_checksums,
+            mask_checksums,
             scrambled_checksum,
 
             // Spans
