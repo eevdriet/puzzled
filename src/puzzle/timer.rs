@@ -1,14 +1,30 @@
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct Timer {
     elapsed: Duration,
     state: TimerState,
 }
 
 impl Timer {
-    pub fn new(elapsed: Duration, state: TimerState) -> Self {
+    pub(crate) fn new(elapsed: Duration, state: TimerState) -> Self {
         Self { elapsed, state }
+    }
+
+    pub fn new_stopped(elapsed: Duration) -> Self {
+        Self {
+            elapsed,
+            state: TimerState::Stopped,
+        }
+    }
+
+    pub fn new_running(elapsed: Duration) -> Self {
+        Self {
+            elapsed,
+            state: TimerState::Running {
+                start: Instant::now(),
+            },
+        }
     }
 
     pub fn start(&mut self) {
@@ -41,8 +57,14 @@ impl Timer {
     }
 }
 
-#[derive(Debug)]
-pub enum TimerState {
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new_running(Duration::ZERO)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum TimerState {
     Running { start: Instant },
 
     Stopped,
