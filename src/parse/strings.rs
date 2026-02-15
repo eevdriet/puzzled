@@ -59,8 +59,7 @@ impl<'a> TxtParser {
     ) -> Result<Puzzle> {
         let context = "Metadata";
 
-        for line in state.lines.by_ref() {
-            eprintln!("Line: {line}");
+        while let Some(line) = state.next() {
             let line = line.trim();
 
             // Skip empty lines and stop parsing grid at separator
@@ -80,7 +79,7 @@ impl<'a> TxtParser {
             }
 
             // Validate the clue text
-            let text = Self::parse_string(text, 0..0, context)?;
+            let text = state.parse_string(text, context)?;
 
             match prop.to_ascii_lowercase().as_str() {
                 "author" => {
@@ -97,7 +96,7 @@ impl<'a> TxtParser {
                 }
                 "version" => match text.as_bytes() {
                     [x, b'.', y] if x.is_ascii_digit() && y.is_ascii_digit() => {
-                        puzzle = puzzle.with_title(text);
+                        puzzle = puzzle.with_version(text);
                     }
                     _ => {
                         return Err(Error {
@@ -118,21 +117,5 @@ impl<'a> TxtParser {
         }
 
         Ok(puzzle)
-    }
-
-    pub(crate) fn parse_string<S: Into<String>>(
-        text: &str,
-        span: Span,
-        context: S,
-    ) -> Result<String> {
-        if !text.starts_with('"') || !text.ends_with('"') {
-            return Err(Error {
-                span,
-                kind: ErrorKind::Custom("[...]".to_string()),
-                context: context.into(),
-            });
-        }
-
-        Ok(text[1..text.len() - 1].to_string())
     }
 }

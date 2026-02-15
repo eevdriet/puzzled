@@ -3,7 +3,7 @@ use crate::parse::{
 };
 use crate::{Cell, Grid, Solution, Square, Squares};
 
-impl<'a> PuzParser {
+impl PuzParser {
     pub(crate) fn read_squares(&self, grid: &PuzzleGrid, extras: &Extras) -> Result<Squares> {
         let mut cells = Vec::new();
 

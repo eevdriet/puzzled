@@ -187,6 +187,9 @@ pub struct TxtParser;
 pub(crate) struct TxtState<'a> {
     input: &'a str,
     lines: Lines<'a>,
+
+    pos: usize,
+    len: Option<usize>,
 }
 
 impl<'a> TxtParser {
@@ -198,6 +201,8 @@ impl<'a> TxtParser {
         let mut state = TxtState {
             input,
             lines: input.lines(),
+            pos: 0,
+            len: None,
         };
 
         let squares = self.parse_grid(&mut state)?;
@@ -262,11 +267,11 @@ impl<'a> PuzParser {
 
         // Build the puzzle with owned data
         let mut puzzle = Puzzle::new(squares, clues)
-            .with_author(parse_string(strings.author))
-            .with_copyright(parse_string(strings.copyright))
-            .with_notes(parse_string(strings.notes))
-            .with_title(parse_string(strings.title))
-            .with_version(parse_string(header.version));
+            .with_author(PuzState::build_string(strings.author))
+            .with_copyright(PuzState::build_string(strings.copyright))
+            .with_notes(PuzState::build_string(strings.notes))
+            .with_title(PuzState::build_string(strings.title))
+            .with_version(PuzState::build_string(header.version));
 
         if let Some(timer) = &extras.ltim {
             *puzzle.timer_mut() = *timer;
@@ -299,7 +304,7 @@ impl<'a> PuzParser {
         result.map_err(|err| {
             use miette::{NamedSource, Report};
 
-            let source = NamedSource::new(".puz", parse_string(input));
+            let source = NamedSource::new(".puz", PuzState::build_string(input));
             Report::new(err).with_source_code(source)
         })
     }
@@ -337,7 +342,7 @@ mod tests {
 
     fn parse_puz(path: PathBuf, strict: bool) -> ParseResult<(Puzzle, Vec<Error>)> {
         let bytes = fs::read(&path).expect("puzzle file exists");
-        let mut parser = PuzParser::new(strict);
+        let parser = PuzParser::new(strict);
         let result = parser.parse_with_warnings(&bytes);
 
         #[cfg(feature = "miette")]
@@ -348,7 +353,7 @@ mod tests {
 
     fn parse_txt(path: PathBuf) -> ParseResult<Puzzle> {
         let text = fs::read_to_string(&path).expect("puzzle file exists");
-        let mut parser = TxtParser::new();
+        let parser = TxtParser::new();
         let result = parser.parse(text.as_str());
 
         #[cfg(feature = "miette")]
@@ -368,11 +373,16 @@ mod tests {
 
     #[rstest]
     fn parse_ok_txt(#[files("puzzles/ok/*.txt")] path: PathBuf) {
-        let result = parse_txt(path);
+        let result = parse_txt(path.clone());
         let puzzle = result.expect("puzzled is parsed correctly");
 
-        assert!(puzzle.rows() > 0);
-        assert!(puzzle.cols() > 0);
+        let puz = path.with_extension("puz");
+        if puz.exists() {
+            let result2 = parse_puz(path.with_extension("puz"), true);
+            let (puzzle2, _) = result2.expect("puzzle is parsed correctly");
+
+            assert_eq!(puzzle, puzzle2);
+        }
     }
 
     #[rstest]

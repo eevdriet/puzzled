@@ -140,8 +140,7 @@ impl<'a> TxtParser {
         let mut cols = None;
         let mut rows = 0;
 
-        for line in state.lines.by_ref() {
-            eprintln!("Line: {line}");
+        while let Some(line) = state.next() {
             let line = line.trim();
 
             // Skip empty lines and stop parsing grid at separator

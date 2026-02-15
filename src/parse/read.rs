@@ -1,6 +1,8 @@
+use std::{iter::Inspect, str::Lines};
+
 use thiserror::Error;
 
-use crate::parse::{Error, PuzState, Result};
+use crate::parse::{Error, ErrorKind, PuzState, Result, Span, TxtState};
 
 #[derive(Debug, Error, Clone, Copy)]
 pub enum ReadError {
@@ -95,19 +97,49 @@ impl<'a> PuzState<'a> {
 
         Ok(())
     }
+
+    pub(crate) fn build_string(mut bytes: &[u8]) -> String {
+        if let Some(stripped) = bytes.strip_suffix(&[0]) {
+            bytes = stripped;
+        }
+
+        match std::str::from_utf8(bytes) {
+            // Check if the string can be parsed as UTF-8 directly
+            Ok(s) => s.to_string(),
+
+            // Otherwise, apply the Windows-1252 character mapping
+            Err(_) => bytes.iter().map(|&b| windows_1252_to_char(b)).collect(),
+        }
+    }
 }
 
-pub(crate) fn parse_string(mut bytes: &[u8]) -> String {
-    if let Some(stripped) = bytes.strip_suffix(&[0]) {
-        bytes = stripped;
+impl<'a> TxtState<'a> {
+    pub(crate) fn next(&mut self) -> Option<&'a str> {
+        let line = self.lines.next()?;
+
+        // Add on the previous line length
+        if let Some(len) = self.len {
+            self.pos += len;
+        }
+
+        // Memorize the current line length
+        self.len = Some(line.len());
+
+        Some(line)
     }
 
-    match std::str::from_utf8(bytes) {
-        // Check if the string can be parsed as UTF-8 directly
-        Ok(s) => s.to_string(),
+    pub(crate) fn parse_string<S: Into<String>>(&self, text: &str, context: S) -> Result<String> {
+        let text = text.trim();
 
-        // Otherwise, apply the Windows-1252 character mapping
-        Err(_) => bytes.iter().map(|&b| windows_1252_to_char(b)).collect(),
+        if !text.starts_with('"') || !text.ends_with('"') {
+            return Err(Error {
+                span: self.pos..self.pos + text.len(),
+                kind: ErrorKind::Custom("[...]".to_string()),
+                context: context.into(),
+            });
+        }
+
+        Ok(text[1..text.len() - 1].to_string())
     }
 }
 

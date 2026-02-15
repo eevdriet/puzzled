@@ -1,13 +1,13 @@
 use std::time::{Duration, Instant};
 
-use crate::parse::{Error, ExtrasError, PuzParser, PuzState, Result, parse_string};
+use crate::parse::{Error, ExtrasError, PuzParser, PuzState, Result};
 use crate::{Timer, TimerState};
 
 impl<'a> PuzParser {
     pub(crate) fn parse_ltim(&self, state: &mut PuzState<'a>) -> Result<Timer> {
         // Parse the LTIM string into its elapsed and state parts
         let (ltim, ltim_span) = state.read_span(|s| s.read_str("LTIM"))?;
-        let ltim = parse_string(ltim);
+        let ltim = PuzState::build_string(ltim);
 
         let err = |reason: String| Error {
             span: ltim_span.clone(),

@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::parse::{
-    Error, ErrorKind, PuzParser, PuzState, Result, Strings, TxtParser, TxtState, parse_string,
-};
+use crate::parse::{Error, ErrorKind, PuzParser, PuzState, Result, Strings, TxtParser, TxtState};
 use crate::{Clue, ClueId, ClueSpec, Direction, Grid, Position, SECTION_SEPARATOR, Square};
 
 impl<'a> PuzParser {
@@ -25,7 +23,7 @@ impl<'a> PuzParser {
             // No more clues to parse
             let text = match clues_iter.next() {
                 None => return false,
-                Some((_, clue)) => parse_string(clue),
+                Some((_, clue)) => PuzState::build_string(clue),
             };
             let len = grid.find_playable_len(start, direction);
 
@@ -50,7 +48,7 @@ impl<'a> PuzParser {
                 span: strings.clues_span.clone(),
                 kind: ErrorKind::MissingClue {
                     id,
-                    clue: parse_string(clue),
+                    clue: PuzState::build_string(clue),
                 },
                 context: "Clues".to_string(),
             });
@@ -65,8 +63,7 @@ impl<'a> TxtParser {
         let mut clues = Vec::new();
         let context = "Clues";
 
-        for line in state.lines.by_ref() {
-            eprintln!("Line: {line}");
+        while let Some(line) = state.next() {
             let line = line.trim();
 
             // Skip empty lines and stop parsing grid at separator
@@ -98,7 +95,7 @@ impl<'a> TxtParser {
             eprintln!("Text to parse to string: '{text}'");
 
             // Validate the clue text
-            let text = Self::parse_string(text.trim(), 0..0, context)?;
+            let text = state.parse_string(text, context)?;
 
             // Add the clue
             let clue = ClueSpec::new(direction, text);

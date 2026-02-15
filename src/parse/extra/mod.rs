@@ -7,7 +7,7 @@ pub use section::*;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::parse::{Error, PuzParser, PuzState, Result, Span, parse_string};
+use crate::parse::{Error, PuzParser, PuzState, Result, Span};
 use crate::{CellStyle, Grid, Position, Timer};
 
 /// In some .puz files, extra sections are used to indicate additional properties on the solving state.
@@ -78,7 +78,7 @@ impl<'a> PuzParser {
                 continue;
             };
 
-            let header = parse_string(header);
+            let header = PuzState::build_string(header);
 
             // Short-circuit if the section doesn't have the correct header
             let section = self.ok_or_warn(
@@ -133,7 +133,7 @@ impl<'a> PuzParser {
     fn parse_rtbl(&self, state: &mut PuzState<'a>) -> Result<HashMap<u8, String>> {
         let mut rtbl = HashMap::default();
         let (rebuses_str, rtbl_span) = state.read_span(|p| p.read_str("RTBL"))?;
-        let rebuses_str = parse_string(rebuses_str);
+        let rebuses_str = PuzState::build_string(rebuses_str);
 
         let err = |square: u16, reason: String| Error {
             span: rtbl_span.clone(),

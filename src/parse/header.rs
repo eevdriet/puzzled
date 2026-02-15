@@ -1,8 +1,6 @@
 use thiserror::Error;
 
-use crate::parse::{
-    Error, PuzParser, PuzState, Result, Span, checksums::find_region_checksum, parse_string,
-};
+use crate::parse::{Error, PuzParser, PuzState, Result, Span, checksums::find_region_checksum};
 
 const FILE_MAGIC: &str = "ACROSS&DOWN\0";
 
@@ -47,7 +45,7 @@ impl<'a> PuzParser {
             return Err(Error {
                 span: magic_span,
                 kind: HeaderError::InvalidFileMagic {
-                    found: parse_string(magic),
+                    found: PuzState::build_string(magic),
                 }
                 .into(),
                 context: "File magic".to_string(),
