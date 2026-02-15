@@ -1,0 +1,5 @@
+[A B]
+[C .]
+---
+A: "The first two letters of the alphabet"
+D: "Keep it short, but cool"
