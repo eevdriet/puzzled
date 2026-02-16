@@ -17,7 +17,7 @@ use crate::Grid;
 /// These constructors create new white squares that have no [style](CellStyle) and no initial user entry, which is usually desired.
 ///
 /// Another common task is [revealing](Cell::reveal) a square without having to check whether it is white square -- black squares have no notion of being revealed.
-/// The [`reveal`](Square::reveal) and [`is_revealed`](Square::is_revealed) provide an indirection for squares to do this.
+/// The [`reveal`](Square::reveal) and [`is_revealed`](Square::is_revealed) methods provide an indirection for squares to do this.
 /// ```
 /// use puzzled::{Square, Cell, Solution::*};
 ///

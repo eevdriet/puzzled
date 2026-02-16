@@ -1,3 +1,7 @@
+use std::fmt;
+
+use crate::{CellStyle, Solution};
+
 /// Playable [square](Square) that the user can enter their [solution](Solution) into
 ///
 /// This is the main structure for interacting with the puzzle after it has been constructed.
@@ -8,11 +12,32 @@
 ///
 /// When calling these methods, the square [style](CellStyle) is updated to match the current correctness.
 /// The correctness of the entry can be checked with [`is_correct`](Self::is_correct)
+/// ```
+/// use puzzled::{Cell, Solution, CellStyle};
+///
+/// // Cell creation
+/// let mut letter = Cell::new(Solution::Letter('A'));
+/// assert!(letter.is_letter());
+///
+/// let mut rebus = Cell::new_styled(Solution::Rebus("Cats"), CellStyle::CIRCLED);
+/// assert!(rebus.is_rebus());
+///
+/// // Solving
+/// assert_eq!(letter.was_incorrect(), false);
+/// assert_eq!(letter.is_incorrect(), true);
+///
+/// letter.enter('A');
+/// assert_eq!(letter.was_incorrect(), true);
+/// assert_eq!(letter.is_incorrect(), false);
+///
+/// // Style
+/// assert!(rebus.is_circled());
+/// ```
 #[derive(Debug)]
 pub struct Cell {
     solution: Solution,
     entry: Option<String>,
-    style: CellStyle,
+    pub(crate) style: CellStyle,
 }
 
 impl Cell {
@@ -71,17 +96,20 @@ impl Cell {
             return;
         }
 
-        // Update the style based on current and previous correctness
-        let is_correct = self.is_correct();
-        if is_correct && self.is_incorrect() {
+        // Check whether the cell was previously incorrect
+        let was_correct = self.is_correct();
+        if !was_correct {
             self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-        }
-        if !is_correct {
-            self.style |= CellStyle::INCORRECT;
         }
 
         // Enter the new guess
         self.entry = Some(guess.into());
+
+        // Check whether the cell is currently incorrect
+        let is_correct = self.is_correct();
+        if !is_correct {
+            self.style |= CellStyle::INCORRECT;
+        }
     }
 
     /// Clear the current entry.

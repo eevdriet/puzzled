@@ -4,14 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bitflags = "2.10.0"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 miette = { version = "7.6.0", features = ["fancy"], optional = true}
 thiserror = "2.0.18"
 
 [features]
 default = []
-serde = ["dep:serde", "bitflags/serde"]
+serde = ["dep:serde"]
 miette = ["dep:miette"]
 
 [dev-dependencies]
