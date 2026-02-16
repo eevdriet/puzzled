@@ -131,8 +131,8 @@ impl Puzzle {
     );
 
     /// Reference to the timer that keeps track of the total playing time and whether the user is currently playing
-    pub fn timer(&self) -> &Timer {
-        &self.timer
+    pub fn timer(&self) -> Timer {
+        self.timer
     }
 
     /// Mutable reference to the timer that keeps track of the total playing time and whether the user is currently playing

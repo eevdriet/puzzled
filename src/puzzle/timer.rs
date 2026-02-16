@@ -3,48 +3,40 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Clone, Copy)]
 pub struct Timer {
     elapsed: Duration,
+    start: Instant,
     state: TimerState,
 }
 
 impl Timer {
-    pub(crate) fn new(elapsed: Duration, state: TimerState) -> Self {
-        Self { elapsed, state }
-    }
-
-    pub fn new_stopped(elapsed: Duration) -> Self {
+    pub fn new(elapsed: Duration, state: TimerState) -> Self {
         Self {
             elapsed,
-            state: TimerState::Stopped,
+            state,
+            start: Instant::now(),
         }
     }
 
-    pub fn new_running(elapsed: Duration) -> Self {
-        Self {
-            elapsed,
-            state: TimerState::Running {
-                start: Instant::now(),
-            },
-        }
+    pub fn state(&self) -> TimerState {
+        self.state
     }
 
     pub fn start(&mut self) {
         if matches!(self.state, TimerState::Stopped) {
-            self.state = TimerState::Running {
-                start: Instant::now(),
-            }
+            self.state = TimerState::Running;
+            self.start = Instant::now()
         }
     }
 
-    pub fn stop(&mut self) {
-        if let TimerState::Running { start } = self.state {
-            self.elapsed += start.elapsed();
+    pub fn pause(&mut self) {
+        if matches!(self.state, TimerState::Running) {
+            self.elapsed += self.start.elapsed();
             self.state = TimerState::Stopped;
         }
     }
 
     pub fn toggle(&mut self) {
         match self.state {
-            TimerState::Running { .. } => self.stop(),
+            TimerState::Running => self.pause(),
             TimerState::Stopped => self.start(),
         }
     }
@@ -52,28 +44,30 @@ impl Timer {
     pub fn elapsed(&self) -> Duration {
         match self.state {
             TimerState::Stopped => self.elapsed,
-            TimerState::Running { start } => self.elapsed + start.elapsed(),
+            TimerState::Running => self.elapsed + self.start.elapsed(),
         }
     }
 }
 
 impl Default for Timer {
     fn default() -> Self {
-        Self::new_running(Duration::ZERO)
+        Self::new(Duration::ZERO, TimerState::default())
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum TimerState {
-    Running { start: Instant },
+#[derive(Debug, Default, Clone, Copy)]
+pub enum TimerState {
+    #[default]
+    Running = 0,
 
-    Stopped,
+    Stopped = 1,
 }
 
-impl Default for TimerState {
-    fn default() -> Self {
-        Self::Running {
-            start: Instant::now(),
+impl From<TimerState> for u8 {
+    fn from(state: TimerState) -> Self {
+        match state {
+            TimerState::Running => 0,
+            TimerState::Stopped => 1,
         }
     }
 }

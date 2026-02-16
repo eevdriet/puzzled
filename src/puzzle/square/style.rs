@@ -17,7 +17,7 @@ bitflags! {
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 
     #[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash)]
-    pub struct CellStyle: u16 {
+    pub struct CellStyle: u8 {
         /// Square previously contained an incorrect guess
         const PREVIOUSLY_INCORRECT  = 0x10;
 

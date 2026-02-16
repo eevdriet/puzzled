@@ -206,7 +206,7 @@ impl<'a> PuzParser {
         for (idx, (&mask, pos)) in gext.iter().zip(gext.positions()).enumerate() {
             let start = gext_span.start + idx;
 
-            let Some(style) = CellStyle::from_bits(mask as u16) else {
+            let Some(style) = CellStyle::from_bits(mask) else {
                 return Err(Error {
                     span: start..start + 1,
                     kind: ExtrasError::InvalidBitmask { pos, mask }.into(),

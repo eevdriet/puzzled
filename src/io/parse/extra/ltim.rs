@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::io::{Error, ExtrasError, PuzParser, PuzState, Result};
 use crate::{Timer, TimerState};
@@ -25,6 +25,7 @@ impl<'a> PuzParser {
                 "Could not parse '{elapsed_str}' into a non-negative number"
             ))
         })?;
+        let secs = Duration::from_secs(secs);
 
         // Make sure the state is valid
         let state_num: u64 = state_str
@@ -33,9 +34,7 @@ impl<'a> PuzParser {
 
         // Create the resulting timer
         let state: TimerState = match state_num {
-            0 => Ok(TimerState::Running {
-                start: Instant::now(),
-            }),
+            0 => Ok(TimerState::Running {}),
             1 => Ok(TimerState::Stopped),
 
             num => Err(err(format!(
@@ -43,8 +42,7 @@ impl<'a> PuzParser {
             ))),
         }?;
 
-        let timer = Timer::new(Duration::from_secs(secs), state);
-
+        let timer = Timer::new(secs, state);
         Ok(timer)
     }
 }

@@ -86,12 +86,12 @@ pub struct Cell {
 }
 
 impl Cell {
-    /// Construct a square from its [solution](Solution)
+    /// Construct a cell from its [solution](Solution)
     pub fn new(solution: Solution) -> Self {
         Self::new_styled(solution, CellStyle::default())
     }
 
-    /// Construct a square from its [solution](Solution) and intial [style](CellStyle).
+    /// Construct a cell from its [solution](Solution) and intial [style](CellStyle).
     /// Note that the style can only be modified through the methods mentioned above
     pub fn new_styled(solution: Solution, style: CellStyle) -> Self {
         Self {
@@ -101,26 +101,36 @@ impl Cell {
         }
     }
 
-    /// Retrieve the solution of the square
+    /// Retrieve the solution of the cell
     pub fn solution(&self) -> &Solution {
         &self.solution
     }
 
-    /// Retrieve the current entry in the square
+    /// Retrieve the current entry in the cell
     pub fn entry(&self) -> &Option<String> {
         &self.entry
     }
 
-    /// Retrieve the current style of the square
-    pub fn style(&self) -> &CellStyle {
-        &self.style
+    /// Retrieve the current style of the cell
+    pub fn style(&self) -> CellStyle {
+        self.style
+    }
+
+    /// Verify whether the solution to the cell is a letter
+    pub fn is_letter(&self) -> bool {
+        matches!(self.solution, Solution::Letter(_))
+    }
+
+    /// Verify whether the solution to the cell is a rebus
+    pub fn is_rebus(&self) -> bool {
+        matches!(self.solution, Solution::Rebus(_))
     }
 
     /// Reveal the square by manually entering its solution.
     /// This sets its [style](CellStyle) to be [revealed](CellStyle::REVEALED)
     pub fn reveal(&mut self) {
         self.style |= CellStyle::REVEALED;
-        self.entry = Some(self.solution.clone().into())
+        self.entry = Some(self.solution.clone().to_string())
     }
 
     /// Enter a new guess to solve the cell
@@ -194,15 +204,6 @@ pub enum Solution {
 
     /// Multiple-letter solution, a.k.a. a rebus
     Rebus(String),
-}
-
-impl From<Solution> for String {
-    fn from(sol: Solution) -> Self {
-        match sol {
-            Solution::Letter(letter) => letter.to_string(),
-            Solution::Rebus(rebus) => rebus,
-        }
-    }
 }
 
 impl fmt::Display for Solution {

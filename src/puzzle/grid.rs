@@ -291,6 +291,50 @@ impl Puzzle {
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Square> {
         self.squares.iter_mut()
     }
+
+    /// Returns an iterator over the cells of the puzzle.
+    ///
+    /// The cells are traversed in row-major order.
+    /// ```
+    /// use puzzled::{puzzle, Square, Solution::*};
+    ///
+    /// let puzzle = puzzle! (
+    ///    [A .]
+    ///    [. D]
+    /// );
+    /// let mut iter = puzzle.iter_cells();
+    /// assert_eq!(iter.next(), Some(&Cell::new(Letter('A'))));
+    /// assert_eq!(iter.next(), Some(&Cell::new(Letter('D'))));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter_cells(&self) -> impl Iterator<Item = &Cell> {
+        self.squares.iter().filter_map(|square| match square {
+            Square::Black => None,
+            Square::White(cell) => Some(cell),
+        })
+    }
+
+    /// Returns a mutable iterator over the cells of the puzzle.
+    ///
+    /// The cells are traversed in row-major order.
+    /// ```
+    /// use puzzled::{puzzle, Square, Solution::*};
+    ///
+    /// let puzzle = puzzle! (
+    ///    [A .]
+    ///    [. D]
+    /// );
+    /// let mut iter = puzzle.iter_cells_mut();
+    /// assert_eq!(iter.next(), Some(&mut Cell::new(Letter('A'))));
+    /// assert_eq!(iter.next(), Some(&mut Cell::new(Letter('D'))));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter_cells_mut(&mut self) -> impl Iterator<Item = &mut Cell> {
+        self.squares.iter_mut().filter_map(|square| match square {
+            Square::Black => None,
+            Square::White(cell) => Some(cell),
+        })
+    }
 }
 
 impl ops::Index<Position> for Puzzle {
