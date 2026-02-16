@@ -157,7 +157,8 @@ mod read;
 mod squares;
 mod strings;
 
-use crate::io::{Span, find_file_checksum};
+use crate::io::Span;
+use std::io;
 use std::str::Lines;
 
 pub use error::*;
@@ -165,23 +166,67 @@ pub(crate) use extra::*;
 pub(crate) use grid::*;
 pub(crate) use header::*;
 pub(crate) use read::*;
-pub(crate) use strings::*;
 
 use crate::Puzzle;
+
+pub trait PuzRead: io::Read {
+    fn read_u8(&mut self) -> io::Result<u8> {
+        let mut bytes = [0; 1];
+        self.read_exact(&mut bytes)?;
+
+        Ok(u8::from_le_bytes(bytes))
+    }
+
+    fn read_u16(&mut self) -> io::Result<u16> {
+        let mut buf = [0; 2];
+        self.read_exact(&mut buf)?;
+
+        Ok(u16::from_le_bytes(buf))
+    }
+
+    fn read_str0(&mut self) -> io::Result<Vec<u8>> {
+        let mut buf = Vec::new();
+        let mut byte = [0];
+
+        loop {
+            self.read_exact(&mut byte)?;
+            buf.push(byte[0]);
+
+            if byte[0] == b'\0' {
+                break;
+            }
+        }
+
+        Ok(buf)
+    }
+
+    fn read_exact_vec(&mut self, len: usize) -> io::Result<Vec<u8>> {
+        let mut vec = vec![0; len];
+        self.read_exact(&mut vec)?;
+
+        Ok(vec)
+    }
+
+    fn skip(&mut self, count: usize) -> io::Result<()> {
+        self.read_exact_vec(count)?;
+        Ok(())
+    }
+}
 
 #[derive(Default)]
 pub struct PuzParser {
     strict: bool,
 }
 
-pub(crate) struct PuzState<'a> {
+pub(crate) struct PuzState<'a, R> {
+    reader: R,
     warnings: Vec<Error>,
 
     input: &'a [u8],
     pos: usize,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct TxtParser;
 
 pub(crate) struct TxtState<'a> {
@@ -193,10 +238,6 @@ pub(crate) struct TxtState<'a> {
 }
 
 impl<'a> TxtParser {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn parse(&self, input: &'a str) -> Result<Puzzle> {
         let mut state = TxtState {
             input,
@@ -266,10 +307,10 @@ impl<'a> PuzParser {
 
         // Build the puzzle with owned data
         let mut puzzle = Puzzle::new(squares, clues)
-            .with_author(PuzState::build_string(strings.author))
-            .with_copyright(PuzState::build_string(strings.copyright))
-            .with_notes(PuzState::build_string(strings.notes))
-            .with_title(PuzState::build_string(strings.title))
+            .with_author(PuzState::build_string(&strings.author))
+            .with_copyright(PuzState::build_string(&strings.copyright))
+            .with_notes(PuzState::build_string(&strings.notes))
+            .with_title(PuzState::build_string(&strings.title))
             .with_version(PuzState::build_string(header.version));
 
         if let Some(timer) = &extras.ltim {
@@ -356,7 +397,7 @@ mod tests {
 
     fn parse_txt(path: PathBuf) -> ParseResult<Puzzle> {
         let text = fs::read_to_string(&path).expect("puzzle file exists");
-        let parser = TxtParser::new();
+        let parser = TxtParser;
         let result = parser.parse(text.as_str());
 
         #[cfg(feature = "miette")]

@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::io::{
-    Error, ErrorKind, PuzParser, PuzState, Result, SECTION_SEPARATOR, Strings, TxtParser, TxtState,
+    Error, ErrorKind, PuzParser, PuzState, Result, SECTION_SEPARATOR, Span, Strings, TxtParser,
+    TxtState,
 };
 use crate::{Clue, ClueId, ClueSpec, Direction, Grid, Position, Square};
 
@@ -9,7 +10,7 @@ impl<'a> PuzParser {
     pub(crate) fn read_clues(
         &self,
         grid: &Grid<Square>,
-        strings: &Strings<'a>,
+        strings: &Strings,
     ) -> Result<BTreeMap<ClueId, Clue>> {
         let mut entries = BTreeMap::new();
 
@@ -47,7 +48,7 @@ impl<'a> PuzParser {
         if let Some((idx, clue)) = clues_iter.next() {
             let id = idx as u16 + 1;
             return Err(Error {
-                span: strings.clues_span.clone(),
+                span: Span::default(),
                 kind: ErrorKind::MissingClue {
                     id,
                     clue: PuzState::build_string(clue),

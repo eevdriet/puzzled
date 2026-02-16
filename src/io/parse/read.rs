@@ -1,8 +1,6 @@
-use std::{iter::Inspect, str::Lines};
-
 use thiserror::Error;
 
-use crate::io::{Error, ErrorKind, PuzState, Result, Span, TxtState};
+use crate::io::{Error, ErrorKind, PuzState, Result, TxtState};
 
 #[derive(Debug, Error, Clone, Copy)]
 pub enum ReadError {

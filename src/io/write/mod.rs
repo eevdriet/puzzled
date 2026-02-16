@@ -20,7 +20,7 @@ pub(crate) use header::*;
 
 use std::io::{self, Write};
 
-use crate::Puzzle;
+use crate::{Puzzle, io::Strings};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -65,7 +65,7 @@ impl PuzWriter {
         // Write all (unordered) bytes into memory
         let mut header = self.write_header(puzzle)?;
         let grids = self.write_grids(puzzle);
-        let strings = self.write_strings(puzzle)?;
+        let strings = Strings::from_puzzle(puzzle)?;
         let extras = self.write_extras(puzzle)?;
 
         self.write_checksums(&mut header, &grids, &strings)?;

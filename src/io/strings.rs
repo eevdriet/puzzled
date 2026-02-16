@@ -1,8 +1,6 @@
-use std::io::Read;
-
 use crate::{
     Puzzle,
-    io::{Span, write::PuzWrite},
+    io::{PuzRead, write::PuzWrite},
 };
 
 #[derive(Debug, Default)]
@@ -12,35 +10,28 @@ pub(crate) struct Strings {
     pub copyright: Vec<u8>,
     pub notes: Vec<u8>,
     pub clues: Vec<Vec<u8>>,
-
-    pub clues_span: Span,
 }
 
 impl Strings {
-    pub(crate) fn from_reader<R: Read>(
+    pub(crate) fn from_reader<R: PuzRead>(
         reader: &mut R,
         clue_count: usize,
-        state: &mut PuzState<'a>,
     ) -> std::io::Result<Self> {
-        let title = Vec::from(state.read_str("Title")?);
-        let author = Vec::from(state.read_str("Author")?);
-        let copyright = Vec::from(state.read_str("copyright")?);
+        let title = reader.read_str0()?;
+        let author = reader.read_str0()?;
+        let copyright = reader.read_str0()?;
 
         // Sequentially parse the clues
-        let (clues, clues_span) = state.read_span(|s| {
-            let mut clues = Vec::with_capacity(clue_count);
+        let mut clues = Vec::with_capacity(clue_count);
 
-            for num in 1..=clue_count {
-                let context = format!("Clue #{num}");
-                let clue = Vec::from(s.read_str(context)?);
+        for num in 1..=clue_count {
+            let context = format!("Clue #{num}");
+            let clue = reader.read_str0()?;
 
-                clues.push(clue);
-            }
+            clues.push(clue);
+        }
 
-            Ok(clues)
-        })?;
-
-        let notes = Vec::from(state.read_str("Notes")?);
+        let notes = reader.read_str0()?;
 
         Ok(Strings {
             title,
@@ -48,7 +39,6 @@ impl Strings {
             copyright,
             notes,
             clues,
-            clues_span,
         })
     }
 

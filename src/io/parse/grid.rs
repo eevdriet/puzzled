@@ -7,6 +7,7 @@ use crate::io::{
 use crate::{Grid, Square};
 
 pub(crate) const NON_PLAYABLE_CELL: u8 = b'.';
+pub(crate) const MISSING_ENTRY_CELL: u8 = b'-';
 
 #[derive(Debug)]
 pub(crate) struct PuzzleGrid {
