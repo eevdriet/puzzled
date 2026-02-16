@@ -117,6 +117,11 @@ impl Clue {
         })
     }
 
+    /// Clue text
+    pub fn text(&self) -> &String {
+        &self.text
+    }
+
     /// [Direction] of the clue within the puzzle
     pub fn direction(&self) -> Direction {
         self.direction

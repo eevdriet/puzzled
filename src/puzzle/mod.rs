@@ -1,4 +1,3 @@
-mod builder;
 mod clues;
 mod geom;
 mod grid;
@@ -9,7 +8,6 @@ mod timer;
 
 use std::fmt;
 
-pub use builder::*;
 pub use clues::*;
 pub use geom::*;
 pub use grid::*;

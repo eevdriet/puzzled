@@ -31,7 +31,7 @@ impl Strings {
         for (idx, clue) in puzzle.iter_clues().enumerate() {
             let num = idx + 1;
             let context = format!("Clue #{num}");
-            strings.clues[idx].write_str0(&clue.text).expect(&context);
+            strings.clues[idx].write_str0(clue.text()).expect(&context);
         }
 
         strings
