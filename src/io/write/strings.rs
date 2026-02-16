@@ -1,23 +1,19 @@
-use crate::{
-    Puzzle,
-    io::{PuzWriter, Strings, write::PuzWrite},
-};
+use crate::io::{Context, PuzWrite, Strings, write};
 
-impl PuzWriter {
-    pub(crate) fn write_strings(&self, puzzle: &Puzzle) -> std::io::Result<Strings> {
-        let mut strings = Strings::default();
-        strings.title.write_opt_str0(puzzle.title(), 0)?;
-        strings.author.write_opt_str0(puzzle.author(), 0)?;
-        strings.copyright.write_opt_str0(puzzle.copyright(), 0)?;
+impl Strings {
+    pub(crate) fn write_with<W: PuzWrite>(&self, writer: &mut W) -> write::Result<()> {
+        writer.write_all(&self.title).context("Title")?;
+        writer.write_all(&self.author).context("Author")?;
+        writer.write_all(&self.copyright).context("Copyright")?;
 
-        strings.clues = Vec::with_capacity(puzzle.clues().len());
-
-        for (idx, clue) in puzzle.iter_clues().enumerate() {
-            strings.clues[idx].write_str0(&clue.text)?;
+        for (idx, clue) in self.clues.iter().enumerate() {
+            let num = idx + 1;
+            let context = format!("Clue #{num}");
+            writer.write_all(clue).context(context)?;
         }
 
-        strings.notes.write_opt_str0(puzzle.notes(), 0)?;
+        writer.write_all(&self.notes).context("Notes")?;
 
-        Ok(strings)
+        Ok(())
     }
 }

@@ -1,86 +1,46 @@
-use std::{collections::BTreeMap, io::Write};
+use crate::io::{Context, Extras, PuzWrite, write};
 
-use crate::{
-    Puzzle, Square,
-    io::{PuzWriter, write::PuzWrite},
-};
+impl Extras {
+    pub(crate) fn write_with<W: PuzWrite>(&self, writer: &mut W) -> write::Result<()> {
+        if let Some(grbs) = &self.grbs {
+            writer.write_all(b"GRBS").context("GRBS header")?;
 
-impl PuzWriter {
-    pub(crate) fn write_extras(&self, puzzle: &Puzzle) -> std::io::Result<Vec<u8>> {
-        let mut extras = Vec::new();
-
-        self.write_rebuses(&mut extras, puzzle)?;
-        self.write_ltim(&mut extras, puzzle)?;
-        self.write_gext(&mut extras, puzzle)?;
-
-        Ok(extras)
-    }
-
-    fn write_rebuses(&self, extras: &mut Vec<u8>, puzzle: &Puzzle) -> std::io::Result<()> {
-        // Only write GRBS/LTBR if any rebuses are used
-        if !puzzle.iter_cells().any(|cell| cell.is_rebus()) {
-            return Ok(());
+            for (&byte, pos) in grbs.iter().zip(grbs.positions()) {
+                let context = format!("Square {pos}");
+                writer.write_u8(byte).context(context)?;
+            }
         }
 
-        // First write the GRBS, indicating which squares hold a rebus
-        extras.write_all(b"GRBS")?;
+        if let Some(rtbl) = &self.rtbl {
+            writer.write_all(b"RTBL").context("RTBL header")?;
 
-        let mut rebuses: BTreeMap<u8, String> = BTreeMap::new();
-        let mut num = 0;
+            for (num, rebus) in rtbl {
+                let key = format!("{num:02}:{rebus};");
+                let context = format!("Rebus #{num}");
 
-        for square in puzzle.iter() {
-            let byte: u8 = match square {
-                Square::White(cell) if cell.is_rebus() => {
-                    num += 1;
-                    rebuses.insert(num, cell.solution().to_string());
+                writer.write_all(key.as_bytes()).context(context)?;
+            }
 
-                    num
-                }
-                _ => 0,
-            };
-
-            extras.write_u8(byte)?;
+            writer.write_u8(0).context("RTBL EOF bit")?;
         }
 
-        // Then write the RTBL, which holds the actual rebus definitions
-        extras.write_all(b"RTBL")?;
+        if let Some(ltim) = &self.ltim {
+            writer.write_all(b"LTIM").context("LTIM header")?;
 
-        for (num, rebus) in rebuses {
-            let key = format!("{num:02}:{rebus};");
-            extras.write_all(key.as_bytes())?;
-        }
-        extras.write_u8(0)?;
+            let secs = ltim.elapsed().as_secs();
+            let state: u8 = ltim.state().into();
 
-        Ok(())
-    }
-
-    fn write_ltim(&self, extras: &mut Vec<u8>, puzzle: &Puzzle) -> std::io::Result<()> {
-        extras.write_all(b"LTIM")?;
-
-        let timer = puzzle.timer();
-        let secs = timer.elapsed().as_secs();
-        let state: u8 = timer.state().into();
-
-        let ltim = format!("{secs},{state}");
-        extras.write_str0(&ltim)
-    }
-
-    fn write_gext(&self, extras: &mut Vec<u8>, puzzle: &Puzzle) -> std::io::Result<()> {
-        // Only write GEXT if any styles are set
-        if puzzle.iter_cells().all(|cell| cell.style().is_empty()) {
-            return Ok(());
+            let format = format!("{secs},{state}");
+            writer.write_str0(&format).context("LTIM")?;
         }
 
-        // Then write the style of each square
-        extras.write_all(b"GEXT")?;
+        if let Some(gext) = &self.gext {
+            writer.write_all(b"GEXT").context("GEXT header")?;
 
-        for square in puzzle.iter() {
-            let byte: u8 = match square {
-                Square::Black => 0,
-                Square::White(cell) => cell.style().bits(),
-            };
-
-            extras.write_u8(byte)?;
+            for (&style, pos) in gext.iter().zip(gext.positions()) {
+                let context = format!("Cell {pos} style");
+                writer.write_u8(style.bits()).context(context)?;
+            }
         }
 
         Ok(())

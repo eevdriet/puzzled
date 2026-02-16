@@ -1,12 +1,40 @@
 use crate::Puzzle;
-use crate::io::{Error, ErrorKind, PuzParser, PuzState, Result, Strings, TxtParser, TxtState};
+use crate::io::{Context, PuzRead, Strings, TxtReader, TxtState, read};
 
-impl<'a> TxtParser {
+impl Strings {
+    pub(crate) fn read_from<R: PuzRead>(reader: &mut R, clue_count: u16) -> read::Result<Self> {
+        let title = reader.read_str0().context("Title")?;
+        let author = reader.read_str0().context("Author")?;
+        let copyright = reader.read_str0().context("Copyright")?;
+
+        // Sequentially parse the clues
+        let mut clues = Vec::with_capacity(clue_count as usize);
+
+        for num in 1..=clue_count {
+            let context = format!("Clue #{num}");
+            let clue = reader.read_str0().context(context)?;
+
+            clues.push(clue);
+        }
+
+        let notes = reader.read_str0().context("Notes")?;
+
+        Ok(Strings {
+            title,
+            author,
+            copyright,
+            notes,
+            clues,
+        })
+    }
+}
+
+impl<'a> TxtReader {
     pub(crate) fn parse_strings(
         &self,
         mut puzzle: Puzzle,
         state: &mut TxtState<'a>,
-    ) -> Result<Puzzle> {
+    ) -> read::Result<Puzzle> {
         let context = "Metadata";
 
         while let Some(line) = state.next() {
@@ -17,9 +45,9 @@ impl<'a> TxtParser {
                 continue;
             }
 
-            let (prop, text) = line.split_once(':').ok_or(Error {
+            let (prop, text) = line.split_once(':').ok_or(read::Error {
                 span: 0..0,
-                kind: ErrorKind::Custom(format!("Invalid metadata: {line}")),
+                kind: read::ErrorKind::Custom(format!("Invalid metadata: {line}")),
                 context: context.to_string(),
             })?;
 
@@ -49,17 +77,17 @@ impl<'a> TxtParser {
                         puzzle = puzzle.with_version(text);
                     }
                     _ => {
-                        return Err(Error {
+                        return Err(read::Error {
                             span: 0..0,
-                            kind: ErrorKind::Custom(format!("Invalid metadata: {line}")),
+                            kind: read::ErrorKind::Custom(format!("Invalid metadata: {line}")),
                             context: context.to_string(),
                         });
                     }
                 },
                 _ => {
-                    return Err(Error {
+                    return Err(read::Error {
                         span: 0..0,
-                        kind: ErrorKind::Custom(format!("Invalid metadata property: {prop}")),
+                        kind: read::ErrorKind::Custom(format!("Invalid metadata property: {prop}")),
                         context: context.to_string(),
                     });
                 }

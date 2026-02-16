@@ -39,12 +39,13 @@
 //!     After constructing the puzzle, [`Puzzle::insert_clues`] can be used to add the puzzle entries to provide clues to the squares.
 //! 3.  [`Parser::parse`] and friends let you parse a puzzle from series of bytes that represent a [*.puz file][PUZ spec].
 //!     By default the parser ignores [warnings](crate::io::Warning) that arise from recoverable input [errors](crate::io::Error).
-//!     By default the parser ignores [warnings](crate::io::Warning) that come from [invalid checksums](crate::parse::io#validating-checksums) or [corrupted extra sections](crate::parse::io#extra-sections).
+//!     By default the parser ignores [warnings](crate::io::Warning) that come from [invalid checksums](crate::io#validating-checksums) or [corrupted extra sections](crate::io#extra-sections).
 //!
 //! The following all construct the same puzzle:
 //! ```
 //! use puzzled::{clue, Grid, puzzle, Puzzle, square};
-//! use puzzled::io::{PuzParser, TxtParser};
+//! use puzzled::io::{PuzReader, TxtReader};
+//! use std::fs::{File, read_to_string};
 //!
 //! // 1. Static
 //! let puzzle1 = puzzle! {
@@ -68,18 +69,14 @@
 //! let mut puzzle2 = Puzzle::from_squares(squares);
 //! puzzle2.insert_clues(clues);
 //!
-//! // 3a. Parsed from a binary .puz file
-//! let parser = PuzParser::new(true);
-//! let bytes = include_bytes!("../puzzles/ok/alphabet.puz");
-//! let puzzle3 = parser.parse(bytes)?;
+//! // 3. Parsed from a .puz file
+//! let mut puz_file = File::open("puzzles/ok/alphabet.puz")?;
 //!
-//! // 3b. Parsed from a .txt file
-//! let parser = TxtParser::new();
-//! let text = include_str!("../puzzles/ok/alphabet.txt");
-//! let puzzle4 = parser.parse(text)?;
+//! let reader = PuzReader::new(false);
+//! let puzzle3 = reader.read(&mut puz_file)?;
 //!
 //! assert_eq!(puzzle1, puzzle2, "macro <-> dyn");
-//! assert_eq!(puzzle3, puzzle4, ".puz <-> .txt");
+//! assert_eq!(puzzle2, puzzle3, "dyn <-> .puz");
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!

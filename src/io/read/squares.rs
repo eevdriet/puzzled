@@ -1,17 +1,15 @@
-use crate::io::{
-    Extras, NON_PLAYABLE_CELL, PuzParser, PuzzleGrid, Result, windows_1252_to_char,
-};
+use crate::io::{Extras, Grids, NON_PLAYABLE_CELL, PuzReader, ReadResult, windows_1252_to_char};
 use crate::{Cell, Grid, Solution, Square, Squares};
 
-impl PuzParser {
-    pub(crate) fn read_squares(&self, grid: &PuzzleGrid, extras: &Extras) -> Result<Squares> {
+impl PuzReader {
+    pub(crate) fn read_squares(&self, grids: &Grids, extras: &Extras) -> ReadResult<Squares> {
         let mut cells = Vec::new();
 
-        for ((&solution, &state), pos) in grid
+        for ((&solution, &state), pos) in grids
             .solution
             .iter()
-            .zip(grid.state.iter())
-            .zip(grid.solution.positions())
+            .zip(grids.state.iter())
+            .zip(grids.solution.positions())
         {
             let cell = match solution {
                 // Non-playable cells are always black
@@ -40,7 +38,7 @@ impl PuzParser {
             cells.push(cell);
         }
 
-        let grid = Grid::new(cells, grid.solution.cols()).expect("Read correct length region");
+        let grid = Grid::new(cells, grids.solution.cols()).expect("Read correct length region");
         Ok(grid)
     }
 }

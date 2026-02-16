@@ -1,17 +1,13 @@
 use std::collections::BTreeMap;
 
 use crate::io::{
-    Error, ErrorKind, PuzParser, PuzState, Result, SECTION_SEPARATOR, Span, Strings, TxtParser,
-    TxtState,
+    PuzReader, ReadResult, SECTION_SEPARATOR, Span, Strings, TxtReader, TxtState, build_string,
+    read,
 };
-use crate::{Clue, ClueId, ClueSpec, Direction, Grid, Position, Square};
+use crate::{Clue, ClueSpec, Clues, Direction, Grid, Position, Square};
 
-impl<'a> PuzParser {
-    pub(crate) fn read_clues(
-        &self,
-        grid: &Grid<Square>,
-        strings: &Strings,
-    ) -> Result<BTreeMap<ClueId, Clue>> {
+impl PuzReader {
+    pub(crate) fn read_clues(&self, grid: &Grid<Square>, strings: &Strings) -> read::Result<Clues> {
         let mut entries = BTreeMap::new();
 
         let mut num: u8 = 1;
@@ -26,7 +22,7 @@ impl<'a> PuzParser {
             // No more clues to parse
             let text = match clues_iter.next() {
                 None => return false,
-                Some((_, clue)) => PuzState::build_string(clue),
+                Some((_, clue)) => build_string(clue),
             };
             let len = grid.find_playable_len(start, direction);
 
@@ -47,11 +43,11 @@ impl<'a> PuzParser {
 
         if let Some((idx, clue)) = clues_iter.next() {
             let id = idx as u16 + 1;
-            return Err(Error {
+            return Err(read::Error {
                 span: Span::default(),
-                kind: ErrorKind::MissingClue {
+                kind: read::ErrorKind::MissingClue {
                     id,
-                    clue: PuzState::build_string(clue),
+                    clue: build_string(clue),
                 },
                 context: "Clues".to_string(),
             });
@@ -61,8 +57,8 @@ impl<'a> PuzParser {
     }
 }
 
-impl<'a> TxtParser {
-    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> Result<Vec<ClueSpec>> {
+impl<'a> TxtReader {
+    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> ReadResult<Vec<ClueSpec>> {
         let mut clues = Vec::new();
         let context = "Clues";
 
@@ -77,9 +73,9 @@ impl<'a> TxtParser {
                 break;
             }
 
-            let (dir_str, text) = line.split_once(':').ok_or(Error {
+            let (dir_str, text) = line.split_once(':').ok_or(read::Error {
                 span: 0..0,
-                kind: ErrorKind::Custom(format!("Invalid clue spec: {line}")),
+                kind: read::ErrorKind::Custom(format!("Invalid clue spec: {line}")),
                 context: context.to_string(),
             })?;
 
@@ -88,9 +84,9 @@ impl<'a> TxtParser {
                 "A" => Direction::Across,
                 "D" => Direction::Down,
                 _ => {
-                    return Err(Error {
+                    return Err(read::Error {
                         span: 0..0,
-                        kind: ErrorKind::Custom(format!("Invalid clue spec: {line}")),
+                        kind: read::ErrorKind::Custom(format!("Invalid clue spec: {line}")),
                         context: context.to_string(),
                     });
                 }

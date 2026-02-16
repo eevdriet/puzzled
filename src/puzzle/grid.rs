@@ -33,6 +33,10 @@ impl<T> Grid<T> {
         self.rows
     }
 
+    pub fn data(&self) -> &Vec<T> {
+        &self.data
+    }
+
     pub fn get(&self, pos: Position) -> Option<&T> {
         let idx = self.index(pos)?;
         unsafe { Some(self.data.get_unchecked(idx)) }
@@ -296,7 +300,7 @@ impl Puzzle {
     ///
     /// The cells are traversed in row-major order.
     /// ```
-    /// use puzzled::{puzzle, Square, Solution::*};
+    /// use puzzled::{Cell, puzzle, Square, Solution::*};
     ///
     /// let puzzle = puzzle! (
     ///    [A .]
@@ -318,9 +322,9 @@ impl Puzzle {
     ///
     /// The cells are traversed in row-major order.
     /// ```
-    /// use puzzled::{puzzle, Square, Solution::*};
+    /// use puzzled::{Cell, puzzle, Square, Solution::*};
     ///
-    /// let puzzle = puzzle! (
+    /// let mut puzzle = puzzle! (
     ///    [A .]
     ///    [. D]
     /// );

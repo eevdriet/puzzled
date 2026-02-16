@@ -10,41 +10,59 @@
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 
 mod checksums;
+mod error;
 mod extras;
 mod grids;
 mod header;
 mod strings;
 
-pub(crate) use grids::*;
-pub(crate) use header::*;
+pub(crate) use error::*;
 
 use std::io::{self, Write};
 
-use crate::{Puzzle, io::Strings};
+use crate::{
+    Puzzle,
+    io::{Context, Extras, Grids, Header, Strings, write},
+};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
 
+/// Extension trait for [`Write`](io::Write) to make writing [puzzles](Puzzle) to a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
+///
+/// Includes convenience methods for writing a [`u8`], [`u16`], [`str`] and [`Option<&str>`]
 pub trait PuzWrite: Write {
+    /// Pad the writer with `pad` 0-bytes
     fn pad(&mut self, pad: usize) -> io::Result<()> {
         self.write_all(&vec![0; pad])
     }
 
+    /// Write a [`u8`]
     fn write_u8(&mut self, val: u8) -> io::Result<()> {
         self.write_all(&[val])
     }
 
+    /// Write a [`u16`]
     fn write_u16(&mut self, val: u16) -> io::Result<()> {
         self.write_all(&val.to_le_bytes())
     }
 
+    /// Write a [`str`] as a null-terminated string
+    ///
+    /// # Assumptions
+    /// The argument does not already include a terminated `\0` byte
     fn write_str0(&mut self, val: &str) -> io::Result<()> {
         self.write_all(val.as_bytes())?;
         self.write_u8(b'\0')
     }
 
-    fn write_opt_str0(&mut self, str: Option<&str>, pad: usize) -> io::Result<()> {
-        match str {
+    /// Optionally write a [`str`] as a null-terminated string or [pad](PuzWrite::pad) the writer
+    ///
+    /// If the value is [`None`], `pad` 0-bytes will be written
+    /// # Assumptions
+    /// The argument does not already include a terminated `\0` byte
+    fn write_opt_str0(&mut self, val: Option<&str>, pad: usize) -> io::Result<()> {
+        match val {
             Some(str) => self.write_str0(str),
             None => {
                 self.pad(pad)?;
@@ -61,21 +79,20 @@ impl PuzWriter {
         Self {}
     }
 
-    pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Puzzle) -> io::Result<()> {
-        // Write all (unordered) bytes into memory
-        let mut header = self.write_header(puzzle)?;
-        let grids = self.write_grids(puzzle);
-        let strings = Strings::from_puzzle(puzzle)?;
-        let extras = self.write_extras(puzzle)?;
+    pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Puzzle) -> write::Result<()> {
+        // Construct the individual sections from the puzzle
+        let mut header = Header::from_puzzle(puzzle).context("Header")?;
+        let grids = Grids::from_puzzle(puzzle).context("Grids")?;
+        let strings = Strings::from_puzzle(puzzle);
+        let extras = Extras::from_puzzle(puzzle);
 
-        self.write_checksums(&mut header, &grids, &strings)?;
+        self.write_checksums(&mut header, &grids, &strings);
 
-        // Write all (ordered) bytes into the writer
-        writer.write_all(&header.cursor.into_inner())?;
-        writer.write_all(&grids.solution)?;
-        writer.write_all(&grids.state)?;
+        // Write all sections into the writer
+        header.write_with(writer)?;
+        grids.write_with(writer)?;
         strings.write_with(writer)?;
-        writer.write_all(&extras)?;
+        extras.write_with(writer)?;
 
         Ok(())
     }

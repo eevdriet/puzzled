@@ -1,9 +1,9 @@
 use std::time::Duration;
 
-use crate::io::{Error, ExtrasError, PuzParser, PuzState, Result};
+use crate::io::{Error, ExtrasError, PuzReader, PuzState, Result};
 use crate::{Timer, TimerState};
 
-impl<'a> PuzParser {
+impl<'a> PuzReader {
     pub(crate) fn parse_ltim(&self, state: &mut PuzState<'a>) -> Result<Timer> {
         // Parse the LTIM string into its elapsed and state parts
         let (ltim, ltim_span) = state.read_span(|s| s.read_str("LTIM"))?;
