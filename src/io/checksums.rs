@@ -102,8 +102,8 @@ pub(crate) fn find_str_checksum(str: &[u8], start: u16, ignore_empty: bool) -> u
     find_region_checksum(str, start)
 }
 
-pub(crate) fn find_cib_checksum(width_height_region: &[u8]) -> u16 {
-    find_region_checksum(width_height_region, 0)
+pub(crate) fn find_cib_checksum(cib_region: &[u8]) -> u16 {
+    find_region_checksum(cib_region, 0)
 }
 
 pub(crate) fn find_file_checksum<'a>(

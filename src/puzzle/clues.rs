@@ -142,6 +142,10 @@ impl PartialOrd for Clue {
 }
 
 impl Puzzle {
+    pub fn clues(&self) -> &Clues {
+        &self.clues
+    }
+
     pub fn insert_clues(&mut self, clues: impl IntoIterator<Item = ClueSpec>) -> Vec<ClueSpec> {
         let (positioned, unpositioned) = self.position_clues(clues);
 
