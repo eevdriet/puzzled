@@ -5,7 +5,7 @@ impl<'a> PuzParser {
         &self,
         header: &Header<'a>,
         grid: &PuzzleGrid,
-        strings: &Strings<'a>,
+        strings: &Strings,
         file_span: Span,
         state: &mut PuzState,
     ) -> Result<Option<()>> {
@@ -27,7 +27,7 @@ impl<'a> PuzParser {
         &self,
         header: &Header<'a>,
         grid: &PuzzleGrid,
-        strings: &Strings<'a>,
+        strings: &Strings,
         state: &mut PuzState,
     ) -> Result<Option<()>> {
         let cib_checksum = find_region_checksum(state.region(header.cib_span.clone()), 0);
@@ -110,7 +110,7 @@ pub(crate) fn find_file_checksum<'a>(
     cib_checksum: u16,
     solution_region: &'a [u8],
     state_region: &'a [u8],
-    strings: &Strings<'a>,
+    strings: &Strings,
 ) -> u16 {
     // Compute the overall file checksum
     let mut file_checksum = cib_checksum;
@@ -122,24 +122,24 @@ pub(crate) fn find_file_checksum<'a>(
     file_checksum
 }
 
-pub(crate) fn find_strings_checksum<'a>(strings: &Strings<'a>, start: u16) -> u16 {
+pub(crate) fn find_strings_checksum<'a>(strings: &Strings, start: u16) -> u16 {
     // Compute the overall file checksum
     let mut file_checksum = start;
 
-    file_checksum = find_str_checksum(strings.title, file_checksum, true);
-    file_checksum = find_str_checksum(strings.author, file_checksum, true);
-    file_checksum = find_str_checksum(strings.copyright, file_checksum, true);
+    file_checksum = find_str_checksum(&strings.title, file_checksum, true);
+    file_checksum = find_str_checksum(&strings.author, file_checksum, true);
+    file_checksum = find_str_checksum(&strings.copyright, file_checksum, true);
 
-    for &clue in &strings.clues {
+    for clue in &strings.clues {
         let clue_without_end = match clue.strip_suffix(&[0]) {
             None => clue,
-            Some(prefix) => prefix,
+            Some(prefix) => &prefix.to_vec(),
         };
 
-        file_checksum = find_str_checksum(clue_without_end, file_checksum, false);
+        file_checksum = find_str_checksum(&clue_without_end, file_checksum, false);
     }
 
-    file_checksum = find_str_checksum(strings.notes, file_checksum, true);
+    file_checksum = find_str_checksum(&strings.notes, file_checksum, true);
     file_checksum
 }
 

@@ -1,53 +1,5 @@
 use crate::Puzzle;
-use crate::io::{Error, ErrorKind, PuzParser, PuzState, Result, Span, TxtParser, TxtState};
-
-#[derive(Debug)]
-pub(crate) struct Strings<'a> {
-    pub title: &'a [u8],
-    pub author: &'a [u8],
-    pub copyright: &'a [u8],
-    pub notes: &'a [u8],
-    pub clues: Vec<&'a [u8]>,
-
-    pub clues_span: Span,
-}
-
-impl<'a> PuzParser {
-    pub(crate) fn parse_strings(
-        &self,
-        clue_count: usize,
-        state: &mut PuzState<'a>,
-    ) -> Result<Strings<'a>> {
-        let title = state.read_str("Title")?;
-        let author = state.read_str("Author")?;
-        let copyright = state.read_str("copyright")?;
-
-        // Sequentially parse the clues
-        let (clues, clues_span) = state.read_span(|s| {
-            let mut clues = Vec::with_capacity(clue_count);
-
-            for num in 1..=clue_count {
-                let context = format!("Clue #{num}");
-                let clue = s.read_str(context)?;
-
-                clues.push(clue);
-            }
-
-            Ok(clues)
-        })?;
-
-        let notes = state.read_str("Notes")?;
-
-        Ok(Strings {
-            title,
-            author,
-            copyright,
-            notes,
-            clues,
-            clues_span,
-        })
-    }
-}
+use crate::io::{Error, ErrorKind, PuzParser, PuzState, Result, Strings, TxtParser, TxtState};
 
 impl<'a> TxtParser {
     pub(crate) fn parse_strings(

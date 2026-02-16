@@ -8,8 +8,11 @@ use crate::{
 #[derive(Debug)]
 pub(crate) struct Header {
     pub cursor: Cursor<Vec<u8>>,
+
     pub file_pos: u64,
     pub masks_pos: u64,
+
+    pub cib_checksum: u16,
 }
 
 impl PuzWriter {
@@ -61,6 +64,7 @@ impl PuzWriter {
             cursor: header,
             file_pos,
             masks_pos,
+            cib_checksum,
         })
     }
 }

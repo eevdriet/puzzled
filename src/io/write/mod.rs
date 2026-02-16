@@ -74,7 +74,7 @@ impl PuzWriter {
         writer.write_all(&header.cursor.into_inner())?;
         writer.write_all(&grids.solution)?;
         writer.write_all(&grids.state)?;
-        writer.write_all(&strings)?;
+        strings.write_with(writer)?;
         writer.write_all(&extras)?;
 
         Ok(())
