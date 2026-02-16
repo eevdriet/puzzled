@@ -9,29 +9,21 @@
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 
+mod checksums;
+mod extras;
 mod grids;
 mod header;
+mod strings;
+
+pub(crate) use grids::*;
+pub(crate) use header::*;
 
 use std::io::{self, Write};
 
 use crate::Puzzle;
-use crate::io::Span;
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
-
-#[derive(Debug)]
-pub(crate) struct Header<'a> {
-    // Checksums
-    pub file_checksum: u16,
-    pub cib_checksum: u16,
-    pub low_checksums: &'a [u8],
-    pub high_checksums: &'a [u8],
-
-    // Regions
-    pub cib_span: Span,
-    pub masks_span: Span,
-}
 
 pub trait PuzWrite: Write {
     fn pad(&mut self, pad: usize) -> io::Result<()> {
@@ -60,14 +52,6 @@ pub trait PuzWrite: Write {
             }
         }
     }
-
-    // fn write_span(&mut self, f: impl FnOnce(&mut Self) -> io::Result<()>) -> io::Result<Span> {
-    //     let start = self.stream_position()? as usize;
-    //     f(self)?;
-    //     let end = self.stream_position()? as usize;
-    //
-    //     Ok(start..end)
-    // }
 }
 
 impl<W: Write> PuzWrite for W {}
@@ -78,36 +62,21 @@ impl PuzWriter {
     }
 
     pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Puzzle) -> io::Result<()> {
-        let header = self.write_header(puzzle)?;
+        // Write all (unordered) bytes into memory
+        let mut header = self.write_header(puzzle)?;
         let grids = self.write_grids(puzzle);
-        self.write_strings(writer, puzzle)?;
-        self.write_extras(writer, puzzle)?;
+        let strings = self.write_strings(puzzle)?;
+        let extras = self.write_extras(puzzle)?;
 
-        Ok(())
-    }
+        self.write_checksums(&mut header, &grids, &strings)?;
 
-    pub(crate) fn write_strings<W: PuzWrite>(
-        &self,
-        writer: &mut W,
-        puzzle: &Puzzle,
-    ) -> io::Result<()> {
-        writer.write_opt_str0(puzzle.title(), 0)?;
-        writer.write_opt_str0(puzzle.author(), 0)?;
-        writer.write_opt_str0(puzzle.copyright(), 0)?;
+        // Write all (ordered) bytes into the writer
+        writer.write_all(&header.cursor.into_inner())?;
+        writer.write_all(&grids.solution)?;
+        writer.write_all(&grids.state)?;
+        writer.write_all(&strings)?;
+        writer.write_all(&extras)?;
 
-        for clue in puzzle.iter_clues() {
-            writer.write_str0(&clue.text)?;
-        }
-
-        writer.write_opt_str0(puzzle.notes(), 0)?;
-        Ok(())
-    }
-
-    pub(crate) fn write_extras<W: PuzWrite>(
-        &self,
-        writer: &mut W,
-        puzzle: &Puzzle,
-    ) -> io::Result<()> {
         Ok(())
     }
 }

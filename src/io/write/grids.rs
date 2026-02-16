@@ -5,8 +5,8 @@ use crate::{
 
 #[derive(Debug)]
 pub(crate) struct Grids {
-    solution: Vec<u8>,
-    state: Vec<u8>,
+    pub solution: Vec<u8>,
+    pub state: Vec<u8>,
 }
 
 impl PuzWriter {
