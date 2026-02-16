@@ -1,10 +1,8 @@
 mod builder;
 mod clues;
+mod geom;
 mod grid;
-mod line;
 mod macros;
-mod offset;
-mod position;
 mod solve;
 mod square;
 mod timer;
@@ -13,10 +11,8 @@ use std::fmt;
 
 pub use builder::*;
 pub use clues::*;
+pub use geom::*;
 pub use grid::*;
-pub use line::*;
-pub use offset::*;
-pub use position::*;
 pub use square::*;
 pub use timer::*;
 

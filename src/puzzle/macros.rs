@@ -45,14 +45,24 @@ macro_rules! square {
         $crate::Square::Black
     };
 
-    ($ch:tt) => {{
-        // Convert letters A..Z / a..z into char
-        let letters = stringify!($ch);
-        let solution = match letters.len() {
-            1 => $crate::Solution::Letter(letters.chars().next().unwrap()),
-            _ => $crate::Solution::Rebus(letters.to_string()),
-        };
+    ($lit:literal) => {{
+        trait __IntoSolution {
+            fn into_solution(self) -> $crate::Solution;
+        }
 
+        impl __IntoSolution for char {
+            fn into_solution(self) -> $crate::Solution {
+                $crate::Solution::Letter(self)
+            }
+        }
+
+        impl __IntoSolution for &str {
+            fn into_solution(self) -> $crate::Solution {
+                $crate::Solution::Rebus(self.to_string())
+            }
+        }
+
+        let solution = __IntoSolution::into_solution($lit);
         $crate::Square::White($crate::Cell::new(solution))
     }};
 }

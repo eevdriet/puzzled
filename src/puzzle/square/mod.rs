@@ -15,17 +15,18 @@ use crate::Grid;
 ///
 /// To easily construct a cell with a given [solution](Solution), you can make use of [`Square::letter`] and [`Square::rebus`].
 /// These constructors create new white squares that have no [style](CellStyle) and no initial user entry, which is usually desired.
+/// The [`square!`](crate::square) macro achieves the same.
 ///
 /// Another common task is [revealing](Cell::reveal) a square without having to check whether it is white square -- black squares have no notion of being revealed.
 /// The [`reveal`](Square::reveal) and [`is_revealed`](Square::is_revealed) methods provide an indirection for squares to do this.
 /// ```
-/// use puzzled::{Square, Cell, Solution::*};
+/// use puzzled::{square, Cell, Solution::*};
 ///
 /// // Creating cells from squares
-/// let letter = Square::letter('L');
+/// let letter = square!('L');
 /// assert_eq!(letter, Cell::new(Letter('L')));
 ///
-/// let mut rebus = Square::rebus("Rebus");
+/// let mut rebus = square!("Rebus");
 /// assert_eq!(rebus, Cell::new(Rebus("Rebus")));
 ///
 /// // Revealing squares
@@ -87,4 +88,7 @@ impl fmt::Display for Square {
     }
 }
 
+/// Collection type of all [squares](Square) in a [puzzle](crate::Puzzle)
+///
+/// A [grid](Grid) is used to represent the squares.
 pub type Squares = Grid<Square>;

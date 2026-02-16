@@ -1,16 +1,28 @@
 use crate::Cell;
 use std::ops;
 
-/// Style that changes the way a square is displayed
+/// Style that changes the way a [cell](Cell) is displayed
 ///
 /// The style is represented as *bit flags* such that multiple styles can simultaneously be set.
-/// Currently, 4 styles are defined.
-/// The definitions derive from the **GEXT data section** of the [*.puz file documentation](wiki).
+/// Currently, the 4 styles that are defined are
+/// - [`PREVIOUSLY_INCORRECT`](CellStyle::PREVIOUSLY_INCORRECT) (`0x10`) for cells that previously contained an [incorrect](Cell::is_correct) guess
+/// - [`INCORRECT`](CellStyle::INCORRECT) (`0x20`) for cells that currently contain an [incorrect](Cell::is_correct) guess
+/// - [`REVEALED`](CellStyle::REVEALED) (`0x40`) for cells that are manually [revealed](Cell::reveal) by the user to show their solution
+/// - [`CIRCLED`](CellStyle::Circled) (`0x80`) for cells that are circled
+///
+/// The definitions derive from the **GEXT data section** of the [*.puz spefication](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki).
 ///
 /// ```rust
-/// use puzzled::CellStyle;
+/// use puzzled::{Cell, CellStyle, Solution};
 ///
-/// let style = CellStyle::REVEALED | CellStyle::CIRCLED;
+/// let style = CellStyle::INCORRECT | CellStyle::CIRCLED;
+/// let mut cell = Cell::new_styled(Solution::Letter('A'), style);
+/// assert_eq!(cell.is_incorrect(), true);
+/// assert_eq!(cell.is_circled(), true);
+///
+/// assert_eq!(cell.is_revealed(), false);
+/// cell.reveal();
+/// assert_eq!(cell.is_revealed(), true);
 /// ```
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CellStyle(u8);

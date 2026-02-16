@@ -2,26 +2,30 @@ use std::{cmp::Ordering, collections::BTreeMap, fmt, ops};
 
 use crate::{Direction, Position, Puzzle};
 
-/// A type that identifies [clues](Clue) within a [puzzle](Puzzle)
+/// Type that identifies where a [clue](Clue) is placed within a [puzzle](Puzzle)
+///
+/// The identifier mimics the way clues are commonly identified in real crosswords.
+/// For example, "4 across" can be specified as `(4, Direction::Across)`.
 pub type ClueId = (u8, Direction);
 
+/// Collection type of all [clues](Clue) in a [puzzle](Puzzle)
+///
+/// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
 pub type Clues = BTreeMap<ClueId, Clue>;
 
 /// Specification for how to add a [clue](Clue) to a [puzzle](Puzzle).
 ///
-/// This struct can be used when the user is unsure what [squares](crate::Square) the clue should pertain to.
-/// By calling [Puzzle::position_clues], the specs are turned into [clues](Clue) by positioning them from the next available square in the puzzle.
-/// Furthermore, [Puzzle::insert_clues] can be used to add the clues to the puzzle after positioning them.
+/// This struct can be used when the user is unsure what [squares](crate::Square) the clue should correspond to.
+/// By calling [`Puzzle::position_clues`], the specs are turned into [clues](Clue) by positioning them from the next available square in the puzzle.
+/// Furthermore, [`Puzzle::insert_clues`] can be used to add the clues to the puzzle after positioning them.
 #[derive(Debug, Clone)]
 pub struct ClueSpec {
-    /// Actual clue text
-    pub text: String,
-    /// [Direction] of the clue within the puzzle
+    text: String,
     direction: Direction,
 }
 
 impl ClueSpec {
-    /// Construct a new clue from its [direction](Direction) and text
+    /// Specify a clue from its [direction](Direction) and text
     pub fn new<S: Into<String>>(direction: Direction, text: S) -> Self {
         Self {
             direction,
@@ -29,19 +33,35 @@ impl ClueSpec {
         }
     }
 
-    /// Construct a clue for an [across](Direction::Across) entry
+    /// Specify a [across](Direction::Across) clue
     pub fn across<S: Into<String>>(text: S) -> Self {
         Self::new(Direction::Across, text.into())
     }
 
-    /// Construct a clue for a [down](Direction::Down) entry
+    /// Specify a [down](Direction::Down) clue
     pub fn down<S: Into<String>>(text: S) -> Self {
         Self::new(Direction::Down, text.into())
     }
 
-    /// [Direction] of the clue within its associated [puzzle](Puzzle)
+    /// Clue text
+    pub fn text(&self) -> &String {
+        &self.text
+    }
+
+    /// [Direction] in which the clue should be placed in a [puzzle](Puzzle)
     pub fn direction(&self) -> Direction {
         self.direction
+    }
+
+    /// Construct a [clue](Clue) from its specification and placement
+    pub fn place(self, num: u8, start: Position, len: u8) -> Clue {
+        Clue {
+            num,
+            start,
+            len,
+            text: self.text,
+            direction: self.direction,
+        }
     }
 }
 
@@ -50,17 +70,19 @@ impl ClueSpec {
 ///
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Clue {
-    /// Actual clue text
-    pub text: String,
+    // Specification
+    text: String,
     direction: Direction,
 
+    // Placement
     num: u8,
     start: Position,
     len: u8,
 }
 
 impl Clue {
-    /// Construct a new clue from its [direction](Direction) and text and [position](Position) in the puzzle grid
+    /// Construct a new clue from its [specification](ClueSpec) and placement within in the [puzzle](crate::Puzzle) [grid](crate::Squares)
+    ///
     /// # Panics
     /// Panics if `len == 0`, i.e. the clue should always occupy at least one [square](crate::Square)
     pub fn new<S: Into<String>>(
@@ -81,7 +103,7 @@ impl Clue {
         }
     }
 
-    /// Returns an iterator over every [position](Position) that the clue covers in the puzzle grid
+    /// Returns an iterator over every [position](Position) that the clue covers in the [puzzle grid](crate::Squares)
     pub fn positions(&self) -> impl Iterator<Item = Position> + '_ {
         (0..self.len).map(move |offset| match self.direction {
             Direction::Across => Position {
@@ -105,17 +127,17 @@ impl Clue {
         self.num
     }
 
-    /// Starting [position](Position) of the clue within its associated [puzzle](Puzzle)
+    /// Starting [position](Position) of the clue within a [puzzle](Puzzle)
     pub fn start(&self) -> Position {
         self.start
     }
 
-    /// Number of [cells](crate::Cell) the clue occupies within its associated [puzzle](Puzzle)
+    /// Number of [cells](crate::Cell) the clue occupies within a [puzzle](Puzzle)
     pub fn len(&self) -> u8 {
         self.len
     }
 
-    /// Verify whether the clue occupies any [cells](crate::Cell) within its associated [puzzle](Puzzle)
+    /// Verify whether the clue occupies any [cells](crate::Cell) within a [puzzle](Puzzle)
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }

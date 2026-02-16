@@ -3,16 +3,24 @@ use std::ops;
 
 use crate::Offset;
 
+/// 2-dimensional coordinate to be used within a [grid](crate::Grid)
+///
+/// The [`Position`] is commonly used in a [puzzle](crate::Puzzle) to access a specific [square](crate::Square).
+/// An [`Offset`] can be used to easily create a new position from an existing one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Position {
+    /// Row (y) coordinate
     pub row: u8,
 
+    /// Column (x) coordinate
     pub col: u8,
 }
 
 impl Position {
+    /// Origin position at (0, 0)
     pub const ORIGIN: Self = Self { row: 0, col: 0 };
 
+    /// Construct a new position
     pub fn new(row: u8, col: u8) -> Self {
         Self { row, col }
     }
