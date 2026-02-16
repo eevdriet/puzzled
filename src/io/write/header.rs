@@ -13,11 +13,7 @@ pub(crate) struct Header {
 }
 
 impl PuzWriter {
-    pub(crate) fn write_header<W: PuzWrite>(
-        &self,
-        writer: &mut W,
-        puzzle: &Puzzle,
-    ) -> std::io::Result<Header> {
+    pub(crate) fn write_header(&self, puzzle: &Puzzle) -> std::io::Result<Header> {
         let mut header = Cursor::new(Vec::new());
 
         // File checksum

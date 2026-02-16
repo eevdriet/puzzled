@@ -9,14 +9,13 @@
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 
+mod grids;
 mod header;
 
-pub(crate) use header::*;
+use std::io::{self, Write};
 
-use std::io::{self, Cursor, Seek, SeekFrom, Write};
-
-use crate::io::{FILE_MAGIC, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Span, find_cib_checksum};
-use crate::{Puzzle, Square};
+use crate::Puzzle;
+use crate::io::Span;
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -79,42 +78,10 @@ impl PuzWriter {
     }
 
     pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Puzzle) -> io::Result<()> {
-        let header = self.write_header(writer, puzzle)?;
-        self.write_grids(writer, puzzle)?;
+        let header = self.write_header(puzzle)?;
+        let grids = self.write_grids(puzzle);
         self.write_strings(writer, puzzle)?;
         self.write_extras(writer, puzzle)?;
-
-        Ok(())
-    }
-
-    pub(crate) fn write_grids<W: PuzWrite>(
-        &self,
-        writer: &mut W,
-        puzzle: &Puzzle,
-    ) -> io::Result<()> {
-        for square in puzzle.iter() {
-            let byte = match square {
-                Square::Black => NON_PLAYABLE_CELL,
-                Square::White(cell) => {
-                    cell.solution();
-                    4
-                }
-            };
-
-            writer.write_u8(byte)?;
-        }
-
-        for square in puzzle.iter() {
-            let byte = match square {
-                Square::Black => NON_PLAYABLE_CELL,
-                Square::White(cell) => match cell.entry() {
-                    Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL as char) as u8,
-                    None => MISSING_ENTRY_CELL,
-                },
-            };
-
-            writer.write_u8(byte)?;
-        }
 
         Ok(())
     }
