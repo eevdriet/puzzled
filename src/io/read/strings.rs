@@ -60,6 +60,7 @@ impl<'a> TxtReader {
 
             // Validate the clue text
             let text = state.parse_string(text, context)?;
+            eprintln!("Parsing '{prop}' from '{text}'");
 
             match prop.to_ascii_lowercase().as_str() {
                 "author" => {
