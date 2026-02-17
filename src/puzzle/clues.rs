@@ -301,12 +301,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     A: "To be able to",
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
+    ///     - A: "To be able to"
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
     /// );
     /// let mut iter = puzzle.iter_clues();
     ///
@@ -332,12 +332,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     A: "To be able to",
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
+    ///     - A: "To be able to"
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
     /// );
     /// let mut iter = puzzle.iter_clues_mut();
     ///
@@ -363,12 +363,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     A: "To be able to",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
+    ///     - A: "To be able to"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
     /// );
     /// let mut iter = puzzle.iter_across();
     ///
@@ -393,12 +393,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     A: "To be able to",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
+    ///     - A: "To be able to"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
     /// );
     /// let mut iter = puzzle.iter_across_mut();
     ///
@@ -423,12 +423,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
-    ///     A: "To be able to",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
+    ///     - A: "To be able to"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
     /// );
     /// let mut iter = puzzle.iter_down();
     ///
@@ -453,12 +453,12 @@ impl Puzzle {
     ///     [A G E]
     ///     [R O W]
     ///     ---
-    ///     D: "An automobile",
-    ///     D: "Past, gone, before now",
-    ///     D: "Not existing before",
-    ///     A: "To be able to",
-    ///     A: "The length of life",
-    ///     A: "Some stuff arranged in a line",
+    ///     - D: "An automobile"
+    ///     - D: "Past, gone, before now"
+    ///     - D: "Not existing before"
+    ///     - A: "To be able to"
+    ///     - A: "The length of life"
+    ///     - A: "Some stuff arranged in a line"
     /// );
     /// let mut iter = puzzle.iter_down_mut();
     ///
@@ -485,10 +485,10 @@ impl ops::Index<ClueId> for Puzzle {
     ///     [A B]
     ///     [C .]
     ///     ---
-    ///     A: "AB",
-    ///     D: "AC",
-    ///     D: "B",
-    ///     A: "C",
+    ///     - A: "AB"
+    ///     - D: "AC"
+    ///     - D: "B"
+    ///     - A: "C"
     /// );
     ///
     /// assert_eq!(puzzle[(1, Across)], clue!(1 A: "AB" @ (0, 0) + 2));

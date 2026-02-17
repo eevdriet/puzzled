@@ -91,6 +91,34 @@ macro_rules! square {
     }};
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __metadata {
+    ($puzzle:ident, author : $val:literal) => {
+        $puzzle = $puzzle.with_author($val);
+    };
+
+    ($puzzle:ident, copyright : $val:literal) => {
+        $puzzle = $puzzle.with_copyright($val);
+    };
+
+    ($puzzle:ident, notes : $val:literal) => {
+        $puzzle = $puzzle.with_notes($val);
+    };
+
+    ($puzzle:ident, title : $val:literal) => {
+        $puzzle = $puzzle.with_title($val);
+    };
+
+    ($puzzle:ident, version : $val:literal) => {
+        $puzzle = $puzzle.with_version($val);
+    };
+
+    ($puzzle:ident, $key:ident : $val:literal) => {
+        compile_error!(concat!("Invalid puzzle property: ", stringify!($key)));
+    };
+}
+
 /// Inline constructor for a [puzzle](crate::Puzzle)
 #[macro_export]
 macro_rules! puzzle {
@@ -99,7 +127,10 @@ macro_rules! puzzle {
         [$($x0:tt)+] $( [$($x:tt)+])*
 
         // Clue definitions
-        $(--- $( $dir:ident : $clue:literal ),* $( , )?)?
+        $(--- $(- $dir:ident : $clue:literal )*)?
+
+        // Metadata
+        $(--- $( $meta_key:ident : $meta_val:literal )*)?
     ) => {{
         // Manually count the number of columns in the first row
         let mut _assert_width0 = [(); $crate::__count!($($x0)*)];
@@ -115,12 +146,13 @@ macro_rules! puzzle {
 
         let mut vec = Vec::with_capacity(rows.checked_mul(cols).unwrap());
 
-        // $( vec.push($crate::square!($x0)); )*
+        // Add squares
         $( vec.push($crate::square!($x0)); )*
         $( $( vec.push($crate::square!($x)); )* )*
 
         let squares = $crate::Grid::new(vec, cols as u8).unwrap();
 
+        // Add clues
         #[allow(unused_mut)]
         let mut clues = Vec::new();
 
@@ -133,6 +165,13 @@ macro_rules! puzzle {
 
         let mut puzzle = $crate::Puzzle::from_squares(squares);
         puzzle.insert_clues(clues);
+
+        // Add metadata
+        $(
+            $(
+                $crate::__metadata!(puzzle, $meta_key : $meta_val);
+            )*
+        )?
 
         puzzle
     }};

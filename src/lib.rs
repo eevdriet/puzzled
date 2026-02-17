@@ -13,16 +13,16 @@
 //!     [I M A X .]
 //!     [N O R . .]
 //!     ---
-//!     A: "Half-___ (coffee order)",
-//!     A: "Sandwich shop",
-//!     A: "Passover feast",
-//!     A: "Gigantic movie format",
-//!     A: "Neither's partner",
-//!     D: "Tree type",
-//!     D: "Trebek of Jeopardy!",
-//!     D: "Another tree type",
-//!     D: "Tape given to record labels",
-//!     D: "Sloth, e.g.",
+//!     - A: "Half-___ (coffee order)"
+//!     - A: "Sandwich shop"
+//!     - A: "Passover feast"
+//!     - A: "Gigantic movie format"
+//!     - A: "Neither's partner"
+//!     - D: "Tree type"
+//!     - D: "Trebek of Jeopardy!"
+//!     - D: "Another tree type"
+//!     - D: "Tape given to record labels"
+//!     - D: "Sloth, e.g."
 //! );
 //!
 //! assert_eq!(puzzle.rows(), 5);
@@ -52,8 +52,10 @@
 //!     [A B]
 //!     [C .]
 //!     ---
-//!     A: "The first two letters of the alphabet",
-//!     D: "Keep it short, but cool"
+//!     - A: "The first two letters of the alphabet"
+//!     - D: "Keep it short, but cool"
+//!     ---
+//!     version: "2.0"
 //! };
 //!
 //! // 2. Dynamic
