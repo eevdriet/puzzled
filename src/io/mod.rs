@@ -1,19 +1,82 @@
 //! Defines all functionality for reading and writing [puzzles](crate::Puzzle)
 //!
-//! Deserializing and parsing [*.puz files][PUZ google spec]
+//! # Formats
+//! The crate currently supports the following formats and streams for dealing with them:
+//! | Format  | Reader | Writer |
+//! |------------|--------|------|
+//! | Binary | [`PuzReader`] | [`PuzWriter`] |
+//! | Text | [`TxtReader`] | |
 //!
-//! # Usage
-//! # Errors and warnings
-//! # Parsing process
-//! This crate tries to following the [Across Lite specification][PUZ google spec] as closely as possible to parse `*.puz` files from binary data.
+//! ## Binary
+//! This crate tries to following the [Across Lite format][PUZ google spec] as closely as possible to handle binary data.
 //! Note that a [reformatted specification][PUZ spec] which may be easier to read from, as it provides the full specification in Markdown.
+//! The format is used to create `*.puz` files, which are commonly shared online on platforms such as [Crosshare](https://crosshare.org/).
 //!
-//! In each of the following sections, we list the elements that are parsed:
-//! - White elements are directly used to define the resulting [puzzle](Puzzle).
-//! - <span style="color:yellow">Yellow</span> elements are used for [validating checksums](self#validating-checksums) and checking the byte integrity of the `*.puz` data.
-//! - <span style="color:gray">Gray</span> elements are currently ignored
+//! ## Text
+//! The **text** format allows for a more WYSIWYG definition of puzzles.
+//! It ties in nicely with the [`puzzle!`](crate::puzzle!) macro, as its [DSL](https://doc.rust-lang.org/rust-by-example/macros/dsl.html) follows the text format exactly.
+//!
+//! For example, the following two ways to construct a puzzle are identical
+//! ```
+//! use puzzled::{puzzle};
+//! use puzzled::io::{TxtReader};
+//! use std::{path::Path, fs::read_to_string};
+//!
+//! // 1. Macro definition
+//! let puzzle1 = puzzle! {
+//!     [A B]
+//!     [C .]
+//!     - A: "The first two letters of the alphabet"
+//!     - D: "Keep it short, but cool"
+//!     version: "2.0"
+//! };
+//!
+//! // 2. Text file
+//! let path = Path::new("puzzles/ok/alphabet.txt");
+//! let txt = read_to_string(path)?;
+//!
+//! let reader = TxtReader;
+//! let puzzle2 = reader.read(&txt)?;
+//!
+//! assert_eq!(puzzle1, puzzle2);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
+//!
+//! # Errors and warnings
+//! The crate defines 3 types of [`Error`] that can occur when reading and writing [puzzles](crate::Puzzle):
+//! - [`read::Error`] for errors that occur when *reading puzzles*.
+//!
+//!   For example, [`PuzReader`] may not read the required number of [clues](crate::Clues) and yield a [`MissingClue`](read::ErrorKind::MissingClue) error.
+//! - [`write::Error`] for errors that occur when *writing puzzles*
+//!
+//!   For example, [`PuzWriter`] fails writing a large puzzle to a small output buffer
+//! - [`format::Error`] for errors can occur during both *reading and writing puzzles*.
+//!
+//!   For example, a `*.puz` file requires that its version is set as `x.y` where `x,y` are one digit numbers.
+//!   The [`PuzReader`] may read a series of bytes that doesn't agree with that format.
+//!   Similary, the [`PuzWriter`] may not be able to convert the [`Puzzle::version`](crate::Puzzle::version) when writing out the byte data.
+//!   Both scenarios would yield a [`InvalidVersion`](format::Error::InvalidVersion) error.
+//!
+//! In some cases, errors are recoverable such that they do not have to impede the whole reading/writing process.
+//! For example, when a [`PuzReader`] encounters an invalid [extra section](self::extra-sections), it should be able to just skip it and create a puzzle anyways.
+//! Streams that support warnings are initialized with a `strict` flag to indicate how to handle warnings.
+//! - If `strict == true`, a warning is treated as an error and the streaming is immediately aborted if one is encountered
+//! - Otherwise, all warnings are collected throughout the streaming process.
+//!   Streams specify a separate `*_with_warnings` to return them to the user along with the streaming result.
+//!   For example, consider [`PuzReader::read`] and [`PuzReader::read_with_warnings`]
+//!
+//! # Process
+//! Even though the [`PuzReader`] and [`PuzWriter`] are the only streams using the [Across Lite format][PUZ google spec] format directly, all streams addhere to its underlying data model.
+//! Therefore it may be worthwhile to read through this section, even if you have no interest in working with binary data to represent your [puzzles](crate::Puzzle).
 //!
 //! ## Header
+//! First a **[header](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#header)** is read, which mostly contains [checksums][Checksums] to verify whether the binary data is valid.
+//! It also defines a [version](crate::Puzzle::version) and the basic layout for the puzzle, such as its [width](crate::Squares::cols), [height](crate::Squares::rows) and how many [clues](crate::Clues) should be read.
+//! We list the components that are read as follows:
+//! - <span style="color:white">White</span> components are directly used to define the resulting [puzzle][Puzzle].
+//! - <span style="color:yellow">Yellow</span> components are used for [validating checksums](self#validating-checksums) and checking the byte integrity of the `*.puz` data.
+//! - <span style="color:gray">Gray</span> components are currently ignored
+//!
 //! | Component  | Length | Type | Description |
 //! |------------|--------|------|-------------|
 //! | <span style="color:yellow">Checksum</span>   | 2      | u16  | Overall [file checksum](self#file) |
@@ -21,19 +84,47 @@
 //! | <span style="color:yellow">CIB Checksum</span>          | 2      | u16  | [CIB checksum](self#cib) |
 //! | <span style="color:yellow">Masked Low Checksums</span>  | 4      | u32  | A set of low [masked checksums](self#masked-regions) |
 //! | <span style="color:yellow">Masked High Checksums</span> | 4      | u32  | A set of high [masked checksums](self#masked-regions) |
-//! | Version String(?)  | 4      | str  | e.g. "1.2\0" |
+//! | <span style="color:white">Version String(?)</span> | 4      | str  | e.g. "1.2\0" |
 //! | <span style="color:gray">Reserved1C(?)</span>      | 2      | u16  | In many files, this is uninitialized memory |
 //! | <span style="color:gray">Scrambled Checksum</span> | 2      | u16  | In scrambled puzzles, a checksum of the real solution (details below) |
-//! | Width              | 1      | u8   | The width of the board |
-//! | Height             | 1      | u8   | The height of the board |
-//! | # of Clues         | 2      | u16  | The number of clues for this board |
+//! | <span style="color:white">Width</span>        | 1      | u8   | The width of the board |
+//! | <span style="color:white">Height</span>             | 1      | u8   | The height of the board |
+//! | <span style="color:white"># of Clues</span>  | 2      | u16  | The number of clues for this board |
 //! | <span style="color:gray">Unknown Bitmask</span>    | 2      | u16  | A bitmask. Operations unknown. |
 //! | <span style="color:gray">Scrambled Tag</span>      | 2      | u16  | 0 for unscrambled puzzles. Nonzero (often 4) for scrambled puzzles. |
 //!
+//! ## Puzzle grids
+//! Then the **[grids](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#puzzle-layout-and-state)** which define the layout of [puzzle][Puzzle] are read.
+//! Specifically, the following 2 grids are read from the `header.width` and `header.height`:
+//! 1.  A *solution* grid containing the [solution](crate::Solution) to each [square](crate::Square)
+//!     To indicate a [non-playable (black) square](crate::Square::Black), a `b"."` is used.
+//!     The other squares are the playable [cells](crate::Cell) that the user can put their solutions into.
+//! 2.  A *state* grid containing the current [entry](crate::Cell::entry) to each square
+//!     Note that *even if a user has not yet entered any solutions, a full state grid is read*.
+//!     Cells that do not yet contain a user entry are indicate with `b"-"`
+//!
+//! As an example, consider the following puzzle and its underlying puzzle grids in binary form:
+//! ```
+//! use puzzled::puzzle;
+//!
+//! let puzzle = puzzle! (
+//!     [C . .]
+//!     [A . .]
+//!     [R O W]
+//! );
+//!
+//! // Underlying byte data to represent the puzzle grids
+//! // Note that the `puzzle!` macro doesn't include user entries
+//! let solution = b"C..A..ROW";
+//! let state = b"-..-..---";
+//! ```
+//!
+//! The crate uses a [`Grid<Square>`](crate::Grid<Square>) to store both the solution and state in a single grid.
+//!
 //! ## Strings
-//! The [strings](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#strings-section) includes the "metadata" for the [puzzle](Puzzle), such as its title and author.
-//! It also includes the text for every [clue](crate::Clue) that should be attached to the puzzle.
-//! The pseudo-code of how to do so is given [here](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#clue-assignment) and the crate implementation is found in [`Puzzle::position_clues`].
+//! Next are the **[strings](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#strings-section)**, which include the "metadata" for the [puzzle](Puzzle), such as its [title](crate::Puzzle::title) and [author](crate::Puzzle::author).
+//! It also includes the text for every [clue](crate::Clue) that should be placed in the puzzle [grid](crate::Squares).
+//! The pseudo-code of how to do so is given [here](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#clue-assignment) and the crate implementation is found in [`Puzzle::place_clues`](crate::Puzzle::place_clues).
 //!
 //! | Component | Length | Type | Example |
 //! |:------------|:-------------------|:---|:---|
@@ -44,7 +135,49 @@
 //! | ...         | ... | ... | ... |
 //! | Clue `#n`   | ? | str | Quiet              |
 //! | Notes       | ? | str | http://mywebsite   |
-//! ## Puzzle grid
+//!
+//! ## Extra sections
+//! Finally a number of **[extra sections][PUZ google spec]** are optionally read to allow for reading square customization and [solving time](crate::Timer).
+//! The crate currently supports **GRBS**, **RTBL**, **LTIM** and **GEXT** sections are considered, but more may be supported in the future.
+//!
+//! ### GRBS and RTBL
+//! The **GRBS** section contains a [grid](crate::Grid) of keys for each [square](crate::Square) in the [puzzle](crate::Puzzle) that has a [rebus solution](crate::Solution::Rebus).
+//! The actual rebus values themselves are read afterwards in the [RTBL](self::RTBL).
+//! For a [non-rebus (letter) square](crate::Solution::Letter), a `0` byte is used to indicate no rebus needs to be read in RTBL.
+//! Any square that *does* contain a rebus gets a unique identifying byte key of `n`.
+//!
+//! The **RTBL** section then contains an ASCII-string representing the actual rebuses.
+//! It is read as a [`HashMap<u8, String>`] and correctly sets a rebus solution for the squares represented in GRBS.
+//! Consider the following example to get an idea of how the GRBS and RTBL sections would be layed out in a `*.puz` file:
+//! ```
+//! use puzzled::puzzle;
+//!
+//! let puzzle = puzzle! (
+//!     [C      REBUS1 Y     ]
+//!     [A      .      REBUS1]
+//!     [REBUS2 O      W     ]
+//! );
+//!
+//! // Binary data read in the GRBS and RTBL extras section to represent the puzzle above
+//! // Note that
+//! // - The keys are not necessarily consecutive numbers
+//! // - The same key can be used multiple times in GRBS (e.g. `7`)
+//! // - Keys are always represented with 2 digits, so for 1-9 a leading space is used (e.g. ` 7`)
+//! let grbs = [0, 7, 0, 0, 0, 7, 16, 0, 0];
+//! let rtbl = b" 7:REBUS1;16:REBUS2";
+//! ```
+//!
+//! ### LTIM
+//! The **LTIM** section contains the definition of a [`Timer`](crate::Timer) which represents the time already used solving the [puzzle](crate::Puzzle).
+//! Specifically, the following are read
+//! -   A [`Duration`](std::time::Duration) from a *number of elapsed seconds*
+//! -   A [`TimerState`](crate::TimerState) representing whether the timer is active (`0` for [`TimerState::Running`](crate::TimerState::Running) and `1` for [`TimerState::Stopped`](crate::TimerState::Stopped))
+//!
+//! ### GEXT
+//! The **GEXT** sections contains a [grid](crate::Grid) of [styles](crate::CellStyle) that are applied to each of the [squares](crate::Square) in the [puzzle](crate::Puzzle).
+//! Each style is represnted with a single [`u8`], where [non-playable squares](crate::Square::Black) always take the value `0`.
+//! For a [cell](crate::Cell), refer to [`CellStyle`](crate::CellStyle) to see which styles are currently supported.
+//! Multiple styles can be set at once as style is represented as (partially complete) bit flags.
 //!
 //! ## Validating checksums
 //! The main validation technique for `*.puz` files is to *match given checksums with region checksums*.
@@ -141,29 +274,27 @@
 //! assert_eq!(header.mask_checksums[6], b"E" ^ ((state_checksum & 0xFF00) >> 8));
 //! assert_eq!(header.mask_checksums[7], b"D" ^ ((strs_checksum & 0xFF00) >> 8));
 //! ```
-//!
-//! ## Extra sections
-//! When [`Parser::parse_strict`] is used, each extra section must have a valid header (GRBS, TLBR, LTIM or GEXT) and contents.
-//! Otherwise, the user is [warned](Warning) against invalid or (partially) missing sections.
-//!
 //! [puzzled]: crate
+//! [Puzzle]: crate::Puzzle
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
+//! [Checksums]: self#validating-checksums
 
+pub(crate) mod format;
 pub(crate) mod read;
 pub(crate) mod write;
 
 mod checksums;
 mod error;
 mod extras;
-mod format;
 mod grids;
 mod header;
 mod strings;
 
 pub use {
+    format::{Error as FormatError, Result as FormatResult},
     read::{Error as ReadError, PuzRead, PuzReader, Result as ReadResult, TxtReader, Warning},
-    write::{PuzWrite, PuzWriter},
+    write::{Error as WriteError, PuzWrite, PuzWriter, Result as WriteResult},
 };
 
 pub(crate) use {

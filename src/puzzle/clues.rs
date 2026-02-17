@@ -176,7 +176,7 @@ impl Puzzle {
     }
 
     pub fn insert_clues(&mut self, clues: impl IntoIterator<Item = ClueSpec>) -> Vec<ClueSpec> {
-        let (positioned, unpositioned) = self.position_clues(clues);
+        let (positioned, unpositioned) = self.place_clues(clues);
 
         for clue in positioned {
             let id = (clue.num, clue.direction);
@@ -186,7 +186,7 @@ impl Puzzle {
         unpositioned
     }
 
-    pub fn position_clues(
+    pub fn place_clues(
         &self,
         clues: impl IntoIterator<Item = ClueSpec>,
     ) -> (Vec<Clue>, Vec<ClueSpec>) {
@@ -300,7 +300,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - A: "To be able to"
     ///     - D: "An automobile"
     ///     - D: "Past, gone, before now"
@@ -331,7 +330,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - A: "To be able to"
     ///     - D: "An automobile"
     ///     - D: "Past, gone, before now"
@@ -362,7 +360,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - A: "To be able to"
     ///     - A: "The length of life"
     ///     - A: "Some stuff arranged in a line"
@@ -392,7 +389,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - A: "To be able to"
     ///     - A: "The length of life"
     ///     - A: "Some stuff arranged in a line"
@@ -422,7 +418,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - D: "An automobile"
     ///     - D: "Past, gone, before now"
     ///     - D: "Not existing before"
@@ -452,7 +447,6 @@ impl Puzzle {
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
-    ///     ---
     ///     - D: "An automobile"
     ///     - D: "Past, gone, before now"
     ///     - D: "Not existing before"
@@ -484,7 +478,6 @@ impl ops::Index<ClueId> for Puzzle {
     /// let puzzle = puzzle! (
     ///     [A B]
     ///     [C .]
-    ///     ---
     ///     - A: "AB"
     ///     - D: "AC"
     ///     - D: "B"

@@ -16,7 +16,7 @@ mod grids;
 mod header;
 mod strings;
 
-pub(crate) use error::*;
+pub use error::*;
 
 use std::io::{self, Write};
 

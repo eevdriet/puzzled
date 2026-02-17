@@ -127,10 +127,10 @@ macro_rules! puzzle {
         [$($x0:tt)+] $( [$($x:tt)+])*
 
         // Clue definitions
-        $(--- $(- $dir:ident : $clue:literal )*)?
+        $(- $dir:ident : $clue:literal )*
 
         // Metadata
-        $(--- $( $meta_key:ident : $meta_val:literal )*)?
+        $( $meta_key:ident : $meta_val:literal )*
     ) => {{
         // Manually count the number of columns in the first row
         let mut _assert_width0 = [(); $crate::__count!($($x0)*)];
@@ -157,21 +157,17 @@ macro_rules! puzzle {
         let mut clues = Vec::new();
 
         $(
-            $(
-                let clue = $crate::clue_spec!($dir : $clue);
-                clues.push(clue);
-            )*
-        )?
+            let clue = $crate::clue_spec!($dir : $clue);
+            clues.push(clue);
+        )*
 
         let mut puzzle = $crate::Puzzle::from_squares(squares);
         puzzle.insert_clues(clues);
 
         // Add metadata
         $(
-            $(
-                $crate::__metadata!(puzzle, $meta_key : $meta_val);
-            )*
-        )?
+            $crate::__metadata!(puzzle, $meta_key : $meta_val);
+        )*
 
         puzzle
     }};
