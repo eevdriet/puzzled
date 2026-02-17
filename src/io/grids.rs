@@ -1,6 +1,6 @@
 use crate::{
     Grid, Puzzle, Square,
-    io::{self, windows_1252_to_char},
+    io::{format, windows_1252_to_char},
 };
 
 pub(crate) const NON_PLAYABLE_CELL: u8 = b'.';
@@ -28,6 +28,9 @@ pub enum GridsError {
     )]
     InvalidDimensions { cols: u8, rows: u8 },
 
+    #[error("Row {row} has an invalid format: {reason}")]
+    InvalidRow { row: u8, reason: String },
+
     #[error(
         "The solution grid has square '{solution_square}' at {row}R{col}C, while the state grid has '{state_square}' at that position"
     )]
@@ -40,7 +43,7 @@ pub enum GridsError {
 }
 
 impl Grids {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> io::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
         let width = puzzle.cols();
         let height = puzzle.rows();
 
@@ -91,16 +94,16 @@ impl Grids {
         Ok(grids)
     }
 
-    fn validate(&self) -> io::Result<()> {
+    fn validate(&self) -> format::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
-        let err = |kind: GridsError| io::Error::Grids(kind);
+        let err = |kind: GridsError| format::Error::Grids(kind);
 
         for (grid, _) in &grids {
             let len = grid.rows();
 
             if len != self.height {
-                return Err(io::Error::Grids(GridsError::InvalidHeight {
+                return Err(err(GridsError::InvalidHeight {
                     found: len,
                     expected: self.height,
                 }));

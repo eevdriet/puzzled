@@ -8,7 +8,7 @@ mod squares;
 mod state;
 mod strings;
 
-use crate::io::{Context, Extras, Grids, Header, Strings, is_valid_version, read};
+use crate::io::{Context, Extras, Grids, Header, Strings, format, is_valid_version, read};
 use std::io;
 
 pub use error::*;
@@ -102,7 +102,7 @@ impl PuzReader {
         // Read main components
         let header = Header::read_from(reader)?;
         if !is_valid_version(&header.version) {
-            let result: read::Result<()> = Err(crate::io::Error::InvalidVersion).context("Version");
+            let result: read::Result<()> = Err(format::Error::InvalidVersion).context("Version");
             state.ok_or_warn(result)?;
         }
 
