@@ -195,8 +195,8 @@ impl Puzzle {
             .into_iter()
             .partition(|clue| clue.direction == Direction::Across);
 
-        let mut across_iter = across.iter();
-        let mut down_iter = down.iter();
+        let mut across_iter = across.into_iter();
+        let mut down_iter = down.into_iter();
 
         // Determine all positions past the last entry
         let last = match self.iter_clues().last() {
@@ -239,19 +239,19 @@ impl Puzzle {
         }
 
         // Collect the remaining clues that could not be positioned within the puzzle
-        let mut unpositioned: Vec<_> = across_iter.cloned().collect();
-        unpositioned.extend(down_iter.cloned());
+        let mut unpositioned: Vec<_> = across_iter.collect();
+        unpositioned.extend(down_iter);
 
         (positioned, unpositioned)
     }
 
-    fn try_clue_position<'a>(
+    fn try_clue_position(
         &self,
         num: u8,
         start: Position,
         direction: Direction,
         last: &Clue,
-        iter: &mut impl Iterator<Item = &'a ClueSpec>,
+        iter: &mut impl Iterator<Item = ClueSpec>,
     ) -> Option<Clue> {
         // Cannot position clue at the same start as the last clue in the same direction
         if num > 1 && last.start == start && last.direction() == direction {
@@ -267,16 +267,12 @@ impl Puzzle {
         let clue = iter.next()?;
 
         // Position the clue from the given start
-        let direction = clue.direction;
-        let text = clue.text.clone();
-        let len = self.squares.find_playable_len(start, direction);
-
         Some(Clue {
             num,
             direction,
             start,
-            text,
-            len,
+            text: clue.text,
+            len: self.squares.find_playable_len(start, direction),
         })
     }
 }

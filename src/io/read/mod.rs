@@ -106,6 +106,8 @@ impl PuzReader {
             state.ok_or_warn(result)?;
         }
 
+        dbg!(&header);
+
         let grids = Grids::read_from(reader, header.width, header.height)?;
         let strings = Strings::read_from(reader, header.clue_count)?;
 
@@ -177,17 +179,15 @@ impl<'a> TxtReader {
     }
 }
 
-pub(crate) fn build_string(mut bytes: &[u8]) -> String {
-    if let Some(stripped) = bytes.strip_suffix(&[0]) {
-        bytes = stripped;
-    }
+pub(crate) fn build_string(bytes: &[u8]) -> String {
+    let stripped = bytes.strip_suffix(&[0]).unwrap_or(bytes);
 
-    match std::str::from_utf8(bytes) {
+    match std::str::from_utf8(stripped) {
         // Check if the string can be parsed as UTF-8 directly
         Ok(s) => s.to_string(),
 
         // Otherwise, apply the Windows-1252 character mapping
-        Err(_) => bytes.iter().map(|&b| windows_1252_to_char(b)).collect(),
+        Err(_) => stripped.iter().map(|&b| windows_1252_to_char(b)).collect(),
     }
 }
 
@@ -301,13 +301,17 @@ mod tests {
         if txt_path.exists() {
             let result2 = parse_txt(txt_path);
 
-            match result {
-                Ok((puzzle, _)) => {
-                    assert!(result2.is_ok_and(|puzzle2| puzzle == puzzle2));
+            match (result, result2) {
+                (Ok((puzzle, _)), Ok(puzzle2)) => {
+                    assert_eq!(puzzle, puzzle2);
                 }
-                Err(_) => {
-                    assert!(result2.is_err());
+                (Ok((puzzle, _)), Err(err)) => {
+                    panic!("Found left: {puzzle} and right: {err}");
                 }
+                (Err(err), Ok(puzzle)) => {
+                    panic!("Found left: {err} and right: {puzzle}");
+                }
+                _ => {}
             }
         }
     }

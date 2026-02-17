@@ -19,12 +19,16 @@ impl Extras {
         let size = usize::from(width) * usize::from(height);
         let mut extras = Extras::default();
 
+        eprintln!("Extras START");
+
         loop {
             // Try to read a section header
             let result = reader.read_slice::<4>().context("Extras section header");
             let Some(header) = state.ok_or_warn(result)? else {
                 break;
             };
+
+            eprintln!("Found header '{}'", build_string(&header));
 
             match &header {
                 // Try to read valid sections
@@ -47,6 +51,7 @@ impl Extras {
             }
         }
 
+        eprintln!("Extras END");
         Ok(extras)
     }
 

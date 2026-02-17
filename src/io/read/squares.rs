@@ -1,9 +1,12 @@
-use crate::io::{Extras, Grids, NON_PLAYABLE_CELL, PuzReader, ReadResult, windows_1252_to_char};
-use crate::{Cell, Grid, Solution, Square, Squares};
+use crate::io::{
+    Extras, Grids, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, PuzReader, read, windows_1252_to_char,
+};
+use crate::puzzle::{Cell, Grid, Solution, Square, Squares};
 
 impl PuzReader {
-    pub(crate) fn read_squares(&self, grids: &Grids, extras: &Extras) -> ReadResult<Squares> {
+    pub(crate) fn read_squares(&self, grids: &Grids, extras: &Extras) -> read::Result<Squares> {
         let mut cells = Vec::new();
+        eprintln!("Extras: {extras:?}");
 
         for ((&solution, &state), pos) in grids
             .solution
@@ -23,15 +26,15 @@ impl PuzReader {
                     };
 
                     let style = extras.get_style(pos);
-                    let mut fill = Cell::new_styled(solution, style);
+                    let mut cell = Cell::new_styled(solution, style);
 
                     // Set the given user state for a playable cell
-                    if state != NON_PLAYABLE_CELL {
+                    if state != MISSING_ENTRY_CELL {
                         let contents = windows_1252_to_char(state).to_string();
-                        fill.enter(contents);
+                        cell.enter(contents);
                     }
 
-                    Square::White(fill)
+                    Square::White(cell)
                 }
             };
 

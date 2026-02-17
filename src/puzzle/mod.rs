@@ -26,7 +26,12 @@ macro_rules! string_prop {
 
         #[doc = $setter_doc]
         pub fn $setter<S: Into<String>>(mut self, value: S) -> Self {
-            self.$field = Some(value.into());
+            let value = value.into();
+
+            if !value.is_empty() {
+                self.$field = Some(value.into());
+            }
+
             self
         }
     };

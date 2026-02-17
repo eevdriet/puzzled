@@ -66,7 +66,7 @@
 //!     clue_spec!(D: "Keep it short, but cool")
 //! ];
 //!
-//! let mut puzzle2 = Puzzle::from_squares(squares);
+//! let mut puzzle2 = Puzzle::from_squares(squares).with_version("2.0");
 //! puzzle2.insert_clues(clues);
 //!
 //! // 3. Parsed from a .puz file

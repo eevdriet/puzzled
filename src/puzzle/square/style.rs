@@ -24,7 +24,7 @@ use std::ops;
 /// cell.reveal();
 /// assert!(cell.is_revealed());
 /// ```
-#[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CellStyle(u8);
 
 impl CellStyle {
@@ -82,6 +82,12 @@ impl CellStyle {
             0 => Some(result),
             _ => None,
         }
+    }
+}
+
+impl Default for CellStyle {
+    fn default() -> Self {
+        Self::EMPTY
     }
 }
 
