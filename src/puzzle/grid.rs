@@ -217,13 +217,13 @@ impl Puzzle {
     ///
     /// Same as [`get`](Self::get), but additionally checks whether the square is a cell
     /// ```
-    /// use puzzled::{Cell, Position, puzzle, Solution::*};
+    /// use puzzled::{cell, Position, puzzle, Solution::*};
     ///
     /// let puzzle = puzzle! (
     ///    [. B]
     ///    [D .]
     /// );
-    /// assert_eq!(puzzle.get_cell(Position::new(0, 1)), Some(&Cell::new(Letter('B'))));
+    /// assert_eq!(puzzle.get_cell(Position::new(0, 1)), Some(&cell!('B')));
     /// assert_eq!(puzzle.get_cell(Position::new(1, 1)), None);
     /// assert_eq!(puzzle.get_cell(Position::new(2, 1)), None);
     /// ```
@@ -238,13 +238,13 @@ impl Puzzle {
     ///
     /// Same as [`get_mut`](Self::get_mut), but additionally checks whether the square is a cell
     /// ```
-    /// use puzzled::{Cell, Position, puzzle, Solution::*};
+    /// use puzzled::{cell, Position, puzzle, Solution::*};
     ///
     /// let mut puzzle = puzzle! (
     ///    [. B]
     ///    [D .]
     /// );
-    /// assert_eq!(puzzle.get_cell_mut(Position::new(0, 1)), Some(&mut Cell::new(Letter('B'))));
+    /// assert_eq!(puzzle.get_cell_mut(Position::new(0, 1)), Some(&mut cell!('B')));
     /// assert_eq!(puzzle.get_cell_mut(Position::new(1, 1)), None);
     /// assert_eq!(puzzle.get_cell_mut(Position::new(2, 1)), None);
     /// ```
@@ -259,17 +259,17 @@ impl Puzzle {
     ///
     /// The squares are traversed in row-major order.
     /// ```
-    /// use puzzled::{puzzle, Square};
+    /// use puzzled::{puzzle, square};
     ///
     /// let puzzle = puzzle! (
     ///    [A B]
     ///    [C D]
     /// );
     /// let mut iter = puzzle.iter();
-    /// assert_eq!(iter.next(), Some(&Square::letter('A')));
-    /// assert_eq!(iter.next(), Some(&Square::letter('B')));
-    /// assert_eq!(iter.next(), Some(&Square::letter('C')));
-    /// assert_eq!(iter.next(), Some(&Square::letter('D')));
+    /// assert_eq!(iter.next(), Some(&square!('A')));
+    /// assert_eq!(iter.next(), Some(&square!('B')));
+    /// assert_eq!(iter.next(), Some(&square!('C')));
+    /// assert_eq!(iter.next(), Some(&square!('D')));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &Square> {
@@ -279,17 +279,17 @@ impl Puzzle {
     /// Returns a mutable iterator over the squares of the puzzle.
     /// The squares are traversed in row-major order.
     /// ```
-    /// use puzzled::{puzzle, Square};
+    /// use puzzled::{puzzle, square};
     ///
     /// let mut puzzle = puzzle! (
     ///    [A B]
     ///    [C D]
     /// );
     /// let mut iter = puzzle.iter_mut();
-    /// assert_eq!(iter.next(), Some(&mut Square::letter('A')));
-    /// assert_eq!(iter.next(), Some(&mut Square::letter('B')));
-    /// assert_eq!(iter.next(), Some(&mut Square::letter('C')));
-    /// assert_eq!(iter.next(), Some(&mut Square::letter('D')));
+    /// assert_eq!(iter.next(), Some(&mut square!('A')));
+    /// assert_eq!(iter.next(), Some(&mut square!('B')));
+    /// assert_eq!(iter.next(), Some(&mut square!('C')));
+    /// assert_eq!(iter.next(), Some(&mut square!('D')));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Square> {

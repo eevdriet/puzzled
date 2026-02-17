@@ -20,20 +20,20 @@ use crate::Grid;
 /// Another common task is [revealing](Cell::reveal) a square without having to check whether it is white square -- black squares have no notion of being revealed.
 /// The [`reveal`](Square::reveal) and [`is_revealed`](Square::is_revealed) methods provide an indirection for squares to do this.
 /// ```
-/// use puzzled::{square, Cell, Solution::*};
+/// use puzzled::{cell, Cell, square, Square, Solution::*};
 ///
 /// // Creating cells from squares
 /// let letter = square!('L');
-/// assert_eq!(letter, Cell::new(Letter('L')));
+/// assert_eq!(letter, Square::White(cell!('L')));
 ///
 /// let mut rebus = square!("Rebus");
-/// assert_eq!(rebus, Cell::new(Rebus("Rebus")));
+/// assert_eq!(rebus, Square::White(cell!("Rebus")));
 ///
 /// // Revealing squares
-/// assert_eq!(rebus.is_revealed(), false);
+/// assert!(!rebus.is_revealed());
 ///
 /// rebus.reveal();
-/// assert_eq!(rebus.is_revealed(), true);
+/// assert!(rebus.is_revealed());
 /// ```
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum Square {

@@ -17,12 +17,12 @@ use std::ops;
 ///
 /// let style = CellStyle::INCORRECT | CellStyle::CIRCLED;
 /// let mut cell = Cell::new_styled(Solution::Letter('A'), style);
-/// assert_eq!(cell.is_incorrect(), true);
-/// assert_eq!(cell.is_circled(), true);
+/// assert!(cell.is_incorrect());
+/// assert!(cell.is_circled());
 ///
-/// assert_eq!(cell.is_revealed(), false);
+/// assert!(!cell.is_revealed());
 /// cell.reveal();
-/// assert_eq!(cell.is_revealed(), true);
+/// assert!(cell.is_revealed());
 /// ```
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CellStyle(u8);
@@ -97,7 +97,7 @@ impl ops::BitAnd<CellStyle> for CellStyle {
     type Output = CellStyle;
 
     fn bitand(self, rhs: CellStyle) -> CellStyle {
-        CellStyle(self.0 | rhs.0)
+        CellStyle(self.0 & rhs.0)
     }
 }
 
@@ -132,12 +132,6 @@ macro_rules! check_style {
         #[doc = concat!("Checks whether [`", stringify!($variant), "`]) is set.")]
         pub fn $style_fn(&self) -> bool {
             self.style & $variant != CellStyle::EMPTY
-        }
-    };
-    (CellStyle::EMPTY, $style_fn:ident()) => {
-        #[doc = concat!("Checks whether [no style](CellStyle::EMPTY) is set.")]
-        pub fn $style_fn(&self) -> bool {
-            self.style == CellStyle::EMPTY
         }
     };
 }

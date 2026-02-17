@@ -13,22 +13,25 @@ use crate::{CellStyle, Solution};
 /// When calling these methods, the square [style](CellStyle) is updated to match the current correctness.
 /// The correctness of the entry can be checked with [`is_correct`](Self::is_correct)
 /// ```
-/// use puzzled::{Cell, Solution, CellStyle};
+/// use puzzled::{cell, Cell, Solution, CellStyle};
 ///
 /// // Cell creation
-/// let mut letter = Cell::new(Solution::Letter('A'));
+/// let mut letter = cell!('A');
 /// assert!(letter.is_letter());
 ///
-/// let mut rebus = Cell::new_styled(Solution::Rebus("Cats"), CellStyle::CIRCLED);
+/// let mut rebus = Cell::new_styled(Solution::Rebus("Cats".to_string()), CellStyle::CIRCLED);
 /// assert!(rebus.is_rebus());
 ///
 /// // Solving
-/// assert_eq!(letter.was_incorrect(), false);
-/// assert_eq!(letter.is_incorrect(), true);
-///
 /// letter.enter('A');
-/// assert_eq!(letter.was_incorrect(), true);
-/// assert_eq!(letter.is_incorrect(), false);
+/// assert!(!letter.was_incorrect());
+/// assert!(!letter.is_incorrect());
+/// assert!(letter.is_correct());
+///
+/// letter.enter('B');
+/// assert!(!letter.was_incorrect());
+/// assert!(letter.is_incorrect());
+/// assert!(!letter.is_correct());
 ///
 /// // Style
 /// assert!(rebus.is_circled());
@@ -97,8 +100,7 @@ impl Cell {
         }
 
         // Check whether the cell was previously incorrect
-        let was_correct = self.is_correct();
-        if !was_correct {
+        if self.entry.is_some() && !self.is_correct() {
             self.style |= CellStyle::PREVIOUSLY_INCORRECT;
         }
 
@@ -106,8 +108,7 @@ impl Cell {
         self.entry = Some(guess.into());
 
         // Check whether the cell is currently incorrect
-        let is_correct = self.is_correct();
-        if !is_correct {
+        if !self.is_correct() {
             self.style |= CellStyle::INCORRECT;
         }
     }

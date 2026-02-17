@@ -6,13 +6,13 @@ mod solve;
 mod square;
 mod timer;
 
-use std::fmt;
-
 pub use clues::*;
 pub use geom::*;
 pub use grid::*;
 pub use square::*;
 pub use timer::*;
+
+use std::fmt;
 
 macro_rules! string_prop {
     ($field:ident, $field_doc:literal, $setter:ident, $setter_doc:literal) => {

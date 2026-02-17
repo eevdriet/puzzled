@@ -43,7 +43,7 @@
 //!
 //! The following all construct the same puzzle:
 //! ```
-//! use puzzled::{clue, Grid, puzzle, Puzzle, square};
+//! use puzzled::{clue_spec, Grid, puzzle, Puzzle, square};
 //! use puzzled::io::{PuzReader, TxtReader};
 //! use std::fs::{File, read_to_string};
 //!
@@ -62,8 +62,8 @@
 //!     .expect("Grid size evenly divides columns");
 //!
 //! let clues = vec![
-//!     clue!(A: "The first two letters of the alphabet"),
-//!     clue!(D: "Keep it short, but cool")
+//!     clue_spec!(A: "The first two letters of the alphabet"),
+//!     clue_spec!(D: "Keep it short, but cool")
 //! ];
 //!
 //! let mut puzzle2 = Puzzle::from_squares(squares);
@@ -80,20 +80,19 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
-//! # Dependencies
-//! The library currently has the following dependencies
-//!     - [thiserror] to simplify the definition of the [`Error`](crate::io::Error) type and subtypes
-//!     - [bitflags] to define the different [`styles`](CellStyle) that can be set for a [`square`](Cell)
-//!
-//! # Features
-//! Currently, [puzzled] defines the following flags
-//!     - **serde** - Enables support for serializing puzzles
+//! # Features and dependencies
+//! The library currently has no dependencies, expect for the following features:
+//! - **serde** - Enables support for serializing and deserializing puzzles with [serde]
+//! - [thiserror] to simplify the definition of the [`Error`](crate::io::Error) type and subtypes
 //!
 //! [puzzled]: crate
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 
-mod puzzle;
-pub use puzzle::*;
-
 pub mod io;
+pub mod puzzle;
+
+pub use {
+    io::{PuzReader, PuzWriter, TxtReader},
+    puzzle::*,
+};

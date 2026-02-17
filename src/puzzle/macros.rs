@@ -16,15 +16,17 @@ macro_rules! __dir {
     };
 }
 
+/// Inline constructor for a [clue specification](crate::ClueSpec)
 #[macro_export]
-macro_rules! clue {
+macro_rules! clue_spec {
     ($dir:ident : $clue:literal) => {
         $crate::ClueSpec::new($crate::__dir!($dir), $clue)
     };
 }
 
+/// Inline constructor for a [clue](crate::Clue)
 #[macro_export]
-macro_rules! clue_at {
+macro_rules! clue {
     ($num:literal $dir:ident : $clue:literal @ ($row:literal, $col:literal) + $len:literal) => {
         $crate::Clue::new(
             $num,
@@ -36,15 +38,9 @@ macro_rules! clue_at {
     };
 }
 
+/// Inline constructor for a [cell](crate::Cell)
 #[macro_export]
-macro_rules! square {
-    () => {
-        $crate::Square::Black
-    };
-    (.) => {
-        $crate::Square::Black
-    };
-
+macro_rules! cell {
     ($lit:literal) => {{
         trait __IntoSolution {
             fn into_solution(self) -> $crate::Solution;
@@ -63,10 +59,39 @@ macro_rules! square {
         }
 
         let solution = __IntoSolution::into_solution($lit);
-        $crate::Square::White($crate::Cell::new(solution))
+        $crate::Cell::new(solution)
     }};
 }
 
+/// Inline constructor for a [square](crate::Square)
+#[macro_export]
+macro_rules! square {
+    () => {
+        $crate::Square::Black
+    };
+    (.) => {
+        $crate::Square::Black
+    };
+
+    ($lit:literal) => {{
+        let cell = $crate::cell!($lit);
+        $crate::Square::White(cell)
+    }};
+
+    ($ident:ident) => {{
+        let s = stringify!($ident);
+
+        let solution = match s.len() {
+            1 => $crate::Solution::Letter(s.chars().next().unwrap()),
+            _ => $crate::Solution::Rebus(s.to_string()),
+        };
+        let cell = $crate::Cell::new(solution);
+
+        $crate::Square::White(cell)
+    }};
+}
+
+/// Inline constructor for a [puzzle](crate::Puzzle)
 #[macro_export]
 macro_rules! puzzle {
     (
@@ -101,7 +126,7 @@ macro_rules! puzzle {
 
         $(
             $(
-                let clue = $crate::clue!($dir : $clue);
+                let clue = $crate::clue_spec!($dir : $clue);
                 clues.push(clue);
             )*
         )?

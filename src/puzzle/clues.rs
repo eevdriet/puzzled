@@ -18,6 +18,8 @@ pub type Clues = BTreeMap<ClueId, Clue>;
 /// This struct can be used when the user is unsure what [squares](crate::Square) the clue should correspond to.
 /// By calling [`Puzzle::position_clues`], the specs are turned into [clues](Clue) by positioning them from the next available square in the puzzle.
 /// Furthermore, [`Puzzle::insert_clues`] can be used to add the clues to the puzzle after positioning them.
+///
+/// The [`clue_spec!`](crate::clue_spec) macro provides a shorthand for creating clue specifications.
 #[derive(Debug, Clone)]
 pub struct ClueSpec {
     text: String,
@@ -67,7 +69,7 @@ impl ClueSpec {
 
 /// Clue
 ///
-///
+/// The [`clue!`](crate::clue) macro provides a shorthand for creating clues
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Clue {
     // Specification
@@ -216,7 +218,7 @@ impl Puzzle {
 
             // Try to position the clue directed across
             if let Some(clue) =
-                self.try_clue_at_position(num, start, Direction::Across, &last, &mut across_iter)
+                self.try_clue_position(num, start, Direction::Across, &last, &mut across_iter)
             {
                 positioned.push(clue);
                 started = true;
@@ -224,7 +226,7 @@ impl Puzzle {
 
             // Try to position the clue directed down
             if let Some(clue) =
-                self.try_clue_at_position(num, start, Direction::Down, &last, &mut down_iter)
+                self.try_clue_position(num, start, Direction::Down, &last, &mut down_iter)
             {
                 positioned.push(clue);
                 started = true;
@@ -243,7 +245,7 @@ impl Puzzle {
         (positioned, unpositioned)
     }
 
-    fn try_clue_at_position<'a>(
+    fn try_clue_position<'a>(
         &self,
         num: u8,
         start: Position,
@@ -296,7 +298,7 @@ impl Puzzle {
     /// Returns an iterator over the entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at};
+    /// use puzzled::{puzzle, clue};
     ///
     /// let puzzle = puzzle! (
     ///     [C A N]
@@ -312,12 +314,12 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_clues();
     ///
-    /// assert_eq!(iter.next(), Some(&clue_at!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(1 A: "To be able to" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(1 D: "An automobile" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(3 D: "Not existing before" @ (0, 2) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(4 A: "The length of life" @ (1, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_clues(&self) -> impl Iterator<Item = &Clue> {
@@ -327,7 +329,7 @@ impl Puzzle {
     /// Returns a mutable iterator over the entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at};
+    /// use puzzled::{puzzle, clue};
     ///
     /// let mut puzzle = puzzle! (
     ///     [C A N]
@@ -343,12 +345,12 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_clues_mut();
     ///
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(1 A: "To be able to" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(1 D: "An automobile" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(3 D: "Not existing before" @ (0, 2) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(4 A: "The length of life" @ (1, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_clues_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
@@ -358,7 +360,7 @@ impl Puzzle {
     /// Returns an iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at, Direction::*};
+    /// use puzzled::{puzzle, clue, Direction::*};
     ///
     /// let puzzle = puzzle! (
     ///     [C A N]
@@ -374,9 +376,9 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_across();
     ///
-    /// assert_eq!(iter.next(), Some(&clue_at!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(1 A: "To be able to" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(4 A: "The length of life" @ (1, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_across(&self) -> impl Iterator<Item = &Clue> {
@@ -388,7 +390,7 @@ impl Puzzle {
     /// Returns a mutable iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at, Direction::*};
+    /// use puzzled::{puzzle, clue, Direction::*};
     ///
     /// let mut puzzle = puzzle! (
     ///     [C A N]
@@ -404,9 +406,9 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_across_mut();
     ///
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(1 A: "To be able to" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(4 A: "The length of life" @ (1, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_across_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
@@ -418,7 +420,7 @@ impl Puzzle {
     /// Returns an iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at, Direction::*};
+    /// use puzzled::{puzzle, clue, Direction::*};
     ///
     /// let puzzle = puzzle! (
     ///     [C A N]
@@ -434,9 +436,9 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_down();
     ///
-    /// assert_eq!(iter.next(), Some(&clue_at!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue_at!(3 D: "Not existing before" @ (0, 2) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(1 D: "An automobile" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
+    /// assert_eq!(iter.next(), Some(&clue!(3 D: "Not existing before" @ (0, 2) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_down(&self) -> impl Iterator<Item = &Clue> {
@@ -448,7 +450,7 @@ impl Puzzle {
     /// Returns a mutable iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::{puzzle, clue_at, Direction::*};
+    /// use puzzled::{puzzle, clue, Direction::*};
     ///
     /// let mut puzzle = puzzle! (
     ///     [C A N]
@@ -464,9 +466,9 @@ impl Puzzle {
     /// );
     /// let mut iter = puzzle.iter_down_mut();
     ///
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue_at!(3 D: "Not existing before" @ (0, 2) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(1 D: "An automobile" @ (0, 0) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
+    /// assert_eq!(iter.next(), Some(&mut clue!(3 D: "Not existing before" @ (0, 2) + 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_down_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
@@ -481,7 +483,7 @@ impl ops::Index<ClueId> for Puzzle {
 
     /// Index the puzzle to retrieve a reference to the square at the given position.
     /// ```
-    /// use puzzled::{clue_at, Direction::*, puzzle};
+    /// use puzzled::{clue, Direction::*, puzzle};
     ///
     /// let puzzle = puzzle! (
     ///     [A B]
@@ -493,10 +495,10 @@ impl ops::Index<ClueId> for Puzzle {
     ///     A: "C",
     /// );
     ///
-    /// assert_eq!(puzzle[(1, Across)], clue_at!(1 A: "AB" @ (0, 0) + 2));
-    /// assert_eq!(puzzle[(1, Down)], clue_at!(1 D: "AC" @ (0, 0) + 2));
-    /// assert_eq!(puzzle[(2, Down)], clue_at!(2 D: "B" @ (0, 1) + 1));
-    /// assert_eq!(puzzle[(3, Across)], clue_at!(3 A: "C" @ (1, 0) + 1));
+    /// assert_eq!(puzzle[(1, Across)], clue!(1 A: "AB" @ (0, 0) + 2));
+    /// assert_eq!(puzzle[(1, Down)], clue!(1 D: "AC" @ (0, 0) + 2));
+    /// assert_eq!(puzzle[(2, Down)], clue!(2 D: "B" @ (0, 1) + 1));
+    /// assert_eq!(puzzle[(3, Across)], clue!(3 A: "C" @ (1, 0) + 1));
     /// ```
     ///
     /// # Panics
