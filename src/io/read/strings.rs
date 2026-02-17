@@ -1,5 +1,5 @@
 use crate::Puzzle;
-use crate::io::{Context, PuzRead, Strings, TxtReader, TxtState, read};
+use crate::io::{Context, PuzRead, Strings, TxtReader, TxtState, format, is_valid_version, read};
 
 impl Strings {
     pub(crate) fn read_from<R: PuzRead>(reader: &mut R, clue_count: u16) -> read::Result<Self> {
@@ -45,11 +45,13 @@ impl<'a> TxtReader {
                 continue;
             }
 
-            let (prop, text) = line.split_once(':').ok_or(read::Error {
-                span: 0..0,
-                kind: read::ErrorKind::Custom(format!("Invalid metadata: {line}")),
-                context: context.to_string(),
-            })?;
+            let (prop, text) = line
+                .split_once(':')
+                .ok_or(format::Error::InvalidProperty {
+                    found: line.to_string(),
+                    reason: "Property should be formatted as <key>: \"<value>\"".to_string(),
+                })
+                .context(context)?;
 
             // Parse timer separately
             if prop == "timer" {
@@ -73,23 +75,19 @@ impl<'a> TxtReader {
                     puzzle = puzzle.with_title(text);
                 }
                 "version" => match text.as_bytes() {
-                    [x, b'.', y] if x.is_ascii_digit() && y.is_ascii_digit() => {
+                    version if is_valid_version(version) => {
                         puzzle = puzzle.with_version(text);
                     }
                     _ => {
-                        return Err(read::Error {
-                            span: 0..0,
-                            kind: read::ErrorKind::Custom(format!("Invalid metadata: {line}")),
-                            context: context.to_string(),
-                        });
+                        return Err(format::Error::InvalidVersion).context(context);
                     }
                 },
                 _ => {
-                    return Err(read::Error {
-                        span: 0..0,
-                        kind: read::ErrorKind::Custom(format!("Invalid metadata property: {prop}")),
-                        context: context.to_string(),
-                    });
+                    return Err(format::Error::InvalidProperty {
+                        found: prop.to_string(),
+                        reason: "Type is unknown".to_string(),
+                    })
+                    .context(context);
                 }
             }
         }

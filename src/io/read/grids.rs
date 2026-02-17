@@ -1,5 +1,5 @@
 use crate::io::{
-    Context, Grids, GridsError, PuzRead, ReadResult, SECTION_SEPARATOR, TxtReader, TxtState, read,
+    Context, Grids, GridsError, PuzRead, SECTION_SEPARATOR, TxtReader, TxtState, format, read,
 };
 use crate::{Grid, Square};
 
@@ -29,7 +29,9 @@ impl Grids {
 impl<'a> TxtReader {
     pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> read::Result<Grid<Square>> {
         let mut squares = Vec::new();
-        let context = "Puzzle grid".to_string();
+        let context = "Puzzle grid";
+
+        let err = |err: GridsError| format::Error::Grids(err);
 
         let mut cols = None;
         let mut rows = 0;
@@ -54,46 +56,36 @@ impl<'a> TxtReader {
 
             if let Some(width) = cols {
                 if width != row_width {
-                    return Err(read::Error {
-                        span: 0..0,
-                        kind: GridsError::InvalidWidth {
-                            row: rows,
-                            found: row_width,
-                            expected: width,
-                        }
-                        .into(),
-                        context,
-                    });
+                    return Err(err(GridsError::InvalidWidth {
+                        row: rows,
+                        found: row_width,
+                        expected: width,
+                    }))
+                    .context(context.to_string());
                 }
             } else {
                 cols = Some(row_width);
             }
         }
 
-        let cols = cols.ok_or(read::Error {
-            span: 0..0,
-            kind: GridsError::InvalidDimensions { rows, cols: 0 }.into(),
-            context: context.clone(),
-        })?;
+        let cols = cols
+            .ok_or(err(GridsError::InvalidDimensions { rows, cols: 0 }))
+            .context(context.to_string())?;
 
-        let grid = Grid::new(squares, cols).ok_or(read::Error {
-            span: 0..0,
-            kind: GridsError::InvalidDimensions { rows, cols }.into(),
-            context,
-        })?;
+        let grid = Grid::new(squares, cols)
+            .ok_or(err(GridsError::InvalidDimensions { rows, cols }))
+            .context(context.to_string())?;
 
         Ok(grid)
     }
 
-    fn parse_row(row: u8, line: &str) -> ReadResult<Vec<Square>> {
-        let context = format!("Row #{row}");
-
+    fn parse_row(row: u8, line: &str) -> read::Result<Vec<Square>> {
         if !line.starts_with('[') || !line.ends_with(']') {
-            return Err(read::Error {
-                span: 0..0,
-                kind: read::ErrorKind::Custom("[...]".to_string()),
-                context,
-            });
+            return Err(format::Error::Grids(GridsError::InvalidRow {
+                row,
+                reason: "Should be delimited by [...]".to_string(),
+            }))
+            .context(format!("Puzzle grid"));
         }
 
         let line = &line[1..line.len() - 1];

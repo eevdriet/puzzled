@@ -2,7 +2,7 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::io::Context;
+use crate::io::{Context, format};
 
 #[derive(Debug, Error)]
 #[error("{kind} while writing '{context}'")]
@@ -15,14 +15,11 @@ pub struct Error {
 
 #[derive(Debug, Error)]
 pub enum ErrorKind {
-    #[error("{0}")]
-    Custom(String),
-
     #[error("I/O error: {0}")]
     Io(std::io::Error),
 
-    #[error("Formatting error: {0}")]
-    Format(crate::io::Error),
+    #[error("{0}")]
+    Format(#[from] format::Error),
 }
 
 impl<T> Context<T, Error> for io::Result<T> {

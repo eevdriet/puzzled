@@ -156,6 +156,7 @@ pub(crate) mod write;
 mod checksums;
 mod error;
 mod extras;
+mod format;
 mod grids;
 mod header;
 mod strings;
@@ -183,17 +184,19 @@ use std::ops::Range;
 pub(crate) type Span = Range<usize>;
 
 pub(crate) fn is_valid_version(version: &[u8]) -> bool {
-    if version.len() != 4 {
+    // Optionally strip the trailing \0
+    let version = version.strip_suffix(&[0]).unwrap_or(version);
+
+    if version.len() != 3 {
         return false;
     }
 
     let mut bytes = version.iter();
-    let (x, &dot, y, &c0) = (
-        bytes.next().expect("checked version length"),
+    let (x, &dot, y) = (
         bytes.next().expect("checked version length"),
         bytes.next().expect("checked version length"),
         bytes.next().expect("checked version length"),
     );
 
-    x.is_ascii_digit() && dot == b'.' && y.is_ascii_digit() && c0 == b'\0'
+    x.is_ascii_digit() && dot == b'.' && y.is_ascii_digit()
 }

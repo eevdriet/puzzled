@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{
     Position,
-    io::{GridsError, HeaderError, Span, error::Context},
+    io::{FILE_MAGIC, Span, error::Context, format},
 };
 
 #[derive(Debug, Error)]
@@ -22,20 +22,14 @@ pub struct Error {
 
 #[derive(Debug, Error)]
 pub enum ErrorKind {
-    #[error("{0}")]
-    Custom(String),
-
     #[error("I/O error: {0}")]
     Io(std::io::Error),
 
-    #[error("Formatting error: {0}")]
-    Format(crate::io::Error),
-
     #[error("{0}")]
-    Header(#[from] HeaderError),
+    Format(#[from] format::Error),
 
-    #[error("{0}")]
-    Puzzle(#[from] GridsError),
+    #[error("Invalid file magic: .puz files expect '{FILE_MAGIC}', but found '{found}'")]
+    InvalidFileMagic { found: String },
 
     #[error("Invalid checksum '{found}' found, expected '{expected}'")]
     InvalidChecksum { found: u16, expected: u16 },
@@ -59,10 +53,6 @@ pub enum ErrorKind {
     // RTBL
     #[error("Rebus #{square} in the RTBL is invalid: {reason}")]
     InvalidRebus { square: u16, reason: String },
-
-    // LTIM
-    #[error("Invalid timer found: {reason}")]
-    InvalidTimer { reason: String },
 
     // GEXT
     #[error(

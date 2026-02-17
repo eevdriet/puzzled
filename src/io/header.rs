@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{
     Puzzle,
-    io::{self, FILE_MAGIC, is_valid_version},
+    io::{FILE_MAGIC, format, is_valid_version},
 };
 
 #[derive(Debug, Default)]
@@ -29,22 +29,16 @@ pub(crate) struct Header {
 }
 
 #[derive(Debug, Error, Clone)]
-pub enum HeaderError {
-    #[error("Invalid file magic: .puz files expect '{FILE_MAGIC}', but found '{found}'")]
-    InvalidFileMagic { found: String },
-
-    #[error("Invalid puzzle dimensions: read {width} width and {height} height")]
-    InvalidDimensions { width: u8, height: u8 },
-}
+pub enum HeaderError {}
 
 impl Header {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> io::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
         let mut header = Header::default();
 
         if let Some(version) = puzzle.version() {
             let bytes = version.as_bytes();
             if is_valid_version(bytes) {
-                return Err(io::Error::InvalidVersion);
+                return Err(format::Error::InvalidVersion);
             }
 
             header.version = [bytes[0], bytes[1], bytes[2], bytes[3]];

@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     CellStyle, Grid, TimerState,
     io::{
-        Context, Extras, Gext, Grbs, Ltim, PuzRead, Rtbl, Span, build_string,
+        Context, Extras, Gext, Grbs, Ltim, PuzRead, Rtbl, Span, build_string, format,
         read::{self, PuzState},
     },
 };
@@ -126,7 +126,7 @@ impl Extras {
 
         let err = |reason: String| read::Error {
             span: Span::default(),
-            kind: read::ErrorKind::InvalidTimer { reason },
+            kind: format::Error::InvalidTimer { reason }.into(),
             context: context.into(),
         };
 

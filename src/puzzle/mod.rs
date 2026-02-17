@@ -1,3 +1,6 @@
+/// Defines all functionality for solving and interacting with [puzzles](Puzzle)
+///
+///
 mod clues;
 mod geom;
 mod grid;

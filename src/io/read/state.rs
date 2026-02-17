@@ -1,6 +1,6 @@
 use std::str::Lines;
 
-use crate::io::{ReadError, Warning, read};
+use crate::io::{Context, ReadError, Warning, format, read};
 
 #[derive(Debug, Default)]
 pub struct PuzState {
@@ -63,11 +63,10 @@ impl<'a> TxtState<'a> {
         let text = text.trim();
 
         if !text.starts_with('"') || !text.ends_with('"') {
-            return Err(ReadError {
-                span: self.pos..self.pos + text.len(),
-                kind: read::ErrorKind::Custom("[...]".to_string()),
-                context: context.into(),
-            });
+            return Err(format::Error::InvalidStringLiteral {
+                found: text.to_string(),
+            })
+            .context(context);
         }
 
         Ok(text[1..text.len() - 1].to_string())

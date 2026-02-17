@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::io::{
-    PuzReader, ReadResult, SECTION_SEPARATOR, Span, Strings, TxtReader, TxtState, build_string,
-    read,
+    PuzReader, SECTION_SEPARATOR, Span, Strings, TxtReader, TxtState, build_string, format, read,
 };
 use crate::{Clue, ClueSpec, Clues, Direction, Grid, Position, Square};
 
@@ -58,9 +57,18 @@ impl PuzReader {
 }
 
 impl<'a> TxtReader {
-    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> ReadResult<Vec<ClueSpec>> {
+    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> read::Result<Vec<ClueSpec>> {
         let mut clues = Vec::new();
         let context = "Clues";
+
+        let err = |reason: &str| read::Error {
+            span: 0..0,
+            kind: format::Error::InvalidClueSpec {
+                reason: reason.to_string(),
+            }
+            .into(),
+            context: "Clues".to_string(),
+        };
 
         while let Some(line) = state.next() {
             let line = line.trim();
@@ -73,25 +81,20 @@ impl<'a> TxtReader {
                 break;
             }
 
-            let (dir_str, text) = line.split_once(':').ok_or(read::Error {
-                span: 0..0,
-                kind: read::ErrorKind::Custom(format!("Invalid clue spec: {line}")),
-                context: context.to_string(),
-            })?;
+            let (dir_str, text) = line
+                .split_once(':')
+                .ok_or(err("Clues should be specified as <dir> : <text>"))?;
 
             // Validate the direction of the clue
             let direction = match dir_str.trim() {
                 "A" => Direction::Across,
                 "D" => Direction::Down,
                 _ => {
-                    return Err(read::Error {
-                        span: 0..0,
-                        kind: read::ErrorKind::Custom(format!("Invalid clue spec: {line}")),
-                        context: context.to_string(),
-                    });
+                    return Err(err(
+                        "Clue direction should be either A (across) or D (down)",
+                    ));
                 }
             };
-            eprintln!("Text to parse to string: '{text}'");
 
             // Validate the clue text
             let text = state.parse_string(text, context)?;
