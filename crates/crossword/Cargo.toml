@@ -1,0 +1,18 @@
+[package]
+name = "puzzled_crossword"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { workspace = true, optional = true }
+miette = { workspace = true, optional = true}
+thiserror = { workspace = true}
+puzzled_core = { path = "../core"}
+
+[features]
+default = []
+serde = ["dep:serde"]
+miette = ["dep:miette"]
+
+[dev-dependencies]
+rstest = "0.26.1"

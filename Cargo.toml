@@ -1,17 +1,9 @@
-[package]
-name = "puzzled"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "2"
 
-[dependencies]
-serde = { version = "1.0.228", features = ["derive"], optional = true }
-miette = { version = "7.6.0", features = ["fancy"], optional = true}
+members = ["crates/core","crates/crossword"]
+
+[workspace.dependencies]
 thiserror = "2.0.18"
-
-[features]
-default = []
-serde = ["dep:serde"]
-miette = ["dep:miette"]
-
-[dev-dependencies]
-rstest = "0.26.1"
+serde = { version = "1.0.228", features = ["derive"]}
+miette = { version = "7.6.0", features = ["fancy"]}
