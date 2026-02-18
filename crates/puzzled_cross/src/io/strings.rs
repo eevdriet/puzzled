@@ -28,7 +28,7 @@ impl Strings {
 
         strings.clues = Vec::with_capacity(puzzle.clues().len());
 
-        for (idx, clue) in puzzle.iter_clues().enumerate() {
+        for (idx, clue) in puzzle.clues().values().enumerate() {
             let num = idx + 1;
             let context = format!("Clue #{num}");
             strings.clues[idx].write_str0(clue.text()).expect(&context);

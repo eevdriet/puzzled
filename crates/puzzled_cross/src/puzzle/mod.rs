@@ -2,13 +2,11 @@
 ///
 ///
 mod clue;
-mod grid;
 mod macros;
 mod solve;
 mod square;
 
 pub use clue::*;
-pub use grid::*;
 pub use square::*;
 
 use puzzled_core::Timer;
@@ -105,6 +103,56 @@ impl Puzzle {
             ..Default::default()
         }
     }
+
+    pub fn squares(&self) -> &Squares {
+        &self.squares
+    }
+
+    pub fn squares_mut(&mut self) -> &mut Squares {
+        &mut self.squares
+    }
+
+    pub fn clues(&self) -> &Clues {
+        &self.clues
+    }
+
+    pub fn clues_mut(&mut self) -> &mut Clues {
+        &mut self.clues
+    }
+
+    /// Number of rows (height) in the puzzle.
+    ///
+    /// Note that this includes blank squares
+    /// ```
+    /// use puzzled_crossword::puzzle;
+    ///
+    /// let puzzle = puzzle! (
+    ///    [A B C]
+    ///    [D E F]
+    /// );
+    /// assert_eq!(puzzle.rows(), 2);
+    /// assert_eq!(puzzle.cols(), 3);
+    /// ```
+    pub fn rows(&self) -> usize {
+        self.squares.rows()
+    }
+
+    /// Number of columns (width) in the puzzle.
+    ///
+    /// Note that this includes blank squares
+    /// ```
+    /// use puzzled_crossword::puzzle;
+    ///
+    /// let puzzle = puzzle! (
+    ///    [A B C]
+    ///    [D E F]
+    /// );
+    /// assert_eq!(puzzle.rows(), 2);
+    /// assert_eq!(puzzle.cols(), 3);
+    /// ```
+    pub fn cols(&self) -> usize {
+        self.squares.cols()
+    }
 }
 
 /// # Properties
@@ -185,13 +233,13 @@ impl fmt::Display for Puzzle {
 
         writeln!(f)?;
 
-        for entry in self.iter_across() {
+        for entry in self.clues().iter_across() {
             writeln!(f, "{entry}")?
         }
 
         writeln!(f)?;
 
-        for entry in self.iter_down() {
+        for entry in self.clues().iter_down() {
             writeln!(f, "{entry}")?
         }
 

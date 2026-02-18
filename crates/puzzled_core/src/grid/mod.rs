@@ -4,7 +4,7 @@ mod index;
 mod iter;
 mod macros;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default)]
 pub struct Grid<T> {
     cols: usize,
     rows: usize,
@@ -142,6 +142,24 @@ impl<T> Grid<T> {
         Some(true)
     }
 }
+
+impl<T> PartialEq for Grid<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        if self.rows != other.rows {
+            return false;
+        }
+        if self.cols != other.cols {
+            return false;
+        }
+
+        self.data == other.data
+    }
+}
+
+impl<T> Eq for Grid<T> where T: Eq {}
 
 impl<T> Grid<T>
 where

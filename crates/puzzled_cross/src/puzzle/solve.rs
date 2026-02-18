@@ -51,7 +51,7 @@ impl Puzzle {
     /// ```
     pub fn reveal_clue(&mut self, id: ClueId) -> bool {
         // Try to get the clue to reveal squares for
-        let Some(clue) = self.get_clue(id) else {
+        let Some(clue) = self.clues().get(&id) else {
             return false;
         };
 

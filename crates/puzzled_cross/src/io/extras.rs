@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{CellStyle, GridExtension, Puzzle, SizeCheck, Square, format};
+use crate::{CellStyle, Puzzle, SizeCheck, Square, format};
 use puzzled_core::{Grid, Position, Timer};
 
 pub(crate) type Grbs = Grid<u8>;

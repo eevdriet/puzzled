@@ -1,10 +1,11 @@
 mod cell;
 mod solution;
+mod squares;
 mod style;
 
 use std::fmt;
 
-pub use {cell::*, solution::*, style::*};
+pub use {cell::*, solution::*, squares::*, style::*};
 
 /// Square that is placed in the [puzzle](crate::Puzzle) [grid](crate::Grid).
 ///

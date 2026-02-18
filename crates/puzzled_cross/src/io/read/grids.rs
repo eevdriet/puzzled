@@ -1,9 +1,9 @@
 use puzzled_core::Grid;
 
-use crate::Square;
 use crate::io::{
     Context, Grids, GridsError, PuzRead, SECTION_SEPARATOR, TxtReader, TxtState, format, read,
 };
+use crate::{Square, Squares};
 
 impl Grids {
     pub(crate) fn read_from<R: PuzRead>(
@@ -30,7 +30,7 @@ impl Grids {
 }
 
 impl<'a> TxtReader {
-    pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> read::Result<Grid<Square>> {
+    pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> read::Result<Squares> {
         let mut squares = Vec::new();
         let context = "Puzzle grid";
 
@@ -79,7 +79,7 @@ impl<'a> TxtReader {
             .ok_or(err(GridsError::InvalidDimensions { rows, cols }))
             .context(context.to_string())?;
 
-        Ok(grid)
+        Ok(Squares::new(grid))
     }
 
     fn parse_row(row: u8, line: &str) -> read::Result<Vec<Square>> {

@@ -1,13 +1,13 @@
-use puzzled_core::{Grid, Position};
+use puzzled_core::Position;
 use std::collections::BTreeMap;
 
 use crate::io::{
     PuzReader, SECTION_SEPARATOR, Span, Strings, TxtReader, TxtState, build_string, format, read,
 };
-use crate::{Clue, ClueSpec, Clues, Direction, GridExtension, Square};
+use crate::{Clue, ClueSpec, Clues, Direction, Squares};
 
 impl PuzReader {
-    pub(crate) fn read_clues(&self, grid: &Grid<Square>, strings: &Strings) -> read::Result<Clues> {
+    pub(crate) fn read_clues(&self, squares: &Squares, strings: &Strings) -> read::Result<Clues> {
         let mut entries = BTreeMap::new();
 
         let mut num: u8 = 1;
@@ -15,7 +15,7 @@ impl PuzReader {
 
         let mut start_at_pos = |num: u8, start: Position, direction: Direction| -> bool {
             // Cannot start clue at current position
-            if !grid.starts_in_dir(start, direction) {
+            if !squares.starts_in_dir(start, direction) {
                 return false;
             }
 
@@ -24,7 +24,7 @@ impl PuzReader {
                 None => return false,
                 Some((_, clue)) => build_string(clue),
             };
-            let len = grid.find_playable_len(start, direction);
+            let len = squares.find_playable_len(start, direction);
 
             let entry = Clue::new(num, direction, text, start, len);
             entries.insert((num, direction), entry);
@@ -32,7 +32,7 @@ impl PuzReader {
             true
         };
 
-        for start in grid.positions() {
+        for start in squares.positions() {
             let starts_across = start_at_pos(num, start, Direction::Across);
             let starts_down = start_at_pos(num, start, Direction::Down);
 
@@ -53,7 +53,7 @@ impl PuzReader {
             });
         }
 
-        Ok(entries)
+        Ok(Clues::new(entries))
     }
 }
 

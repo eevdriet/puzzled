@@ -39,6 +39,33 @@ impl<T> Grid<T> {
     }
 }
 
+/// Index the grid to retrieve a reference to the entry at the given [position](Position).
+/// ```
+/// use puzzled_core::{grid, Position};
+///
+/// let grid = grid! (
+///    [1, 2],
+///    [3, 4],
+/// );
+///
+/// assert_eq!(grid[Position::new(0, 0)], 1);
+/// assert_eq!(grid[Position::new(0, 1)], 2);
+/// assert_eq!(grid[Position::new(1, 0)], 3);
+/// assert_eq!(grid[Position::new(1, 1)], 4);
+/// ```
+/// # Panics
+/// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
+/// ```should_panic
+/// use puzzled_core::{grid, Position};
+///
+/// let grid = grid! (
+///    [1, 2],
+///    [3, 4],
+/// );
+///
+/// let pos = Position::new(2, 1);
+/// let num = &grid[pos];
+/// ```
 impl<T, P> ops::Index<P> for Grid<T>
 where
     P: Into<Position>,
@@ -61,6 +88,33 @@ impl<T, P> ops::IndexMut<P> for Grid<T>
 where
     P: Into<Position>,
 {
+    /// Index the grid to retrieve a mutable reference to the entry at the given [position](Position).
+    /// ```
+    /// use puzzled_core::{grid, Position};
+    ///
+    /// let grid = grid! (
+    ///    [1, 2],
+    ///    [3, 4],
+    /// );
+    ///
+    /// assert_eq!(grid[Position::new(0, 0)], 1);
+    /// assert_eq!(grid[Position::new(0, 1)], 2);
+    /// assert_eq!(grid[Position::new(1, 0)], 3);
+    /// assert_eq!(grid[Position::new(1, 1)], 4);
+    /// ```
+    /// # Panics
+    /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
+    /// ```should_panic
+    /// use puzzled_core::{grid, Position};
+    ///
+    /// let grid = grid! (
+    ///    [1, 2],
+    ///    [3, 4],
+    /// );
+    ///
+    /// let pos = Position::new(2, 1);
+    /// let num = &grid[pos];
+    /// ```
     fn index_mut(&mut self, pos: P) -> &mut Self::Output {
         let pos: Position = pos.into();
         let rows = self.rows;

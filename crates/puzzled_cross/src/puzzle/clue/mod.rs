@@ -1,22 +1,15 @@
+mod clues;
 mod direction;
+mod id;
 
+pub use clues::*;
 pub use direction::*;
+pub use id::*;
 
 use puzzled_core::Position;
-use std::{cmp::Ordering, collections::BTreeMap, fmt, ops};
+use std::{cmp::Ordering, fmt};
 
-use crate::{GridExtension, Puzzle};
-
-/// Type that identifies where a [clue](Clue) is placed within a [puzzle](Puzzle)
-///
-/// The identifier mimics the way clues are commonly identified in real crosswords.
-/// For example, "4 across" can be specified as `(4, Direction::Across)`.
-pub type ClueId = (u8, Direction);
-
-/// Collection type of all [clues](Clue) in a [puzzle](Puzzle)
-///
-/// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
-pub type Clues = BTreeMap<ClueId, Clue>;
+use crate::Puzzle;
 
 /// Specification for how to add a [clue](Clue) to a [puzzle](Puzzle).
 ///
@@ -176,10 +169,6 @@ impl PartialOrd for Clue {
 }
 
 impl Puzzle {
-    pub fn clues(&self) -> &Clues {
-        &self.clues
-    }
-
     pub fn insert_clues(&mut self, clues: impl IntoIterator<Item = ClueSpec>) -> Vec<ClueSpec> {
         let (positioned, unpositioned) = self.place_clues(clues);
 
@@ -204,7 +193,7 @@ impl Puzzle {
         let mut down_iter = down.into_iter();
 
         // Determine all positions past the last entry
-        let last = match self.iter_clues().last() {
+        let last = match self.clues.values().last() {
             Some(clue) => clue.clone(),
             None => Clue::default(),
         };
@@ -279,235 +268,5 @@ impl Puzzle {
             text: clue.text,
             len: self.squares.find_playable_len(start, direction),
         })
-    }
-}
-
-/// # Puzzle clues
-impl Puzzle {
-    /// Get a reference to the [clue](Clue) that is identified
-    /// [`Some(Clue)`](Option::Some) is returned if the identifier is valid, otherwise [`None`].
-    pub fn get_clue(&self, id: ClueId) -> Option<&Clue> {
-        self.clues.get(&id)
-    }
-
-    /// Get a mutable reference to the [clue](Clue) that is identified
-    /// [`Some(Clue)`](Option::Some) is returned if the identifier is valid, otherwise [`None`].
-    pub fn get_clue_mut(&mut self, id: ClueId) -> Option<&mut Clue> {
-        self.clues.get_mut(&id)
-    }
-
-    /// Returns an iterator over the entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue};
-    ///
-    /// let puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - A: "To be able to"
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    /// );
-    /// let mut iter = puzzle.iter_clues();
-    ///
-    /// assert_eq!(iter.next(), Some(&clue!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_clues(&self) -> impl Iterator<Item = &Clue> {
-        self.clues.values()
-    }
-
-    /// Returns a mutable iterator over the entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue};
-    ///
-    /// let mut puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - A: "To be able to"
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    /// );
-    /// let mut iter = puzzle.iter_clues_mut();
-    ///
-    /// assert_eq!(iter.next(), Some(&mut clue!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_clues_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
-        self.clues.values_mut()
-    }
-
-    /// Returns an iterator over just the across entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue, Direction::*};
-    ///
-    /// let puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - A: "To be able to"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    /// );
-    /// let mut iter = puzzle.iter_across();
-    ///
-    /// assert_eq!(iter.next(), Some(&clue!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_across(&self) -> impl Iterator<Item = &Clue> {
-        self.clues
-            .values()
-            .filter(|clue| matches!(clue.direction(), Direction::Across))
-    }
-
-    /// Returns a mutable iterator over just the across entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue, Direction::*};
-    ///
-    /// let mut puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - A: "To be able to"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    /// );
-    /// let mut iter = puzzle.iter_across_mut();
-    ///
-    /// assert_eq!(iter.next(), Some(&mut clue!(1 A: "To be able to" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(4 A: "The length of life" @ (1, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(5 A: "Some stuff arranged in a line" @ (2, 0) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_across_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
-        self.clues
-            .values_mut()
-            .filter(|clue| matches!(clue.direction(), Direction::Across))
-    }
-
-    /// Returns an iterator over just the down entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue, Direction::*};
-    ///
-    /// let puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    ///     - A: "To be able to"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    /// );
-    /// let mut iter = puzzle.iter_down();
-    ///
-    /// assert_eq!(iter.next(), Some(&clue!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&clue!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_down(&self) -> impl Iterator<Item = &Clue> {
-        self.clues
-            .values()
-            .filter(|clue| matches!(clue.direction(), Direction::Down))
-    }
-
-    /// Returns a mutable iterator over just the down entries of the puzzle.
-    /// The order is defined by the [`Ord`] implementation on [`Clue`].
-    /// ```
-    /// use puzzled_crossword::{puzzle, clue, Direction::*};
-    ///
-    /// let mut puzzle = puzzle! (
-    ///     [C A N]
-    ///     [A G E]
-    ///     [R O W]
-    ///     - D: "An automobile"
-    ///     - D: "Past, gone, before now"
-    ///     - D: "Not existing before"
-    ///     - A: "To be able to"
-    ///     - A: "The length of life"
-    ///     - A: "Some stuff arranged in a line"
-    /// );
-    /// let mut iter = puzzle.iter_down_mut();
-    ///
-    /// assert_eq!(iter.next(), Some(&mut clue!(1 D: "An automobile" @ (0, 0) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(2 D: "Past, gone, before now" @ (0, 1) + 3)));
-    /// assert_eq!(iter.next(), Some(&mut clue!(3 D: "Not existing before" @ (0, 2) + 3)));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_down_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
-        self.clues
-            .values_mut()
-            .filter(|clue| matches!(clue.direction(), Direction::Down))
-    }
-}
-
-impl ops::Index<ClueId> for Puzzle {
-    type Output = Clue;
-
-    /// Index the puzzle to retrieve a reference to the square at the given position.
-    /// ```
-    /// use puzzled_crossword::{clue, Direction::*, puzzle};
-    ///
-    /// let puzzle = puzzle! (
-    ///     [A B]
-    ///     [C .]
-    ///     - A: "AB"
-    ///     - D: "AC"
-    ///     - D: "B"
-    ///     - A: "C"
-    /// );
-    ///
-    /// assert_eq!(puzzle[(1, Across)], clue!(1 A: "AB" @ (0, 0) + 2));
-    /// assert_eq!(puzzle[(1, Down)], clue!(1 D: "AC" @ (0, 0) + 2));
-    /// assert_eq!(puzzle[(2, Down)], clue!(2 D: "B" @ (0, 1) + 1));
-    /// assert_eq!(puzzle[(3, Across)], clue!(3 A: "C" @ (1, 0) + 1));
-    /// ```
-    ///
-    /// # Panics
-    /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
-    /// ```should_panic
-    /// use puzzled_crossword::{Direction::*, puzzle};
-    ///
-    /// let puzzle = puzzle! (
-    ///    [A B]
-    ///    [C D]
-    /// );
-    ///
-    /// let clue = &puzzle[(10, Across)];
-    /// ```
-    fn index(&self, id: ClueId) -> &Self::Output {
-        &self.clues[&id]
     }
 }
