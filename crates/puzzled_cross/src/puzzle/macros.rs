@@ -1,12 +1,5 @@
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __count {
-    () => (0usize);
-    ( $x:tt $($xs:tt)* ) => (1usize + $crate::__count!($($xs)*));
-}
-
-#[doc(hidden)]
-#[macro_export]
 macro_rules! __dir {
     (A) => {
         $crate::Direction::Across
@@ -136,25 +129,11 @@ macro_rules! puzzle {
         // Metadata
         $( $meta_key:ident : $meta_val:literal )*
     ) => {{
-        // Manually count the number of columns in the first row
-        let mut _assert_width0 = [(); $crate::__count!($($x0)*)];
-        let cols = $crate::__count!($($x0)*);
-        let rows = 1usize;
-
-        // Count the number of columns in subsequent rows
-        $(
-            let _assert_width = [(); $crate::__count!($($x)*)];
-            _assert_width0 = _assert_width;
-            let rows = rows + 1usize;
-        )*
-
-        let mut vec = Vec::with_capacity(rows.checked_mul(cols).unwrap());
-
         // Add squares
-        $( vec.push($crate::square!($x0)); )*
-        $( $( vec.push($crate::square!($x)); )* )*
-
-        let squares = puzzled_core::Grid::from_vec(vec, cols).unwrap();
+        let squares = $crate::grid![
+            [$( $crate::square!($x0) ),+]
+            $(, [$( $crate::square!($x) ),+] )*
+        ];
 
         // Add clues
         #[allow(unused_mut)]

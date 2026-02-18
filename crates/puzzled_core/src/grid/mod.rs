@@ -1,5 +1,8 @@
+use crate::{Order, Position};
+
 mod index;
 mod iter;
+mod macros;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Grid<T> {
@@ -9,6 +12,9 @@ pub struct Grid<T> {
 }
 
 impl<T> Grid<T> {
+    /// Create a grid from a data [`Vec<T>`] and the number of columns to use
+    ///
+    /// Returns [`None`] if the data does not divide the number of columns
     pub fn from_vec(data: Vec<T>, cols: usize) -> Option<Self> {
         if !data.len().is_multiple_of(cols) {
             return None;
@@ -18,16 +24,122 @@ impl<T> Grid<T> {
         Some(Self { cols, rows, data })
     }
 
+    /// Number of columns in the grid
     pub fn cols(&self) -> usize {
         self.cols
     }
 
+    /// Number of rows in the grid
     pub fn rows(&self) -> usize {
         self.rows
     }
 
+    /// Reference the underlying data [`Vec`]
     pub fn data(&self) -> &Vec<T> {
         &self.data
+    }
+
+    /// Map each entry in the grid to create a new grid
+    pub fn map<U, F>(self, f: F) -> Grid<U>
+    where
+        F: FnMut(T) -> U,
+    {
+        Grid {
+            data: self.data.into_iter().map(f).collect(),
+            cols: self.cols,
+            rows: self.rows,
+        }
+    }
+
+    /// Map each referenced entry in the grid to create a new grid
+    pub fn map_ref<U, F>(&self, f: F) -> Grid<U>
+    where
+        F: FnMut(&T) -> U,
+    {
+        Grid {
+            data: self.data.iter().map(f).collect(),
+            cols: self.cols,
+            rows: self.rows,
+        }
+    }
+
+    /// Map each indexed entry in the grid to create a new grid
+    pub fn map_indexed<U, F>(self, mut f: F) -> Grid<U>
+    where
+        F: FnMut(Position, T) -> U,
+    {
+        let cols = self.cols;
+        let data = self
+            .data
+            .into_iter()
+            .enumerate()
+            .map(|(idx, val)| {
+                let pos = Position::from_row_order(idx, cols);
+                f(pos, val)
+            })
+            .collect();
+
+        Grid {
+            data,
+            cols,
+            rows: self.rows,
+        }
+    }
+
+    /// Map each indexed referenced entry in the grid to create a new grid
+    pub fn map_ref_indexed<U, F>(&self, mut f: F) -> Grid<U>
+    where
+        F: FnMut(Position, &T) -> U,
+    {
+        let cols = self.cols;
+        let data = self
+            .data
+            .iter()
+            .enumerate()
+            .map(|(idx, val)| {
+                let pos = Position::from_row_order(idx, cols);
+                f(pos, val)
+            })
+            .collect();
+
+        Grid {
+            data,
+            cols,
+            rows: self.rows,
+        }
+    }
+
+    /// Try to swap the elements at the given [positions](Position)
+    ///
+    /// If either position is out of bounds, [`None`] is returned.
+    /// Otherwise, [`Some<bool>`] is returned indicating whether a swap was performed.
+    /// ```
+    /// use puzzled_core::{grid, Position};
+    ///
+    /// let mut grid = grid![
+    ///     [1, 2],
+    ///     [3, 4],
+    /// ];
+    ///
+    /// let pos1 = Position::new(0, 0);
+    /// let pos2 = Position::new(1, 1);
+    /// let pos3 = Position::new(2, 2);
+    ///
+    /// assert_eq!(grid.swap(pos1, pos1), Some(false));
+    /// assert_eq!(grid.swap(pos1, pos2), Some(true));
+    /// assert_eq!(grid.swap(pos1, pos3), None);
+    /// assert_eq!(grid[pos1], 4);
+    /// ```
+    pub fn swap(&mut self, pos1: Position, pos2: Position) -> Option<bool> {
+        let idx1 = self.index(pos1)?;
+        let idx2 = self.index(pos2)?;
+
+        if pos1 == pos2 {
+            return Some(false);
+        }
+
+        self.data.swap(idx1, idx2);
+        Some(true)
     }
 }
 
@@ -35,6 +147,9 @@ impl<T> Grid<T>
 where
     T: Default,
 {
+    /// Create a new grid with a given size with [`T::Default`][Default]
+    ///
+    /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
     pub fn new(rows: usize, cols: usize) -> Option<Self> {
         let size = rows.checked_mul(cols)?;
 

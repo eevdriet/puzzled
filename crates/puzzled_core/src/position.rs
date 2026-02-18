@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops;
 
 use crate::Offset;
+use crate::Order;
 use crate::clamped_add;
 
 /// 2-dimensional coordinate to be used within a [grid](crate::Grid)
@@ -23,6 +24,20 @@ impl Position {
     /// Construct a new position
     pub fn new(row: usize, col: usize) -> Self {
         Self { row, col }
+    }
+
+    pub fn from_row_order(idx: usize, cols: usize) -> Self {
+        Self {
+            row: idx / cols,
+            col: idx % cols,
+        }
+    }
+
+    pub fn from_col_order(idx: usize, rows: usize) -> Self {
+        Self {
+            row: idx % rows,
+            col: idx / rows,
+        }
     }
 
     pub fn offset(&self, offset: Offset) -> Self {
