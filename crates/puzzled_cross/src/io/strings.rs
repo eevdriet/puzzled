@@ -1,4 +1,4 @@
-use crate::{Puzzle, format, io::write::PuzWrite};
+use crate::{Crossword, format, io::write::PuzWrite};
 
 #[derive(Debug, Default)]
 pub(crate) struct Strings {
@@ -10,7 +10,7 @@ pub(crate) struct Strings {
 }
 
 impl Strings {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Crossword) -> format::Result<Self> {
         let mut strings = Strings::default();
 
         strings

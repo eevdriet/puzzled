@@ -1,4 +1,4 @@
-/// Defines all functionality for solving and interacting with [puzzles](Puzzle)
+/// Defines all functionality for solving and interacting with [puzzles](Crossword)
 ///
 ///
 mod clue;
@@ -38,10 +38,10 @@ macro_rules! string_prop {
 /// It contains all needed information to play a crossword puzzle, such as
 ///
 /// # Constructors
-/// Puzzles can be constructed dynamically from a collection of [squares](Square) and [clues](Clue).
+/// Crosswords can be constructed dynamically from a collection of [squares](Square) and [clues](Clue).
 /// Based on whether you already have the entire clue or just is [specification](ClueSpec), you can do the following:
-/// - Use [`Puzzle::new`] when both squares and clues are available
-/// - Use [`Puzzle::from_squares`] to first initialize the puzzle [grid](crate::Grid) and thereafter [`Puzzle::insert_clues`] to add the clues in the right position.
+/// - Use [`Crossword::new`] when both squares and clues are available
+/// - Use [`Crossword::from_squares`] to first initialize the puzzle [grid](crate::Grid) and thereafter [`Crossword::insert_clues`] to add the clues in the right position.
 ///
 /// # Properties
 /// Currently the puzzle defines all properties that can be set in a [*.puz][PUZ google spec] file, which include:
@@ -51,18 +51,11 @@ macro_rules! string_prop {
 /// - Notes
 /// - Title
 ///
-/// Each property `prop` can be set with `with_prop()` and retrieved with `prop()`, e.g. see [`Puzzle::author()`] and [`Puzzle::with_author`].
+/// Each property `prop` can be set with `with_prop()` and retrieved with `prop()`, e.g. see [`Crossword::author()`] and [`Crossword::with_author`].
 ///
-/// Puzzles keep track of the time spent solving with a [`Timer`].
+/// Crosswords keep track of the time spent solving with a [`Timer`].
 /// Users can access the timer with [`timer`](Self::timer) and [`timer_mut`](Self::timer_mut) to [start](Timer::start) and [stop](Timer::pause) playing.
 /// If the user does not set a timer of their own, a [running](crate::TimerState::Running) timer is attached that has no initial [elapsed](Timer::elapsed) time.
-///
-/// Finally, properties that are derived from the puzzle [squares](Squares) are [clues](Clues) can indirectly be accessed.
-/// These include
-/// - Dimensionality of the puzzle, such as the number of [rows](Self::rows), [columns](Self::cols)
-/// - Iterators:
-///     * [`iter`](Self::iter), [`iter_mut`](Self::iter_mut) for squares
-///     * [`iter_clues`](Self::iter_clues), [`iter_across`](Self::iter_across), [`iter_down`](Self::iter_down) and `*_mut` variants for clues
 ///
 /// # Mutation and solving
 ///
@@ -70,7 +63,7 @@ macro_rules! string_prop {
 /// [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 
 #[derive(Debug, Default)]
-pub struct Puzzle {
+pub struct Crossword {
     // State
     squares: Squares,
     clues: Clues,
@@ -85,7 +78,7 @@ pub struct Puzzle {
 }
 
 /// # Constructors
-impl Puzzle {
+impl Crossword {
     /// Constructs a new puzzle from its [squares](Square) and [clues](Clue)
     pub fn new(squares: Squares, clues: Clues) -> Self {
         Self {
@@ -96,7 +89,7 @@ impl Puzzle {
     }
 
     /// Constructs a new puzzle from just its [squares](Square)
-    /// Use [`Puzzle::insert_clues`] to add [clues](Clue) from their [specification](ClueSpec)
+    /// Use [`Crossword::insert_clues`] to add [clues](Clue) from their [specification](ClueSpec)
     pub fn from_squares(squares: Squares) -> Self {
         Self {
             squares,
@@ -126,7 +119,7 @@ impl Puzzle {
     /// ```
     /// use puzzled_crossword::puzzle;
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///    [A B C]
     ///    [D E F]
     /// );
@@ -143,7 +136,7 @@ impl Puzzle {
     /// ```
     /// use puzzled_crossword::puzzle;
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///    [A B C]
     ///    [D E F]
     /// );
@@ -156,7 +149,7 @@ impl Puzzle {
 }
 
 /// # Properties
-impl Puzzle {
+impl Crossword {
     string_prop!(
         author,
         "Author of the puzzle",
@@ -202,7 +195,7 @@ impl Puzzle {
     );
 }
 
-impl PartialEq for Puzzle {
+impl PartialEq for Crossword {
     fn eq(&self, other: &Self) -> bool {
         self.squares == other.squares
             && self.clues == other.clues
@@ -214,9 +207,9 @@ impl PartialEq for Puzzle {
     }
 }
 
-impl Eq for Puzzle {}
+impl Eq for Crossword {}
 
-impl fmt::Display for Puzzle {
+impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cols = self.squares.cols();
 

@@ -14,9 +14,9 @@ use std::io;
 pub use error::*;
 pub(crate) use state::*;
 
-use crate::Puzzle;
+use crate::Crossword;
 
-/// Extension trait for [`Read`](io::Read) to make reading [puzzles](Puzzle) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
+/// Extension trait for [`Read`](io::Read) to make reading [puzzles](Crossword) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///
 /// Includes convenience methods for reading a [`u8`], [`u16`], `\0` terminated [`str`] and [`Vec<u8>`] from a generic reader
 pub trait PuzRead: io::Read {
@@ -88,7 +88,7 @@ impl PuzReader {
         Self { strict }
     }
 
-    pub fn read<R: PuzRead>(&self, reader: &mut R) -> read::Result<Puzzle> {
+    pub fn read<R: PuzRead>(&self, reader: &mut R) -> read::Result<Crossword> {
         let (puzzle, _) = self.read_with_warnings(reader)?;
         Ok(puzzle)
     }
@@ -96,7 +96,7 @@ impl PuzReader {
     pub fn read_with_warnings<R: PuzRead>(
         &self,
         reader: &mut R,
-    ) -> read::Result<(Puzzle, Vec<Warning>)> {
+    ) -> read::Result<(Crossword, Vec<Warning>)> {
         let mut state = PuzState::new(self.strict);
 
         // Read main components
@@ -120,7 +120,7 @@ impl PuzReader {
         let clues = self.read_clues(&squares, &strings)?;
 
         // Build the puzzle with owned data
-        let mut puzzle = Puzzle::new(squares, clues)
+        let mut puzzle = Crossword::new(squares, clues)
             .with_author(build_string(&strings.author))
             .with_copyright(build_string(&strings.copyright))
             .with_notes(build_string(&strings.notes))
@@ -149,7 +149,7 @@ impl PuzReader {
 pub struct TxtReader;
 
 impl<'a> TxtReader {
-    pub fn read(&self, input: &'a str) -> Result<Puzzle> {
+    pub fn read(&self, input: &'a str) -> Result<Crossword> {
         let mut state = TxtState {
             input,
             lines: input.lines(),
@@ -158,7 +158,7 @@ impl<'a> TxtReader {
         };
 
         let squares = self.parse_grid(&mut state)?;
-        let mut puzzle = Puzzle::from_squares(squares);
+        let mut puzzle = Crossword::from_squares(squares);
 
         let clues = self.parse_clues(&mut state)?;
         puzzle.insert_clues(clues);
@@ -237,20 +237,20 @@ pub(crate) fn windows_1252_to_char(byte: u8) -> char {
 
 #[cfg(test)]
 mod tests {
-    use crate::Puzzle;
+    use crate::Crossword;
     use crate::io::{PuzReader, TxtReader, Warning, read};
     use rstest::rstest;
     use std::fs::File;
     use std::{fs, path::PathBuf};
 
-    fn parse_puz(path: PathBuf, strict: bool) -> read::Result<(Puzzle, Vec<Warning>)> {
+    fn parse_puz(path: PathBuf, strict: bool) -> read::Result<(Crossword, Vec<Warning>)> {
         let mut file = File::open(path).expect("puzzle file exists");
         let parser = PuzReader::new(strict);
 
         parser.read_with_warnings(&mut file)
     }
 
-    fn parse_txt(path: PathBuf) -> read::Result<Puzzle> {
+    fn parse_txt(path: PathBuf) -> read::Result<Crossword> {
         let text = fs::read_to_string(&path).expect("puzzle file exists");
         let parser = TxtReader;
 

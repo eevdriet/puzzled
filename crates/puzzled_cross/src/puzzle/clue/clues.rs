@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, ops};
 
 use crate::{Clue, ClueId, Direction};
 
-/// Collection type of all [clues](Clue) in a [puzzle](Puzzle)
+/// Collection type of all [clues](Clue) in a [puzzle](crate::Crossword)
 ///
 /// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -18,7 +18,7 @@ impl Clues {
     /// ```
     /// use puzzled_crossword::{puzzle, clue, Direction::*};
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
@@ -47,7 +47,7 @@ impl Clues {
     /// ```
     /// use puzzled_crossword::{puzzle, clue, Direction::*};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
@@ -76,7 +76,7 @@ impl Clues {
     /// ```
     /// use puzzled_crossword::{puzzle, clue, Direction::*};
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]
@@ -105,7 +105,7 @@ impl Clues {
     /// ```
     /// use puzzled_crossword::{puzzle, clue, Direction::*};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///     [C A N]
     ///     [A G E]
     ///     [R O W]

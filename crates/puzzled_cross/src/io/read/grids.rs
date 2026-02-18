@@ -32,7 +32,7 @@ impl Grids {
 impl<'a> TxtReader {
     pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> read::Result<Squares> {
         let mut squares = Vec::new();
-        let context = "Puzzle grid";
+        let context = "Crossword grid";
 
         let err = |err: GridsError| format::Error::Grids(err);
 
@@ -88,7 +88,7 @@ impl<'a> TxtReader {
                 row,
                 reason: "Should be delimited by [...]".to_string(),
             }))
-            .context("Puzzle grid");
+            .context("Crossword grid");
         }
 
         let line = &line[1..line.len() - 1];

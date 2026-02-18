@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{CellStyle, Puzzle, SizeCheck, Square, format};
+use crate::{CellStyle, Crossword, SizeCheck, Square, format};
 use puzzled_core::{Grid, Position, Timer};
 
 pub(crate) type Grbs = Grid<u8>;
@@ -39,7 +39,7 @@ pub struct Extras {
 }
 
 impl Extras {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Crossword) -> format::Result<Self> {
         let squares = puzzle.squares();
         squares.check_size()?;
 

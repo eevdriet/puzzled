@@ -1,14 +1,14 @@
-use crate::{ClueId, Puzzle, Square};
+use crate::{ClueId, Crossword, Square};
 use puzzled_core::Position;
 
 /// # Mutation and solving
-impl Puzzle {
+impl Crossword {
     /// Try to reveal a [cell](crate::Cell) at a given [position](Position).
     /// Returns whether successful, i.e. the [square](Square) at the position is in-bounds and a cell
     /// ```
     /// use puzzled_crossword::{puzzle, Position};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A B C]
     ///    [D E F]
     ///    [G H I]
@@ -36,7 +36,7 @@ impl Puzzle {
     /// ```
     /// use puzzled_crossword::{puzzle, Position};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A B C]
     ///    [D E F]
     ///    [G H I]

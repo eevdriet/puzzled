@@ -1,5 +1,5 @@
 use crate::{
-    Puzzle, SizeCheck,
+    Crossword, SizeCheck,
     io::{format, is_valid_version},
 };
 
@@ -27,7 +27,7 @@ pub(crate) struct Header {
 }
 
 impl Header {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Crossword) -> format::Result<Self> {
         puzzle.squares().check_size()?;
 
         let mut header = Header::default();

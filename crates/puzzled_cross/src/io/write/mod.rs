@@ -1,7 +1,7 @@
-//! Defines all functionality for writing and serializing a [puzzle](Puzzle) into a valid [*.puz file][PUZ google spec]
+//! Defines all functionality for writing and serializing a [puzzle](Crossword) into a valid [*.puz file][PUZ google spec]
 //!
 //! # Usage
-//! The primary type for writing out [puzzles](Puzzle) is the [`Writer`], which writes to a [`Vec<T>`].
+//! The primary type for writing out [puzzles](Crossword) is the [`Writer`], which writes to a [`Vec<T>`].
 //! Depending on the desired output, this can be a
 //! - [`Vec<u8>`] for writing to [*.puz files][PUZ google spec]
 //! - [`Vec<u8>`] for writing to [*.puz files][PUZ google spec]
@@ -21,14 +21,14 @@ pub use error::*;
 use std::io::{self, Write};
 
 use crate::{
-    Puzzle,
+    Crossword,
     io::{Context, Extras, Grids, Header, Strings, write},
 };
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
 
-/// Extension trait for [`Write`](io::Write) to make writing [puzzles](Puzzle) to a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
+/// Extension trait for [`Write`](io::Write) to make writing [puzzles](Crossword) to a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///
 /// Includes convenience methods for writing a [`u8`], [`u16`], [`str`] and [`Option<&str>`]
 pub trait PuzWrite: Write {
@@ -79,7 +79,7 @@ impl PuzWriter {
         Self {}
     }
 
-    pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Puzzle) -> write::Result<()> {
+    pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Crossword) -> write::Result<()> {
         // Construct the individual sections from the puzzle
         let mut header = Header::from_puzzle(puzzle).context("Header")?;
         let grids = Grids::from_puzzle(puzzle).context("Grids")?;

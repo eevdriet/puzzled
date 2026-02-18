@@ -1,5 +1,5 @@
 use crate::{
-    Puzzle, SizeCheck, Square,
+    Crossword, SizeCheck, Square,
     io::{format, windows_1252_to_char},
 };
 use puzzled_core::Grid;
@@ -64,7 +64,7 @@ impl SizeCheck for Grid<Square> {
 }
 
 impl Grids {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+    pub(crate) fn from_puzzle(puzzle: &Crossword) -> format::Result<Self> {
         puzzle.squares().check_size()?;
 
         let rows = puzzle.rows();

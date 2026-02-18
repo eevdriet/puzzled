@@ -116,9 +116,9 @@ macro_rules! __metadata {
     };
 }
 
-/// Inline constructor for a [puzzle](crate::Puzzle)
+/// Inline constructor for a [puzzle](crate::Crossword)
 #[macro_export]
-macro_rules! puzzle {
+macro_rules! crossword {
     (
         // Grid definition
         [$($x0:tt)+] $( [$($x:tt)+])*
@@ -145,7 +145,7 @@ macro_rules! puzzle {
             clues.push(clue);
         )*
 
-        let mut puzzle = $crate::Puzzle::from_squares(squares);
+        let mut puzzle = $crate::Crossword::from_squares(squares);
         puzzle.insert_clues(clues);
 
         // Add metadata

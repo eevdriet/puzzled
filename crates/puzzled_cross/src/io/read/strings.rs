@@ -1,4 +1,4 @@
-use crate::Puzzle;
+use crate::Crossword;
 use crate::io::{Context, PuzRead, Strings, TxtReader, TxtState, format, is_valid_version, read};
 
 impl Strings {
@@ -32,9 +32,9 @@ impl Strings {
 impl<'a> TxtReader {
     pub(crate) fn parse_strings(
         &self,
-        mut puzzle: Puzzle,
+        mut puzzle: Crossword,
         state: &mut TxtState<'a>,
-    ) -> read::Result<Puzzle> {
+    ) -> read::Result<Crossword> {
         let context = "Metadata";
 
         while let Some(line) = state.next() {

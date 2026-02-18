@@ -9,13 +9,13 @@ pub use id::*;
 use puzzled_core::Position;
 use std::{cmp::Ordering, fmt};
 
-use crate::Puzzle;
+use crate::Crossword;
 
-/// Specification for how to add a [clue](Clue) to a [puzzle](Puzzle).
+/// Specification for how to add a [clue](Clue) to a [puzzle](Crossword).
 ///
 /// This struct can be used when the user is unsure what [squares](crate::Square) the clue should correspond to.
-/// By calling [`Puzzle::place_clues`], the specs are turned into [clues](Clue) by placing them from the next available square in the puzzle.
-/// Furthermore, [`Puzzle::insert_clues`] can be used to add the clues to the puzzle after positioning them.
+/// By calling [`Crossword::place_clues`], the specs are turned into [clues](Clue) by placing them from the next available square in the puzzle.
+/// Furthermore, [`Crossword::insert_clues`] can be used to add the clues to the puzzle after positioning them.
 ///
 /// The [`clue_spec!`](crate::clue_spec) macro provides a shorthand for creating clue specifications.
 #[derive(Debug, Clone)]
@@ -48,7 +48,7 @@ impl ClueSpec {
         &self.text
     }
 
-    /// [Direction] in which the clue should be placed in a [puzzle](Puzzle)
+    /// [Direction] in which the clue should be placed in a [puzzle](Crossword)
     pub fn direction(&self) -> Direction {
         self.direction
     }
@@ -81,7 +81,7 @@ pub struct Clue {
 }
 
 impl Clue {
-    /// Construct a new clue from its [specification](ClueSpec) and placement within in the [puzzle](crate::Puzzle) [grid](crate::Squares)
+    /// Construct a new clue from its [specification](ClueSpec) and placement within in the [puzzle](crate::Crossword) [grid](crate::Squares)
     ///
     /// # Panics
     /// Panics if `len == 0`, i.e. the clue should always occupy at least one [square](crate::Square)
@@ -127,22 +127,22 @@ impl Clue {
         self.direction
     }
 
-    /// Number of the clue within its associated [puzzle](Puzzle)
+    /// Number of the clue within its associated [puzzle](Crossword)
     pub fn num(&self) -> u8 {
         self.num
     }
 
-    /// Starting [position](Position) of the clue within a [puzzle](Puzzle)
+    /// Starting [position](Position) of the clue within a [puzzle](Crossword)
     pub fn start(&self) -> Position {
         self.start
     }
 
-    /// Number of [cells](crate::Cell) the clue occupies within a [puzzle](Puzzle)
+    /// Number of [cells](crate::Cell) the clue occupies within a [puzzle](Crossword)
     pub fn len(&self) -> u8 {
         self.len
     }
 
-    /// Verify whether the clue occupies any [cells](crate::Cell) within a [puzzle](Puzzle)
+    /// Verify whether the clue occupies any [cells](crate::Cell) within a [puzzle](Crossword)
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -168,7 +168,7 @@ impl PartialOrd for Clue {
     }
 }
 
-impl Puzzle {
+impl Crossword {
     pub fn insert_clues(&mut self, clues: impl IntoIterator<Item = ClueSpec>) -> Vec<ClueSpec> {
         let (positioned, unpositioned) = self.place_clues(clues);
 

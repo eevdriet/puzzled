@@ -7,7 +7,7 @@ use std::fmt;
 
 pub use {cell::*, solution::*, squares::*, style::*};
 
-/// Square that is placed in the [puzzle](crate::Puzzle) [grid](crate::Grid).
+/// Square that is placed in the [puzzle](crate::Crossword) [grid](crate::Grid).
 ///
 /// Squares come in two forms: [black](Square::Black) squares that do not contain user entries and [white](Square::White) ones that do.
 /// Note that the latter are also called [cells](Cell) to make it clear that the square is playable.
@@ -36,11 +36,11 @@ pub use {cell::*, solution::*, squares::*, style::*};
 /// ```
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum Square {
-    /// Non-playable square that defines the borders of the [puzzle](crate::Puzzle) [grid](crate::Grid)
+    /// Non-playable square that defines the borders of the [puzzle](crate::Crossword) [grid](crate::Grid)
     #[default]
     Black,
 
-    /// Playable [cell](Cell) that can be entered and holds a [solution](Solution) to verify a [puzzle](crate::Puzzle) with
+    /// Playable [cell](Cell) that can be entered and holds a [solution](Solution) to verify a [puzzle](crate::Crossword) with
     White(Cell),
 }
 

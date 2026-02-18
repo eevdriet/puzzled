@@ -1,6 +1,6 @@
 use std::fmt;
 
-/// Direction which a [clue](crate::Clue) can be placed in a [puzzle](crate::Puzzle)
+/// Direction which a [clue](crate::Clue) can be placed in a [puzzle](crate::Crossword)
 ///
 /// Together with the *clue number*, the [`Direction`] can [identify](crate::ClueId) where a clue should be placed.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

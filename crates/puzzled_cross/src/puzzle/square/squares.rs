@@ -2,9 +2,9 @@ use std::ops;
 
 use puzzled_core::{Grid, Offset, Position};
 
-use crate::{Cell, Direction, Puzzle, Square};
+use crate::{Cell, Direction, Crossword, Square};
 
-/// Collection type of all [squares](Square) in a [puzzle](crate::Puzzle)
+/// Collection type of all [squares](Square) in a [puzzle](crate::Crossword)
 ///
 /// A [grid](Grid) is used to represent the squares.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -55,11 +55,11 @@ impl Squares {
 
     /// Get a reference to the [cell](Cell) at the given position
     ///
-    /// Same as [`get`](Self::get), but additionally checks whether the square is a cell
+    /// Same as [`get`](Grid<Square>::get), but additionally checks whether the square is a cell
     /// ```
     /// use puzzled_crossword::{cell, Position, puzzle, Solution::*};
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///    [. B]
     ///    [D .]
     /// );
@@ -76,11 +76,11 @@ impl Squares {
 
     /// Get a mutable reference to the [square](Cell) at the given position
     ///
-    /// Same as [`get_mut`](Self::get_mut), but additionally checks whether the square is a cell
+    /// Same as [`get_mut`](Grid<Square>::get_mut), but additionally checks whether the square is a cell
     /// ```
     /// use puzzled_crossword::{cell, Position, puzzle, Solution::*};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [. B]
     ///    [D .]
     /// );
@@ -101,7 +101,7 @@ impl Squares {
     /// ```
     /// use puzzled_crossword::{Cell, puzzle, Square, Solution::*};
     ///
-    /// let puzzle = puzzle! (
+    /// let puzzle = crossword! (
     ///    [A .]
     ///    [. D]
     /// );
@@ -123,7 +123,7 @@ impl Squares {
     /// ```
     /// use puzzled_crossword::{Cell, puzzle, Square, Solution::*};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A .]
     ///    [. D]
     /// );
@@ -154,18 +154,18 @@ impl ops::DerefMut for Squares {
     }
 }
 
-impl ops::Index<Position> for Puzzle {
+impl ops::Index<Position> for Crossword {
     type Output = Square;
 
     /// Index the puzzle to retrieve a reference to the [square](Square) at the given [position](Position).
     /// ```
     /// use puzzled_crossword::{Position, puzzle, Square};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A .]
     ///    [C D]
     /// );
-    /// let mut puzzle2 = puzzle! (
+    /// let mut puzzle2 = crossword! (
     ///    [A B]
     ///    [C D]
     /// );
@@ -179,7 +179,7 @@ impl ops::Index<Position> for Puzzle {
     /// ```should_panic
     /// use puzzled_crossword::{Position, puzzle, Square};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A .]
     ///    [C D]
     /// );
@@ -192,16 +192,16 @@ impl ops::Index<Position> for Puzzle {
     }
 }
 
-impl ops::IndexMut<Position> for Puzzle {
+impl ops::IndexMut<Position> for Crossword {
     /// Index the puzzle to retrieve a mutable reference to the [square](Square) at the given [position](Position).
     /// ```
     /// use puzzled_crossword::{Position, puzzle, Square};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A .]
     ///    [C D]
     /// );
-    /// let mut puzzle2 = puzzle! (
+    /// let mut puzzle2 = crossword! (
     ///    [A B]
     ///    [C D]
     /// );
@@ -215,7 +215,7 @@ impl ops::IndexMut<Position> for Puzzle {
     /// ```should_panic
     /// use puzzled_crossword::{Position, puzzle, Square};
     ///
-    /// let mut puzzle = puzzle! (
+    /// let mut puzzle = crossword! (
     ///    [A .]
     ///    [C D]
     /// );
