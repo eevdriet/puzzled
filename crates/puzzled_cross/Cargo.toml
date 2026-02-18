@@ -7,7 +7,7 @@ edition = "2024"
 serde = { workspace = true, optional = true }
 miette = { workspace = true, optional = true}
 thiserror = { workspace = true}
-puzzled_core = { path = "../core"}
+puzzled_core = { path = "../puzzled_core"}
 
 [features]
 default = []
@@ -15,4 +15,4 @@ serde = ["dep:serde"]
 miette = ["dep:miette"]
 
 [dev-dependencies]
-rstest = "0.26.1"
+rstest = { workspace = true }

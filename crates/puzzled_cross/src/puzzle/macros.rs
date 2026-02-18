@@ -14,6 +14,10 @@ macro_rules! __dir {
     (D) => {
         $crate::Direction::Down
     };
+
+    ($dir:ident) => {
+        compile_error!("Invalid direction: only A (across) and D (down) allowed")
+    };
 }
 
 /// Inline constructor for a [clue specification](crate::ClueSpec)

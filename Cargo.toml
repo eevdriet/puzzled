@@ -1,9 +1,10 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/core","crates/crossword"]
+members = ["crates/puzzled_core","crates/puzzled_cross"]
 
 [workspace.dependencies]
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"]}
 miette = { version = "7.6.0", features = ["fancy"]}
+rstest = "0.26.1"
