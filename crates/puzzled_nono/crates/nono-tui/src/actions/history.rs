@@ -1,0 +1,60 @@
+use std::fmt::Debug;
+
+use crate::{ActionResult, AppState};
+
+use super::ActionOutcome;
+
+#[derive(Debug, Default)]
+pub struct History {
+    undos: Vec<Box<dyn UndoAction>>,
+    redos: Vec<Box<dyn UndoAction>>,
+}
+
+pub trait UndoAction: Debug {
+    fn execute(&mut self, state: &mut AppState) -> ActionResult;
+
+    fn undo(&mut self, state: &mut AppState) -> ActionResult;
+
+    fn redo(&mut self, state: &mut AppState) -> ActionResult {
+        self.execute(state)
+    }
+}
+
+impl History {
+    pub fn execute(
+        &mut self,
+        mut action: Box<dyn UndoAction>,
+        state: &mut AppState,
+    ) -> ActionResult {
+        self.redos.clear();
+
+        let result = action.execute(state);
+        self.undos.push(action);
+
+        result
+    }
+
+    pub fn undo(&mut self, state: &mut AppState) -> ActionResult {
+        let mut action = match self.undos.pop() {
+            Some(action) => action,
+            _ => return Ok(ActionOutcome::Ignored),
+        };
+
+        let result = action.undo(state);
+        self.redos.push(action);
+
+        result
+    }
+
+    pub fn redo(&mut self, state: &mut AppState) -> ActionResult {
+        let mut action = match self.redos.pop() {
+            Some(action) => action,
+            _ => return Ok(ActionOutcome::Ignored),
+        };
+
+        let result = action.redo(state);
+        self.undos.push(action);
+
+        result
+    }
+}

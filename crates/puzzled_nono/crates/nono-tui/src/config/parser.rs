@@ -1,0 +1,211 @@
+use std::collections::HashMap;
+
+use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind};
+use serde::{
+    Deserialize,
+    de::{self},
+};
+
+use crate::{Action, AppEvent, Config, EventTrie, PuzzleStyle, Settings};
+
+impl<'de> Deserialize<'de> for Config {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let raw_actions = RawActions::deserialize(deserializer)?;
+
+        let settings = raw_actions.settings;
+        let styles = raw_actions.styles;
+        let actions = parse_action_groups(raw_actions.actions).map_err(de::Error::custom)?;
+
+        Ok(Config {
+            actions,
+            styles,
+            settings,
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct RawActions {
+    pub actions: RawActionGroups,
+
+    #[serde(default)]
+    pub styles: PuzzleStyle,
+
+    pub settings: Settings,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum RawKeySeq {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+type RawActionKeys = HashMap<Action, RawKeySeq>;
+
+#[derive(Debug, Deserialize)]
+struct RawActionGroups {
+    #[serde(flatten)]
+    pub general: RawActionKeys,
+
+    pub puzzle: Option<RawActionKeys>,
+}
+
+fn parse_action_groups(groups: RawActionGroups) -> Result<EventTrie, String> {
+    let mut trie = EventTrie::default();
+
+    for (events, action) in parse_action_events(groups.general)? {
+        trie.insert(&events, action);
+    }
+
+    if let Some(puzzle) = groups.puzzle {
+        for (events, action) in parse_action_events(puzzle)? {
+            trie.insert(&events, action);
+        }
+    }
+
+    Ok(trie)
+}
+
+fn parse_action_events(action_keys: RawActionKeys) -> Result<Vec<(Vec<AppEvent>, Action)>, String> {
+    let mut action_events = Vec::new();
+
+    for (action, key_seq) in action_keys {
+        let key_strs = match key_seq {
+            RawKeySeq::Single(single) => vec![single],
+            RawKeySeq::Multiple(keys) => keys,
+        };
+
+        for key_str in key_strs {
+            match parse_key(action, &key_str) {
+                Ok(events) => action_events.push((events, action)),
+                Err(err) => tracing::warn!(
+                    "Skipping setting {action:?} for events from invalid key {key_str}: {err:#?}"
+                ),
+            };
+        }
+    }
+
+    Ok(action_events)
+}
+
+fn parse_key(action: Action, key: &str) -> Result<Vec<AppEvent>, String> {
+    use KeyCode::*;
+
+    let mut s = key.trim().to_ascii_lowercase();
+    let mut mods = KeyModifiers::empty();
+
+    // Remove surrounding <...>
+    if s.starts_with('<') && s.ends_with('>') {
+        s = s[1..s.len() - 1].to_string();
+    }
+
+    // Check for modifiers
+    let mut modifiers: Vec<_> = s.split('-').collect();
+
+    let key_str = if modifiers.len() > 1 {
+        // Last part is the key itself, e.g. <C-S-Enter> -> ['Control', 'Shift', 'Enter']
+        let key_part = modifiers.pop().expect("Checked that length is > 1");
+
+        // Apply all modifiers one by one
+        for modifier in modifiers {
+            match modifier {
+                "c" => mods |= KeyModifiers::CONTROL,
+                "s" => mods |= KeyModifiers::SHIFT,
+                "a" => mods |= KeyModifiers::ALT,
+                other => return Err(format!("Unknown modifier: {other}")),
+            }
+        }
+
+        key_part
+    }
+    // Normal dash
+    else {
+        modifiers[0]
+    };
+
+    // Determine if a mouse button corresponds to the action
+    let mouse = match key_str {
+        "mouseleft" | "mouse1" => Some(MouseButton::Left),
+        "mouseright" | "mouse2" => Some(MouseButton::Right),
+        "mousemiddle" | "mouse3" => Some(MouseButton::Middle),
+        _ => None,
+    };
+
+    // If so, determine the type of event based on the action
+    if let Some(button) = mouse {
+        let kind = match action {
+            Action::Click => MouseEventKind::Down(button),
+            Action::Drag => MouseEventKind::Drag(button),
+            Action::ScrollLeft => MouseEventKind::ScrollLeft,
+            Action::ScrollUp => MouseEventKind::ScrollUp,
+            Action::ScrollDown => MouseEventKind::ScrollDown,
+            Action::ScrollRight => MouseEventKind::ScrollRight,
+            _ => return Err("Invalid action {action:?} to be performed by {button:?}".to_string()),
+        };
+
+        return Ok(vec![AppEvent::mouse(kind, mods)]);
+    }
+
+    // Keep trying to take as much away from the key str as possible and collect events
+    let mut key_events: Vec<AppEvent> = Vec::new();
+    let mut idx = 0;
+
+    'outer: while idx < key_str.len() {
+        for (key, code) in SPECIAL_KEY_CODES {
+            if key_str[idx..].starts_with(key) {
+                let event = AppEvent::key(code, mods);
+                key_events.push(event);
+
+                break 'outer;
+            }
+        }
+
+        let first = key_str[idx..].chars().next().expect("while-loop condition");
+
+        for key in SHIFTED_KEY_CODES.chars() {
+            if first == key || first == '_' {
+                let event = AppEvent::key(Char(first), mods);
+                key_events.push(event);
+
+                break 'outer;
+            }
+        }
+
+        if first.is_ascii_alphanumeric() || first.is_whitespace() {
+            let event = AppEvent::key(Char(first), mods);
+            key_events.push(event);
+
+            idx += 1;
+        } else {
+            tracing::warn!("Unknown character '{first}' found, ignoring");
+            break 'outer;
+        }
+    }
+
+    Ok(key_events)
+}
+
+const SHIFTED_KEY_CODES: &str = "!@#$%^&*()_+{}|:\"<>?~";
+
+const SPECIAL_KEY_CODES: [(&str, KeyCode); 16] = [
+    (" ", KeyCode::Char(' ')),
+    ("space", KeyCode::Char(' ')),
+    ("backspace", KeyCode::Backspace),
+    ("enter", KeyCode::Enter),
+    ("left", KeyCode::Left),
+    ("right", KeyCode::Right),
+    ("up", KeyCode::Up),
+    ("down", KeyCode::Down),
+    ("home", KeyCode::Home),
+    ("esc", KeyCode::Esc),
+    ("end", KeyCode::End),
+    ("pageup", KeyCode::PageUp),
+    ("pagedown", KeyCode::PageDown),
+    ("tab", KeyCode::Tab),
+    ("delete", KeyCode::Delete),
+    ("insert", KeyCode::Insert),
+];

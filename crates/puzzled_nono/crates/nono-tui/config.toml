@@ -1,0 +1,55 @@
+[settings]
+viewport_width = 40
+viewport_height = 20
+
+[styles]
+grid_size = 5
+
+[actions]
+bottom_viewport = "zb"
+center_viewport = "zz"
+click = "<Mouse1>"
+cross = "c"
+delete = "d"
+delete_single = "x"
+drag = "<Mouse1>"
+enter_cells_visual = "v"
+enter_rows_visual = "<S-v>"
+enter_cols_visual = "<C-v>"
+exit_insert = "<Esc>"
+exit_visual = "<Esc>"
+fill = "<Space>"
+find_fill_backwards = "<S-f>"
+find_fill_forwards = "f"
+find_til_fill_backwards = "<S-t>"
+find_til_fill_forwards = "t"
+focus_down = "<C-j>"
+focus_left = "<C-h>"
+focus_right = "<C-l>"
+focus_up = "<C-k>"
+jump_col = "|"
+jump_col_end = "<S-g>"
+jump_col_start = "gg"
+jump_end_backwards = "ge"
+jump_end_forwards = "e"
+jump_first_non_blank = "^"
+jump_last_non_blank = "_"
+jump_row_end = ["$", "<end>"]
+jump_row_start = ["0", "<home>"]
+jump_start_backwards = "b"
+jump_start_forwards = "w"
+move_down = ["j", "<down>"]
+move_left = ["h", "<left>"]
+move_right = ["l", "<right>"]
+move_up = ["k", "<up>"]
+quit = "q"
+redo = "<C-r>"
+sample_fill = "s"
+scroll_down = "<mouse1>"
+scroll_left = "<mouse1>"
+scroll_right = "<mouse1>"
+scroll_up = "<mouse1>"
+switch_axis = "m"
+switch_fill = "r"
+top_viewport = "zt"
+undo = "u"
