@@ -1,8 +1,6 @@
 use std::ops;
 
-use puzzled_core::{Grid, Offset, Position};
-
-use crate::{Cell, Direction, Puzzle, Square};
+use crate::{Cell, Direction, Grid, Offset, Position, Puzzle, Square};
 
 /// Collection type of all [squares](Square) in a [puzzle](crate::Puzzle)
 ///

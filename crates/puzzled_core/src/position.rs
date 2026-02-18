@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops;
 
 use crate::Offset;
+use crate::clamped_add;
 
 /// 2-dimensional coordinate to be used within a [grid](crate::Grid)
 ///
@@ -25,13 +26,8 @@ impl Position {
     }
 
     pub fn offset(&self, offset: Offset) -> Self {
-        let col = (self.col as isize)
-            .saturating_add(offset.cols)
-            .clamp(0, isize::MAX) as usize;
-
-        let row = (self.row as isize)
-            .saturating_add(offset.rows)
-            .clamp(0, isize::MAX) as usize;
+        let row = clamped_add(self.row, offset.rows);
+        let col = clamped_add(self.col, offset.cols);
 
         Self { col, row }
     }
@@ -57,7 +53,7 @@ impl From<Position> for (usize, usize) {
 
 impl fmt::Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, {})", self.row, self.col)
+        write!(f, "R{}, C{}", self.row, self.col)
     }
 }
 
