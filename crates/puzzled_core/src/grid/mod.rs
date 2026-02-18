@@ -1,4 +1,4 @@
-use crate::{Order, Position};
+use crate::Position;
 
 mod index;
 mod iter;

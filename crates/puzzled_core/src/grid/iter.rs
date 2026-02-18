@@ -4,7 +4,7 @@ use std::{
     slice::{Iter, IterMut},
 };
 
-use crate::{Grid, Line, Order, Position, grid};
+use crate::{Grid, Line, Order, Position};
 
 type RowIter<'a, T> = Iter<'a, T>;
 type RowIterMut<'a, T> = IterMut<'a, T>;

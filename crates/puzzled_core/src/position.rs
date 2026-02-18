@@ -2,7 +2,6 @@ use std::fmt;
 use std::ops;
 
 use crate::Offset;
-use crate::Order;
 use crate::clamped_add;
 
 /// 2-dimensional coordinate to be used within a [grid](crate::Grid)

@@ -70,41 +70,18 @@ impl Grids {
         let rows = puzzle.rows();
         let cols = puzzle.cols();
 
-        let solution = {
-            let mut bytes = Vec::new();
+        let solution = puzzle.squares().map_ref(|square| match square {
+            Square::Black => NON_PLAYABLE_CELL,
+            Square::White(cell) => cell.solution().to_string().chars().next().unwrap_or('\0') as u8,
+        });
 
-            for square in puzzle.iter() {
-                let byte = match square {
-                    Square::Black => NON_PLAYABLE_CELL,
-                    Square::White(cell) => {
-                        cell.solution();
-                        4
-                    }
-                };
-
-                bytes.push(byte);
-            }
-
-            Grid::from_vec(bytes, cols).expect("Read correct length")
-        };
-
-        let state = {
-            let mut bytes = Vec::new();
-
-            for square in puzzle.iter() {
-                let byte = match square {
-                    Square::Black => NON_PLAYABLE_CELL,
-                    Square::White(cell) => match cell.entry() {
-                        Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL as char) as u8,
-                        None => MISSING_ENTRY_CELL,
-                    },
-                };
-
-                bytes.push(byte);
-            }
-
-            Grid::from_vec(bytes, cols).expect("Read correct length")
-        };
+        let state = puzzle.squares().map_ref(|square| match square {
+            Square::Black => NON_PLAYABLE_CELL,
+            Square::White(cell) => match cell.entry() {
+                Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL as char) as u8,
+                None => MISSING_ENTRY_CELL,
+            },
+        });
 
         let grids = Grids {
             solution,

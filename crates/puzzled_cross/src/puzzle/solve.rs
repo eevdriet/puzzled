@@ -23,7 +23,7 @@ impl Puzzle {
     /// ```
     pub fn reveal_cell(&mut self, pos: Position) -> bool {
         // Try to get the square to reveal
-        let Some(square) = self.get_mut(pos) else {
+        let Some(square) = self.squares.get_mut(pos) else {
             return false;
         };
 
@@ -60,13 +60,13 @@ impl Puzzle {
     }
 
     pub fn reveal(&mut self) {
-        for square in self.iter_mut() {
+        for square in self.squares.iter_mut() {
             square.reveal();
         }
     }
 
     pub fn is_revealed(&self) -> bool {
-        self.iter().all(|square| square.is_revealed())
+        self.squares.iter().all(|square| square.is_revealed())
     }
 
     /// Checks whether the puzzle is solved

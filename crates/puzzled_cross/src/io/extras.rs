@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{CellStyle, Puzzle, SizeCheck, Square, format};
+use crate::{CellStyle, GridExtension, Puzzle, SizeCheck, Square, format};
 use puzzled_core::{Grid, Position, Timer};
 
 pub(crate) type Grbs = Grid<u8>;
@@ -40,29 +40,27 @@ pub struct Extras {
 
 impl Extras {
     pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
-        puzzle.squares().check_size()?;
+        let squares = puzzle.squares();
+        squares.check_size()?;
 
         let mut extras = Extras::default();
 
         // GRBS / RTBL
-        if puzzle.iter_cells().any(|cell| cell.is_rebus()) {
+        if squares.iter_cells().any(|cell| cell.is_rebus()) {
             let mut rebuses: BTreeMap<u8, String> = BTreeMap::new();
             let mut num = 0;
 
-            let squares: Vec<_> = puzzle
-                .iter()
-                .map(|square| match square {
-                    Square::White(cell) if cell.is_rebus() => {
-                        num += 1;
-                        rebuses.insert(num, cell.solution().to_string());
+            let grbs = squares.map_ref(|square| match square {
+                Square::White(cell) if cell.is_rebus() => {
+                    num += 1;
+                    rebuses.insert(num, cell.solution().to_string());
 
-                        num
-                    }
-                    _ => 0,
-                })
-                .collect();
+                    num
+                }
+                _ => 0,
+            });
 
-            extras.grbs = Some(Grid::from_vec(squares, puzzle.cols()).expect("correct dimensions"));
+            extras.grbs = Some(grbs);
             extras.rtbl = Some(rebuses);
         }
 
@@ -70,16 +68,12 @@ impl Extras {
         extras.ltim = Some(puzzle.timer());
 
         // GEXT
-        if !puzzle.iter_cells().all(|cell| cell.style().is_empty()) {
-            let styles: Vec<_> = puzzle
-                .iter()
-                .map(|square| match square {
-                    Square::Black => CellStyle::default(),
-                    Square::White(cell) => cell.style(),
-                })
-                .collect();
-
-            extras.gext = Some(Grid::from_vec(styles, puzzle.cols()).expect("correct dimensions"));
+        if !squares.iter_cells().all(|cell| cell.style().is_empty()) {
+            let gext = squares.map_ref(|square| match square {
+                Square::Black => CellStyle::default(),
+                Square::White(cell) => cell.style(),
+            });
+            extras.gext = Some(gext);
         }
 
         Ok(extras)
