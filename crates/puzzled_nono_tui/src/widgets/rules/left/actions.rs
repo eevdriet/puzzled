@@ -1,5 +1,5 @@
 use crossterm::event::Event;
-use nono::Position;
+use puzzled_nono::Position;
 
 use crate::{
     Action, ActionInput, ActionOutcome, AppState, Error, HandleAction, MotionRange, Result,

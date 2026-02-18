@@ -3,7 +3,7 @@ mod fill;
 pub use fill::*;
 
 use crossterm::event::Event;
-use nono::{Fill, FindDirection, LinePosition, Position, Puzzle};
+use puzzled_nono::{Fill, FindDirection, LinePosition, Position, Puzzle};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{

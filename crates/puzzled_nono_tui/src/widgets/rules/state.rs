@@ -1,4 +1,4 @@
-use nono::{Axis, Fill, Position, Rule};
+use puzzled_nono::{Axis, Fill, Position, Rule};
 use ratatui::layout::{Position as AppPosition, Rect};
 
 use crate::{Region, RuleDisplay, Selection, puzzle_to_app};

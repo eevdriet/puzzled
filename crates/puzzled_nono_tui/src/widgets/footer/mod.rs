@@ -3,7 +3,7 @@ mod state;
 
 pub use state::*;
 
-use nono::{Axis, Fill};
+use puzzled_nono::{Axis, Fill};
 use ratatui::{
     layout::Alignment,
     prelude::{Buffer, Rect},

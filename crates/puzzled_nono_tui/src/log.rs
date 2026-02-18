@@ -1,4 +1,4 @@
-use nono::Result;
+use puzzled_nono::Result;
 use std::fs;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;

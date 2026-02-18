@@ -1,4 +1,4 @@
-use nono::Axis;
+use puzzled_nono::Axis;
 use ratatui::layout::{Position, Rect};
 
 use crate::MotionRange;

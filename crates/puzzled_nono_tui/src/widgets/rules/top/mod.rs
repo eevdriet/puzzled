@@ -1,6 +1,6 @@
 mod actions;
 
-use nono::{Fill, Line, Rule, Run};
+use puzzled_nono::{Fill, Line, Rule, Run};
 use ratatui::{
     layout::{Alignment, Position},
     prelude::{Buffer, Rect},

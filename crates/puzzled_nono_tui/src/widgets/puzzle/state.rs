@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use nono::{Axis, Fill, Position, Puzzle};
+use puzzled_nono::{Axis, Fill, Position, Puzzle};
 use ratatui::layout::{Position as AppPosition, Rect, Size};
 
 use crate::{PuzzleStyle, Selection, Viewport};

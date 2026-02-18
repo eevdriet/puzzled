@@ -1,14 +1,12 @@
 use std::path::Path;
 
+use crate::{Color, Fill, Nonogram, Puzzle, Rule, Rules, io};
 use image::{DynamicImage, GenericImageView, ImageReader, Pixel, Rgba};
-use nono::{Color, Fill, Nonogram, Puzzle, Rule, Rules};
-
-use crate::{PuzzleLoader, Result};
 
 pub struct ImageLoader;
 
-impl PuzzleLoader for ImageLoader {
-    fn load_nonogram(path: &Path) -> Result<Nonogram> {
+impl io::PuzzleLoader for ImageLoader {
+    fn load_nonogram(path: &Path) -> io::Result<Nonogram> {
         let image = ImageReader::open(path)?.decode()?;
         let (cols, rows) = image.dimensions();
 
@@ -23,7 +21,7 @@ impl PuzzleLoader for ImageLoader {
     }
 }
 
-fn read_rules_and_colors(image: &DynamicImage) -> Result<(Rules, Vec<Color>)> {
+fn read_rules_and_colors(image: &DynamicImage) -> io::Result<(Rules, Vec<Color>)> {
     let mut colors = Vec::new();
 
     let mut pixel_to_fill = |pixel: Rgba<u8>| -> Fill {

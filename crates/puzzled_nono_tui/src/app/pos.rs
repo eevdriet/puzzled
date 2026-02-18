@@ -1,4 +1,4 @@
-use nono::Position as PuzzlePosition;
+use puzzled_nono::Position as PuzzlePosition;
 use ratatui::layout::Position as AppPosition;
 
 pub fn puzzle_to_app(pos: PuzzlePosition) -> AppPosition {

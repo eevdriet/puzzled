@@ -1,5 +1,5 @@
 use crossterm::event::{Event, MouseEvent};
-use nono::Fill;
+use puzzled_nono::Fill;
 use ratatui::layout::Position;
 
 use crate::{

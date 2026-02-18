@@ -6,10 +6,10 @@ pub enum Error {
     Custom(String),
 
     #[error("Nonogram error: {0}")]
-    Nonogram(#[from] nono::Error),
+    Nonogram(#[from] puzzled_nono::Error),
 
     #[error("Loading error: {0}")]
-    Load(#[from] nono_io::Error),
+    Load(#[from] puzzled_nono::io::Error),
 
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),

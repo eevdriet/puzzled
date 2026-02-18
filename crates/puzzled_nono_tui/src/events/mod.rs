@@ -4,7 +4,7 @@ mod trie;
 use std::{hash::Hash, ops::Deref};
 
 pub use engine::*;
-use nono::Fill;
+use puzzled_nono::Fill;
 pub use trie::*;
 
 use crossterm::event::{

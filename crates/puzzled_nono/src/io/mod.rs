@@ -1,4 +1,4 @@
-use nono::Nonogram;
+use crate::Nonogram;
 use std::path::Path;
 
 mod error;

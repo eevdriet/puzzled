@@ -18,7 +18,7 @@ use crossterm::{
     execute,
     terminal::EnterAlternateScreen,
 };
-use nono::{Puzzle, Rules, Solver};
+use puzzled_nono::{Puzzle, Rules, Solver};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Margin, Position, Rect},

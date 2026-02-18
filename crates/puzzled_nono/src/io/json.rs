@@ -1,14 +1,13 @@
 use std::path::Path;
 
-use nono::{Fill, Nonogram, Puzzle, Rule, Rules, Run};
 use serde::Deserialize;
 
-use crate::{PuzzleLoader, error::Result};
+use crate::{Fill, Nonogram, Puzzle, Rule, Rules, Run, io};
 
 pub struct JsonLoader;
 
-impl PuzzleLoader for JsonLoader {
-    fn load_nonogram(path: &Path) -> Result<Nonogram> {
+impl io::PuzzleLoader for JsonLoader {
+    fn load_nonogram(path: &Path) -> io::Result<Nonogram> {
         let text = std::fs::read_to_string(path)?;
         let raw: JsonNonogram = serde_json::from_str(&text)?;
         let nonogram = raw.try_into()?;
@@ -34,7 +33,7 @@ pub struct RawRun {
 }
 
 impl TryFrom<JsonNonogram> for Nonogram {
-    type Error = nono::Error;
+    type Error = io::Error;
 
     fn try_from(data: JsonNonogram) -> core::result::Result<Self, Self::Error> {
         let fills: Vec<_> = data
@@ -77,7 +76,7 @@ impl TryFrom<JsonNonogram> for Nonogram {
         let puzzle = if data.puzzle.is_empty() {
             Puzzle::empty(rows, cols)
         } else {
-            Puzzle::new(rows, cols, fills)?
+            Puzzle::new(rows, cols, fills).expect("Correct size")
         };
 
         Ok(Nonogram {

@@ -2,8 +2,7 @@ use std::path::PathBuf;
 
 use crate::PuzzleStyle;
 use clap::Parser;
-use nono::Nonogram;
-use nono_io::load_nonogram;
+use puzzled_nono::{Nonogram, load_nonogram};
 
 use crate::Result;
 

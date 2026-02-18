@@ -1,4 +1,4 @@
-use nono::{Fill, Position};
+use puzzled_nono::{Fill, Position};
 
 use crate::{ActionOutcome, ActionResult, AppState, UndoAction};
 

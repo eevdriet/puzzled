@@ -1,4 +1,4 @@
-use nono::Error;
+use puzzled_nono::Error;
 use ratatui::layout::Position as AppPosition;
 
 use crate::{

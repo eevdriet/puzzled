@@ -9,8 +9,11 @@ mod run;
 mod solver;
 mod style;
 
+pub mod io;
+
 pub use fill::*;
 pub use geom::*;
+pub use io::load_nonogram;
 pub use puzzle::*;
 pub use rules::*;
 pub use run::*;

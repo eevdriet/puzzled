@@ -8,7 +8,7 @@ pub use left::*;
 pub use state::*;
 pub use top::*;
 
-use nono::{Fill, Line, LineValidation, Rule};
+use puzzled_nono::{Fill, Line, LineValidation, Rule};
 use ratatui::{
     layout::Position,
     style::{Color, Modifier, Style},

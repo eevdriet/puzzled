@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use nono::{Color, Fill};
+use puzzled_nono::{Color, Fill};
 use ratatui::style::Color as RColor;
 use serde::Deserialize;
 

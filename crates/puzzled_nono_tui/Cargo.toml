@@ -14,8 +14,8 @@ toml = { workspace = true }
 directories = { workspace = true }
 thiserror = { workspace = true }
 
-nono = { path = "../puzzled_nono/"}
+puzzled_nono = { path = "../puzzled_nono/"}
 
 [dev-dependencies]
-rstest = "0.26.1"
-tracing-test = "0.2.5"
+rstest = { workspace = true }
+tracing-test = { workspace = true }

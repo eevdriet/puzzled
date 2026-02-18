@@ -1,4 +1,4 @@
-use nono::{Axis, Fill};
+use puzzled_nono::{Axis, Fill};
 use ratatui::layout::Rect;
 
 use crate::Region;

@@ -8,7 +8,7 @@ pub use state::*;
 pub use style::*;
 pub use viewport::*;
 
-use nono::Fill;
+use puzzled_nono::Fill;
 use ratatui::{
     buffer::Buffer,
     layout::{Position as AppPosition, Rect},
