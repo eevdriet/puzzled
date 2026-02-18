@@ -115,10 +115,10 @@ impl Clue {
         (0..self.len).map(move |offset| match self.direction {
             Direction::Across => Position {
                 row: self.start.row,
-                col: self.start.col + offset,
+                col: self.start.col + offset as usize,
             },
             Direction::Down => Position {
-                row: self.start.row + offset,
+                row: self.start.row + offset as usize,
                 col: self.start.col,
             },
         })

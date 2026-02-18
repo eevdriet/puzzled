@@ -4,32 +4,26 @@ use crate::Position;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Grid<T> {
-    cols: u8,
-    rows: u8,
+    cols: usize,
+    rows: usize,
     data: Vec<T>,
 }
 
 impl<T> Grid<T> {
-    pub fn new(data: Vec<T>, cols: u8) -> Option<Self> {
-        let rows = data.len() / cols as usize;
-        let size = rows * usize::from(cols);
-
-        if data.len() != size {
+    pub fn from_vec(data: Vec<T>, cols: usize) -> Option<Self> {
+        if !data.len().is_multiple_of(cols) {
             return None;
         }
 
-        Some(Self {
-            cols,
-            rows: rows as u8,
-            data,
-        })
+        let rows = data.len() / cols;
+        Some(Self { cols, rows, data })
     }
 
-    pub fn cols(&self) -> u8 {
+    pub fn cols(&self) -> usize {
         self.cols
     }
 
-    pub fn rows(&self) -> u8 {
+    pub fn rows(&self) -> usize {
         self.rows
     }
 
@@ -52,7 +46,7 @@ impl<T> Grid<T> {
             return None;
         }
 
-        Some(usize::from(pos.row) * usize::from(self.cols) + usize::from(pos.col))
+        Some(pos.row * self.cols + pos.col)
     }
 
     pub fn positions(&self) -> impl Iterator<Item = Position> + '_ {
@@ -74,6 +68,20 @@ impl<T> Grid<T> {
                 &self[pos]
             })
         })
+    }
+}
+
+impl<T> Grid<T>
+where
+    T: Default,
+{
+    pub fn new(rows: usize, cols: usize) -> Option<Self> {
+        let size = rows.checked_mul(cols)?;
+
+        let mut data = Vec::with_capacity(size);
+        data.fill_with(T::default);
+
+        Some(Self { rows, cols, data })
     }
 }
 

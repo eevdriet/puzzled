@@ -150,7 +150,7 @@ macro_rules! puzzle {
         $( vec.push($crate::square!($x0)); )*
         $( $( vec.push($crate::square!($x)); )* )*
 
-        let squares = puzzled_core::Grid::new(vec, cols as u8).unwrap();
+        let squares = puzzled_core::Grid::from_vec(vec, cols).unwrap();
 
         // Add clues
         #[allow(unused_mut)]

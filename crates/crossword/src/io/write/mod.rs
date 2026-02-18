@@ -83,8 +83,8 @@ impl PuzWriter {
         // Construct the individual sections from the puzzle
         let mut header = Header::from_puzzle(puzzle).context("Header")?;
         let grids = Grids::from_puzzle(puzzle).context("Grids")?;
-        let strings = Strings::from_puzzle(puzzle);
-        let extras = Extras::from_puzzle(puzzle);
+        let strings = Strings::from_puzzle(puzzle).context("Strings")?;
+        let extras = Extras::from_puzzle(puzzle).context("Extras")?;
 
         self.write_checksums(&mut header, &grids, &strings);
 

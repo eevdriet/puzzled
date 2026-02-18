@@ -58,7 +58,7 @@ impl Extras {
 
     fn read_grbs<R: PuzRead>(reader: &mut R, size: usize, width: u8) -> read::Result<Grbs> {
         let grbs = reader.read_vec(size).context("GRBS")?;
-        let grbs = Grid::new(grbs, width).expect("Read correct length");
+        let grbs = Grid::from_vec(grbs, width as usize).expect("Read correct length");
 
         Ok(grbs)
     }
@@ -169,7 +169,7 @@ impl Extras {
         let context = "GEXT";
 
         let bytes = reader.read_vec(size).context(context.to_string())?;
-        let bytes = Grid::new(bytes, width).expect("Read correct length");
+        let bytes = Grid::from_vec(bytes, width as usize).expect("Read correct length");
         let mut styles = Vec::with_capacity(size);
 
         for (&mask, pos) in bytes.iter().zip(bytes.positions()) {
@@ -184,7 +184,7 @@ impl Extras {
             styles.push(style);
         }
 
-        let gext = Grid::new(styles, width).expect("Read correct length");
+        let gext = Grid::from_vec(styles, width as usize).expect("Read correct length");
         Ok(gext)
     }
 }

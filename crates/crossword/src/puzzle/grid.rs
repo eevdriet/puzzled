@@ -9,7 +9,7 @@ use crate::{Cell, Direction, Puzzle, Square};
 /// A [grid](Grid) is used to represent the squares.
 pub type Squares = Grid<Square>;
 
-pub trait GridExtension {
+pub(crate) trait GridExtension {
     fn starts_in_dir(&self, pos: Position, dir: Direction) -> bool;
 
     fn find_playable_len(&self, pos: Position, dir: Direction) -> u8;
@@ -57,6 +57,10 @@ impl GridExtension for Grid<Square> {
 
 /// # Puzzle squares
 impl Puzzle {
+    pub fn squares(&self) -> &Squares {
+        &self.squares
+    }
+
     /// Number of rows (height) in the puzzle.
     ///
     /// Note that this includes blank squares
@@ -70,7 +74,7 @@ impl Puzzle {
     /// assert_eq!(puzzle.rows(), 2);
     /// assert_eq!(puzzle.cols(), 3);
     /// ```
-    pub fn rows(&self) -> u8 {
+    pub fn rows(&self) -> usize {
         self.squares.rows()
     }
 
@@ -87,7 +91,7 @@ impl Puzzle {
     /// assert_eq!(puzzle.rows(), 2);
     /// assert_eq!(puzzle.cols(), 3);
     /// ```
-    pub fn cols(&self) -> u8 {
+    pub fn cols(&self) -> usize {
         self.squares.cols()
     }
 

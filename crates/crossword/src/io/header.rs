@@ -1,5 +1,5 @@
 use crate::{
-    Puzzle,
+    Puzzle, SizeCheck,
     io::{format, is_valid_version},
 };
 
@@ -28,6 +28,8 @@ pub(crate) struct Header {
 
 impl Header {
     pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+        puzzle.squares().check_size()?;
+
         let mut header = Header::default();
 
         if let Some(version) = puzzle.version() {
@@ -40,8 +42,8 @@ impl Header {
         }
 
         // Fill the CIB region
-        header.width = puzzle.cols();
-        header.height = puzzle.rows();
+        header.width = puzzle.cols() as u8;
+        header.height = puzzle.rows() as u8;
         header.clue_count = puzzle.clues().len() as u16;
         header.write_cib();
 

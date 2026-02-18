@@ -9,10 +9,10 @@ use crate::Offset;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Position {
     /// Row (y) coordinate
-    pub row: u8,
+    pub row: usize,
 
     /// Column (x) coordinate
-    pub col: u8,
+    pub col: usize,
 }
 
 impl Position {
@@ -20,8 +20,20 @@ impl Position {
     pub const ORIGIN: Self = Self { row: 0, col: 0 };
 
     /// Construct a new position
-    pub fn new(row: u8, col: u8) -> Self {
+    pub fn new(row: usize, col: usize) -> Self {
         Self { row, col }
+    }
+
+    pub fn offset(&self, offset: Offset) -> Self {
+        let col = (self.col as isize)
+            .saturating_add(offset.cols)
+            .clamp(0, isize::MAX) as usize;
+
+        let row = (self.row as isize)
+            .saturating_add(offset.rows)
+            .clamp(0, isize::MAX) as usize;
+
+        Self { col, row }
     }
 }
 
@@ -31,13 +43,13 @@ impl Default for Position {
     }
 }
 
-impl From<(u8, u8)> for Position {
-    fn from((row, col): (u8, u8)) -> Self {
+impl From<(usize, usize)> for Position {
+    fn from((row, col): (usize, usize)) -> Self {
         Position::new(row, col)
     }
 }
 
-impl From<Position> for (u8, u8) {
+impl From<Position> for (usize, usize) {
     fn from(pos: Position) -> Self {
         (pos.row, pos.col)
     }
@@ -56,16 +68,7 @@ impl ops::Add<Offset> for Position {
     ///
     /// Values that would move the position outside the `u8` range are clamped
     fn add(self, offset: Offset) -> Self {
-        let max = i16::from(u8::MAX);
-
-        let col = i16::from(self.col)
-            .saturating_add(offset.cols)
-            .clamp(0, max) as u8;
-        let row = i16::from(self.row)
-            .saturating_add(offset.rows)
-            .clamp(0, max) as u8;
-
-        Self { col, row }
+        self.offset(offset)
     }
 }
 
@@ -76,16 +79,7 @@ impl ops::Sub<Offset> for Position {
     ///
     /// Values that would move the position outside the `u8` range are clamped
     fn sub(self, offset: Offset) -> Self {
-        let max = i16::from(u8::MAX);
-
-        let col = i16::from(self.col)
-            .saturating_sub(offset.cols)
-            .clamp(0, max) as u8;
-        let row = i16::from(self.row)
-            .saturating_sub(offset.rows)
-            .clamp(0, max) as u8;
-
-        Self { col, row }
+        self.offset(-offset)
     }
 }
 

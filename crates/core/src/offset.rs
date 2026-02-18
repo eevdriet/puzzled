@@ -1,15 +1,15 @@
-use crate::Position;
+use std::ops::Neg;
 
 /// Amounts by which to move a [`Position`](crate::Position).
 ///
 /// Positive numbers move to the right/bottom and negative to the left/top.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Offset {
-    /// How many columns to move over by
-    pub cols: i16,
-
     /// How many rows to move over by
-    pub rows: i16,
+    pub rows: isize,
+
+    /// How many columns to move over by
+    pub cols: isize,
 }
 
 impl Offset {
@@ -25,11 +25,13 @@ impl Offset {
     pub const DOWN: Self = Self { cols: 0, rows: 1 };
 }
 
-impl From<Position> for Offset {
-    fn from(position: Position) -> Self {
+impl Neg for Offset {
+    type Output = Offset;
+
+    fn neg(self) -> Self::Output {
         Self {
-            cols: i16::from(position.col),
-            rows: i16::from(position.row),
+            rows: -self.rows,
+            cols: -self.cols,
         }
     }
 }

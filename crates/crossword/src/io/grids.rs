@@ -1,5 +1,5 @@
 use crate::{
-    Puzzle, Square,
+    Puzzle, SizeCheck, Square,
     io::{format, windows_1252_to_char},
 };
 use puzzled_core::Grid;
@@ -18,6 +18,12 @@ pub(crate) struct Grids {
 
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum GridsError {
+    #[error(
+        "({rows}R, {cols}C) is too large to represent a crossword grid. Make sure rows, cols <= {}",
+        u8::MAX
+    )]
+    Oversized { rows: usize, cols: usize },
+
     #[error("Row {row} in the grid has an invalid width of {found} (expected {expected})")]
     InvalidWidth { row: u8, found: u8, expected: u8 },
 
@@ -43,10 +49,26 @@ pub enum GridsError {
     },
 }
 
+impl SizeCheck for Grid<Square> {
+    fn check_size(&self) -> format::Result<()> {
+        let rows = self.rows();
+        let cols = self.cols();
+        let max_size = u8::MAX as usize;
+
+        if cols > max_size || rows > max_size {
+            return Err(format::Error::Grids(GridsError::Oversized { rows, cols }));
+        }
+
+        Ok(())
+    }
+}
+
 impl Grids {
     pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
-        let width = puzzle.cols();
-        let height = puzzle.rows();
+        puzzle.squares().check_size()?;
+
+        let rows = puzzle.rows();
+        let cols = puzzle.cols();
 
         let solution = {
             let mut bytes = Vec::new();
@@ -63,7 +85,7 @@ impl Grids {
                 bytes.push(byte);
             }
 
-            Grid::new(bytes, width).expect("Read correct length")
+            Grid::from_vec(bytes, cols).expect("Read correct length")
         };
 
         let state = {
@@ -81,14 +103,14 @@ impl Grids {
                 bytes.push(byte);
             }
 
-            Grid::new(bytes, width).expect("Read correct length")
+            Grid::from_vec(bytes, cols).expect("Read correct length")
         };
 
         let grids = Grids {
             solution,
             state,
-            width,
-            height,
+            width: cols as u8,
+            height: rows as u8,
         };
         grids.validate()?;
 
@@ -101,7 +123,7 @@ impl Grids {
         let err = |kind: GridsError| format::Error::Grids(kind);
 
         for (grid, _) in &grids {
-            let len = grid.rows();
+            let len = grid.rows() as u8;
 
             if len != self.height {
                 return Err(err(GridsError::InvalidHeight {
@@ -135,8 +157,8 @@ impl Grids {
                 return Err(err(GridsError::CellMismatch {
                     solution_square: windows_1252_to_char(solution_square),
                     state_square: windows_1252_to_char(state_square),
-                    row: pos.row,
-                    col: pos.col,
+                    row: pos.row as u8,
+                    col: pos.col as u8,
                 }));
             }
         }

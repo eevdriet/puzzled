@@ -43,7 +43,8 @@ impl PuzReader {
             cells.push(cell);
         }
 
-        let grid = Grid::new(cells, grids.solution.cols()).expect("Read correct length region");
+        let grid =
+            Grid::from_vec(cells, grids.solution.cols()).expect("Read correct length region");
         Ok(grid)
     }
 }

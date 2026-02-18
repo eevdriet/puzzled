@@ -331,3 +331,7 @@ pub(crate) fn is_valid_version(version: &[u8]) -> bool {
 
     x.is_ascii_digit() && dot == b'.' && y.is_ascii_digit()
 }
+
+pub(crate) trait SizeCheck {
+    fn check_size(&self) -> format::Result<()>;
+}

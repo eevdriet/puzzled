@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{CellStyle, Puzzle, Square};
+use crate::{CellStyle, Puzzle, SizeCheck, Square, format};
 use puzzled_core::{Grid, Position, Timer};
 
 pub(crate) type Grbs = Grid<u8>;
@@ -39,7 +39,9 @@ pub struct Extras {
 }
 
 impl Extras {
-    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> Self {
+    pub(crate) fn from_puzzle(puzzle: &Puzzle) -> format::Result<Self> {
+        puzzle.squares().check_size()?;
+
         let mut extras = Extras::default();
 
         // GRBS / RTBL
@@ -60,7 +62,7 @@ impl Extras {
                 })
                 .collect();
 
-            extras.grbs = Some(Grid::new(squares, puzzle.cols()).expect("correct dimensions"));
+            extras.grbs = Some(Grid::from_vec(squares, puzzle.cols()).expect("correct dimensions"));
             extras.rtbl = Some(rebuses);
         }
 
@@ -77,10 +79,10 @@ impl Extras {
                 })
                 .collect();
 
-            extras.gext = Some(Grid::new(styles, puzzle.cols()).expect("correct dimensions"));
+            extras.gext = Some(Grid::from_vec(styles, puzzle.cols()).expect("correct dimensions"));
         }
 
-        extras
+        Ok(extras)
     }
 }
 

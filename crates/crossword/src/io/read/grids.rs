@@ -11,13 +11,14 @@ impl Grids {
         width: u8,
         height: u8,
     ) -> read::Result<Self> {
-        let size = usize::from(width) * usize::from(height);
+        let uwidth = width as usize;
+        let size = uwidth * usize::from(height);
 
         let solution = reader.read_vec(size).context("Solution grid")?;
-        let solution = Grid::new(solution, width).expect("Read correct length");
+        let solution = Grid::from_vec(solution, uwidth).expect("Read correct length");
 
         let state = reader.read_vec(size).context("State grid")?;
-        let state = Grid::new(state, width).expect("Read correct length");
+        let state = Grid::from_vec(state, uwidth).expect("Read correct length");
 
         Ok(Self {
             solution,
@@ -74,7 +75,7 @@ impl<'a> TxtReader {
             .ok_or(err(GridsError::InvalidDimensions { rows, cols: 0 }))
             .context(context.to_string())?;
 
-        let grid = Grid::new(squares, cols)
+        let grid = Grid::from_vec(squares, cols as usize)
             .ok_or(err(GridsError::InvalidDimensions { rows, cols }))
             .context(context.to_string())?;
 
