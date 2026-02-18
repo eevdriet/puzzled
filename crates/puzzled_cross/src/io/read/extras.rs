@@ -172,7 +172,7 @@ impl Extras {
         let bytes = Grid::from_vec(bytes, width as usize).expect("Read correct length");
         let mut styles = Vec::with_capacity(size);
 
-        for (&mask, pos) in bytes.iter().zip(bytes.positions()) {
+        for (pos, &mask) in bytes.indexed_iter() {
             let Some(style) = CellStyle::from_mask(mask) else {
                 return Err(read::Error {
                     span: Span::default(),

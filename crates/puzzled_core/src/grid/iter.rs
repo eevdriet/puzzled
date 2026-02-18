@@ -13,6 +13,10 @@ type ColIter<'a, T> = StepBy<Iter<'a, T>>;
 type ColIterMut<'a, T> = StepBy<IterMut<'a, T>>;
 
 impl<T> Grid<T> {
+    pub fn positions(&self) -> impl Iterator<Item = Position> {
+        (0..self.data.len()).map(move |idx| self.position(idx).expect("Position should be valid"))
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.data.iter()
     }
@@ -123,19 +127,19 @@ where
 }
 
 impl<T> Grid<T> {
-    pub fn iter_with_pos(&self) -> impl Iterator<Item = (Position, &T)> {
+    pub fn indexed_iter(&self) -> impl Iterator<Item = (Position, &T)> {
         let iter = self.data.iter().enumerate();
 
         PosIter::new(iter, self.cols)
     }
 
-    pub fn iter_mut_with_pos(&mut self) -> impl Iterator<Item = (Position, &mut T)> {
+    pub fn indexed_iter_mut(&mut self) -> impl Iterator<Item = (Position, &mut T)> {
         let iter = self.data.iter_mut().enumerate();
 
         PosIterMut::new(iter, self.cols)
     }
 
-    pub fn iter_row_with_pos(&self, row: usize) -> impl Iterator<Item = (Position, &T)> {
+    pub fn indexed_iter_row(&self, row: usize) -> impl Iterator<Item = (Position, &T)> {
         let iter = self
             .data
             .iter()
@@ -146,10 +150,7 @@ impl<T> Grid<T> {
         PosIter::new(iter, self.cols)
     }
 
-    pub fn iter_row_mut_with_pos(
-        &mut self,
-        row: usize,
-    ) -> impl Iterator<Item = (Position, &mut T)> {
+    pub fn indexed_iter_row_mut(&mut self, row: usize) -> impl Iterator<Item = (Position, &mut T)> {
         let iter = self
             .data
             .iter_mut()
@@ -160,20 +161,17 @@ impl<T> Grid<T> {
         PosIterMut::new(iter, self.cols)
     }
 
-    pub fn iter_rows_with_pos(&self) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
-        (0..self.rows).map(move |row| self.iter_row_with_pos(row))
+    pub fn indexed_iter_rows(&self) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
+        (0..self.rows).map(move |row| self.indexed_iter_row(row))
     }
 
-    pub fn iter_col_with_pos(&self, col: usize) -> impl Iterator<Item = (Position, &T)> {
+    pub fn indexed_iter_col(&self, col: usize) -> impl Iterator<Item = (Position, &T)> {
         let iter = self.data.iter().enumerate().skip(col).step_by(self.cols);
 
         PosIter::new(iter, self.cols)
     }
 
-    pub fn iter_col_mut_with_pos(
-        &mut self,
-        col: usize,
-    ) -> impl Iterator<Item = (Position, &mut T)> {
+    pub fn indexed_iter_col_mut(&mut self, col: usize) -> impl Iterator<Item = (Position, &mut T)> {
         let iter = self
             .data
             .iter_mut()
@@ -184,8 +182,8 @@ impl<T> Grid<T> {
         PosIterMut::new(iter, self.cols)
     }
 
-    pub fn iter_cols_pos(&self) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
-        (0..self.cols).map(move |col| self.iter_col_with_pos(col))
+    pub fn indexed_iter_cols(&self) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
+        (0..self.cols).map(move |col| self.indexed_iter_row(col))
     }
 }
 
@@ -297,7 +295,7 @@ where
 }
 
 impl<T> Grid<T> {
-    pub fn iter_line_pos(&self, line: Line) -> impl Iterator<Item = (Position, &T)> {
+    pub fn indexed_iter_line(&self, line: Line) -> impl Iterator<Item = (Position, &T)> {
         match line {
             Line::Row(row) if row < self.rows => {
                 let iter = self
@@ -318,7 +316,7 @@ impl<T> Grid<T> {
         }
     }
 
-    pub fn iter_lines_pos(
+    pub fn indexed_iter_lines(
         &self,
         order: Order,
     ) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
@@ -332,6 +330,6 @@ impl<T> Grid<T> {
             Order::ColMajor => Line::Col(line),
         });
 
-        lines.map(|line| self.iter_line_pos(line))
+        lines.map(|line| self.indexed_iter_line(line))
     }
 }

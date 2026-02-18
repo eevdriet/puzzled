@@ -19,12 +19,23 @@ impl<T> Grid<T> {
         unsafe { Some(self.data.get_unchecked_mut(idx)) }
     }
 
-    pub(crate) fn index(&self, pos: Position) -> Option<usize> {
+    pub fn index(&self, pos: Position) -> Option<usize> {
         if pos.row >= self.rows || pos.col >= self.cols {
             return None;
         }
 
         Some(pos.row * self.cols + pos.col)
+    }
+
+    pub fn position(&self, idx: usize) -> Option<Position> {
+        if idx >= self.data.len() {
+            return None;
+        }
+
+        let row = idx / self.cols;
+        let col = idx % self.cols;
+
+        Some(Position::new(row, col))
     }
 }
 

@@ -10,12 +10,7 @@ impl PuzReader {
         let mut cells = Vec::new();
         eprintln!("Extras: {extras:?}");
 
-        for ((&solution, &state), pos) in grids
-            .solution
-            .iter()
-            .zip(grids.state.iter())
-            .zip(grids.solution.positions())
-        {
+        for ((pos, &solution), &state) in grids.solution.indexed_iter().zip(grids.state.iter()) {
             let cell = match solution {
                 // Non-playable cells are always black
                 NON_PLAYABLE_CELL => Square::Black,

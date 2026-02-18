@@ -5,7 +5,7 @@ impl Extras {
         if let Some(grbs) = &self.grbs {
             writer.write_all(b"GRBS").context("GRBS header")?;
 
-            for (&byte, pos) in grbs.iter().zip(grbs.positions()) {
+            for (pos, &byte) in grbs.indexed_iter() {
                 let context = format!("Square {pos}");
                 writer.write_u8(byte).context(context)?;
             }
@@ -37,7 +37,7 @@ impl Extras {
         if let Some(gext) = &self.gext {
             writer.write_all(b"GEXT").context("GEXT header")?;
 
-            for (&style, pos) in gext.iter().zip(gext.positions()) {
+            for (pos, &style) in gext.indexed_iter() {
                 let context = format!("Cell {pos} style");
                 writer.write_u8(style.bits()).context(context)?;
             }

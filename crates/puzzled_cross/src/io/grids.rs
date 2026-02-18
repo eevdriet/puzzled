@@ -147,11 +147,8 @@ impl Grids {
         }
 
         // Check that non-playable squares match in the layout and state
-        for ((&solution_square, &state_square), pos) in self
-            .solution
-            .iter()
-            .zip(self.state.iter())
-            .zip(self.solution.positions())
+        for ((pos, &solution_square), &state_square) in
+            self.solution.indexed_iter().zip(self.state.iter())
         {
             if (solution_square == NON_PLAYABLE_CELL) != (state_square == NON_PLAYABLE_CELL) {
                 return Err(err(GridsError::CellMismatch {
