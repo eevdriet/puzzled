@@ -1,7 +1,16 @@
-[workspace]
-resolver = "2"
-members = ["crates/nono", "crates/nono-io", "crates/nono-tui"]
-
-[workspace.package]
-version = "0.0.1"
+[package]
+name = "puzzled_nono"
+version = "0.1.0"
 edition = "2024"
+
+[dependencies]
+bitvec = { workspace = true}
+derive_more = {workspace = true}
+serde = {workspace = true}
+serde_json = {workspace = true}
+thiserror = {workspace = true}
+tracing = {workspace = true}
+
+[dev-dependencies]
+rstest = {workspace = true}
+tracing-test = {workspace = true}
