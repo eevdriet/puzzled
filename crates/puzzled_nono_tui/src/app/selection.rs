@@ -1,4 +1,4 @@
-use puzzled_nono::Axis;
+use puzzled_nono::Order;
 use ratatui::layout::{Position, Rect};
 
 use crate::MotionRange;
@@ -14,7 +14,7 @@ pub enum SelectionKind {
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Selection {
-    pub axis: Axis,
+    pub order: Order,
     pub kind: SelectionKind,
 
     start: Option<Position>,
@@ -22,9 +22,9 @@ pub struct Selection {
 }
 
 impl Selection {
-    pub fn empty(axis: Axis) -> Self {
+    pub fn empty(order: Order) -> Self {
         Self {
-            axis,
+            order,
             kind: SelectionKind::default(),
             start: None,
             end: None,

@@ -1,29 +1,10 @@
 #![allow(dead_code)]
 
-mod error;
-mod fill;
-mod geom;
-mod puzzle;
-mod rules;
-mod run;
-mod solver;
-mod style;
-
 pub mod io;
+pub mod puzzle;
+pub mod solver;
 
-pub use fill::*;
-pub use geom::*;
-pub use io::load_nonogram;
-pub use puzzle::*;
-pub use rules::*;
-pub use run::*;
-pub use style::*;
+pub use puzzled_core::*;
+pub use {io::*, puzzle::*, solver::*};
 
-pub use error::*;
-pub use solver::*;
-
-pub struct Nonogram {
-    pub puzzle: Puzzle,
-    pub rules: Rules,
-    pub colors: Vec<Color>,
-}
+mod error;

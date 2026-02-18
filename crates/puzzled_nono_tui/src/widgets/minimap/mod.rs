@@ -30,12 +30,10 @@ impl StatefulWidgetRef for &MiniMapWidget {
             .y_bounds([0.0, (cell_height * puzzle.rows()) as f64])
             .marker(Marker::Braille)
             .paint(|ctx| {
-                for (r, row) in puzzle.iter_rows().enumerate() {
-                    let r = r as u16;
+                for (r, row) in puzzle.fills().iter_rows().enumerate() {
                     let y_start = cell_height * (puzzle.rows() - r);
 
                     for (c, fill) in row.enumerate() {
-                        let c = c as u16;
                         let x_start = cell_width * c;
 
                         if matches!(fill, Fill::Color(_))

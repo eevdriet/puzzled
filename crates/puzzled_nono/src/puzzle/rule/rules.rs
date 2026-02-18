@@ -1,6 +1,6 @@
 use derive_more::Debug;
 
-use crate::{Puzzle, Rule};
+use crate::{Nonogram, Rule};
 
 #[derive(Debug, Default, Clone)]
 pub struct Rules {
@@ -13,8 +13,9 @@ impl Rules {
         Self { rows, cols }
     }
 
-    pub fn from_puzzle(puzzle: &Puzzle) -> Self {
+    pub fn from_puzzle(puzzle: &Nonogram) -> Self {
         let rows = puzzle
+            .fills()
             .iter_rows()
             .map(|row| {
                 let fills = row.copied();
@@ -23,6 +24,7 @@ impl Rules {
             .collect::<Vec<_>>();
 
         let cols = puzzle
+            .fills()
             .iter_cols()
             .map(|col| {
                 let fills = col.copied();

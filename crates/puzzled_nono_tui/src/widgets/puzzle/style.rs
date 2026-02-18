@@ -9,19 +9,19 @@ pub struct PuzzleStyle {
     pub colors: Vec<Color>,
 
     #[serde(default)]
-    pub grid_size: Option<u16>,
+    pub grid_size: Option<usize>,
 
     #[serde(default = "default_cell_width")]
-    pub cell_width: u16,
+    pub cell_width: usize,
 
     #[serde(default = "default_cell_height")]
-    pub cell_height: u16,
+    pub cell_height: usize,
 }
 
-fn default_cell_width() -> u16 {
+fn default_cell_width() -> usize {
     2
 }
-fn default_cell_height() -> u16 {
+fn default_cell_height() -> usize {
     1
 }
 
@@ -41,7 +41,7 @@ impl PuzzleStyle {
         match fill {
             Fill::Color(id) if id > 0 => self
                 .colors
-                .get(id as usize - 1)
+                .get(id - 1)
                 .copied()
                 .map(|(r, g, b)| RColor::Rgb(r, g, b)),
             _ => Some(RColor::DarkGray),
@@ -49,7 +49,7 @@ impl PuzzleStyle {
     }
 
     pub fn key_from_fill(&self, fill: Fill) -> Option<char> {
-        let color_count = self.colors.len() as u16;
+        let color_count = self.colors.len();
         fill.key(Some(color_count))
     }
 
@@ -68,6 +68,6 @@ impl PuzzleStyle {
 
         (0..self.colors.len())
             .contains(&idx)
-            .then_some(Fill::Color(idx as u16 + 1))
+            .then_some(Fill::Color(idx + 1))
     }
 }

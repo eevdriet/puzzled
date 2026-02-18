@@ -3,7 +3,7 @@ mod fill;
 pub use fill::*;
 
 use crossterm::event::Event;
-use puzzled_nono::{Fill, FindDirection, LinePosition, Position, Puzzle};
+use puzzled_nono::{Fill, FindDirection, LinePosition, Nonogram, Position};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
@@ -51,7 +51,7 @@ impl HandleAction for &PuzzleWidget {
         // Input
         let event = input.event.clone();
         let action = input.action;
-        let count = input.repeat.unwrap_or(1);
+        let count = input.repeat.unwrap_or(1) as usize;
 
         let fill: Option<Fill> = event.clone().try_into().ok();
         let mut cmd: Option<ActionResult> = None;
@@ -65,7 +65,7 @@ impl HandleAction for &PuzzleWidget {
         let pos: Position = app_to_puzzle(state.puzzle.cursor);
         let col = pos.col;
         let row = pos.row;
-        let axis_pos = pos.along_axis(state.puzzle.motion_axis);
+        let axis_pos = pos.with_order(state.puzzle.motion_order);
 
         let end: Position = match action {
             // Moves
@@ -88,21 +88,25 @@ impl HandleAction for &PuzzleWidget {
 
             // Fill finds
             Action::FindFillForwards if fill.is_some() => puzzle
+                .fills()
                 .find_fill(axis_pos, fill.unwrap(), FindDirection::Forwards)
                 .map(|pos| pos.into())
                 .unwrap_or(pos),
 
             Action::FindFillBackwards if fill.is_some() => puzzle
+                .fills()
                 .find_fill(axis_pos, fill.unwrap(), FindDirection::Backwards)
                 .map(|pos| pos.into())
                 .unwrap_or(pos),
 
             Action::FindTilFillForwards if fill.is_some() => puzzle
+                .fills()
                 .find_fill(axis_pos, fill.unwrap(), FindDirection::Forwards)
                 .map(|pos| (pos - 1).into())
                 .unwrap_or(pos),
 
             Action::FindTilFillBackwards if fill.is_some() => puzzle
+                .fills()
                 .find_fill(axis_pos, fill.unwrap(), FindDirection::Backwards)
                 .map(|pos| (pos + 1).into())
                 .unwrap_or(pos),
@@ -135,11 +139,13 @@ impl HandleAction for &PuzzleWidget {
 
             // Jump to non-blank runs
             Action::JumpFirstNonBlank => puzzle
+                .fills()
                 .find_first_non_blank_fill(axis_pos.line, FindDirection::Forwards)
                 .map(|pos| pos.into())
                 .unwrap_or(pos),
 
             Action::JumpLastNonBlank => puzzle
+                .fills()
                 .find_first_non_blank_fill(axis_pos.line, FindDirection::Backwards)
                 .map(|pos| pos.into())
                 .unwrap_or(pos),
@@ -225,8 +231,8 @@ impl HandleAction for &PuzzleWidget {
             }
 
             Action::SwitchAxis => {
-                state.puzzle.motion_axis.switch();
-                state.puzzle.selection.axis.switch();
+                state.puzzle.motion_order.flip();
+                state.puzzle.selection.order.flip();
             }
 
             // TODO: Implement properly by changing scroll too
@@ -267,19 +273,19 @@ impl HandleAction for &PuzzleWidget {
 }
 
 fn handle_jumps(
-    puzzle: &Puzzle,
+    puzzle: &Nonogram,
     pos: LinePosition,
     to_start: bool,
     direction: FindDirection,
-    count: u16,
+    count: usize,
 ) -> Position {
     let mut pos = pos;
 
     for _ in 0..count {
         // Try to jump to the next position
         let next_pos = match to_start {
-            true => puzzle.find_directed_run_start(pos, direction),
-            false => puzzle.find_directed_run_end(pos, direction),
+            true => puzzle.fills().find_directed_run_start(pos, direction),
+            false => puzzle.fills().find_directed_run_end(pos, direction),
         };
 
         // If not possible, the start/end is reached: stop

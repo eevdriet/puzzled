@@ -1,5 +1,7 @@
+mod fills;
 mod mask;
 
+pub use fills::*;
 pub use mask::*;
 
 use serde::Deserialize;
@@ -32,7 +34,7 @@ impl Fill {
         }
     }
 
-    pub fn key(&self, color_count: Option<u16>) -> Option<char> {
+    pub fn key(&self, color_count: Option<usize>) -> Option<char> {
         match self {
             // Default characters for blanks and crosses
             Fill::Blank => Some('.'),
@@ -56,7 +58,7 @@ impl Fill {
     }
 }
 
-impl From<Fill> for Option<u16> {
+impl From<Fill> for Option<usize> {
     fn from(fill: Fill) -> Self {
         match fill {
             Fill::Blank => None,

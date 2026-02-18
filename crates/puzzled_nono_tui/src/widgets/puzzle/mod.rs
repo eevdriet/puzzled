@@ -33,7 +33,7 @@ impl StatefulWidgetRef for &PuzzleWidget {
 impl PuzzleWidget {
     fn draw_puzzle(&self, buf: &mut Buffer, app_state: &AppState) {
         let state = &app_state.puzzle;
-        let cell_width = state.style.cell_width as usize;
+        let cell_width = state.style.cell_width;
         let div_style = Style::default().fg(Color::DarkGray);
 
         // Determine which rows and columns to display
@@ -59,8 +59,10 @@ impl PuzzleWidget {
                 let is_selected = selection.contains(&pos);
                 let style = PuzzleWidget::cell_style(&fill, pos, is_selected, app_state);
 
+                let col = col as usize;
+
                 // Draw cell
-                let repeat = state.style.cell_width as usize;
+                let repeat = state.style.cell_width;
                 let symbol = match pos == state.cursor {
                     true => 'E',
                     false => fill.symbol(),
@@ -70,12 +72,12 @@ impl PuzzleWidget {
 
                 safe_draw_str(buf, (x, y).into(), symbol, style);
 
-                x += state.style.cell_width;
+                x += state.style.cell_width as u16;
 
                 // Draw vertical divider
                 if let Some(size) = state.style.grid_size
                     && col != cols - 1
-                    && (col + 1) % size == 0
+                    && (col + 1).is_multiple_of(size)
                 {
                     safe_draw_str(buf, (x, y).into(), "│", div_style);
                     x += 1;
@@ -83,14 +85,16 @@ impl PuzzleWidget {
             }
 
             // Draw horizontal divider
+            let row = row as usize;
             if let Some(size) = state.style.grid_size
                 && (row + 1).is_multiple_of(size)
                 && row != rows - 1
             {
                 let mut div_x = x_start;
-                let div_y = y + state.style.cell_height;
+                let div_y = y + state.style.cell_height as u16;
 
                 for col in vp.col_start..vp.col_end {
+                    let col = col as usize;
                     let text = "─".repeat(cell_width);
                     safe_draw_str(buf, (div_x, div_y).into(), text, div_style);
                     div_x += cell_width as u16;
@@ -105,7 +109,7 @@ impl PuzzleWidget {
             }
 
             // Advance y by cell height
-            y += state.style.cell_height;
+            y += state.style.cell_height as u16;
         }
     }
 
@@ -156,7 +160,7 @@ impl PuzzleWidget {
                     .puzzle
                     .style
                     .colors
-                    .get(*id as usize - 1)
+                    .get(*id - 1)
                     .unwrap_or_else(|| panic!("Color for fill {} should be set", id));
 
                 let rcolor = Color::Rgb(*r, *g, *b);

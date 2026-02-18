@@ -1,108 +1,68 @@
 mod error;
+mod fill;
 mod find;
-mod iter;
+mod rule;
+mod run;
+mod style;
+
+use bitvec::vec::BitVec;
+use puzzled_core::Line;
+use std::collections::HashMap;
 
 pub use error::*;
+pub use fill::*;
 pub use find::*;
-pub use iter::*;
-
-use std::ops::{Index, IndexMut};
-
-use crate::{Error, Fill, Line, Position, Result};
+pub use rule::*;
+pub use run::*;
+pub use style::*;
 
 #[derive(Debug, Default)]
-pub struct Puzzle {
-    // Contents
-    rows: u16,
-    cols: u16,
-    fills: Vec<Fill>,
+pub struct Nonogram {
+    fills: Fills,
+    rules: Rules,
+    colors: Vec<Color>,
 }
 
-impl Puzzle {
-    // Constructors
-    pub fn new(rows: u16, cols: u16, fills: Vec<Fill>) -> Result<Self> {
-        let size = usize::from(rows) * usize::from(cols);
-        if fills.len() != size {
-            return Err(Error::Puzzle(PuzzleError::SizeMismatch {
-                rows,
-                cols,
-                size,
-            }));
-        }
-
-        // Create the puzzle
-        let mut puzzle = Self { rows, cols, fills };
-
-        // Generate the fill masks
-        for row in 0..rows {
-            for col in 0..cols {
-                let pos = Position::new(row, col);
-                let fill = puzzle[pos];
-
-                puzzle.fill_cell(pos, fill);
-            }
-        }
-
-        Ok(puzzle)
-    }
-
-    pub fn empty(rows: u16, cols: u16) -> Self {
-        let size = usize::from(rows) * usize::from(cols);
-        let fills = vec![Fill::Blank; size];
-
-        Self::new(rows, cols, fills).unwrap()
-    }
-
-    // Iterating
-    // Getters
-    pub fn size(&self) -> usize {
-        usize::from(self.rows) * usize::from(self.cols)
-    }
-
-    pub fn rows(&self) -> u16 {
-        self.rows
-    }
-    pub fn cols(&self) -> u16 {
-        self.cols
-    }
-
-    // Indexing
-    fn index(&self, pos: Position) -> usize {
-        usize::from(pos.row) * usize::from(self.cols) + usize::from(pos.col)
-    }
-
-    // Line
-    pub fn line_len(&self, line: Line) -> u16 {
-        match line {
-            Line::Row(_) => self.cols,
-            Line::Col(_) => self.rows,
+impl Nonogram {
+    pub fn new(fills: Fills, rules: Rules, colors: Vec<Color>) -> Self {
+        Self {
+            fills,
+            rules,
+            colors,
         }
     }
 
-    // Setters
-    pub fn fill_cell(&mut self, pos: Position, fill: Fill) {
-        self[pos] = fill;
+    pub fn fills(&self) -> &Fills {
+        &self.fills
+    }
+
+    pub fn fills_mut(&mut self) -> &mut Fills {
+        &mut self.fills
+    }
+
+    pub fn rules(&self) -> &Rules {
+        &self.rules
+    }
+
+    pub fn rules_mut(&mut self) -> &mut Rules {
+        &mut self.rules
+    }
+
+    pub fn colors(&self) -> &Vec<Color> {
+        &self.colors
+    }
+
+    /// Number of columns in the grid
+    pub fn cols(&self) -> usize {
+        self.fills.cols()
+    }
+
+    /// Number of rows in the grid
+    pub fn rows(&self) -> usize {
+        self.fills.rows()
     }
 }
 
-impl<P> Index<P> for Puzzle
-where
-    P: Into<Position>,
-{
-    type Output = Fill;
+pub type LineMap<T> = HashMap<Line, T>;
 
-    fn index(&self, pos: P) -> &Self::Output {
-        let idx = self.index(pos.into());
-        &self.fills[idx]
-    }
-}
-
-impl<P> IndexMut<P> for Puzzle
-where
-    P: Into<Position>,
-{
-    fn index_mut(&mut self, pos: P) -> &mut Self::Output {
-        let idx = self.index(pos.into());
-        &mut self.fills[idx]
-    }
-}
+pub type LineMask = BitVec;

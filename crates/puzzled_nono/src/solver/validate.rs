@@ -1,4 +1,4 @@
-use crate::{Fill, Line, LineConstraint, LinePosition, Puzzle, Rule, Solver};
+use crate::{Fill, Line, LineConstraint, LinePosition, Nonogram, Rule, Solver};
 
 #[derive(Debug, Clone, Copy)]
 pub enum LineValidation {
@@ -12,8 +12,8 @@ pub enum LineValidation {
 
     /// Line is validated by a rule of different length
     LengthMismatch {
-        rule_len: u16,
-        line_len: u16,
+        rule_len: usize,
+        line_len: usize,
     },
 
     /// Line includes a fill that is not include in the rule
@@ -38,7 +38,7 @@ impl LineValidation {
 }
 
 impl Solver {
-    pub fn validate(&mut self, puzzle: &Puzzle, line: Line) -> LineValidation {
+    pub fn validate(&mut self, puzzle: &Nonogram, line: Line) -> LineValidation {
         let Some(rule) = self.rules.get(&line) else {
             tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
             return LineValidation::MissingRule(line);
@@ -46,7 +46,7 @@ impl Solver {
 
         // Make sure the rule length is valid
         let rule_len = rule.line_len();
-        let line_len = puzzle.line_len(line);
+        let line_len = puzzle.fills().line_len(line);
 
         if rule_len != line_len {
             tracing::warn!(
@@ -72,9 +72,9 @@ impl Solver {
         self.validate_iter(puzzle, rule, line)
     }
 
-    fn validate_iter(&self, puzzle: &Puzzle, rule: &Rule, line: Line) -> LineValidation {
+    fn validate_iter(&self, puzzle: &Nonogram, rule: &Rule, line: Line) -> LineValidation {
         let rule_iter = rule.runs().iter();
-        let line_iter = puzzle.iter_runs(line);
+        let line_iter = puzzle.fills().iter_line_runs(line);
 
         if rule_iter.clone().count() != line_iter.clone().count() {
             return LineValidation::Valid;
@@ -127,9 +127,9 @@ impl Solver {
         // LineValidation::Valid
     }
 
-    fn validate_dp(&self, puzzle: &Puzzle, rule: &Rule, line: Line) -> LineValidation {
+    fn validate_dp(&self, puzzle: &Nonogram, rule: &Rule, line: Line) -> LineValidation {
         let runs = rule.runs();
-        let n = puzzle.line_len(line) as usize;
+        let n = puzzle.fills().line_len(line);
         let m = runs.len();
 
         // dp[offset][r]: first offset cells can fit the first r runs
@@ -137,7 +137,7 @@ impl Solver {
         dp[0][0] = true;
 
         for offset in 0..=n {
-            let pos = LinePosition::new(line, offset as u16);
+            let pos = LinePosition::new(line, offset);
 
             #[allow(clippy::needless_range_loop)]
             for r in 0..=m {
@@ -147,7 +147,7 @@ impl Solver {
                 }
 
                 // Option 1: skip next position
-                if offset < n && matches!(puzzle[pos], Fill::Cross | Fill::Blank) {
+                if offset < n && matches!(puzzle[pos.into()], Fill::Cross | Fill::Blank) {
                     dp[offset + 1][r] = true;
                 }
 
@@ -163,7 +163,7 @@ impl Solver {
                 let len = run.count;
 
                 let next_pos = pos + len;
-                let next_offset = next_pos.offset as usize;
+                let next_offset = next_pos.pos;
 
                 // Run cannot fit in the remaining space
                 if next_offset > n {
@@ -175,7 +175,7 @@ impl Solver {
                 let mut ok = true;
 
                 for idx in 0..len {
-                    match puzzle[pos + idx] {
+                    match puzzle[(pos + idx).into()] {
                         Fill::Cross => {
                             ok = false;
                             break;
@@ -194,7 +194,7 @@ impl Solver {
 
                 // Make sure to leave a space between runs with the same (colored) fill
                 if next_offset < n
-                    && matches!(puzzle[next_pos], col @Fill::Color(_) if col == run.fill)
+                    && matches!(puzzle[next_pos.into()], col @Fill::Color(_) if col == run.fill)
                 {
                     continue;
                 }

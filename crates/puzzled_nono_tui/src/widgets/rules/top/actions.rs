@@ -21,12 +21,12 @@ impl HandleAction for &ColRulesWidget {
 
         let event = input.event;
         let action = input.action;
-        let count = input.repeat.unwrap_or(1);
+        let count = input.repeat.unwrap_or(1) as usize;
 
         // Lose focus commands
-        let get_max_row = |col: u16| -> u16 {
-            let rule = &rule_state.rules[col as usize];
-            rule.runs().len() as u16 - 1
+        let get_max_row = |col: usize| -> usize {
+            let rule = &rule_state.rules[col];
+            rule.runs().len() - 1
         };
 
         let pos: Position = app_to_puzzle(rule_state.cursor);

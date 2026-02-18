@@ -1,8 +1,6 @@
 use std::io;
 
-use thiserror::Error;
-
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
     Custom(String),

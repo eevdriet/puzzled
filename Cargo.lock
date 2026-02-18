@@ -1735,6 +1735,7 @@ dependencies = [
  "bitvec",
  "derive_more",
  "image",
+ "puzzled_core",
  "rstest",
  "serde",
  "serde_json",

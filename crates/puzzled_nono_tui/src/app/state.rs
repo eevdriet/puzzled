@@ -1,4 +1,4 @@
-use puzzled_nono::{Axis, Fill, Puzzle, Rules, Solver};
+use puzzled_nono::{Fill, Nonogram, Order, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
@@ -22,7 +22,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(puzzle: Puzzle, rules: Rules, style: PuzzleStyle, settings: Settings) -> Self {
+    pub fn new(puzzle: Nonogram, rules: Rules, style: PuzzleStyle, settings: Settings) -> Self {
         let start_fill = Fill::Color(1);
 
         let mut solver = Solver::new();
@@ -33,8 +33,8 @@ impl AppState {
             solver,
             puzzle: PuzzleState::new(puzzle, style, start_fill),
             focus: Focus::default(),
-            rules_left: RuleState::new(rules.rows.clone(), Axis::Row),
-            rules_top: RuleState::new(rules.cols.clone(), Axis::Col),
+            rules_left: RuleState::new(rules.rows.clone(), Order::RowMajor),
+            rules_top: RuleState::new(rules.cols.clone(), Order::ColMajor),
             minimap: MiniMapState::default(),
             footer: FooterState::new(),
         }

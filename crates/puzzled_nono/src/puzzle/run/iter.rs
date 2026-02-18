@@ -91,7 +91,7 @@ mod tests {
     #[case(vec![B, B], vec![(B, 2)])]
     #[case(vec![B, B, X, B], vec![(B, 2), (X, 1), (B, 1)])]
     #[case(vec![C, X, X, C], vec![(C, 1), (X, 2), (C, 1)])]
-    fn all_runs(#[case] fills: Vec<Fill>, #[case] runs: Vec<(Fill, u16)>) {
+    fn all_runs(#[case] fills: Vec<Fill>, #[case] runs: Vec<(Fill, usize)>) {
         let fill_runs: Vec<_> = Runs::new(fills.into_iter(), false).collect();
         let runs: Vec<Run> = runs.iter().map(|&val| val.into()).collect();
 
@@ -104,7 +104,7 @@ mod tests {
     #[case(vec![B, X, C], vec![(C, 1)])]
     #[case(vec![C, X, C], vec![(C, 1), (C, 1)])]
     #[case(vec![C, C, C2, C, C2, C2, C, C], vec![(C, 2), (C2, 1), (C, 1), (C2, 2), (C, 2)])]
-    fn colored_runs(#[case] fills: Vec<Fill>, #[case] runs: Vec<(Fill, u16)>) {
+    fn colored_runs(#[case] fills: Vec<Fill>, #[case] runs: Vec<(Fill, usize)>) {
         let fill_runs: Vec<_> = Runs::new(fills.into_iter(), true).collect();
         let runs: Vec<Run> = runs.iter().map(|&val| val.into()).collect();
 

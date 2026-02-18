@@ -102,3 +102,33 @@ impl ops::SubAssign<Offset> for LinePosition {
         *self = *self - offset;
     }
 }
+
+impl ops::Add<usize> for LinePosition {
+    type Output = Self;
+
+    fn add(self, offset: usize) -> Self::Output {
+        let pos = self.pos.saturating_add(offset);
+        self.with_pos(pos)
+    }
+}
+
+impl ops::AddAssign<usize> for LinePosition {
+    fn add_assign(&mut self, offset: usize) {
+        *self = *self + offset;
+    }
+}
+
+impl ops::Sub<usize> for LinePosition {
+    type Output = Self;
+
+    fn sub(self, offset: usize) -> Self::Output {
+        let pos = self.pos.saturating_sub(offset);
+        self.with_pos(pos)
+    }
+}
+
+impl ops::SubAssign<usize> for LinePosition {
+    fn sub_assign(&mut self, offset: usize) {
+        *self = *self - offset;
+    }
+}

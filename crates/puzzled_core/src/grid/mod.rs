@@ -1,8 +1,10 @@
-use crate::Position;
+use crate::{Line, Position};
 
 mod index;
 mod iter;
 mod macros;
+
+pub use iter::*;
 
 #[derive(Debug, Default)]
 pub struct Grid<T> {
@@ -32,6 +34,10 @@ impl<T> Grid<T> {
     /// Number of rows in the grid
     pub fn rows(&self) -> usize {
         self.rows
+    }
+
+    pub fn size(&self) -> usize {
+        self.cols * self.rows
     }
 
     /// Reference the underlying data [`Vec`]
@@ -140,6 +146,13 @@ impl<T> Grid<T> {
 
         self.data.swap(idx1, idx2);
         Some(true)
+    }
+
+    pub fn line_len(&self, line: Line) -> usize {
+        match line {
+            Line::Row(_) => self.cols,
+            Line::Col(_) => self.rows,
+        }
     }
 }
 

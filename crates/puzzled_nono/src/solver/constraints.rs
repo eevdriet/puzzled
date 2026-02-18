@@ -19,7 +19,7 @@ impl Solver {
         };
 
         let runs = rule.runs();
-        let line_len = rule.line_len() as usize;
+        let line_len = rule.line_len();
 
         let left = fit_forwards(runs, line_len);
         let right = fit_backwards(runs, line_len);
@@ -84,7 +84,7 @@ fn find_filled(
             continue;
         }
 
-        let len = run.count as usize;
+        let len = run.count;
         let mut run_must = bitvec![1; n];
         let mut has_any = false;
 
@@ -150,7 +150,7 @@ fn fit_forwards(runs: &[Run], line_len: usize) -> Vec<Vec<bool>> {
             }
 
             // Option 2: place run r
-            let len = runs[r].count as usize;
+            let len = runs[r].count;
             let mut next = offset + len;
 
             // Leave a gap for adjacent runs of the same fill
@@ -195,7 +195,7 @@ fn fit_backwards(runs: &[Run], line_len: usize) -> Vec<Vec<bool>> {
             }
 
             // Option 2: place run r
-            let len = runs[r].count as usize;
+            let len = runs[r].count;
             let mut next = offset + len;
 
             // Leave a gap for adjacent runs of the same fill
@@ -247,7 +247,7 @@ mod tests {
     #[case::multiple_runs(vec![(C,3), (C,2), (C,1)], 8, vec![ft_vec(9, 0), ft_vec(9, 4), ft_vec(9, 7), ft_vec(9, 8)])]
     #[case::mixed_runs(vec![(C,1), (C,1)], 3, vec![ft_vec(4, 0), ft_vec(4, 2), ft_vec(4, 3)])]
     fn test_fit_forwards(
-        #[case] runs: Vec<(Fill, u16)>,
+        #[case] runs: Vec<(Fill, usize)>,
         #[case] line_len: usize,
         #[case] expected: Vec<Vec<bool>>,
     ) {
@@ -270,7 +270,7 @@ mod tests {
     #[case::multiple_runs(vec![(C,1), (C,1)], 3, vec![tf_vec(4, 1), tf_vec(4, 3), tf_vec(4, 4)])]
     #[case::multiple_runs(vec![(C,1), (C,1)], 4, vec![tf_vec(5, 2), tf_vec(5, 4), tf_vec(5, 5)])]
     fn test_fit_backwards(
-        #[case] runs: Vec<(Fill, u16)>,
+        #[case] runs: Vec<(Fill, usize)>,
         #[case] line_len: usize,
         #[case] expected: Vec<Vec<bool>>,
     ) {
@@ -290,7 +290,7 @@ mod tests {
     #[case::exact_fit(vec![(C,2), (C, 1), (C, 3)], 8, bitvec![1, 1, 0, 1, 0, 1, 1, 1])]
     #[case::exact_fit(vec![(C,2), (C2, 1), (C2, 3)], 8, bitvec![0, 1, 0, 0, 0, 0, 0, 0])]
     fn test_must_be_filled(
-        #[case] runs: Vec<(Fill, u16)>,
+        #[case] runs: Vec<(Fill, usize)>,
         #[case] line_len: usize,
         #[case] expected: BitVec,
     ) {
@@ -312,7 +312,7 @@ mod tests {
     #[case::exact_fit(vec![(C,2), (C, 1), (C, 3)], 8, bitvec![1, 1, 0, 1, 0, 1, 1, 1])]
     #[case::exact_fit(vec![(C,2), (C2, 1), (C2, 3)], 8, bitvec![1, 1, 1, 0, 0, 0, 0, 0])]
     fn test_maybe_filled(
-        #[case] runs: Vec<(Fill, u16)>,
+        #[case] runs: Vec<(Fill, usize)>,
         #[case] line_len: usize,
         #[case] expected: BitVec,
     ) {

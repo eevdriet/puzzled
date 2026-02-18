@@ -22,15 +22,15 @@ impl HandleAction for &RowRulesWidget {
 
         let event = input.event;
         let action = input.action;
-        let count = input.repeat.unwrap_or(1);
+        let count = input.repeat.unwrap_or(1) as usize;
 
         // Lose focus commands
-        let get_max_col = |row: u16| -> u16 {
-            let rule = &rule_state.rules[row as usize];
-            rule.runs().len() as u16 - 1
+        let get_max_col = |row: usize| -> usize {
+            let rule = &rule_state.rules[row];
+            rule.runs().len() - 1
         };
 
-        let next_back_idx = |col: u16, row: u16, next_row: u16| -> u16 {
+        let next_back_idx = |col: usize, row: usize, next_row: usize| -> usize {
             let back = get_max_col(row).saturating_sub(col);
 
             get_max_col(next_row).saturating_sub(back)

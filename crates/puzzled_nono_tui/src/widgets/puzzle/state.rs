@@ -1,13 +1,13 @@
 use std::time::Instant;
 
-use puzzled_nono::{Axis, Fill, Position, Puzzle};
+use puzzled_nono::{Fill, Nonogram, Order, Position};
 use ratatui::layout::{Position as AppPosition, Rect, Size};
 
 use crate::{PuzzleStyle, Selection, Viewport};
 
 #[derive(Debug)]
 pub struct PuzzleState {
-    pub puzzle: Puzzle,
+    pub puzzle: Nonogram,
 
     pub style: PuzzleStyle,
 
@@ -30,40 +30,40 @@ pub struct PuzzleState {
     // Solving properties
     pub fill: Fill,
 
-    pub motion_axis: Axis,
+    pub motion_order: Order,
 }
 
 impl PuzzleState {
-    pub fn new(puzzle: Puzzle, style: PuzzleStyle, fill: Fill) -> Self {
-        let axis = Axis::default();
+    pub fn new(puzzle: Nonogram, style: PuzzleStyle, fill: Fill) -> Self {
+        let order = Order::default();
 
         Self {
             puzzle,
             style,
             fill,
 
-            selection: Selection::empty(axis),
+            selection: Selection::empty(order),
             start_time: Instant::now(),
             cursor: AppPosition::default(),
             area: Rect::default(),
             viewport: Viewport::default(),
             scroll: Position::default(),
-            motion_axis: axis,
+            motion_order: order,
         }
     }
     pub fn bounds(&self) -> Rect {
         let width = self.puzzle.cols();
         let height = self.puzzle.rows();
 
-        Rect::new(0, 0, width, height)
+        Rect::new(0, 0, width as u16, height as u16)
     }
 
     pub fn screen_to_puzzle(&self, area: Rect, screen_pos: AppPosition) -> Option<Position> {
         let puzzle = &self.puzzle;
 
         // Start from the relative position to the viewport
-        let mut x = screen_pos.x.checked_sub(area.x)?;
-        let mut y = screen_pos.y.checked_sub(area.y)?;
+        let mut x = screen_pos.x.checked_sub(area.x)? as usize;
+        let mut y = screen_pos.y.checked_sub(area.y)? as usize;
 
         tracing::trace!("pos: {screen_pos:?} + viewport: {:?}", area);
         tracing::trace!("pos relative to viewport: {:?}", (x, y));
@@ -101,8 +101,8 @@ impl PuzzleState {
         let vp = &self.viewport;
 
         // Start from the viewport origin
-        let mut x = vp.area.x;
-        let mut y = vp.area.y;
+        let mut x = vp.area.x as usize;
+        let mut y = vp.area.y as usize;
 
         // Determine the puzzle position visible within the viewport
         let col = puzzle_pos.col.checked_sub(self.scroll.col)?;
@@ -121,7 +121,7 @@ impl PuzzleState {
             y += row / size;
         }
 
-        Some(AppPosition::new(x, y))
+        Some(AppPosition::new(x as u16, y as u16))
     }
 
     fn visible_cells(&self) -> Size {
@@ -152,7 +152,10 @@ impl PuzzleState {
                 )
             });
 
-        Size::new(end.col - start.col + 1, end.row - start.row + 1)
+        Size::new(
+            (end.col - start.col + 1) as u16,
+            (end.row - start.row + 1) as u16,
+        )
     }
 
     pub fn update_viewport(&mut self) {
@@ -160,8 +163,8 @@ impl PuzzleState {
         let vp = &mut self.viewport;
 
         let rows = self.puzzle.rows();
-        vp.row_start = self.scroll.row;
-        vp.row_end = (vp.row_start + visible.height).min(rows);
+        vp.row_start = self.scroll.row as u16;
+        vp.row_end = (vp.row_start + visible.height).min(rows as u16);
 
         tracing::trace!(
             "Row range: {}..{} (with {} visible rows and {rows} puzzle rows)",
@@ -171,8 +174,8 @@ impl PuzzleState {
         );
 
         let cols = self.puzzle.cols();
-        vp.col_start = self.scroll.col;
-        vp.col_end = (vp.col_start + visible.width).min(cols);
+        vp.col_start = self.scroll.col as u16;
+        vp.col_end = (vp.col_start + visible.width).min(cols as u16);
         tracing::trace!(
             "Col range: {}..{} (with {} visible cols and {cols} puzzle cols)",
             vp.col_start,
@@ -182,11 +185,12 @@ impl PuzzleState {
     }
 
     pub fn keep_cursor_visible(&mut self, cursor: AppPosition) {
-        let (col, row) = cursor.into();
+        let row = cursor.y as usize;
+        let col = cursor.x as usize;
         let grid = self.style.grid_size;
 
         let vp = &self.viewport;
-        let (vis_cols, vis_rows) = (vp.visible_cols(), vp.visible_rows());
+        let (vis_cols, vis_rows) = (vp.visible_cols() as usize, vp.visible_rows() as usize);
 
         let scroll = self.scroll;
 
@@ -234,6 +238,6 @@ impl PuzzleState {
         let height = rows * self.style.cell_height + row_div_count;
 
         // Add on 2 for the borders around
-        Size::new(width + 2, height + 2)
+        Size::new(width as u16 + 2, height as u16 + 2)
     }
 }

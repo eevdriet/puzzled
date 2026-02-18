@@ -1,4 +1,4 @@
-use puzzled_nono::{Axis, Fill, Position, Rule};
+use puzzled_nono::{Fill, Order, Position, Rule};
 use ratatui::layout::{Position as AppPosition, Rect};
 
 use crate::{Region, RuleDisplay, Selection, puzzle_to_app};
@@ -13,7 +13,7 @@ pub struct RuleState {
 
     pub selection: Selection,
 
-    pub axis: Axis,
+    pub order: Order,
 
     pub area: Rect,
     pub overflow_area: Rect,
@@ -22,11 +22,11 @@ pub struct RuleState {
 }
 
 impl RuleState {
-    pub fn new(rules: Vec<Rule>, axis: Axis) -> Self {
+    pub fn new(rules: Vec<Rule>, order: Order) -> Self {
         Self {
             rules,
-            axis,
-            selection: Selection::empty(axis),
+            order,
+            selection: Selection::empty(order),
             ..Default::default()
         }
     }
@@ -61,16 +61,16 @@ impl RuleState {
     }
 
     pub fn follow_puzzle_cursor(&mut self, cursor: Position) {
-        let cursor = match self.axis {
-            Axis::Row => {
+        let cursor = match self.order {
+            Order::RowMajor => {
                 let row = cursor.row;
-                let col = self.rules[row as usize].min_run(cursor.col);
+                let col = self.rules[row].min_run(cursor.col);
 
                 Position { row, col }
             }
-            Axis::Col => {
+            Order::ColMajor => {
                 let col = cursor.col;
-                let row = self.rules[col as usize].min_run(cursor.row);
+                let row = self.rules[col].min_run(cursor.row);
 
                 Position { row, col }
             }

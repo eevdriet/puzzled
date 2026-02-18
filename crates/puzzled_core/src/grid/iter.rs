@@ -554,6 +554,7 @@ impl<T> Grid<T> {
     }
 }
 
+#[derive(Clone)]
 pub enum LineIter<'a, T> {
     Row(RowIter<'a, T>),
     Col(ColIter<'a, T>),
@@ -572,6 +573,26 @@ impl<'a, T> Iterator for LineIter<'a, T> {
     }
 }
 
+impl<'a, T> DoubleEndedIterator for LineIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Row(iter) => iter.next_back(),
+            Self::Col(iter) => iter.next_back(),
+            _ => None,
+        }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for LineIter<'a, T> {
+    fn len(&self) -> usize {
+        match self {
+            Self::Row(iter) => iter.len(),
+            Self::Col(iter) => iter.len(),
+            Self::Empty => 0,
+        }
+    }
+}
+
 pub enum LineIterMut<'a, T> {
     Row(RowIterMut<'a, T>),
     Col(ColIterMut<'a, T>),
@@ -586,6 +607,26 @@ impl<'a, T> Iterator for LineIterMut<'a, T> {
             Self::Row(iter) => iter.next(),
             Self::Col(iter) => iter.next(),
             _ => None,
+        }
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for LineIterMut<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Row(iter) => iter.next_back(),
+            Self::Col(iter) => iter.next_back(),
+            _ => None,
+        }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for LineIterMut<'a, T> {
+    fn len(&self) -> usize {
+        match self {
+            Self::Row(iter) => iter.len(),
+            Self::Col(iter) => iter.len(),
+            Self::Empty => 0,
         }
     }
 }

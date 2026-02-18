@@ -38,17 +38,14 @@ fn main() -> Result<()> {
 
     let nonogram = args.parse_puzzle()?;
 
-    let puzzle = nonogram.puzzle;
-    let rules = nonogram.rules;
-
     let style = PuzzleStyle {
-        colors: nonogram.colors,
+        colors: nonogram.colors().clone(),
         grid_size: config.styles.grid_size,
         ..Default::default()
     };
 
     let mut term = ratatui::init();
-    let mut app = App::new(puzzle, rules, style, config);
+    let mut app = App::new(nonogram, style, config);
 
     if let Err(err) = app.run(&mut term) {
         tracing::error!("{err:#?}");

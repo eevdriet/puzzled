@@ -11,8 +11,6 @@ pub enum Line {
     Col(u16),
 }
 
-pub type LineMap<T> = HashMap<Line, T>;
-
 impl Line {
     pub fn line(&self) -> u16 {
         match self {

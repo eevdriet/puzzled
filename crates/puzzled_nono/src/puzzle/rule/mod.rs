@@ -1,7 +1,7 @@
-mod puzzle;
+mod rules;
 mod slice;
 
-pub use puzzle::*;
+pub use rules::*;
 pub use slice::*;
 
 use derive_more::Debug;
@@ -16,12 +16,12 @@ pub struct Rule {
     fills: FillMask,
 
     #[debug(skip)]
-    prefix_lens: Vec<u16>,
-    line_len: u16,
+    prefix_lens: Vec<usize>,
+    line_len: usize,
 }
 
 impl Rule {
-    pub fn new(runs: Vec<Run>, line_len: u16) -> Self {
+    pub fn new(runs: Vec<Run>, line_len: usize) -> Self {
         let mut fills = FillMask::new();
         let mut prefix_lens = Vec::with_capacity(runs.len());
 
@@ -88,24 +88,24 @@ impl Rule {
         self.fills.iter_colors()
     }
 
-    pub fn line_len(&self) -> u16 {
+    pub fn line_len(&self) -> usize {
         self.line_len
     }
 
-    pub fn len(&self) -> u16 {
+    pub fn len(&self) -> usize {
         match self.prefix_lens.len().checked_sub(1) {
             None => 0,
             Some(end) => self.prefix_lens[end],
         }
     }
 
-    pub fn min_run(&self, pos: u16) -> u16 {
+    pub fn min_run(&self, pos: usize) -> usize {
         let run_pos = match self.prefix_lens.binary_search(&pos) {
             Ok(pos) => pos,
             Err(pos) => pos,
         };
 
-        run_pos.clamp(0, self.runs.len().saturating_sub(1)) as u16
+        run_pos.clamp(0, self.runs.len().saturating_sub(1))
     }
 
     pub fn is_empty(&self) -> bool {
@@ -128,7 +128,7 @@ mod tests {
     const C1: Fill = Fill::Color(1);
     const C2: Fill = Fill::Color(2);
 
-    fn fill_counts_to_runs(fill_counts: Vec<(Fill, u16)>) -> Vec<Run> {
+    fn fill_counts_to_runs(fill_counts: Vec<(Fill, usize)>) -> Vec<Run> {
         fill_counts
             .iter()
             .map(|&val| val.into())
@@ -138,7 +138,7 @@ mod tests {
         let mut fills = vec![];
 
         for run in runs {
-            fills.extend(vec![run.fill; run.count as usize]);
+            fills.extend(vec![run.fill; run.count]);
         }
 
         fills
@@ -148,7 +148,7 @@ mod tests {
     #[case::single_color(vec![C1], vec![(C1, 1)])]
     #[case::single_blank(vec![B], vec![])]
     #[case::multiple(vec![B, X, C1], vec![(C1, 1)])]
-    fn test_from_fills_runs(#[case] fills: Vec<Fill>, #[case] expected: Vec<(Fill, u16)>) {
+    fn test_from_fills_runs(#[case] fills: Vec<Fill>, #[case] expected: Vec<(Fill, usize)>) {
         let rule = Rule::from_fills(fills.into_iter());
         let runs = fill_counts_to_runs(expected);
 
@@ -159,7 +159,7 @@ mod tests {
     #[case::single_color(vec![C1], 1)]
     #[case::single_blank(vec![B], 1)]
     #[case::multiple(vec![B, X, C1], 3)]
-    fn test_from_fills_line_len(#[case] fills: Vec<Fill>, #[case] expected: u16) {
+    fn test_from_fills_line_len(#[case] fills: Vec<Fill>, #[case] expected: usize) {
         let rule = Rule::from_fills(fills.into_iter());
 
         assert_eq!(rule.line_len(), expected);
@@ -169,7 +169,7 @@ mod tests {
     #[rstest]
     #[case::no_space(vec![C1, C2], 2)]
     #[case::mono_color(vec![C1, C1, C1, B, C1, C1, C1, B], 7)]
-    fn test_from_fills_len(#[case] fills: Vec<Fill>, #[case] expected: u16) {
+    fn test_from_fills_len(#[case] fills: Vec<Fill>, #[case] expected: usize) {
         let rule = Rule::from_fills(fills.into_iter());
 
         assert_eq!(rule.len(), expected);

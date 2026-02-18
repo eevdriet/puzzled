@@ -1,7 +1,10 @@
 use std::fmt;
 use std::ops;
 
+use crate::Line;
+use crate::LinePosition;
 use crate::Offset;
+use crate::Order;
 use crate::clamped_add;
 
 /// 2-dimensional coordinate to be used within a [grid](crate::Grid)
@@ -44,6 +47,23 @@ impl Position {
         let col = clamped_add(self.col, offset.cols);
 
         Self { col, row }
+    }
+
+    pub fn relative(&self) -> (LinePosition, LinePosition) {
+        let row = Line::Row(self.row);
+        let col = Line::Col(self.col);
+
+        (
+            LinePosition::new(row, self.col),
+            LinePosition::new(col, self.row),
+        )
+    }
+
+    pub fn with_order(&self, order: Order) -> LinePosition {
+        match order {
+            Order::RowMajor => LinePosition::new(Line::Row(self.row), self.col),
+            Order::ColMajor => LinePosition::new(Line::Col(self.col), self.row),
+        }
     }
 }
 

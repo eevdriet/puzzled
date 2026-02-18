@@ -18,7 +18,7 @@ use crossterm::{
     execute,
     terminal::EnterAlternateScreen,
 };
-use puzzled_nono::{Puzzle, Rules, Solver};
+use puzzled_nono::{Nonogram, Solver};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Margin, Position, Rect},
@@ -54,7 +54,8 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(puzzle: Puzzle, rules: Rules, style: PuzzleStyle, config: Config) -> Self {
+    pub fn new(puzzle: Nonogram, style: PuzzleStyle, config: Config) -> Self {
+        let rules = puzzle.rules().clone();
         let rules_left = RowRulesWidget::new("Rules [Rows]".to_string(), rules.rows.clone());
         let rules_top = ColRulesWidget::new("Rules [Cols]".to_string(), rules.cols.clone());
 
@@ -207,9 +208,9 @@ impl App {
         let vp = &self.state.puzzle.viewport;
 
         // Display scrollbar to scroll through puzzle rows
-        let rows = self.state.puzzle.puzzle.rows() as usize;
+        let rows = self.state.puzzle.puzzle.rows();
         let visible_rows = vp.visible_rows() as usize;
-        let row = self.state.puzzle.scroll.row as usize;
+        let row = self.state.puzzle.scroll.row;
 
         if rows > visible_rows {
             let scroll_rows_bar = Scrollbar::new(ScrollbarOrientation::VerticalLeft)
@@ -230,9 +231,9 @@ impl App {
         }
 
         // Display scrollbar to scroll through puzzle columns
-        let cols = self.state.puzzle.puzzle.cols() as usize;
+        let cols = self.state.puzzle.puzzle.cols();
         let visible_cols = vp.visible_cols() as usize;
-        let col = self.state.puzzle.scroll.col as usize;
+        let col = self.state.puzzle.scroll.col;
 
         if cols > visible_cols {
             let scroll_cols_bar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)

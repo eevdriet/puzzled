@@ -1,8 +1,9 @@
 use std::path::Path;
 
+use puzzled_core::Grid;
 use serde::Deserialize;
 
-use crate::{Fill, Nonogram, Puzzle, Rule, Rules, Run, io};
+use crate::{Fill, Fills, Nonogram, Rule, Rules, Run, io};
 
 pub struct JsonLoader;
 
@@ -23,13 +24,13 @@ pub struct JsonNonogram {
     pub cols: Vec<Vec<RawRun>>,
 
     #[serde(default)]
-    pub puzzle: Vec<Vec<u16>>,
+    pub puzzle: Vec<Vec<usize>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RawRun {
-    pub fill: u16,
-    pub count: u16,
+    pub fill: usize,
+    pub count: usize,
 }
 
 impl TryFrom<JsonNonogram> for Nonogram {
@@ -43,8 +44,8 @@ impl TryFrom<JsonNonogram> for Nonogram {
             .map(|id| Fill::Color(*id))
             .collect();
 
-        let rows = data.rows.len() as u16;
-        let cols = data.cols.len() as u16;
+        let rows = data.rows.len();
+        let cols = data.cols.len();
 
         let row_rules: Vec<_> = data
             .rows
@@ -73,16 +74,12 @@ impl TryFrom<JsonNonogram> for Nonogram {
             .collect();
 
         let rules = Rules::new(row_rules, col_rules);
-        let puzzle = if data.puzzle.is_empty() {
-            Puzzle::empty(rows, cols)
+        let grid = if data.puzzle.is_empty() {
+            Grid::new(rows, cols).expect("Non-overflowing size")
         } else {
-            Puzzle::new(rows, cols, fills).expect("Correct size")
+            Grid::from_vec(fills, cols).expect("Correct size")
         };
 
-        Ok(Nonogram {
-            puzzle,
-            rules,
-            colors: data.colors,
-        })
+        Ok(Nonogram::new(Fills::new(grid), rules, data.colors))
     }
 }

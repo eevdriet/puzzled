@@ -4,7 +4,7 @@ use crate::{Rule, Run};
 
 pub struct RunsSlice<'a> {
     runs: &'a [Run],
-    len: u16,
+    len: usize,
 }
 
 impl<'a> RunsSlice<'a> {
@@ -12,7 +12,7 @@ impl<'a> RunsSlice<'a> {
         self.runs
     }
 
-    pub fn len(&self) -> u16 {
+    pub fn len(&self) -> usize {
         self.len
     }
 

@@ -1,7 +1,8 @@
 use std::path::Path;
 
-use crate::{Color, Fill, Nonogram, Puzzle, Rule, Rules, io};
+use crate::{Color, Fill, Fills, Nonogram, Rule, Rules, io};
 use image::{DynamicImage, GenericImageView, ImageReader, Pixel, Rgba};
+use puzzled_core::Grid;
 
 pub struct ImageLoader;
 
@@ -10,14 +11,10 @@ impl io::PuzzleLoader for ImageLoader {
         let image = ImageReader::open(path)?.decode()?;
         let (cols, rows) = image.dimensions();
 
-        let puzzle = Puzzle::empty(rows as u16, cols as u16);
+        let grid = Grid::new(rows as usize, cols as usize).expect("Non-overflowing size");
         let (rules, colors) = read_rules_and_colors(&image)?;
 
-        Ok(Nonogram {
-            puzzle,
-            rules,
-            colors,
-        })
+        Ok(Nonogram::new(Fills::new(grid), rules, colors))
     }
 }
 
@@ -39,7 +36,7 @@ fn read_rules_and_colors(image: &DynamicImage) -> io::Result<(Rules, Vec<Color>)
                         colors.push(color);
                         colors.len()
                     }
-                } as u16;
+                };
 
                 Fill::Color(idx)
             }

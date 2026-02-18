@@ -11,21 +11,21 @@ use crate::Fill;
 #[derive(Clone, Copy, PartialEq, Eq, Deserialize)]
 pub struct Run {
     pub fill: Fill,
-    pub count: u16,
+    pub count: usize,
 }
 
 impl Run {
-    pub fn new(fill: Fill, count: u16) -> Self {
+    pub fn new(fill: Fill, count: usize) -> Self {
         Self { fill, count }
     }
 }
 
-impl From<(Fill, u16)> for Run {
-    fn from((fill, count): (Fill, u16)) -> Self {
+impl From<(Fill, usize)> for Run {
+    fn from((fill, count): (Fill, usize)) -> Self {
         Self { fill, count }
     }
 }
-impl From<Run> for (Fill, u16) {
+impl From<Run> for (Fill, usize) {
     fn from(run: Run) -> Self {
         (run.fill, run.count)
     }

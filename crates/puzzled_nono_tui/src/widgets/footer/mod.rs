@@ -3,7 +3,7 @@ mod state;
 
 pub use state::*;
 
-use puzzled_nono::{Axis, Fill};
+use puzzled_nono::{Fill, Order};
 use ratatui::{
     layout::Alignment,
     prelude::{Buffer, Rect},
@@ -84,7 +84,7 @@ impl FooterWidget {
         let mut fill_spans: Vec<(Span, Option<Fill>)> = Vec::new();
 
         let fills: Vec<_> = (0..state.puzzle.style.colors.len())
-            .map(|c| Fill::Color(c as u16 + 1))
+            .map(|c| Fill::Color(c + 1))
             .collect();
 
         for (f, fill) in fills.iter().enumerate() {
@@ -159,12 +159,12 @@ impl FooterWidget {
             .fill_color(fill)
             .expect("Current fill {fill:?} should have a defined color");
 
-        let axis = state.puzzle.motion_axis;
-        let axis_symbol = match axis {
-            Axis::Row => "↔",
-            Axis::Col => "↕",
+        let order = state.puzzle.motion_order;
+        let order_symbol = match order {
+            Order::RowMajor => "↔",
+            Order::ColMajor => "↕",
         };
-        let axis_span = Span::styled(axis_symbol.to_string(), Style::default().fg(Color::White));
+        let axis_span = Span::styled(order_symbol.to_string(), Style::default().fg(Color::White));
 
         let fill_repeat = 3;
         Line::from(vec![
@@ -180,8 +180,8 @@ impl FooterWidget {
 
         let x = x_aligned(area, fill_repeat, alignment) + fill_repeat + 1;
 
-        state.footer.axis_region = Region {
-            data: axis,
+        state.footer.order_region = Region {
+            data: order,
             area: Rect {
                 x,
                 y: area.y,
@@ -196,11 +196,12 @@ impl FooterWidget {
         let fill_count = state
             .puzzle
             .puzzle
-            .iter_cells()
+            .fills()
+            .iter()
             .filter(|fill| !matches!(fill, Fill::Blank))
             .count() as u16;
 
-        let fill_perc = fill_count as f64 / state.puzzle.puzzle.size() as f64;
+        let fill_perc = fill_count as f64 / state.puzzle.puzzle.fills().size() as f64;
 
         // let gauge = Gauge::default().ratio(fill_perc);
         let gauge = LineGauge::default()

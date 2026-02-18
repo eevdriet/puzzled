@@ -52,8 +52,8 @@ pub fn run_style(info: &RuleInfo, fill: Fill, idx: u16, state: &AppState) -> Sty
     let focus = state.focus;
     let cursor = state.cursor();
     let pos = match line {
-        Line::Row(row) => Position::new(idx, *row),
-        Line::Col(col) => Position::new(*col, idx),
+        Line::Row(row) => Position::new(idx, *row as u16),
+        Line::Col(col) => Position::new(*col as u16, idx),
     };
     let is_left = matches!(line, Line::Row(_)) && matches!(focus, Focus::RulesLeft);
     let is_top = matches!(line, Line::Col(_)) && matches!(focus, Focus::RulesTop);
@@ -61,8 +61,8 @@ pub fn run_style(info: &RuleInfo, fill: Fill, idx: u16, state: &AppState) -> Sty
     let is_active = match focus {
         // Highlight all runs in the active row/column when puzzle focused
         Focus::Puzzle => match line {
-            Line::Row(row) => cursor.y == *row,
-            Line::Col(col) => cursor.x == *col,
+            Line::Row(row) => cursor.y as usize == *row,
+            Line::Col(col) => cursor.x as usize == *col,
         },
 
         // Highlight the cursor run in the active line when rules focused
@@ -100,10 +100,10 @@ pub fn status_info(info: &RuleInfo, state: &AppState) -> (Style, char) {
 
     let is_active = match line {
         Line::Row(row) => {
-            cursor.y == *row && matches!(state.focus, Focus::Puzzle | Focus::RulesLeft)
+            cursor.y == *row as u16 && matches!(state.focus, Focus::Puzzle | Focus::RulesLeft)
         }
         Line::Col(col) => {
-            cursor.x == *col && matches!(state.focus, Focus::Puzzle | Focus::RulesTop)
+            cursor.x == *col as u16 && matches!(state.focus, Focus::Puzzle | Focus::RulesTop)
         }
     };
 

@@ -121,8 +121,8 @@ impl TryFrom<AppEvent> for Fill {
         let fill = match ch {
             '.' => Fill::Blank,
             'x' | '0' => Fill::Cross,
-            '1'..'9' => Fill::Color(ch as u16 - b'0' as u16),
-            'a'..'x' | 'x'..='z' => Fill::Color(ch as u16 - b'a' as u16 + 9),
+            '1'..'9' => Fill::Color((ch as u8 - b'0') as usize),
+            'a'..'x' | 'x'..='z' => Fill::Color((ch as u8 - b'a') as usize + 9),
             _ => return Err(()),
         };
 

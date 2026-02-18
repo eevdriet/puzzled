@@ -62,7 +62,8 @@ impl RowRulesWidget {
         let mut y = vp.area.y;
 
         for row in vp.row_start..vp.row_end {
-            let rule = &self.rules[row as usize];
+            let row = row as usize;
+            let rule = &self.rules[row];
             let line = Line::Row(row);
             let validation = state.solver[line];
 
@@ -78,14 +79,14 @@ impl RowRulesWidget {
             let inner = Rect {
                 y,
                 width: area.width - 2,
-                height: cell_height,
+                height: cell_height as u16,
                 ..area
             };
 
             let regions = self.draw_runs(&info, Alignment::Right, inner, buf, state);
             state.rules_left.fill_regions.extend(regions);
 
-            if cursor.y == row && !matches!(state.focus, Focus::RulesTop) {
+            if cursor.y == row as u16 && !matches!(state.focus, Focus::RulesTop) {
                 let o = state.rules_left.overflow_area;
                 let inner = Rect { x: o.x + 1, ..o };
 
@@ -94,7 +95,7 @@ impl RowRulesWidget {
             }
 
             // Advance to next viewport row and skip grid dividors
-            y += cell_height;
+            y += cell_height as u16;
 
             if let Some(size) = puz_state.style.grid_size
                 && (row + 1).is_multiple_of(size)
@@ -186,7 +187,7 @@ impl RowRulesWidget {
                         x,
                         y,
                         width: w,
-                        height: cell_height,
+                        height: cell_height as u16,
                     },
                 };
 
@@ -212,7 +213,7 @@ impl RowRulesWidget {
             x: area.x,
             y,
             width: area.width,
-            height: cell_height,
+            height: cell_height as u16,
         };
 
         Paragraph::new(format!("{symbol}"))

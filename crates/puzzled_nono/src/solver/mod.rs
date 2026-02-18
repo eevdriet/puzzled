@@ -11,7 +11,7 @@ use std::{
 
 use bitvec::bitvec;
 
-use crate::{Fill, Line, LineMap, LineMask, LinePosition, Position, Puzzle, Result, Rule, Rules};
+use crate::{Fill, Line, LineMap, LineMask, LinePosition, Nonogram, Position, Result, Rule, Rules};
 
 #[derive(Debug, Default)]
 pub struct Solver {
@@ -39,7 +39,7 @@ impl Solver {
         self.masks.clear();
     }
 
-    pub fn solve(&mut self, _puzzle: &mut Puzzle) -> Result<bool> {
+    pub fn solve(&mut self, _puzzle: &mut Nonogram) -> Result<bool> {
         Ok(true)
     }
 
@@ -47,7 +47,7 @@ impl Solver {
         self.validations.get(&line)
     }
 
-    pub fn update_cell(&mut self, puzzle: &mut Puzzle, pos: Position, fill: Fill) {
+    pub fn update_cell(&mut self, puzzle: &mut Nonogram, pos: Position, fill: Fill) {
         // Record the previous fill and set the current
         let prev = puzzle[pos];
         puzzle[pos] = fill;
@@ -55,8 +55,8 @@ impl Solver {
         let (row_pos, col_pos) = pos.relative();
         let row = row_pos.line;
         let col = col_pos.line;
-        let row_len = puzzle.line_len(row) as usize;
-        let col_len = puzzle.line_len(col) as usize;
+        let row_len = puzzle.fills().line_len(row);
+        let col_len = puzzle.fills().line_len(col);
 
         // Set the fill in the row and column masks
         self.set_mask(row_pos, row_len, prev, fill);
@@ -77,7 +77,7 @@ impl Solver {
     fn set_mask(&mut self, pos: LinePosition, line_len: usize, prev: Fill, curr: Fill) {
         // Retrieve the masks for the given line
         let line = pos.line;
-        let pos = pos.offset as usize;
+        let pos = pos.pos;
 
         let masks = self.masks.entry(line).or_default();
 
@@ -100,12 +100,12 @@ impl Solver {
 
     pub fn insert_rules(&mut self, rules: &Rules) {
         for (r, rule) in rules.rows.iter().enumerate() {
-            let row = Line::Row(r as u16);
+            let row = Line::Row(r);
             self.rules.insert(row, rule.clone());
         }
 
         for (c, rule) in rules.cols.iter().enumerate() {
-            let col = Line::Col(c as u16);
+            let col = Line::Col(c);
             self.rules.insert(col, rule.clone());
         }
     }

@@ -71,11 +71,12 @@ impl ColRulesWidget {
         let y = area.y;
 
         for col in vp.col_start..vp.col_end {
+            let col = col as usize;
             if x >= vp.area.right() {
                 break;
             }
 
-            let rule = &self.rules[col as usize];
+            let rule = &self.rules[col];
             let line = Line::Col(col);
             let validation = state.solver[line];
 
@@ -88,14 +89,14 @@ impl ColRulesWidget {
             let run_area = Rect {
                 x,
                 y,
-                width: cell_width,
+                width: cell_width as u16,
                 height: area.height,
             };
 
             let regions = self.draw_runs(&info, false, run_area, buf, state);
             state.rules_top.fill_regions.extend(regions);
 
-            if cursor.x == col && !matches!(state.focus, Focus::RulesLeft) {
+            if cursor.x as usize == col && !matches!(state.focus, Focus::RulesLeft) {
                 let o = state.rules_top.overflow_area;
                 let run_area = Rect { y, ..o };
 
@@ -106,7 +107,7 @@ impl ColRulesWidget {
             self.draw_status(&info, x, area, buf, state);
 
             // Advance to next viewport column and skip grid dividors
-            x += cell_width;
+            x += cell_width as u16;
 
             if let Some(size) = puz_state.style.grid_size
                 && (col + 1).is_multiple_of(size)
@@ -137,7 +138,7 @@ impl ColRulesWidget {
         };
 
         //
-        let cell_width = state.puzzle.style.cell_width as usize;
+        let cell_width = state.puzzle.style.cell_width;
         let len = runs.len() as u16;
 
         let mut x = area.x;
@@ -198,7 +199,7 @@ impl ColRulesWidget {
         let area = Rect {
             x,
             y: area.bottom() - 1,
-            width: cell_width,
+            width: cell_width as u16,
             height: 1,
         };
 

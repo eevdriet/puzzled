@@ -22,7 +22,7 @@ impl HandleAction for &FooterWidget {
                     let next = match action {
                         Action::MoveLeft | Action::ScrollLeft => (curr - 1).max(1),
                         Action::MoveRight | Action::ScrollRight => {
-                            (curr + 1).min(state.puzzle.style.colors.len() as u16 - 1)
+                            (curr + 1).min(state.puzzle.style.colors.len() - 1)
                         }
                         _ => curr,
                     };
@@ -65,7 +65,7 @@ impl HandleAction for &FooterWidget {
 fn handle_mouse(mouse: MouseEvent, state: &mut AppState) {
     let pos = Position::new(mouse.column, mouse.row);
     tracing::info!("Clicked at {pos:?}");
-    tracing::info!("Axis region: {:?}", state.footer.axis_region);
+    tracing::info!("Axis region: {:?}", state.footer.order_region);
 
     // Check if a fill region was clicked
     for region in &mut state.footer.fill_regions {
@@ -75,7 +75,7 @@ fn handle_mouse(mouse: MouseEvent, state: &mut AppState) {
     }
 
     // Check if the axis region was clicked
-    if state.footer.axis_region.area.contains(pos) {
-        state.puzzle.motion_axis.switch();
+    if state.footer.order_region.area.contains(pos) {
+        state.puzzle.motion_order.flip();
     }
 }

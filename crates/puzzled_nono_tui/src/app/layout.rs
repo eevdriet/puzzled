@@ -49,7 +49,7 @@ impl ComputeLayout for App {
         let cell_height = self.state.puzzle.style.cell_height;
 
         // The width is the left rules + puzzle + offset rule + spacing
-        let width = puzzle_size.width + max_rules_width + cell_width;
+        let width = puzzle_size.width + max_rules_width + cell_width as u16;
         let width = root.width.min(width);
 
         // Calculate the offset to horizontally center the puzzle
@@ -58,7 +58,7 @@ impl ComputeLayout for App {
 
         // Calculate how much space is needed to display the longest overflowing column rule
         let overflow_height = max_rules_height + puzzle_size.height;
-        let overflow_count = (rules_height as f64 / overflow_height as f64).ceil() as u16;
+        let overflow_count = (rules_height as f64 / overflow_height as f64).ceil() as usize;
         let overflow_top = overflow_count * cell_width;
 
         let [_, outer, _, mut rules_top_overflow_area] = Layout::default()
@@ -67,7 +67,7 @@ impl ComputeLayout for App {
                 Constraint::Length(center_offset),
                 Constraint::Length(width),
                 Constraint::Length(1),
-                Constraint::Length(overflow_top),
+                Constraint::Length(overflow_top as u16),
             ])
             .areas(root);
 
@@ -78,7 +78,7 @@ impl ComputeLayout for App {
         let center_offset = center_height.saturating_sub(max_rules_height);
 
         // Try to display the full puzzle + top rules if possible, otherwise clamp to root
-        let height = max_rules_height + puzzle_size.height + 1 + cell_height + FOOTER_HEIGHT;
+        let height = max_rules_height + puzzle_size.height + 1 + cell_height as u16 + FOOTER_HEIGHT;
         let height = root.height.min(height);
 
         let [_, inner] = Layout::default()
@@ -106,13 +106,13 @@ impl ComputeLayout for App {
                 Constraint::Length(max_rules_height),
                 Constraint::Max(puzzle_size.height),
                 Constraint::Length(1),
-                Constraint::Length(cell_height),
+                Constraint::Length(cell_height as u16),
                 Constraint::Min(FOOTER_HEIGHT),
             ])
             .areas(right);
 
         // Calculate how much space is needed to display the longest overflowing row rule
-        let overflow_count = (rules_width as f64 / inner.width as f64).ceil() as u16;
+        let overflow_count = (rules_width as f64 / inner.width as f64).ceil() as usize;
         let overflow_left = overflow_count * cell_height;
 
         let [_, _, _, rules_left_overflow_area, _] = Layout::default()
@@ -121,7 +121,7 @@ impl ComputeLayout for App {
                 Constraint::Length(height),
                 Constraint::Max(puzzle_size.height),
                 Constraint::Length(1),
-                Constraint::Length(overflow_left),
+                Constraint::Length(overflow_left as u16),
                 Constraint::Min(FOOTER_HEIGHT),
             ])
             .areas(inner);
