@@ -130,3 +130,32 @@ impl ops::SubAssign<Offset> for Position {
         *self = *self - offset;
     }
 }
+
+#[cfg(feature = "serde")]
+mod serde {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Position;
+
+    type PositionData = [usize; 2];
+
+    impl Serialize for Position {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let data: PositionData = [self.row, self.col];
+            data.serialize(serializer)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Position {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let [row, col] = PositionData::deserialize(deserializer)?;
+            Ok(Position { row, col })
+        }
+    }
+}

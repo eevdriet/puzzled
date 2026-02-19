@@ -314,12 +314,9 @@ pub use {
 };
 
 pub(crate) use {
-    checksums::*,
     extras::*,
     grids::*,
-    header::*,
     read::{TxtState, build_string, windows_1252_to_char},
-    strings::*,
 };
 
 pub(crate) const SECTION_SEPARATOR: &str = "---";

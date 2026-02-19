@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 /// Solution to a [square](crate::Square) that can be used to verify its correctness
 ///
@@ -19,6 +19,48 @@ impl fmt::Display for Solution {
         match self {
             Self::Letter(letter) => write!(f, "{letter}"),
             Self::Rebus(rebus) => write!(f, "{rebus}"),
+        }
+    }
+}
+
+impl From<String> for Solution {
+    fn from(value: String) -> Self {
+        match value.len() {
+            1 => {
+                let letter = value.chars().next().expect("Verified non-zero length");
+                Solution::Letter(letter)
+            }
+            _ => Solution::Rebus(value),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Solution;
+
+    impl Serialize for Solution {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let mut buf = [0; 4];
+
+            serializer.serialize_str(match self {
+                Solution::Letter(letter) => letter.encode_utf8(&mut buf),
+                Solution::Rebus(rebus) => rebus,
+            })
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Solution {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            Ok(String::deserialize(deserializer)?.into())
         }
     }
 }

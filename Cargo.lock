@@ -1716,6 +1716,9 @@ dependencies = [
 [[package]]
 name = "puzzled_core"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "puzzled_crossword"
@@ -1725,6 +1728,7 @@ dependencies = [
  "puzzled_core",
  "rstest",
  "serde",
+ "serde_json",
  "thiserror 2.0.18",
 ]
 

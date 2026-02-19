@@ -2,11 +2,11 @@ use puzzled_core::Position;
 
 use crate::{Clue, Direction};
 
-/// Specification for how to add a [clue](Clue) to a [puzzle](Crossword).
+/// Specification for how to add a [clue](Clue) to a [crossword](crate::Crossword).
 ///
 /// This struct can be used when the user is unsure what [squares](crate::Square) the clue should correspond to.
-/// By calling [`Crossword::place_clues`], the specs are turned into [clues](Clue) by placing them from the next available square in the puzzle.
-/// Furthermore, [`Crossword::insert_clues`] can be used to add the clues to the puzzle after positioning them.
+/// By calling [`Crossword::place_clues`](crate::Crossword::place_clues), the specs are turned into [clues](Clue) by placing them from the next available square in the puzzle.
+/// Furthermore, [`Crossword::insert_clues`](crate::Crossword::insert_clues) can be used to add the clues to the puzzle after positioning them.
 ///
 /// The [`clue_spec!`](crate::clue_spec) macro provides a shorthand for creating clue specifications.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +39,7 @@ impl ClueSpec {
         &self.text
     }
 
-    /// [Direction] in which the clue should be placed in a [puzzle](Crossword)
+    /// [Direction] in which the clue should be placed in a [crossword](crate::Crossword)
     pub fn direction(&self) -> Direction {
         self.direction
     }

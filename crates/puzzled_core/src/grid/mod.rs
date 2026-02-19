@@ -6,6 +6,7 @@ mod macros;
 
 pub use iter::*;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Default)]
 pub struct Grid<T> {
     cols: usize,
@@ -173,6 +174,19 @@ where
 }
 
 impl<T> Eq for Grid<T> where T: Eq {}
+
+impl<T> Clone for Grid<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Grid {
+            cols: self.cols,
+            rows: self.rows,
+            data: self.data.clone(),
+        }
+    }
+}
 
 impl<T> Grid<T>
 where

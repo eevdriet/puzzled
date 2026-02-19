@@ -32,16 +32,21 @@ macro_rules! string_prop {
     };
 }
 
-/// A crossword puzzle
+/// A [crossword](https://en.wikipedia.org/wiki/Crossword) puzzle
 ///
 /// This is the main data structure that is delivered by the crate.
-/// It contains all needed information to play a crossword puzzle, such as
+/// It contains all needed information to play a crossword puzzle
 ///
 /// # Constructors
-/// Crosswords can be constructed dynamically from a collection of [squares](Square) and [clues](Clue).
-/// Based on whether you already have the entire clue or just is [specification](ClueSpec), you can do the following:
-/// - Use [`Crossword::new`] when both squares and clues are available
-/// - Use [`Crossword::from_squares`] to first initialize the puzzle [grid](crate::Grid) and thereafter [`Crossword::insert_clues`] to add the clues in the right position.
+/// Crosswords can be constructed in a number of different ways, depending on the underlying data format
+/// - With the [`crossword!`](crate::crossword) macro, that allows for specifying crosswords inline
+/// - Dynamically from a collection of [squares](Square) and [clues](Clues).
+///   Based on whether you already have [clues](Clue) and their placement or just their [specifications](ClueSpec), you can do the following:
+///     - Use [`Crossword::new`] when both squares and clues are available
+///     - Use [`Crossword::from_squares`] to first initialize the puzzle [grid](crate::Grid) and thereafter [`Crossword::insert_clues`] to add the clues in the right position.
+/// - By using a reader from the [`io`](crate::io) module.
+///   Various readers are available, including [`PuzReader`](crate::PuzReader) which uses the [Across Lite *.puz specification](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
+/// - By
 ///
 /// # Properties
 /// Currently the puzzle defines all properties that can be set in a [*.puz][PUZ google spec] file, which include:
@@ -61,8 +66,7 @@ macro_rules! string_prop {
 ///
 /// [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 /// [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
-
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Crossword {
     // State
     squares: Squares,
@@ -237,5 +241,131 @@ impl fmt::Display for Crossword {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use puzzled_core::Timer;
+    use serde::{Deserialize, Serialize, de::Error};
+
+    use crate::{Clues, CluesData, Crossword, Squares, SquaresData};
+
+    #[derive(Serialize, Deserialize)]
+    struct CrosswordData {
+        rows: usize,
+        cols: usize,
+
+        #[serde(flatten)]
+        squares: SquaresData,
+
+        clues: Option<CluesData>,
+
+        // Metadata
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timer: Option<Timer>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        author: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        copyright: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        notes: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        version: Option<String>,
+    }
+
+    impl Serialize for Crossword {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            // Puzzle
+            let squares = self.squares().to_data();
+            let has_clues = !self.clues().is_empty();
+            let clues = has_clues.then_some(self.clues().to_data());
+
+            // Metadata
+            let has_played = self.timer != Timer::default();
+            let timer = has_played.then_some(self.timer);
+
+            let to_owned = |opt: Option<&str>| opt.map(|str| str.to_string());
+
+            CrosswordData {
+                rows: self.squares().rows(),
+                cols: self.squares().cols(),
+                squares,
+                clues,
+                timer,
+                author: to_owned(self.author()),
+                copyright: to_owned(self.copyright()),
+                notes: to_owned(self.notes()),
+                title: to_owned(self.title()),
+                version: to_owned(self.version()),
+            }
+            .serialize(serializer)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Crossword {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let CrosswordData {
+                cols,
+                squares: squares_data,
+                clues: clues_data,
+                timer,
+                author,
+                copyright,
+                notes,
+                title,
+                version,
+                ..
+            } = CrosswordData::deserialize(deserializer)?;
+
+            let squares = Squares::from_data(squares_data, cols).map_err(Error::custom)?;
+            let clues = Clues::from_data(clues_data.unwrap_or_default()).map_err(Error::custom)?;
+            let timer = timer.unwrap_or_default();
+
+            Ok(Crossword {
+                squares,
+                clues,
+                timer,
+                author,
+                version,
+                copyright,
+                notes,
+                title,
+            })
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::crossword;
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serialize_crossword() {
+        use serde_json;
+
+        let crossword = crossword!(
+            [C A T]
+            [A . R]
+            [R A T]
+
+            - A: "Animal"
+        );
+
+        let json = serde_json::to_string_pretty(&crossword).unwrap();
+
+        println!("{}", json);
+
+        assert!(json.len() == 150);
     }
 }

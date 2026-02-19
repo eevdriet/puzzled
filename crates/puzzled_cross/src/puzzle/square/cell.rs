@@ -36,11 +36,12 @@ use crate::{CellStyle, Solution};
 /// // Style
 /// assert!(rebus.is_circled());
 /// ```
-#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct Cell {
     solution: Solution,
     entry: Option<String>,
-    pub(crate) style: CellStyle,
+    style: CellStyle,
 }
 
 impl Cell {

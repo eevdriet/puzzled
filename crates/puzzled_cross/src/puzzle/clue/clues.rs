@@ -1,11 +1,13 @@
 use std::{collections::BTreeMap, ops};
 
+#[cfg(feature = "serde")]
+use crate::ClueData;
 use crate::{Clue, ClueId, Direction};
 
 /// Collection type of all [clues](Clue) in a [puzzle](crate::Crossword)
 ///
 /// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Clues(BTreeMap<ClueId, Clue>);
 
 impl Clues {
@@ -130,6 +132,57 @@ impl Clues {
     }
 }
 
+#[cfg(feature = "serde")]
+impl Clues {
+    pub(crate) fn from_data(data: CluesData) -> Result<Self, String> {
+        let mut clues = BTreeMap::new();
+
+        for (key, val) in data {
+            use std::str::FromStr;
+
+            use puzzled_core::Position;
+
+            // Try to parse the clue number and direction from the key
+            let (num_str, dir_str) = key.split_once('-').ok_or(format!(
+                "Key '{key}' must be formatted as '<num> : <dir>' where <dir> ::= A | D"
+            ))?;
+            let num: u8 = num_str
+                .parse()
+                .map_err(|_| format!("Expected number, found '{num_str}'"))?;
+            let direction = Direction::from_str(dir_str)?;
+
+            // Then construct the clue and insert it into the clues
+            let id: ClueId = (num, direction);
+            let clue = Clue {
+                num,
+                direction,
+                text: val.text,
+                start: val.start,
+                len: val.len,
+            };
+
+            clues.insert(id, clue);
+        }
+
+        Ok(Self(clues))
+    }
+
+    pub(crate) fn to_data(&self) -> CluesData {
+        self.iter()
+            .map(|((num, dir), clue)| {
+                let key = format!("{num}-{dir}");
+                let val = ClueData {
+                    start: clue.start,
+                    len: clue.len,
+                    text: clue.text().clone(),
+                };
+
+                (key, val)
+            })
+            .collect()
+    }
+}
+
 impl ops::Deref for Clues {
     type Target = BTreeMap<ClueId, Clue>;
 
@@ -143,3 +196,6 @@ impl ops::DerefMut for Clues {
         &mut self.0
     }
 }
+
+#[cfg(feature = "serde")]
+pub(crate) type CluesData = BTreeMap<String, crate::ClueData>;

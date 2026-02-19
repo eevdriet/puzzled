@@ -34,7 +34,7 @@ pub use {cell::*, solution::*, squares::*, style::*};
 /// rebus.reveal();
 /// assert!(rebus.is_revealed());
 /// ```
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub enum Square {
     /// Non-playable square that defines the borders of the [puzzle](crate::Crossword) [grid](crate::Grid)
     #[default]
@@ -83,6 +83,48 @@ impl fmt::Display for Square {
         match self {
             Self::Black => write!(f, "."),
             Self::White(fill) => write!(f, "{fill}"),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde {
+    use serde::{Deserialize, Serialize};
+
+    use crate::{Cell, NON_PLAYABLE_CELL, Solution, Square};
+
+    impl Serialize for Square {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            match self {
+                Square::Black => serializer.serialize_str("#"),
+                Square::White(cell) => match &cell.solution() {
+                    Solution::Letter(letter) => serializer.serialize_str(&letter.to_string()),
+                    Solution::Rebus(rebus) => serializer.serialize_str(rebus),
+                },
+            }
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Square {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let repr = String::deserialize(deserializer)?;
+            if repr == NON_PLAYABLE_CELL.to_string() {
+                return Ok(Square::Black);
+            }
+
+            let solution = if repr.len() == 1 {
+                Solution::Letter(repr.chars().next().expect("Checked length"))
+            } else {
+                Solution::Rebus(repr.clone())
+            };
+
+            Ok(Square::White(Cell::new(solution)))
         }
     }
 }

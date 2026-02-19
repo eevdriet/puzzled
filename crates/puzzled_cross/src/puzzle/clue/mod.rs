@@ -96,6 +96,11 @@ impl Clue {
         ClueSpec::new(self.direction, &self.text)
     }
 
+    /// Clue [identifier](ClueId)
+    pub fn id(&self) -> ClueId {
+        (self.num, self.direction)
+    }
+
     /// Verify whether the clue occupies any [cells](crate::Cell) within a [puzzle](Crossword)
     pub fn is_empty(&self) -> bool {
         self.len == 0
@@ -223,4 +228,12 @@ impl Crossword {
             len: self.squares.find_playable_len(start, direction),
         })
     }
+}
+
+#[cfg(feature = "serde")]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct ClueData {
+    start: Position,
+    text: String,
+    len: u8,
 }

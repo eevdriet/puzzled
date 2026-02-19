@@ -80,23 +80,34 @@ impl Default for Timer {
     }
 }
 
+impl PartialEq for Timer {
+    fn eq(&self, other: &Self) -> bool {
+        self.state == other.state && self.elapsed() == other.elapsed()
+    }
+}
+
+impl Eq for Timer {}
+
 /// State variants that a [timer](Timer) can be in
 /// ```
 /// use puzzled_core::{Timer, TimerState};
 ///
 /// let mut timer = Timer::default();
-/// assert_eq!(timer.state(), TimerState::Running);
+/// assert_eq!(timer.state(), TimerState::Stopped);
 ///
 /// timer.pause();
 /// assert_eq!(timer.state(), TimerState::Stopped);
+///
+/// timer.start();
+/// assert_eq!(timer.state(), TimerState::Running);
 /// ```
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum TimerState {
     /// State where the [timer](Timer) is running and [elapsed](Timer::elapsed) is counted
-    #[default]
     Running = 0,
 
     /// State where the [timer](Timer) is stopped and [elapses](Timer::elapsed) time is ignored
+    #[default]
     Stopped = 1,
 }
 
@@ -105,6 +116,66 @@ impl From<TimerState> for u8 {
         match state {
             TimerState::Running => 0,
             TimerState::Stopped => 1,
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use std::time::{Duration, Instant};
+
+    use serde::{Deserialize, Serialize, de};
+
+    use super::*;
+
+    #[derive(Serialize, Deserialize)]
+    pub struct TimerData {
+        elapsed: u64,
+        state: u8,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Timer {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            TimerData {
+                elapsed: self.elapsed().as_secs(),
+                state: self.state as u8,
+            }
+            .serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Timer {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let data = TimerData::deserialize(deserializer)?;
+
+            let state = match data.state {
+                0 => TimerState::Running,
+                1 => TimerState::Stopped,
+                _ => {
+                    return Err(de::Error::custom(
+                        "invalid timer state, expected 0 (running) or 1 (stopped)",
+                    ));
+                }
+            };
+
+            let elapsed = Duration::from_secs(data.elapsed);
+
+            Ok(Timer {
+                start: match state {
+                    TimerState::Running => Instant::now() - elapsed,
+                    TimerState::Stopped => Instant::now(),
+                },
+                elapsed,
+                state,
+            })
         }
     }
 }

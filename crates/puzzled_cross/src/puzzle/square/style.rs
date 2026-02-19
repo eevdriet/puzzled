@@ -24,6 +24,7 @@ use std::ops;
 /// cell.reveal();
 /// assert!(cell.is_revealed());
 /// ```
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CellStyle(u8);
 
@@ -137,7 +138,7 @@ macro_rules! check_style {
     ($variant:expr, $style_fn:ident()) => {
         #[doc = concat!("Checks whether [`", stringify!($variant), "`]) is set.")]
         pub fn $style_fn(&self) -> bool {
-            self.style & $variant != CellStyle::EMPTY
+            self.style() & $variant != CellStyle::EMPTY
         }
     };
 }

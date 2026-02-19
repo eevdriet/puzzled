@@ -7,7 +7,7 @@ use crate::{Cell, Crossword, Direction, Square};
 /// Collection type of all [squares](Square) in a [puzzle](crate::Crossword)
 ///
 /// A [grid](Grid) is used to represent the squares.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Squares(Grid<Square>);
 
 impl Squares {
@@ -140,6 +140,107 @@ impl Squares {
     }
 }
 
+#[cfg(feature = "serde")]
+impl Squares {
+    pub(crate) fn from_data(data: SquaresData, cols: usize) -> Result<Self, String> {
+        use crate::CellStyle;
+
+        let SquaresData {
+            solution,
+            state,
+            styles,
+            ..
+        } = data;
+
+        // Default construct missing state/styles and verify their length
+        let len = solution.len();
+        let state = state.unwrap_or(vec![String::new(); len]);
+        let styles = styles.unwrap_or(vec![CellStyle::EMPTY; len]);
+
+        if state.len() != len {
+            return Err(format!(
+                "The state grid has a different length ({}) than the solution grid ({len})",
+                state.len()
+            ));
+        }
+        if styles.len() != len {
+            return Err(format!(
+                "The styles grid has a different length ({}) than the solution grid ({len})",
+                styles.len()
+            ));
+        }
+
+        let squares = solution
+            .into_iter()
+            .zip(state.into_iter().zip(styles.into_iter()))
+            .map(|(solution, (entry, style))| {
+                use crate::NON_PLAYABLE_CELL;
+
+                if solution == NON_PLAYABLE_CELL.to_string() {
+                    return Square::Black;
+                }
+
+                let mut cell = Cell::new_styled(solution.into(), style);
+                if !entry.is_empty() {
+                    cell.enter(entry);
+                }
+
+                Square::White(cell)
+            })
+            .collect();
+
+        let grid: Grid<Square> = Grid::from_vec(squares, cols).ok_or(format!(
+            "Grid length {len} does not divide the number of columns {cols}"
+        ))?;
+        Ok(Self(grid))
+    }
+
+    pub(crate) fn to_data(&self) -> SquaresData {
+        use crate::{CellStyle, NON_PLAYABLE_CELL};
+
+        let solution: Vec<_> = self
+            .iter()
+            .map(|square| match square {
+                Square::Black => NON_PLAYABLE_CELL.to_string(),
+                Square::White(cell) => cell.solution().to_string(),
+            })
+            .collect();
+
+        // State
+        let has_state = self.iter_cells().any(|cell| cell.entry().is_some());
+
+        let state = has_state.then_some(
+            self.iter()
+                .map(|square| match square {
+                    Square::Black => NON_PLAYABLE_CELL.to_string(),
+                    Square::White(cell) => cell
+                        .entry()
+                        .clone()
+                        .unwrap_or(NON_PLAYABLE_CELL.to_string()),
+                })
+                .collect::<Vec<_>>(),
+        );
+
+        // Styles
+        let has_styles = self.iter_cells().any(|cell| !cell.style().is_empty());
+
+        let styles = has_styles.then_some(
+            self.iter()
+                .map(|square| match square {
+                    Square::Black => CellStyle::EMPTY,
+                    Square::White(cell) => cell.style(),
+                })
+                .collect::<Vec<_>>(),
+        );
+
+        SquaresData {
+            solution,
+            state,
+            styles,
+        }
+    }
+}
+
 impl ops::Deref for Squares {
     type Target = Grid<Square>;
 
@@ -226,4 +327,16 @@ impl ops::IndexMut<Position> for Crossword {
     fn index_mut(&mut self, pos: Position) -> &mut Self::Output {
         &mut self.squares[pos]
     }
+}
+
+#[cfg(feature = "serde")]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct SquaresData {
+    pub(crate) solution: Vec<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) state: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) styles: Option<Vec<crate::CellStyle>>,
 }

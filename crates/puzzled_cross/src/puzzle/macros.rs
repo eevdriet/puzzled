@@ -97,7 +97,7 @@ macro_rules! crossword {
 /// 2. A [`char`] constructs a [white square](crate::Square::White) with a [letter](crate::Solution::Letter) [cell](crate::Cell)
 /// 3. A [`str`] constructs a white square with a [rebus](crate::Solution::Rebus) cell
 ///
-/// Note that for the latter two, the syntax is analoguous to using [`cell!`].
+/// Note that for the latter two, the syntax is analoguous to using [`cell!`](crate::cell).
 /// ```
 /// use puzzled_crossword::{square, Square, cell};
 ///
@@ -226,7 +226,7 @@ macro_rules! clue {
 /// 1. A [`char`] constructs a [letter](crate::Solution::Letter) cell
 /// 2. A [`str`] constructs a [rebus](crate::Solution::Rebus) cell
 ///
-/// Note that a [`square!`] can be constructed with the same syntax
+/// Note that a [`square!`](crate::square) can be constructed with the same syntax
 /// ```
 /// use puzzled_crossword::{cell, Cell, Solution::*};
 ///
