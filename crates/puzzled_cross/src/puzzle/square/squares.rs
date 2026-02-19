@@ -57,7 +57,7 @@ impl Squares {
     ///
     /// Same as [`get`](Grid<Square>::get), but additionally checks whether the square is a cell
     /// ```
-    /// use puzzled_crossword::{cell, crossword, Position, Solution::*};
+    /// use puzzled_cross::{cell, crossword, Position, Solution::*};
     ///
     /// let puzzle = crossword! (
     ///    [. B]
@@ -78,7 +78,7 @@ impl Squares {
     ///
     /// Same as [`get_mut`](Grid<Square>::get_mut), but additionally checks whether the square is a cell
     /// ```
-    /// use puzzled_crossword::{cell, crossword, Position, Solution::*};
+    /// use puzzled_cross::{cell, crossword, Position, Solution::*};
     ///
     /// let mut puzzle = crossword! (
     ///    [. B]
@@ -99,7 +99,7 @@ impl Squares {
     ///
     /// The cells are traversed in row-major order.
     /// ```
-    /// use puzzled_crossword::{Cell, crossword, Square, Solution::*};
+    /// use puzzled_cross::{Cell, crossword, Square, Solution::*};
     ///
     /// let puzzle = crossword! (
     ///    [A .]
@@ -121,7 +121,7 @@ impl Squares {
     ///
     /// The cells are traversed in row-major order.
     /// ```
-    /// use puzzled_crossword::{Cell, crossword, Square, Solution::*};
+    /// use puzzled_cross::{Cell, crossword, Square, Solution::*};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -260,7 +260,7 @@ impl ops::Index<Position> for Crossword {
 
     /// Index the puzzle to retrieve a reference to the [square](Square) at the given [position](Position).
     /// ```
-    /// use puzzled_crossword::{crossword, Position, Square};
+    /// use puzzled_cross::{crossword, Position, Square};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -278,7 +278,7 @@ impl ops::Index<Position> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_crossword::{crossword, Position, Square};
+    /// use puzzled_cross::{crossword, Position, Square};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -296,7 +296,7 @@ impl ops::Index<Position> for Crossword {
 impl ops::IndexMut<Position> for Crossword {
     /// Index the puzzle to retrieve a mutable reference to the [square](Square) at the given [position](Position).
     /// ```
-    /// use puzzled_crossword::{crossword, Position, Square};
+    /// use puzzled_cross::{crossword, Position, Square};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -314,7 +314,7 @@ impl ops::IndexMut<Position> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_crossword::{crossword, Position, Square};
+    /// use puzzled_cross::{crossword, Position, Square};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]

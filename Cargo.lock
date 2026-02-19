@@ -1721,7 +1721,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "puzzled_crossword"
+name = "puzzled_cross"
 version = "0.1.0"
 dependencies = [
  "miette",

@@ -18,8 +18,8 @@
 //!
 //! For example, the following two ways to construct a puzzle are identical
 //! ```
-//! use puzzled_crossword::{crossword};
-//! use puzzled_crossword::io::{TxtReader};
+//! use puzzled_cross::{crossword};
+//! use puzzled_cross::io::{TxtReader};
 //! use std::{path::Path, fs::read_to_string};
 //!
 //! // 1. Macro definition
@@ -105,7 +105,7 @@
 //!
 //! As an example, consider the following puzzle and its underlying puzzle grids in binary form:
 //! ```
-//! use puzzled_crossword::crossword;
+//! use puzzled_cross::crossword;
 //!
 //! let puzzle = crossword! (
 //!     [C . .]
@@ -150,7 +150,7 @@
 //! It is read as a [`HashMap<u8, String>`](std::collections::HashMap) and correctly sets a rebus solution for the squares represented in GRBS.
 //! Consider the following example to get an idea of how the GRBS and RTBL sections would be layed out in a `*.puz` file:
 //! ```
-//! use puzzled_crossword::crossword;
+//! use puzzled_cross::crossword;
 //!
 //! let puzzle = crossword! (
 //!     [C      REBUS1 Y     ]
@@ -216,7 +216,7 @@
 //! Next is the **file checksum** checks all data used for the [puzzle](crate::Crossword), i.e. both [puzzle grids](self#puzzle-grid) and all [strings](self#strings).
 //! Below is a rough outline of how it is validated in the parser
 //! ```no_run
-//! use puzzled_crossword::io::{find_region_checksum, Header, Grids, Strings};
+//! use puzzled_cross::io::{find_region_checksum, Header, Grids, Strings};
 //!
 //! fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
 //!     let mut checksum = start;
@@ -266,7 +266,7 @@
 //!
 //! Below is a rough outline of how it is validated in the parser
 //! ```no_run
-//! use puzzled_crossword::io::{find_region_checksum, find_strings_checksum, Header, Grids, Strings};
+//! use puzzled_cross::io::{find_region_checksum, find_strings_checksum, Header, Grids, Strings};
 //!
 //! fn validate_masked_checksums<'a>(
 //!     header: &Header,

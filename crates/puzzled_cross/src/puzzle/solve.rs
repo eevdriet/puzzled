@@ -6,7 +6,7 @@ impl Crossword {
     /// Try to reveal a [cell](crate::Cell) at a given [position](Position).
     /// Returns whether successful, i.e. the [square](Square) at the position is in-bounds and a cell
     /// ```
-    /// use puzzled_crossword::{crossword, Position};
+    /// use puzzled_cross::{crossword, Position};
     ///
     /// let mut puzzle = crossword! (
     ///    [A B C]
@@ -34,7 +34,7 @@ impl Crossword {
     /// Try to reveal a [clue](crate::Clue) from a given [identifier](ClueId).
     /// Returns whether the clue exists in the puzzle and all its [positions](Position) could be revealed
     /// ```
-    /// use puzzled_crossword::{crossword, Position};
+    /// use puzzled_cross::{crossword, Position};
     ///
     /// let mut puzzle = crossword! (
     ///    [A B C]

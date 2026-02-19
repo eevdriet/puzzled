@@ -19,7 +19,7 @@ pub use {cell::*, solution::*, squares::*, style::*};
 /// Another common task is [revealing](Cell::reveal) a square without having to check whether it is white square -- black squares have no notion of being revealed.
 /// The [`reveal`](Square::reveal) and [`is_revealed`](Square::is_revealed) methods provide an indirection for squares to do this.
 /// ```
-/// use puzzled_crossword::{cell, Cell, square, Square, Solution::*};
+/// use puzzled_cross::{cell, Cell, square, Square, Solution::*};
 ///
 /// // Creating cells from squares
 /// let letter = square!('L');
