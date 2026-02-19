@@ -18,7 +18,7 @@
 //!
 //! For example, the following two ways to construct a puzzle are identical
 //! ```
-//! use puzzled_crossword::{puzzle};
+//! use puzzled_crossword::{crossword};
 //! use puzzled_crossword::io::{TxtReader};
 //! use std::{path::Path, fs::read_to_string};
 //!
@@ -105,7 +105,7 @@
 //!
 //! As an example, consider the following puzzle and its underlying puzzle grids in binary form:
 //! ```
-//! use puzzled_crossword::puzzle;
+//! use puzzled_crossword::crossword;
 //!
 //! let puzzle = crossword! (
 //!     [C . .]
@@ -150,7 +150,7 @@
 //! It is read as a [`HashMap<u8, String>`](std::collections::HashMap) and correctly sets a rebus solution for the squares represented in GRBS.
 //! Consider the following example to get an idea of how the GRBS and RTBL sections would be layed out in a `*.puz` file:
 //! ```
-//! use puzzled_crossword::puzzle;
+//! use puzzled_crossword::crossword;
 //!
 //! let puzzle = crossword! (
 //!     [C      REBUS1 Y     ]
@@ -215,42 +215,48 @@
 //! ### File
 //! Next is the **file checksum** checks all data used for the [puzzle](crate::Crossword), i.e. both [puzzle grids](self#puzzle-grid) and all [strings](self#strings).
 //! Below is a rough outline of how it is validated in the parser
-//! ```compile_fail
+//! ```no_run
+//! use puzzled_crossword::io::{find_region_checksum, Header, Grids, Strings};
+//!
 //! fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
 //!     let mut checksum = start;
 //!
 //!     if strings.title.len() > 1 {
-//!         checksum = find_region_checksum(strings.title, checksum);
+//!         checksum = find_region_checksum(&strings.title, checksum);
 //!     }
 //!     if strings.author.len() > 1 {
-//!         checksum = find_region_checksum(strings.author, checksum);
+//!         checksum = find_region_checksum(&strings.author, checksum);
 //!     }
 //!     if strings.copyright.len() > 1 {
-//!         checksum = find_region_checksum(strings.copyright, checksum);
+//!         checksum = find_region_checksum(&strings.copyright, checksum);
 //!     }
 //!
-//!     for clue in strings.clues {
+//!     for clue in &strings.clues {
 //!         checksum = find_region_checksum(&clue[..clue.len() - 1], checksum);
 //!     }
 //!     
 //!     if strings.notes.len() > 1 {
-//!         checksum = find_region_checksum(strings.notes, checksum);
+//!         checksum = find_region_checksum(&strings.notes, checksum);
 //!     }
 //!
 //!     checksum
 //! }
 //!
-//! let file_checksum = {
-//!     let mut checksum = header.cib_checksum;
+//! fn validate_file_checksum<'a>(
+//!     header: &Header,
+//!     grids: &Grids,
+//!     strings: &Strings,
+//! ) {
+//!     // Compute the overall file checksum
+//!     let mut file_checksum = header.cib_checksum;
 //!
-//!     checksum = find_region_checksum(grid.solution_region, checksum);
-//!     checksum = find_region_checksum(grid.state_region, checksum);
-//!     checksum = find_strings_checksum(strings, checksum);
+//!     file_checksum = find_region_checksum(grids.solution.data(), file_checksum);
+//!     file_checksum = find_region_checksum(grids.state.data(), file_checksum);
+//!     file_checksum = find_strings_checksum(strings, file_checksum);
 //!
-//!     checksum
-//! };
+//!     assert_eq!(file_checksum, header.file_checksum);
+//! }
 //!
-//! assert_eq!(file_checksum, header.file_checksum);
 //! ```
 //!
 //! ### Masked regions
@@ -259,20 +265,28 @@
 //! To do so, amusingly we use the phrase `I CHEATED` and then some XOR-ing and bit shifting.
 //!
 //! Below is a rough outline of how it is validated in the parser
-//! ```compile_fail
-//! let cib_checksum = find_region_checksum(header.cib_region, 0);
-//! let sol_checksum = find_region_checksum(grid.solution_region, 0);
-//! let state_checksum = find_region_checksum(grid.state_region, 0);
-//! let strs_checksum = find_strings_checksum(strings, 0);
+//! ```no_run
+//! use puzzled_crossword::io::{find_region_checksum, find_strings_checksum, Header, Grids, Strings};
 //!
-//! assert_eq!(header.mask_checksums[0], b"I" ^ (cib_checksum & 0xFF));
-//! assert_eq!(header.mask_checksums[1], b"C" ^ (sol_checksum & 0xFF));
-//! assert_eq!(header.mask_checksums[2], b"H" ^ (state_checksum & 0xFF));
-//! assert_eq!(header.mask_checksums[3], b"E" ^ (strs_checksum & 0xFF));
-//! assert_eq!(header.mask_checksums[4], b"A" ^ ((cib_checksum & 0xFF00) >> 8));
-//! assert_eq!(header.mask_checksums[5], b"T" ^ ((sol_checksum & 0xFF00) >> 8));
-//! assert_eq!(header.mask_checksums[6], b"E" ^ ((state_checksum & 0xFF00) >> 8));
-//! assert_eq!(header.mask_checksums[7], b"D" ^ ((strs_checksum & 0xFF00) >> 8));
+//! fn validate_masked_checksums<'a>(
+//!     header: &Header,
+//!     grids: &Grids,
+//!     strings: &Strings,
+//! ) {
+//!     let cib_checksum = find_region_checksum(&header.cib_region, 0);
+//!     let sol_checksum = find_region_checksum(grids.solution.data(), 0);
+//!     let state_checksum = find_region_checksum(grids.state.data(), 0);
+//!     let strs_checksum = find_strings_checksum(strings, 0);
+//!
+//!     assert_eq!(header.mask_checksums[0], b'I' ^ (cib_checksum & 0xFF) as u8);
+//!     assert_eq!(header.mask_checksums[1], b'C' ^ (sol_checksum & 0xFF) as u8);
+//!     assert_eq!(header.mask_checksums[2], b'H' ^ (state_checksum & 0xFF) as u8);
+//!     assert_eq!(header.mask_checksums[3], b'E' ^ (strs_checksum & 0xFF) as u8);
+//!     assert_eq!(header.mask_checksums[4], b'A' ^ ((cib_checksum & 0xFF00) >> 8) as u8);
+//!     assert_eq!(header.mask_checksums[5], b'T' ^ ((sol_checksum & 0xFF00) >> 8) as u8);
+//!     assert_eq!(header.mask_checksums[6], b'E' ^ ((state_checksum & 0xFF00) >> 8) as u8);
+//!     assert_eq!(header.mask_checksums[7], b'D' ^ ((strs_checksum & 0xFF00) >> 8) as u8);
+//! }
 //! ```
 //! [puzzled]: crate
 //! [Crossword]: crate::Crossword
@@ -291,6 +305,7 @@ mod grids;
 mod header;
 mod strings;
 
+pub use {checksums::*, grids::Grids, header::Header, strings::Strings};
 pub use {
     error::*,
     format::{Error as FormatError, Result as FormatResult},

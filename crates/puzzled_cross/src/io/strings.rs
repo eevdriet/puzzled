@@ -1,7 +1,8 @@
 use crate::{Crossword, format, io::write::PuzWrite};
 
+#[doc(hidden)]
 #[derive(Debug, Default)]
-pub(crate) struct Strings {
+pub struct Strings {
     pub title: Vec<u8>,
     pub author: Vec<u8>,
     pub copyright: Vec<u8>,

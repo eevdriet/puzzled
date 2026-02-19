@@ -1,10 +1,7 @@
-//! The [puzzled] library provides functionality for reading, writing and solving crossword puzzles.
-//! A [`Crossword`] is either constructed directly from its [squares](Square) and [clues](Clue) or using one of the readers from the [`io`] module.
-//! See
-//! - [`puzzle`](mod@puzzle) for constructing and interacting with a [`Crossword`] and its related types
-//! - [`io`] for reading and writing puzzles into the various formats that are supported
+//! The [puzzled] library provides functionality for reading, writing and solving [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
+//! A [`Crossword`] is either constructed directly from its [squares](Squares) and [clues](Clues) or using one of the readers from the [`io`] module.
 //! ```
-//! use puzzled_crossword::puzzle;
+//! use puzzled_crossword::crossword;
 //!
 //! let puzzle = crossword! (
 //!     [. . C A F]
@@ -43,5 +40,8 @@
 pub mod io;
 pub mod puzzle;
 
+#[doc(hidden)]
 pub use puzzled_core::*;
+
+#[doc(hidden)]
 pub use {io::*, puzzle::*};

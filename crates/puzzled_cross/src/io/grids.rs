@@ -4,11 +4,12 @@ use crate::{
 };
 use puzzled_core::Grid;
 
-pub(crate) const NON_PLAYABLE_CELL: u8 = b'.';
-pub(crate) const MISSING_ENTRY_CELL: u8 = b'-';
+pub(crate) const NON_PLAYABLE_CELL: char = '.';
+pub(crate) const MISSING_ENTRY_CELL: char = '-';
 
+#[doc(hidden)]
 #[derive(Debug)]
-pub(crate) struct Grids {
+pub struct Grids {
     pub solution: Grid<u8>,
     pub state: Grid<u8>,
 
@@ -71,15 +72,15 @@ impl Grids {
         let cols = puzzle.cols();
 
         let solution = puzzle.squares().map_ref(|square| match square {
-            Square::Black => NON_PLAYABLE_CELL,
+            Square::Black => NON_PLAYABLE_CELL as u8,
             Square::White(cell) => cell.solution().to_string().chars().next().unwrap_or('\0') as u8,
         });
 
         let state = puzzle.squares().map_ref(|square| match square {
-            Square::Black => NON_PLAYABLE_CELL,
+            Square::Black => NON_PLAYABLE_CELL as u8,
             Square::White(cell) => match cell.entry() {
-                Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL as char) as u8,
-                None => MISSING_ENTRY_CELL,
+                Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL) as u8,
+                None => MISSING_ENTRY_CELL as u8,
             },
         });
 
@@ -127,7 +128,9 @@ impl Grids {
         for ((pos, &solution_square), &state_square) in
             self.solution.iter_indexed().zip(self.state.iter())
         {
-            if (solution_square == NON_PLAYABLE_CELL) != (state_square == NON_PLAYABLE_CELL) {
+            if (solution_square == NON_PLAYABLE_CELL as u8)
+                != (state_square == NON_PLAYABLE_CELL as u8)
+            {
                 return Err(err(GridsError::CellMismatch {
                     solution_square: windows_1252_to_char(solution_square),
                     state_square: windows_1252_to_char(state_square),

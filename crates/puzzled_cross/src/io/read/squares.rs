@@ -1,8 +1,6 @@
 use puzzled_core::Grid;
 
-use crate::io::{
-    Extras, Grids, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, PuzReader, read, windows_1252_to_char,
-};
+use crate::io::{Extras, Grids, MISSING_ENTRY_CELL, PuzReader, read, windows_1252_to_char};
 use crate::puzzle::{Cell, Solution, Square, Squares};
 
 impl PuzReader {
@@ -13,7 +11,7 @@ impl PuzReader {
         for ((pos, &solution), &state) in grids.solution.iter_indexed().zip(grids.state.iter()) {
             let cell = match solution {
                 // Non-playable cells are always black
-                NON_PLAYABLE_CELL => Square::Black,
+                b'.' => Square::Black,
 
                 byte => {
                     // Derive the solution based on the rebus information in the extras
@@ -26,7 +24,7 @@ impl PuzReader {
                     let mut cell = Cell::new_styled(solution, style);
 
                     // Set the given user state for a playable cell
-                    if state != MISSING_ENTRY_CELL {
+                    if state != MISSING_ENTRY_CELL as u8 {
                         let contents = windows_1252_to_char(state).to_string();
                         cell.enter(contents);
                     }

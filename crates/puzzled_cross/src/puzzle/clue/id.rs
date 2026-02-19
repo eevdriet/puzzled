@@ -1,6 +1,6 @@
 use std::ops;
 
-use crate::{Clue, Direction, Crossword};
+use crate::{Clue, Crossword, Direction};
 
 /// Type that identifies where a [clue](Clue) is placed within a [puzzle](Crossword)
 ///
@@ -13,7 +13,7 @@ impl ops::Index<ClueId> for Crossword {
 
     /// Index the puzzle to retrieve a reference to the [clue](Clue) that was [identified](ClueId)
     /// ```
-    /// use puzzled_crossword::{clue, Direction::*, puzzle};
+    /// use puzzled_crossword::{clue, crossword, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [A B]
@@ -33,7 +33,7 @@ impl ops::Index<ClueId> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_crossword::{Direction::*, puzzle};
+    /// use puzzled_crossword::{crossword, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///    [A B]

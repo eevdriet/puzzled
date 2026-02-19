@@ -1,6 +1,7 @@
 use crate::io::Strings;
 
-pub(crate) fn find_region_checksum(region: &[u8], start: u16) -> u16 {
+#[doc(hidden)]
+pub fn find_region_checksum(region: &[u8], start: u16) -> u16 {
     let mut checksum = start;
 
     for &byte in region {
@@ -15,6 +16,7 @@ pub(crate) fn find_region_checksum(region: &[u8], start: u16) -> u16 {
     checksum
 }
 
+#[doc(hidden)]
 pub(crate) fn find_str_checksum(str: &[u8], start: u16, ignore_empty: bool) -> u16 {
     if ignore_empty && matches!(str, [] | [b'\0']) {
         return start;
@@ -43,7 +45,8 @@ pub(crate) fn find_file_checksum<'a>(
     file_checksum
 }
 
-pub(crate) fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
+#[doc(hidden)]
+pub fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
     // Compute the overall file checksum
     let mut file_checksum = start;
 

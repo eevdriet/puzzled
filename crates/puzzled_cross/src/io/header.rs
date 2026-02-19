@@ -3,8 +3,9 @@ use crate::{
     io::{format, is_valid_version},
 };
 
+#[doc(hidden)]
 #[derive(Debug, Default)]
-pub(crate) struct Header {
+pub struct Header {
     // Components
     pub version: [u8; 4],
     pub width: u8,
