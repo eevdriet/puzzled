@@ -237,7 +237,7 @@ impl<T> Grid<T> {
     }
 }
 
-pub struct PosIter<'a, T, I: 'a> {
+struct PosIter<'a, T, I: 'a> {
     iter: I,
     cols: usize,
     is_empty: bool,
@@ -273,7 +273,7 @@ where
     }
 }
 
-pub struct PosIterMut<'a, T, I> {
+struct PosIterMut<'a, T, I> {
     iter: I,
     cols: usize,
     is_empty: bool,
@@ -554,6 +554,7 @@ impl<T> Grid<T> {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub enum LineIter<'a, T> {
     Row(RowIter<'a, T>),
@@ -593,6 +594,7 @@ impl<'a, T> ExactSizeIterator for LineIter<'a, T> {
     }
 }
 
+#[doc(hidden)]
 pub enum LineIterMut<'a, T> {
     Row(RowIterMut<'a, T>),
     Col(ColIterMut<'a, T>),
@@ -717,16 +719,16 @@ impl<T> Grid<T> {
     /// ```
     pub fn iter_lines<'a>(&'a self, order: Order) -> impl Iterator<Item = LineIter<'a, T>> {
         let lines = match order {
-            Order::RowMajor => 0..self.rows,
-            Order::ColMajor => 0..self.cols,
+            Order::Rows => 0..self.rows,
+            Order::Cols => 0..self.cols,
         };
 
         lines.map(move |line| match order {
-            Order::RowMajor => {
+            Order::Rows => {
                 let iter = self.iter_row(line);
                 LineIter::Row(iter)
             }
-            Order::ColMajor => {
+            Order::Cols => {
                 let iter = self.iter_col(line);
                 LineIter::Col(iter)
             }
@@ -734,7 +736,7 @@ impl<T> Grid<T> {
     }
 }
 
-pub enum LinePosIter<'a, T, I, J> {
+enum LinePosIter<'a, T, I, J> {
     Row(PosIter<'a, T, I>),
     Col(PosIter<'a, T, J>),
     Empty,
@@ -837,13 +839,13 @@ impl<T> Grid<T> {
         order: Order,
     ) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
         let range = match order {
-            Order::RowMajor => 0..self.rows,
-            Order::ColMajor => 0..self.cols,
+            Order::Rows => 0..self.rows,
+            Order::Cols => 0..self.cols,
         };
 
         let lines = range.map(move |line| match order {
-            Order::RowMajor => Line::Row(line),
-            Order::ColMajor => Line::Col(line),
+            Order::Rows => Line::Row(line),
+            Order::Cols => Line::Col(line),
         });
 
         lines.map(|line| self.iter_indexed_line(line))

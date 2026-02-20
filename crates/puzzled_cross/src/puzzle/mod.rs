@@ -278,6 +278,7 @@ mod serde_impl {
         version: Option<String>,
     }
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Crossword {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
@@ -310,6 +311,7 @@ mod serde_impl {
         }
     }
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Crossword {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where

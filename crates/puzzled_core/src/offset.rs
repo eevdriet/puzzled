@@ -35,3 +35,36 @@ impl Neg for Offset {
         }
     }
 }
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Offset;
+
+    type OffsetData = [isize; 2];
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Offset {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let data: OffsetData = [self.rows, self.cols];
+            data.serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Offset {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let [rows, cols] = OffsetData::deserialize(deserializer)?;
+            let offset = Offset { rows, cols };
+
+            Ok(offset)
+        }
+    }
+}

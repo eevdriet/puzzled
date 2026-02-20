@@ -83,3 +83,48 @@ impl ops::SubAssign<isize> for Line {
         *self = *self - offset;
     }
 }
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Line;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    enum LineData {
+        Row(usize),
+        Col(usize),
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Line {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let data = match self {
+                Self::Row(row) => LineData::Row(*row),
+                Self::Col(col) => LineData::Col(*col),
+            };
+
+            data.serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Line {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let data = LineData::deserialize(deserializer)?;
+            let line = match data {
+                LineData::Row(row) => Line::Row(row),
+                LineData::Col(col) => Line::Col(col),
+            };
+
+            Ok(line)
+        }
+    }
+}

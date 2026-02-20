@@ -7,18 +7,18 @@ use std::ops;
 pub enum Order {
     /// Row-major order, going row by row
     #[default]
-    RowMajor,
+    Rows,
 
     /// Column-major order, going column by column
-    ColMajor,
+    Cols,
 }
 
 impl Order {
     /// Create an order that is the flipped version of itself
     pub fn flipped(&self) -> Self {
         match self {
-            Self::RowMajor => Self::ColMajor,
-            Self::ColMajor => Self::RowMajor,
+            Self::Rows => Self::Cols,
+            Self::Cols => Self::Rows,
         }
     }
 
@@ -33,5 +33,49 @@ impl ops::Neg for Order {
 
     fn neg(self) -> Self::Output {
         self.flipped()
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Order;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    enum SerdeOrder {
+        Rows,
+        Cols,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Order {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            match self {
+                Order::Rows => SerdeOrder::Rows,
+                Order::Cols => SerdeOrder::Cols,
+            }
+            .serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Order {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let data = SerdeOrder::deserialize(deserializer)?;
+            let order = match data {
+                SerdeOrder::Rows => Order::Rows,
+                SerdeOrder::Cols => Order::Cols,
+            };
+
+            Ok(order)
+        }
     }
 }

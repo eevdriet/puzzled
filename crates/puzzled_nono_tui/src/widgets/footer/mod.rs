@@ -161,8 +161,8 @@ impl FooterWidget {
 
         let order = state.puzzle.motion_order;
         let order_symbol = match order {
-            Order::RowMajor => "↔",
-            Order::ColMajor => "↕",
+            Order::Rows => "↔",
+            Order::Cols => "↕",
         };
         let axis_span = Span::styled(order_symbol.to_string(), Style::default().fg(Color::White));
 

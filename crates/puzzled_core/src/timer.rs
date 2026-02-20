@@ -131,7 +131,21 @@ mod serde_impl {
     #[derive(Serialize, Deserialize)]
     pub struct TimerData {
         elapsed: u64,
-        state: u8,
+        state: TimerState,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for TimerState {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            match self {
+                TimerState::Running => 0,
+                TimerState::Stopped => 0,
+            }
+            .serialize(serializer)
+        }
     }
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -142,21 +156,20 @@ mod serde_impl {
         {
             TimerData {
                 elapsed: self.elapsed().as_secs(),
-                state: self.state as u8,
+                state: self.state,
             }
             .serialize(serializer)
         }
     }
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-    impl<'de> Deserialize<'de> for Timer {
+    impl<'de> Deserialize<'de> for TimerState {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: serde::Deserializer<'de>,
         {
-            let data = TimerData::deserialize(deserializer)?;
-
-            let state = match data.state {
+            let inner = u8::deserialize(deserializer)?;
+            let state = match inner {
                 0 => TimerState::Running,
                 1 => TimerState::Stopped,
                 _ => {
@@ -166,7 +179,18 @@ mod serde_impl {
                 }
             };
 
-            let elapsed = Duration::from_secs(data.elapsed);
+            Ok(state)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Timer {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let TimerData { elapsed, state } = TimerData::deserialize(deserializer)?;
+            let elapsed = Duration::from_secs(elapsed);
 
             Ok(Timer {
                 start: match state {

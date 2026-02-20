@@ -6,7 +6,6 @@ mod macros;
 
 pub use iter::*;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Default)]
 pub struct Grid<T> {
     cols: usize,
@@ -202,5 +201,48 @@ where
         data.fill_with(T::default);
 
         Some(Self { rows, cols, data })
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize, ser::SerializeStruct};
+
+    use crate::Grid;
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    struct SerdeGrid<T> {
+        cols: usize,
+        rows: usize,
+        data: Vec<T>,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<T: Serialize> Serialize for Grid<T> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let mut grid = serializer.serialize_struct("Grid", 3)?;
+            grid.serialize_field("cols", &self.cols)?;
+            grid.serialize_field("rows", &self.rows)?;
+            grid.serialize_field("data", &self.data)?;
+
+            grid.end()
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de, T: Deserialize<'de>> Deserialize<'de> for Grid<T> {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let SerdeGrid { cols, rows, data } = SerdeGrid::deserialize(deserializer)?;
+            let grid = Grid { cols, rows, data };
+
+            Ok(grid)
+        }
     }
 }

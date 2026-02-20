@@ -132,3 +132,46 @@ impl ops::SubAssign<usize> for LinePosition {
         *self = *self - offset;
     }
 }
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use super::*;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    struct SerdeLinePosition {
+        #[serde(flatten)]
+        line: Line,
+
+        pos: usize,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for LinePosition {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            SerdeLinePosition {
+                line: self.line,
+                pos: self.pos,
+            }
+            .serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for LinePosition {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let SerdeLinePosition { line, pos } = SerdeLinePosition::deserialize(deserializer)?;
+            let pos = LinePosition { line, pos };
+
+            Ok(pos)
+        }
+    }
+}

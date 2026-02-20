@@ -16,7 +16,6 @@ use crate::Crossword;
 /// Clue
 ///
 /// The [`clue!`](crate::clue) macro provides a shorthand for creating clues
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Clue {
     // Specification

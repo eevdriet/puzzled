@@ -24,7 +24,6 @@ use std::ops;
 /// cell.reveal();
 /// assert!(cell.is_revealed());
 /// ```
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CellStyle(u8);
 
@@ -148,4 +147,32 @@ impl Cell {
     check_style!(CellStyle::CIRCLED, is_circled());
     check_style!(CellStyle::INCORRECT, is_incorrect());
     check_style!(CellStyle::PREVIOUSLY_INCORRECT, was_incorrect());
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::CellStyle;
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for CellStyle {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for CellStyle {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let inner = u8::deserialize(deserializer)?;
+            Ok(Self(inner))
+        }
+    }
 }

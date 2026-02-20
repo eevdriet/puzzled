@@ -61,8 +61,8 @@ impl Position {
 
     pub fn with_order(&self, order: Order) -> LinePosition {
         match order {
-            Order::RowMajor => LinePosition::new(Line::Row(self.row), self.col),
-            Order::ColMajor => LinePosition::new(Line::Col(self.col), self.row),
+            Order::Rows => LinePosition::new(Line::Row(self.row), self.col),
+            Order::Cols => LinePosition::new(Line::Col(self.col), self.row),
         }
     }
 }
@@ -139,6 +139,7 @@ mod serde {
 
     type PositionData = [usize; 2];
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Position {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
@@ -149,6 +150,7 @@ mod serde {
         }
     }
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Position {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where

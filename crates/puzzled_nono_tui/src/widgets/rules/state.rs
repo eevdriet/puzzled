@@ -62,13 +62,13 @@ impl RuleState {
 
     pub fn follow_puzzle_cursor(&mut self, cursor: Position) {
         let cursor = match self.order {
-            Order::RowMajor => {
+            Order::Rows => {
                 let row = cursor.row;
                 let col = self.rules[row].min_run(cursor.col);
 
                 Position { row, col }
             }
-            Order::ColMajor => {
+            Order::Cols => {
                 let col = cursor.col;
                 let row = self.rules[col].min_run(cursor.row);
 

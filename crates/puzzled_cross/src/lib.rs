@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //! The [`puzzled_cross`](crate) library provides functionality for reading, writing and solving [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
 //! A [`Crossword`] is either constructed directly from its [squares](Squares) and [clues](Clues) or using one of the readers from the [`io`] module.
 //! ```

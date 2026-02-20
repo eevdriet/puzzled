@@ -41,6 +41,7 @@ mod serde_impl {
 
     use crate::Solution;
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Solution {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
@@ -55,6 +56,7 @@ mod serde_impl {
         }
     }
 
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Solution {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
