@@ -4,20 +4,17 @@ mod mask;
 pub use fills::*;
 pub use mask::*;
 
-use serde::Deserialize;
 use std::fmt::Debug;
 
 use crate::ColorId;
 
-#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fill {
     /// Not yet filled out cell
     #[default]
-    #[serde(rename = "blank_char")]
     Blank,
 
     // Crossed out cell
-    #[serde(rename = "cross_char")]
     Cross,
 
     // Colored cell
@@ -71,5 +68,43 @@ impl From<Fill> for Option<usize> {
 impl From<&Fill> for Fill {
     fn from(fill: &Fill) -> Self {
         *fill
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::Fill;
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Fill {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            match self {
+                Fill::Blank => 0,
+                Fill::Cross => 1,
+                Fill::Color(color) => *color,
+            }
+            .serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Fill {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let fill = match usize::deserialize(deserializer)? {
+                0 => Fill::Blank,
+                1 => Fill::Cross,
+                color => Fill::Color(color),
+            };
+
+            Ok(fill)
+        }
     }
 }

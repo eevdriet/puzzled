@@ -1,4 +1,6 @@
-use std::{collections::BTreeMap, ops};
+use std::collections::BTreeMap;
+
+use derive_more::{Deref, DerefMut};
 
 #[cfg(feature = "serde")]
 use crate::ClueData;
@@ -7,7 +9,7 @@ use crate::{Clue, ClueId, Direction};
 /// Collection type of all [clues](Clue) in a [puzzle](crate::Crossword)
 ///
 /// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
-#[derive(Debug, Default, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Deref, DerefMut)]
 pub struct Clues(BTreeMap<ClueId, Clue>);
 
 impl Clues {
@@ -18,7 +20,7 @@ impl Clues {
     /// Returns an iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_cross::{crossword, clue, Direction::*};
+    /// use puzzled_crossword::{crossword, clue, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -47,7 +49,7 @@ impl Clues {
     /// Returns a mutable iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_cross::{crossword, clue, Direction::*};
+    /// use puzzled_crossword::{crossword, clue, Direction::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]
@@ -76,7 +78,7 @@ impl Clues {
     /// Returns an iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_cross::{crossword, clue, Direction::*};
+    /// use puzzled_crossword::{crossword, clue, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -105,7 +107,7 @@ impl Clues {
     /// Returns a mutable iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_cross::{crossword, clue, Direction::*};
+    /// use puzzled_crossword::{crossword, clue, Direction::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]
@@ -178,20 +180,6 @@ impl Clues {
                 (key, val)
             })
             .collect()
-    }
-}
-
-impl ops::Deref for Clues {
-    type Target = BTreeMap<ClueId, Clue>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for Clues {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 

@@ -2,7 +2,7 @@ use std::ops;
 
 use puzzled_core::{Grid, Offset, Position};
 
-use crate::{Cell, Crossword, Direction, Square};
+use crate::{Crossword, Direction, Square};
 
 pub type Squares = Grid<Square>;
 
@@ -85,6 +85,8 @@ impl SquaresSerdeExtension for Squares {
             .into_iter()
             .zip(state.into_iter().zip(styles))
             .map(|(solution, (entry, style))| {
+                use crate::Cell;
+
                 if solution == EMPTY_SQUARE.to_string() {
                     return None;
                 }
@@ -153,7 +155,7 @@ impl ops::Index<Position> for Crossword {
 
     /// Index the puzzle to retrieve a reference to the [square](Square) at the given [position](Position).
     /// ```
-    /// use puzzled_cross::{crossword, Position, Cell};
+    /// use puzzled_crossword::{crossword, Position, Cell};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -171,7 +173,7 @@ impl ops::Index<Position> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_cross::{crossword, Position, Cell};
+    /// use puzzled_crossword::{crossword, Position, Cell};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -189,7 +191,7 @@ impl ops::Index<Position> for Crossword {
 impl ops::IndexMut<Position> for Crossword {
     /// Index the puzzle to retrieve a mutable reference to the [square](Square) at the given [position](Position).
     /// ```
-    /// use puzzled_cross::{crossword, Position, Cell};
+    /// use puzzled_crossword::{crossword, Position, Cell};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]
@@ -207,7 +209,7 @@ impl ops::IndexMut<Position> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_cross::{crossword, Position, Cell};
+    /// use puzzled_crossword::{crossword, Position, Cell};
     ///
     /// let mut puzzle = crossword! (
     ///    [A .]

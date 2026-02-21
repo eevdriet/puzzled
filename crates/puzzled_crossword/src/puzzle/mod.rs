@@ -123,7 +123,7 @@ impl Crossword {
     ///
     /// Note that this includes blank squares
     /// ```
-    /// use puzzled_cross::crossword;
+    /// use puzzled_crossword::crossword;
     ///
     /// let puzzle = crossword! (
     ///    [A B C]
@@ -140,7 +140,7 @@ impl Crossword {
     ///
     /// Note that this includes blank squares
     /// ```
-    /// use puzzled_cross::crossword;
+    /// use puzzled_crossword::crossword;
     ///
     /// let puzzle = crossword! (
     ///    [A B C]
@@ -249,7 +249,6 @@ impl fmt::Display for Crossword {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 mod serde_impl {
     use puzzled_core::Timer;
     use serde::{Deserialize, Serialize, de::Error};

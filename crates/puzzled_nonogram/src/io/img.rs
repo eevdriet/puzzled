@@ -12,9 +12,10 @@ impl io::PuzzleLoader for ImageLoader {
         let (cols, rows) = image.dimensions();
 
         let grid = Grid::new(rows as usize, cols as usize).expect("Non-overflowing size");
+        let fills = Fills::new(grid);
         let (rules, colors) = read_rules_and_colors(&image)?;
 
-        Ok(Nonogram::new(Fills::new(grid), rules, colors))
+        Ok(Nonogram::new(fills, rules, colors))
     }
 }
 

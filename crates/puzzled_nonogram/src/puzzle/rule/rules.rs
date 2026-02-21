@@ -1,5 +1,7 @@
 use derive_more::Debug;
 
+#[cfg(feature = "serde")]
+use crate::Run;
 use crate::{Nonogram, Rule};
 
 #[derive(Debug, Default, Clone)]
@@ -41,4 +43,34 @@ impl Rules {
     pub fn col(&self, c: u16) -> &Rule {
         &self.cols[c as usize]
     }
+
+    pub fn from_serde(rules: SerdeRules, row_count: usize, col_count: usize) -> Self {
+        let rows: Vec<_> = rules
+            .rows
+            .into_iter()
+            .map(|runs| Rule::new(runs, row_count))
+            .collect();
+        let cols: Vec<_> = rules
+            .cols
+            .into_iter()
+            .map(|runs| Rule::new(runs, col_count))
+            .collect();
+
+        Self { rows, cols }
+    }
+
+    #[cfg(feature = "serde")]
+    pub fn to_serde(&self) -> SerdeRules {
+        let rows: Vec<_> = self.rows.iter().map(|rule| rule.runs.clone()).collect();
+        let cols: Vec<_> = self.cols.iter().map(|rule| rule.runs.clone()).collect();
+
+        SerdeRules { rows, cols }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct SerdeRules {
+    rows: Vec<Vec<Run>>,
+    cols: Vec<Vec<Run>>,
 }

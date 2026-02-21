@@ -1,9 +1,9 @@
-use puzzled_core::{Grid, Line, LineIter, Position};
-use std::ops;
+use derive_more::{Deref, DerefMut, Index, IndexMut};
+use puzzled_core::{Grid, Line, LineIter};
 
-use crate::{Fill, Nonogram, Runs};
+use crate::{Fill, Runs};
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Deref, DerefMut, Clone, Index, IndexMut)]
 pub struct Fills(Grid<Fill>);
 
 impl Fills {
@@ -17,30 +17,33 @@ impl Fills {
     }
 }
 
-impl ops::Deref for Fills {
-    type Target = Grid<Fill>;
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use puzzled_core::Grid;
+    use serde::{Deserialize, Serialize};
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    use crate::{Fill, Fills};
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Fills {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
     }
-}
 
-impl ops::DerefMut for Fills {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Fills {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let grid = Grid::<Fill>::deserialize(deserializer)?;
+            let fills = Fills::new(grid);
 
-impl ops::Index<Position> for Nonogram {
-    type Output = Fill;
-
-    fn index(&self, pos: Position) -> &Self::Output {
-        &self.fills[pos]
-    }
-}
-
-impl ops::IndexMut<Position> for Nonogram {
-    fn index_mut(&mut self, pos: Position) -> &mut Self::Output {
-        &mut self.fills[pos]
+            Ok(fills)
+        }
     }
 }

@@ -151,7 +151,6 @@ pub struct TxtReader;
 impl<'a> TxtReader {
     pub fn read(&self, input: &'a str) -> Result<Crossword> {
         let mut state = TxtState {
-            input,
             lines: input.lines(),
             pos: 0,
             len: None,

@@ -17,7 +17,7 @@
 ///    Each property is set as `<key>: <val>`, where `<val>` is expected to be a string literal
 ///
 /// ```
-/// use puzzled_cross::{crossword, clue_spec, Direction::*, Position, square};
+/// use puzzled_crossword::{crossword, clue_spec, Direction::*, Position, square};
 ///
 /// let puzzle = crossword! (
 ///     [C A N .]
@@ -98,7 +98,7 @@ macro_rules! crossword {
 ///
 /// Note that for the latter two, the syntax is analoguous to using [`cell!`](crate::cell).
 /// ```
-/// use puzzled_cross::{square, Cell, cell};
+/// use puzzled_crossword::{square, Cell, cell};
 ///
 /// assert_eq!(square!(), None::<Cell>);
 /// assert_eq!(square!(.), None::<Cell>);
@@ -153,7 +153,7 @@ macro_rules! square {
 /// To construct a placed [clue](crate::Clue) you can use the [`clue!`](crate::clue) macro, which uses the same syntax for the direction and text.
 ///
 /// ```
-/// use puzzled_cross::{clue_spec, ClueSpec, Direction::*};
+/// use puzzled_crossword::{clue_spec, ClueSpec, Direction::*};
 ///
 /// assert_eq!(clue_spec!(A: "A clue"), ClueSpec::new(Across, "A clue".to_string()));
 /// assert_eq!(clue_spec!(D: "D clue"), ClueSpec::new(Down, "D clue".to_string()));
@@ -192,7 +192,7 @@ macro_rules! clue_spec {
 /// - The `<row>` and `<col>` where the starting [square](crate::Square) of the clue is [positioned](crate::Position)
 /// - A `<len>` to denote how many squares the clue takes up in the [`Squares`](crate::Squares) grid
 /// ```
-/// use puzzled_cross::{clue, clue_spec, Clue, Position};
+/// use puzzled_crossword::{clue, clue_spec, Clue, Position};
 ///
 /// let clue = clue!(1 A: "Across clue" @ (1, 2) + 3);
 ///
@@ -226,7 +226,7 @@ macro_rules! clue {
 ///
 /// Note that a [`square!`](crate::square) can be constructed with the same syntax
 /// ```
-/// use puzzled_cross::{cell, Cell, Solution::*};
+/// use puzzled_crossword::{cell, Cell, Solution::*};
 ///
 /// assert_eq!(cell!('L'), Cell::new(Letter('L')));
 /// assert_eq!(cell!("ABC"), Cell::new(Rebus("ABC".to_string())));

@@ -13,7 +13,7 @@ use std::ops;
 /// The definitions derive from the **GEXT data section** of the [*.puz spefication](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki).
 ///
 /// ```rust
-/// use puzzled_cross::{Cell, CellStyle, Solution};
+/// use puzzled_crossword::{Cell, CellStyle, Solution};
 ///
 /// let style = CellStyle::INCORRECT | CellStyle::CIRCLED;
 /// let mut cell = Cell::new_styled(Solution::Letter('A'), style);

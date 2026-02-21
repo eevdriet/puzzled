@@ -6,6 +6,7 @@ mod run;
 mod style;
 
 use bitvec::vec::BitVec;
+use derive_more::{Index, IndexMut};
 use puzzled_core::Line;
 use std::collections::HashMap;
 
@@ -16,9 +17,12 @@ pub use rule::*;
 pub use run::*;
 pub use style::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Index, IndexMut)]
 pub struct Nonogram {
+    #[index]
+    #[index_mut]
     fills: Fills,
+
     rules: Rules,
     colors: Vec<Color>,
 }
@@ -66,3 +70,66 @@ impl Nonogram {
 pub type LineMap<T> = HashMap<Line, T>;
 
 pub type LineMask = BitVec;
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use serde::{Deserialize, Serialize};
+
+    use crate::{Color, Fills, Nonogram, Rules, SerdeRules};
+
+    #[derive(Serialize, Deserialize)]
+    struct SerdeNonogram {
+        rows: usize,
+        cols: usize,
+
+        fills: Fills,
+        rules: SerdeRules,
+        colors: Vec<Color>,
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Nonogram {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let rules = self.rules.to_serde();
+            let fills = self.fills.clone();
+            let colors = self.colors.clone();
+
+            SerdeNonogram {
+                rules,
+                fills,
+                colors,
+                rows: self.rows(),
+                cols: self.cols(),
+            }
+            .serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Nonogram {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let SerdeNonogram {
+                rows,
+                cols,
+                fills,
+                rules,
+                colors,
+            } = SerdeNonogram::deserialize(deserializer)?;
+
+            let rules = Rules::from_serde(rules, rows, cols);
+            let nonogram = Self {
+                fills,
+                rules,
+                colors,
+            };
+
+            Ok(nonogram)
+        }
+    }
+}

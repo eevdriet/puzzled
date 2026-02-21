@@ -1734,6 +1734,7 @@ dependencies = [
 name = "puzzled_crossword"
 version = "0.1.0"
 dependencies = [
+ "derive_more",
  "miette",
  "puzzled_core",
  "rstest",

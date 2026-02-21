@@ -33,7 +33,6 @@ impl PuzState {
 }
 
 pub(crate) struct TxtState<'a> {
-    pub input: &'a str,
     pub lines: Lines<'a>,
 
     pub pos: usize,

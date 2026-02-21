@@ -1,5 +1,5 @@
 use crate::{
-    Crossword, SizeCheck, Square, Squares,
+    Crossword, SizeCheck, Squares,
     io::{format, windows_1252_to_char},
 };
 use puzzled_core::Grid;

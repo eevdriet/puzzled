@@ -13,7 +13,7 @@ impl ops::Index<ClueId> for Crossword {
 
     /// Index the puzzle to retrieve a reference to the [clue](Clue) that was [identified](ClueId)
     /// ```
-    /// use puzzled_cross::{clue, crossword, Direction::*};
+    /// use puzzled_crossword::{clue, crossword, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [A B]
@@ -33,7 +33,7 @@ impl ops::Index<ClueId> for Crossword {
     /// # Panics
     /// Panics if the given `pos` is out of bounds, i.e. `pos.row >= puzzle.rows() || pos.col >= puzzle.cols()`.
     /// ```should_panic
-    /// use puzzled_cross::{crossword, Direction::*};
+    /// use puzzled_crossword::{crossword, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///    [A B]

@@ -10,7 +10,6 @@ mod timer;
 
 pub use grid::*;
 pub use line::*;
-pub use macros::*;
 pub use offset::*;
 pub use order::*;
 pub use position::*;
