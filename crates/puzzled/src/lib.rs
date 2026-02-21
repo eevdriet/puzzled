@@ -9,3 +9,7 @@ pub use puzzled_crossword as crossword;
 #[cfg(feature = "nonogram")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nonogram")))]
 pub use puzzled_nonogram as nonogram;
+
+#[cfg(feature = "puz")]
+#[cfg_attr(docsrs, doc(cfg(feature = "puz")))]
+pub use puzzled_puz as puz;

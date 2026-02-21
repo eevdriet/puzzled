@@ -1,5 +1,5 @@
 use crate::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
-use puzzled_core::Grid;
+use puzzled_core::{Grid, GridError};
 
 pub const NON_PLAYABLE_CELL: char = '.';
 pub const MISSING_ENTRY_CELL: char = '-';
@@ -14,44 +14,17 @@ pub struct Grids {
     pub height: u8,
 }
 
-#[derive(Debug, thiserror::Error, Clone)]
-pub enum GridsError {
-    #[error("Row {row} in the grid has an invalid width of {found} (expected {expected})")]
-    InvalidWidth { row: u8, found: u8, expected: u8 },
-
-    #[error("The grid has an invalid height of {found} (expected {expected})")]
-    InvalidHeight { found: u8, expected: u8 },
-
-    #[error(
-        "The grid has invalid dimensions ({rows} rows and {cols} columns). Make sure the size divides the number of columns"
-    )]
-    InvalidDimensions { cols: u8, rows: u8 },
-
-    #[error("Row {row} has an invalid format: {reason}")]
-    InvalidRow { row: u8, reason: String },
-
-    #[error(
-        "The solution grid has square '{solution_square}' at {row}R{col}C, while the state grid has '{state_square}' at that position"
-    )]
-    CellMismatch {
-        solution_square: char,
-        state_square: char,
-        row: u8,
-        col: u8,
-    },
-}
-
 impl Grids {
     pub fn validate(&self) -> format::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
-        let err = |kind: GridsError| format::Error::Grids(kind);
+        let err = |kind: GridError| format::Error::Grids(kind);
 
         for (grid, _) in &grids {
             let len = grid.rows() as u8;
 
             if len != self.height {
-                return Err(err(GridsError::InvalidHeight {
+                return Err(err(GridError::InvalidHeight {
                     found: len,
                     expected: self.height,
                 }));
@@ -62,7 +35,7 @@ impl Grids {
                 let len = row.count() as u8;
 
                 if len != self.width {
-                    return Err(err(GridsError::InvalidWidth {
+                    return Err(err(GridError::InvalidWidth {
                         row: r as u8,
                         found: len,
                         expected: self.width,
@@ -78,12 +51,12 @@ impl Grids {
             if (solution_square == NON_PLAYABLE_CELL as u8)
                 != (state_square == NON_PLAYABLE_CELL as u8)
             {
-                return Err(err(GridsError::CellMismatch {
+                return Err(format::Error::CellMismatch {
                     solution_square: windows_1252_to_char(solution_square),
                     state_square: windows_1252_to_char(state_square),
                     row: pos.row as u8,
                     col: pos.col as u8,
-                }));
+                });
             }
         }
 

@@ -9,6 +9,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = {workspace = true, optional = true}
+thiserror = {workspace = true}
+
+[dev-dependencies]
+puzzled = {path = "../puzzled/", features = ["crossword"]}
 
 [features]
 default = []

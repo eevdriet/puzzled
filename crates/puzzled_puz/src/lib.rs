@@ -18,8 +18,7 @@
 //!
 //! For example, the following two ways to construct a puzzle are identical
 //! ```
-//! use puzzled::crossword::{crossword};
-//! use puzzled::crossword::io::{TxtReader};
+//! use puzzled::crossword::{crossword, io::TxtReader};
 //! use std::{path::Path, fs::read_to_string};
 //!
 //! // 1. Macro definition
@@ -216,7 +215,7 @@
 //! Next is the **file checksum** checks all data used for the [puzzle](crate::Crossword), i.e. both [puzzle grids](self#puzzle-grid) and all [strings](self#strings).
 //! Below is a rough outline of how it is validated in the parser
 //! ```no_run
-//! use puzzled::crossword::io::{find_region_checksum, Header, Grids, Strings};
+//! use puzzled::puz::{find_region_checksum, Header, Grids, Strings};
 //!
 //! fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
 //!     let mut checksum = start;
@@ -266,7 +265,7 @@
 //!
 //! Below is a rough outline of how it is validated in the parser
 //! ```no_run
-//! use puzzled::crossword::io::{find_region_checksum, find_strings_checksum, Header, Grids, Strings};
+//! use puzzled::puz::{find_region_checksum, find_strings_checksum, Header, Grids, Strings};
 //!
 //! fn validate_masked_checksums<'a>(
 //!     header: &Header,
@@ -308,7 +307,6 @@ mod extras;
 mod grids;
 mod header;
 mod strings;
-mod version;
 
 pub use checksums::*;
 pub use error::*;
@@ -316,7 +314,6 @@ pub use extras::*;
 pub use grids::*;
 pub use header::*;
 pub use strings::*;
-pub use version::*;
 
 pub trait Puz: Sized {
     // Read from puzzle

@@ -9,6 +9,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 puzzled_core = {path = "../puzzled_core/"}
+puzzled_puz = {path = "../puzzled_puz/", optional = true}
 puzzled_crossword = {path = "../puzzled_crossword", optional = true}
 puzzled_nonogram = {path = "../puzzled_nonogram", optional = true}
 
@@ -25,5 +26,6 @@ serde = [
     "puzzled_nonogram?/serde"
 ]
 puz = [
+    "dep:puzzled_puz",
     "puzzled_crossword?/puz"
 ]

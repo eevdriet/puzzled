@@ -1,7 +1,5 @@
 use std::fmt;
 
-use crate::format;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
     major: u8,
@@ -9,15 +7,16 @@ pub struct Version {
 }
 
 impl Version {
-    pub fn new(bytes: &[u8]) -> Result<Self, format::Error> {
-        let err = Err(format::Error::InvalidVersion);
+    pub fn new(bytes: &[u8]) -> Result<Self, String> {
+        let err = "Version should be written as `<major>.<minor>` where <major>, <minor> are u8"
+            .to_string();
 
         // Optionally strip the trailing \0
         let version = bytes.strip_suffix(&[0]).unwrap_or(bytes);
 
         // Version should be 3 components (<major>.<minor>)
         if version.len() != 3 {
-            return err;
+            return Err(err);
         }
 
         // Components should be correct
@@ -29,7 +28,7 @@ impl Version {
         );
 
         if !(major.is_ascii_digit() && dot == b'.' && minor.is_ascii_digit()) {
-            return Err(format::Error::InvalidVersion);
+            return Err(err);
         }
 
         Ok(Self { major, minor })

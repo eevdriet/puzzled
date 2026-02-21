@@ -79,7 +79,7 @@ macro_rules! crossword {
 
         // Add metadata
         $(
-            $crate::__metadata!(puzzle, $meta_key : $meta_val);
+            $crate::metadata!(puzzle, $meta_key : $meta_val);
         )*
 
         puzzle
@@ -274,34 +274,6 @@ macro_rules! __error {
             $macro,
             "' found, please read its documentation to see how to construct it"
         ));
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __metadata {
-    ($puzzle:ident, author : $val:literal) => {
-        $puzzle = $puzzle.with_author($val);
-    };
-
-    ($puzzle:ident, copyright : $val:literal) => {
-        $puzzle = $puzzle.with_copyright($val);
-    };
-
-    ($puzzle:ident, notes : $val:literal) => {
-        $puzzle = $puzzle.with_notes($val);
-    };
-
-    ($puzzle:ident, title : $val:literal) => {
-        $puzzle = $puzzle.with_title($val);
-    };
-
-    ($puzzle:ident, version : $val:literal) => {
-        $puzzle = $puzzle.with_version($val);
-    };
-
-    ($puzzle:ident, $key:ident : $val:literal) => {
-        compile_error!(concat!("Invalid puzzle property: ", stringify!($key)));
     };
 }
 

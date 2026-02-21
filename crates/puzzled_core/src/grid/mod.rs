@@ -1,8 +1,10 @@
 use crate::{Line, Position};
 
+mod error;
 mod index;
 mod iter;
 
+pub use error::*;
 pub use iter::*;
 
 #[derive(Debug, Default)]
@@ -16,27 +18,31 @@ impl<T> Grid<T> {
     /// Create a new grid filled with the result of the given function
     ///
     /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
-    pub fn new_with<F>(rows: usize, cols: usize, value_fn: F) -> Option<Self>
+    pub fn new_with<F>(rows: usize, cols: usize, value_fn: F) -> Result<Self, GridError>
     where
         F: FnMut() -> T,
     {
-        let size = rows.checked_mul(cols)?;
+        let size = match rows.checked_mul(cols) {
+            Some(size) => size,
+            None => return Err(GridError::SizeOverflow { rows, cols }),
+        };
 
         let mut data = Vec::with_capacity(size);
         data.fill_with(value_fn);
-        Some(Self { rows, cols, data })
+        Ok(Self { rows, cols, data })
     }
 
     /// Create a grid from a data [`Vec<T>`] and the number of columns to use
     ///
     /// Returns [`None`] if the data does not divide the number of columns
-    pub fn from_vec(data: Vec<T>, cols: usize) -> Option<Self> {
-        if !data.len().is_multiple_of(cols) {
-            return None;
+    pub fn from_vec(data: Vec<T>, cols: usize) -> Result<Self, GridError> {
+        let len = data.len();
+        if !len.is_multiple_of(cols) {
+            return Err(GridError::ColDivisibility { len, cols });
         }
 
         let rows = data.len() / cols;
-        Some(Self { cols, rows, data })
+        Ok(Self { cols, rows, data })
     }
 
     /// Number of columns in the grid
@@ -222,7 +228,7 @@ where
     /// Create a new grid filled with [`T::Default`][Default]
     ///
     /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
-    pub fn new(rows: usize, cols: usize) -> Option<Self> {
+    pub fn new(rows: usize, cols: usize) -> Result<Self, GridError> {
         Self::new_with(rows, cols, T::default)
     }
 }

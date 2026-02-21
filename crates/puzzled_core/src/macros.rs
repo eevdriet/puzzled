@@ -44,3 +44,32 @@ macro_rules! squares {
         $crate::OptGrid::new(grid)
     }};
 }
+
+#[macro_export]
+macro_rules! metadata {
+    ($puzzle:ident, author : $val:literal) => {
+        $puzzle = $puzzle.with_author($val);
+    };
+
+    ($puzzle:ident, copyright : $val:literal) => {
+        $puzzle = $puzzle.with_copyright($val);
+    };
+
+    ($puzzle:ident, notes : $val:literal) => {
+        $puzzle = $puzzle.with_notes($val);
+    };
+
+    ($puzzle:ident, title : $val:literal) => {
+        $puzzle = $puzzle.with_title($val);
+    };
+
+    ($puzzle:ident, version : $val:literal) => {
+        if let Ok(version) = $crate::Version::new($val.as_bytes()) {
+            $puzzle = $puzzle.with_version(version);
+        }
+    };
+
+    ($puzzle:ident, $key:ident : $val:literal) => {
+        compile_error!(concat!("Invalid puzzle property: ", stringify!($key)));
+    };
+}

@@ -8,5 +8,8 @@ thiserror = {workspace = true}
 serde = {workspace = true, optional = true}
 puzzled_core = {path = "../puzzled_core/"}
 
+[dev-dependencies]
+puzzled = {path = "../puzzled", features = ["puz"]}
+
 [features]
 serde = ["dep:serde"]

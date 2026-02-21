@@ -7,10 +7,9 @@ mod solve;
 mod square;
 
 pub use clue::*;
-use puzzled_puz::Version;
 pub use square::*;
 
-use puzzled_core::Timer;
+use puzzled_core::{Timer, Version};
 use std::fmt;
 
 macro_rules! string_prop {
@@ -256,8 +255,7 @@ impl fmt::Display for Crossword {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::Timer;
-    use puzzled_puz::Version;
+    use puzzled_core::{Timer, Version};
     use serde::{Deserialize, Serialize, de::Error};
 
     use crate::{Clues, CluesData, Crossword, SerdeSquares, Squares};
@@ -359,11 +357,10 @@ mod serde_impl {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 mod test {
     use crate::crossword;
 
-    #[cfg(feature = "serde")]
     #[test]
     fn serialize_crossword() {
         use serde_json;

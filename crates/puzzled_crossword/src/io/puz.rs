@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{CellStyle, Grid, Position};
+use puzzled_core::{CellStyle, Grid, Position, Version};
 use puzzled_puz::{
     Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzWrite, SizeCheck, Span,
     Strings, build_string, format, read, windows_1252_to_char,
@@ -60,7 +60,8 @@ impl Puz for Crossword {
         header.clue_count = clues.len() as u16;
 
         // Metadata
-        header.version = self.version();
+        let version = self.version().map(|v| v.as_bytes()).unwrap_or_default();
+        header.version = version;
         header.write_cib();
 
         Ok(header)
@@ -190,7 +191,7 @@ impl Puz for Crossword {
             .with_notes(build_string(&strings.notes))
             .with_title(build_string(&strings.title));
 
-        if let Some(version) = header.version {
+        if let Ok(version) = Version::new(&header.version) {
             crossword = crossword.with_version(version);
         }
 

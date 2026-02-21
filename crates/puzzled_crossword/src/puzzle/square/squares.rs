@@ -92,9 +92,7 @@ impl Squares {
             })
             .collect();
 
-        let grid = Grid::from_vec(squares, cols).ok_or(format!(
-            "Grid length {len} does not divide the number of columns {cols}"
-        ))?;
+        let grid = Grid::from_vec(squares, cols).map_err(|err| err.to_string())?;
         let squares = Squares::new(grid);
 
         Ok(squares)

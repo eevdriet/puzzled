@@ -1,10 +1,11 @@
-use crate::{Context, PuzRead, PuzState, PuzWrite, Version, read, write};
+use crate::{Context, PuzRead, PuzState, PuzWrite, format, read, write};
+use puzzled_core::Version;
 
 #[doc(hidden)]
 #[derive(Debug, Default)]
 pub struct Header {
     // Components
-    pub version: Option<Version>,
+    pub version: [u8; 4],
     pub width: u8,
     pub height: u8,
     pub clue_count: u16,
@@ -53,9 +54,15 @@ impl Header {
 
         let cib_checksum = reader.read_u16().context("CIB checksum")?;
         let mask_checksums = reader.read_slice::<8>().context("Masked checksums")?;
-        let version = reader.read_slice::<4>().context("Version bytes")?;
 
-        let version = state.ok_or_warn(Version::new(&version).context("Version"))?;
+        // Try to parse a valid version, otherwise set empty bits
+        let version = reader.read_slice::<4>().context("Version bytes")?;
+        let version = state.ok_or_warn(
+            Version::new(&version)
+                .map_err(|reason| format::Error::InvalidVersion { reason })
+                .context("Version"),
+        )?;
+        let version = version.map(|v| v.as_bytes()).unwrap_or_default();
 
         let reserved = reader.read_slice::<14>().context("Reserved1C")?;
         let scrambled_checksum = reader.read_u16().context("Scrambled checksum")?;
@@ -93,8 +100,7 @@ impl Header {
             .write_all(&self.mask_checksums)
             .context("Masked checksums")?;
 
-        let version = &self.version.unwrap_or_default().as_bytes();
-        writer.write_all(version).context("Version")?;
+        writer.write_all(&self.version).context("Version")?;
 
         writer.write_all(&self.reserved).context("Revealed1C")?;
         writer

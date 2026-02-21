@@ -1,15 +1,26 @@
-use crate::{Context, GridsError, Span, read, write};
+use puzzled_core::GridError;
+
+use crate::{Context, Span, read, write};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Invalid version")]
-    InvalidVersion,
+    // Header
+    #[error("Invalid version: {reason}")]
+    InvalidVersion { reason: String },
 
-    #[error("Grids errror: {0}")]
-    Grids(#[from] GridsError),
+    // Grids
+    #[error("Grids error: {0}")]
+    Grids(#[from] GridError),
 
-    #[error("Invalid clue specification: {reason}")]
-    InvalidClueSpec { reason: String },
+    #[error(
+        "The solution grid has square '{solution_square}' at {row}R{col}C, while the state grid has '{state_square}' at that position"
+    )]
+    CellMismatch {
+        solution_square: char,
+        state_square: char,
+        row: u8,
+        col: u8,
+    },
 
     // LTIM
     #[error("Invalid timer found: {reason}")]
