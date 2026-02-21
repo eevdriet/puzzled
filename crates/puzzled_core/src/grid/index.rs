@@ -39,6 +39,46 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T> Grid<Option<T>> {
+    /// Get a reference to the [filled square](Square::Filled) at the given position
+    ///
+    /// Same as [`get`](Grid<Square>::get), but additionally checks whether the square is a cell
+    /// ```
+    /// use puzzled_core::{grid, Position};
+    ///
+    /// let opt_grid = grid! (
+    ///    [None, Some(1)],
+    ///    [Some(2), None]
+    /// );
+    ///
+    /// assert_eq!(opt_grid.get_fill(Position::new(0, 1)), Some(&1));
+    /// assert_eq!(opt_grid.get_fill(Position::new(1, 1)), None);
+    /// assert_eq!(opt_grid.get_fill(Position::new(2, 1)), None);
+    /// ```
+    pub fn get_fill(&self, pos: Position) -> Option<&T> {
+        self.get(pos).and_then(|opt| opt.as_ref())
+    }
+
+    /// Get a mutable reference to the [filled square](Square::Filled) at the given position
+    ///
+    /// Same as [`get_mut`](Grid<Square>::get_mut), but additionally checks whether the square is a cell
+    /// ```
+    /// use puzzled_core::{grid, Position};
+    ///
+    /// let mut opt_grid = grid! (
+    ///    [None, Some(1)],
+    ///    [Some(2), None]
+    /// );
+    ///
+    /// assert_eq!(opt_grid.get_fill_mut(Position::new(0, 1)), Some(&mut 1));
+    /// assert_eq!(opt_grid.get_fill_mut(Position::new(1, 1)), None);
+    /// assert_eq!(opt_grid.get_fill_mut(Position::new(2, 1)), None);
+    /// ```
+    pub fn get_fill_mut(&mut self, pos: Position) -> Option<&mut T> {
+        self.get_mut(pos).and_then(|opt| opt.as_mut())
+    }
+}
+
 /// Index the grid to retrieve a reference to the entry at the given [position](Position).
 /// ```
 /// use puzzled_core::{grid, Position};

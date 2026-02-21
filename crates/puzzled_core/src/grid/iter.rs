@@ -15,7 +15,7 @@ type ColIterMut<'a, T> = StepBy<IterMut<'a, T>>;
 impl<T> Grid<T> {
     /// Creates an iterator over the [positions](Position) of the grid
     ///
-    /// The entries are traversed in [row-major](crate::Order::RowMajor) order.
+    /// The entries are traversed in [row-major](crate::Order::Rows) order.
     /// ```
     /// use puzzled_core::{grid, Position};
     ///
@@ -36,7 +36,7 @@ impl<T> Grid<T> {
 
     /// Creates an iterator over the grid
     ///
-    /// The entries are traversed in [row-major](crate::Order::RowMajor) order.
+    /// The entries are traversed in [row-major](crate::Order::Rows) order.
     /// ```
     /// use puzzled_core::{grid, Position};
     ///
@@ -57,7 +57,7 @@ impl<T> Grid<T> {
 
     /// Creates a mutable iterator over the grid
     ///
-    /// The entries are traversed in [row-major](crate::Order::RowMajor) order.
+    /// The entries are traversed in [row-major](crate::Order::Rows) order.
     /// ```
     /// use puzzled_core::{grid, Position};
     ///
@@ -237,6 +237,48 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T> Grid<Option<T>> {
+    /// Returns an iterator over the filled squares of the puzzle.
+    ///
+    /// The filled squares are traversed in row-major order.
+    /// ```
+    /// use puzzled_core::grid;
+    ///
+    /// let opt_grid = grid! (
+    ///    [None, Some(1)],
+    ///    [Some(2), None]
+    /// );
+    /// let mut iter = opt_grid.iter_fills();
+    ///
+    /// assert_eq!(iter.next(), Some(&1));
+    /// assert_eq!(iter.next(), Some(&2));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter_fills(&self) -> impl Iterator<Item = &T> {
+        self.iter().filter_map(|opt| opt.as_ref())
+    }
+
+    /// Returns a mutable iterator over the filled squares of the puzzle.
+    ///
+    /// The filled squares are traversed in row-major order.
+    /// ```
+    /// use puzzled_core::grid;
+    ///
+    /// let mut opt_grid = grid! (
+    ///    [None, Some(1)],
+    ///    [Some(2), None]
+    /// );
+    /// let mut iter = opt_grid.iter_fills_mut();
+    ///
+    /// assert_eq!(iter.next(), Some(&mut 1));
+    /// assert_eq!(iter.next(), Some(&mut 2));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter_fills_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.iter_mut().filter_map(|opt| opt.as_mut())
+    }
+}
+
 struct PosIter<'a, T, I: 'a> {
     iter: I,
     cols: usize,
@@ -312,7 +354,7 @@ where
 impl<T> Grid<T> {
     /// Creates an indexed iterator over the grid
     ///
-    /// The entries are traversed in [row-major](crate::Order::RowMajor) order.
+    /// The entries are traversed in [row-major](crate::Order::Rows) order.
     /// ```
     /// use puzzled_core::{grid, Position};
     ///
@@ -335,7 +377,7 @@ impl<T> Grid<T> {
 
     /// Creates a mutable indexed iterator over the grid
     ///
-    /// The entries are traversed in [row-major](crate::Order::RowMajor) order.
+    /// The entries are traversed in [row-major](crate::Order::Rows) order.
     /// ```
     /// use puzzled_core::{grid, Position};
     ///
@@ -439,7 +481,7 @@ impl<T> Grid<T> {
     ///    [7, 8, 9]
     /// ];
     /// let mut row_sums = grid
-    ///     .iter_indexed_lines(Order::RowMajor)
+    ///     .iter_indexed_lines(Order::Rows)
     ///     .map(|row| {
     ///         row.fold(0, |acc, (pos, val)| {
     ///             acc + 100 * val + 10 * pos.row + pos.col
@@ -537,7 +579,7 @@ impl<T> Grid<T> {
     ///    [7, 8, 9]
     /// ];
     /// let mut col_sums = grid
-    ///     .iter_indexed_lines(Order::ColMajor)
+    ///     .iter_indexed_lines(Order::Cols)
     ///     .map(|row| {
     ///         row.fold(0, |acc, (pos, val)| {
     ///             acc + 100 * val + 10 * pos.row + pos.col
@@ -711,10 +753,10 @@ impl<T> Grid<T> {
     ///    [4, 5, 6],
     ///    [7, 8, 9]
     /// ];
-    /// let row_sums: Vec<usize> = grid.iter_lines(Order::RowMajor).map(|row| row.sum()).collect();
+    /// let row_sums: Vec<usize> = grid.iter_lines(Order::Rows).map(|row| row.sum()).collect();
     /// assert_eq!(row_sums, vec![6, 15, 24]);
     ///
-    /// let col_sums: Vec<usize> = grid.iter_lines(Order::ColMajor).map(|col| col.sum()).collect();
+    /// let col_sums: Vec<usize> = grid.iter_lines(Order::Cols).map(|col| col.sum()).collect();
     /// assert_eq!(col_sums, vec![12, 15, 18]);
     /// ```
     pub fn iter_lines<'a>(&'a self, order: Order) -> impl Iterator<Item = LineIter<'a, T>> {
@@ -809,7 +851,7 @@ impl<T> Grid<T> {
     ///    [7, 8, 9]
     /// ];
     /// let mut row_sums = grid
-    ///     .iter_indexed_lines(Order::RowMajor)
+    ///     .iter_indexed_lines(Order::Rows)
     ///     .map(|row| {
     ///         row.fold(0, |acc, (pos, val)| {
     ///             acc + 100 * val + 10 * pos.row + pos.col
@@ -822,7 +864,7 @@ impl<T> Grid<T> {
     /// assert_eq!(row_sums.next(), None);
     ///
     /// let mut col_sums = grid
-    ///     .iter_indexed_lines(Order::ColMajor)
+    ///     .iter_indexed_lines(Order::Cols)
     ///     .map(|row| {
     ///         row.fold(0, |acc, (pos, val)| {
     ///             acc + 100 * val + 10 * pos.row + pos.col

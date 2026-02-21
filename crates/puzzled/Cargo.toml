@@ -1,0 +1,26 @@
+[package]
+name = "puzzled"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+puzzled_core = {path = "../puzzled_core/"}
+puzzled_crossword = {path = "../puzzled_crossword", optional = true}
+puzzled_nonogram = {path = "../puzzled_nonogram", optional = true}
+
+serde = { workspace = true, optional = true }
+
+[features]
+crossword = ["dep:puzzled_crossword"]
+nonogram = ["dep:puzzled_nonogram"]
+
+serde = [
+    "dep:serde",
+    "puzzled_core/serde",
+    "puzzled_crossword?/serde",
+    "puzzled_nonogram?/serde"
+]

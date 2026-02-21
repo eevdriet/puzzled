@@ -1714,6 +1714,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "puzzled"
+version = "0.1.0"
+dependencies = [
+ "puzzled_core",
+ "puzzled_crossword",
+ "puzzled_nonogram",
+ "serde",
+]
+
+[[package]]
 name = "puzzled_core"
 version = "0.1.0"
 dependencies = [
@@ -1721,7 +1731,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "puzzled_cross"
+name = "puzzled_crossword"
 version = "0.1.0"
 dependencies = [
  "miette",
@@ -1733,7 +1743,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "puzzled_nono"
+name = "puzzled_nonogram"
 version = "0.1.0"
 dependencies = [
  "bitvec",
@@ -1749,13 +1759,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "puzzled_nono_tui"
+name = "puzzled_nonogram_tui"
 version = "0.1.0"
 dependencies = [
  "clap",
  "crossterm",
  "directories",
- "puzzled_nono",
+ "puzzled_nonogram",
  "ratatui",
  "rstest",
  "serde",

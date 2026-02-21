@@ -1,7 +1,13 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/puzzled_core","crates/puzzled_cross","crates/puzzled_nono","crates/puzzled_nono_tui"]
+members = [
+    "crates/puzzled",
+    "crates/puzzled_core",
+    "crates/puzzled_crossword",
+    "crates/puzzled_nonogram",
+    "crates/puzzled_nonogram_tui",
+]
 
 [workspace.dependencies]
 bitvec = "1.0.1"

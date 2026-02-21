@@ -1,0 +1,23 @@
+[package]
+name = "puzzled_crossword"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+serde = { workspace = true, optional = true }
+miette = { workspace = true, optional = true}
+thiserror = { workspace = true}
+puzzled_core = { path = "../puzzled_core"}
+
+[features]
+default = []
+serde = ["dep:serde"]
+miette = ["dep:miette"]
+
+[dev-dependencies]
+rstest = { workspace = true }
+serde_json = {workspace = true}

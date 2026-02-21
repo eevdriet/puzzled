@@ -2,7 +2,6 @@ use crate::{Line, Position};
 
 mod index;
 mod iter;
-mod macros;
 
 pub use iter::*;
 
