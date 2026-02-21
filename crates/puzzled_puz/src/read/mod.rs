@@ -1,3 +1,13 @@
+//! Defines all functionality for reading [*.puz data][PUZ google spec] into a [puzzle](Puz)
+//!
+//! # Usage
+//! The primary type for writing out [puzzles](Crossword) is the [`Writer`], which writes to a [`Vec<T>`].
+//! Depending on the desired output, this can be a
+//! - [`Vec<u8>`] for writing to [*.puz files][PUZ google spec]
+//! - [`Vec<u8>`] for writing to [*.puz files][PUZ google spec]
+//!
+//! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
+//! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 mod error;
 mod state;
 
@@ -5,9 +15,9 @@ pub use error::*;
 pub(crate) use state::*;
 
 use crate::{Extras, Grids, Header, Puz, Strings};
-use std::io;
+use std::{io, ops::Range};
 
-/// Extension trait for [`Read`](io::Read) to make reading [puzzles](Crossword) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
+/// Extension trait for [`Read`](io::Read) to make reading [puzzles](crate::Puz) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///
 /// Includes convenience methods for reading a [`u8`], [`u16`], `\0` terminated [`str`] and [`Vec<u8>`] from a generic reader
 pub trait PuzRead: io::Read {
@@ -68,6 +78,8 @@ pub trait PuzRead: io::Read {
 }
 
 impl<R: io::Read> PuzRead for R {}
+
+pub type Span = Range<usize>;
 
 #[derive(Debug, Default)]
 pub struct PuzReader {

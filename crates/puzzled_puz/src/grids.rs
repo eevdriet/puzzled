@@ -4,7 +4,34 @@ use puzzled_core::{Grid, GridError};
 pub const NON_PLAYABLE_CELL: char = '.';
 pub const MISSING_ENTRY_CELL: char = '-';
 
-#[doc(hidden)]
+/// [Grids]((https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#puzzle-layout-and-state)) section
+///
+/// This section efines the layout of [puzzle](crate::Puz) to be read.
+/// Specifically, the following 2 grids are read from the `header.width` and `header.height`:
+/// 1.  A *solution* grid containing the [solution](crate::Solution) to each [square](crate::Square)
+///     To indicate a [non-playable (black) square](crate::Square::Black), a `b"."` is used.
+///     The other squares are the playable [cells](crate::Cell) that the user can put their solutions into.
+/// 2.  A *state* grid containing the current [entry](crate::Cell::entry) to each square
+///     Note that *even if a user has not yet entered any solutions, a full state grid is read*.
+///     Squares that do not yet contain a user entry are indicate with `b"-"`
+///
+/// As an example, consider the following puzzle and its underlying puzzle grids in binary form:
+/// ```
+/// use puzzled::crossword::crossword;
+///
+/// let puzzle = crossword! (
+///     [C . .]
+///     [A . .]
+///     [R O W]
+/// );
+///
+/// // Underlying byte data to represent the puzzle grids
+/// // Note that the `crossword!` macro doesn't include user entries
+/// let solution = b"C..A..ROW";
+/// let state = b"-..-..---";
+/// ```
+///
+/// The crate uses a [`Grid<Square>`](crate::Grid<Square>) to store both the solution and state in a single grid.
 #[derive(Debug)]
 pub struct Grids {
     pub solution: Grid<u8>,

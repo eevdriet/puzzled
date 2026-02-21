@@ -9,7 +9,7 @@ serde = {workspace = true, optional = true}
 puzzled_core = {path = "../puzzled_core/"}
 
 [dev-dependencies]
-puzzled = {path = "../puzzled", features = ["puz"]}
+puzzled = {path = "../puzzled", features = ["puz", "crossword"]}
 
 [features]
 serde = ["dep:serde"]

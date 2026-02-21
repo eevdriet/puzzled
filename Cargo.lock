@@ -1717,6 +1717,7 @@ dependencies = [
 name = "puzzled"
 version = "0.1.0"
 dependencies = [
+ "document-features",
  "puzzled_core",
  "puzzled_crossword",
  "puzzled_nonogram",

@@ -1,7 +1,7 @@
 use puzzled_core::Position;
 use thiserror::Error;
 
-use crate::{FILE_MAGIC, Span, error::Context, format};
+use crate::{Context, FILE_MAGIC, Span, format};
 
 #[derive(Debug, Error)]
 #[error("{kind} while reading '{context}'")]

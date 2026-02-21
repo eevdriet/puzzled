@@ -12,19 +12,32 @@ puzzled_core = {path = "../puzzled_core/"}
 puzzled_puz = {path = "../puzzled_puz/", optional = true}
 puzzled_crossword = {path = "../puzzled_crossword", optional = true}
 puzzled_nonogram = {path = "../puzzled_nonogram", optional = true}
+document-features = {workspace = true}
 
 serde = { workspace = true, optional = true }
 
 [features]
+#! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
+#!
+#! ## Puzzles
+#! The following features enable 
+#! 
+## Enables [crosswords](puzzled_crossword)
 crossword = ["dep:puzzled_crossword"]
+## Enables [nonograms](puzzled_nonogram)
 nonogram = ["dep:puzzled_nonogram"]
+#! ...and more to follow!
 
+#! ## I/O
+#! The following features make reading and writing puzzles easier
+## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = [
     "dep:serde",
     "puzzled_core/serde",
     "puzzled_crossword?/serde",
     "puzzled_nonogram?/serde"
 ]
+## Enables reading puzzles from and writing them into the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
 puz = [
     "dep:puzzled_puz",
     "puzzled_crossword?/puz"

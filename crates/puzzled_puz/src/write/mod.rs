@@ -1,4 +1,4 @@
-//! Defines all functionality for writing and serializing a generic [puzzle](Puz) into a valid [*.puz file][PUZ google spec]
+//! Defines all functionality for writing a [puzzle](Puz) as [*.puz data][PUZ google spec]
 //!
 //! # Usage
 //! The primary type for writing out [puzzles](Crossword) is the [`Writer`], which writes to a [`Vec<T>`].
@@ -20,7 +20,7 @@ use crate::{Context, Puz};
 #[derive(Debug, Default)]
 pub struct PuzWriter;
 
-/// Extension trait for [`Write`](io::Write) to make writing [puzzles](Crossword) to a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
+/// Extension trait for [`Write`] to make writing [puzzles](Crossword) to a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///
 /// Includes convenience methods for writing a [`u8`], [`u16`], [`str`] and [`Option<&str>`]
 pub trait PuzWrite: Write {

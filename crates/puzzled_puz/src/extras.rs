@@ -1,41 +1,98 @@
 use std::{collections::BTreeMap, time::Duration};
 
-// use crate::Context;
 use crate::{Context, PuzRead, PuzState, PuzWrite, Span, build_string, format, read, write};
 use puzzled_core::{CellStyle, Grid, Position, Timer, TimerState};
 
-pub(crate) type Grbs = Grid<u8>;
-pub(crate) type Rtbl = BTreeMap<u8, String>;
-pub(crate) type Ltim = Timer;
-pub(crate) type Gext = Grid<CellStyle>;
+/// Grid Rebus (GRBS) type
+///
+/// The GRBS contains one byte per square in the puzzle [grid](puzzled_core::Grid).
+/// Each byte indicates whether or not the corresponding square is a rebus.
+/// Possible values are
+/// - `0` to indicate a non-rebus square
+/// - `1+` to indicate a rebus square, the solution for which is given by the entry with key `n` in the [RTBL] section
+pub type Grbs = Grid<u8>;
 
+/// Rebus Table (RTBL) type
+///
+/// The RTBL section contains a string that represents the solutions for any rebus squares
+/// The solutions are separated by semi-colons and contain the square number and actual rebus
+/// For example, "0:HEART;1:DIAMOND;17:CLUB;23:SPADE" represents 4 rebuses at squares 0, 1, 17 and 23
+pub type Rtbl = BTreeMap<u8, String>;
+
+/// Literal Timer (LTIM) type
+///
+/// The LTIM section contains an ASCII string with information on how much solving [time](puzzled_core::Timer) is used.
+/// Specifically, the information is given as `"<secs>,<state>"`.
+/// Here `<secs>` represents how much time the solver has used in seconds and `<state>` what state the the timer is in.
+/// A value of `<state> = 0` represents the timer [running](puzzled_core::TimerState::Running) and `<state> = 1` that the timer is [stopped](puzzled_core::TimerState::Stopped).
+pub type Ltim = Timer;
+
+/// Grid Extensions (GEXT) type
+///
+/// The GEXT section contains one byte per square in the puzzle [grid](puzzled_core::Grid)
+/// Each byte represents a bitmask indicating that some style attributes are set
+/// The meaning for the following four bits are known:
+/// - `0x10` means that the square was previously marked incorrect
+/// - `0x20` means that the square is currently marked incorrect
+/// - `0x40` means that the contents of the square were given
+/// - `0x80` means that the square is circled
+pub type Gext = Grid<CellStyle>;
+
+/// [Extra sections](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) of the `*.puz` data
+///
+/// The crate currently supports **GRBS**, **RTBL**, **LTIM** and **GEXT** sections are considered, but more may be supported in the future.
+///
+/// ## GRBS and RTBL
+/// The [`GRBS`](Grbs) section contains a [grid](crate::Grid) of keys for each [square](crate::Square) in the [puzzle](crate::Crossword) that has a [rebus solution](crate::Solution::Rebus).
+/// The actual rebus values themselves are read afterwards in the **RTBL** section.
+/// For a [non-rebus (letter) square](crate::Solution::Letter), a `0` byte is used to indicate no rebus needs to be read in RTBL.
+/// Any square that *does* contain a rebus gets a unique identifying byte key of `n`.
+///
+/// The [`RTBL`](Rtbl) section then contains an ASCII-string representing the actual rebuses.
+/// It is read as a [`HashMap<u8, String>`](std::collections::HashMap) and correctly sets a rebus solution for the squares represented in GRBS.
+/// Consider the following example to get an idea of how the GRBS and RTBL sections would be layed out in a `*.puz` file:
+/// ```
+/// use puzzled::crossword::crossword;
+///
+/// let puzzle = crossword! (
+///     [C      REBUS1 Y     ]
+///     [A      .      REBUS1]
+///     [REBUS2 O      W     ]
+/// );
+///
+/// // Binary data read in the GRBS and RTBL extras section to represent the puzzle above
+/// // Note that
+/// // - The keys are not necessarily consecutive numbers
+/// // - The same key can be used multiple times in GRBS (e.g. `7`)
+/// // - Keys are always represented with 2 digits, so for 1-9 a leading space is used (e.g. ` 7`)
+/// let grbs = [0, 7, 0, 0, 0, 7, 16, 0, 0];
+/// let rtbl = b" 7:REBUS1;16:REBUS2";
+/// ```
+///
+/// ## LTIM
+/// The [`LTIM`](Ltim) section contains the definition of a [`Timer`](crate::Timer) which represents the time already used solving the [puzzle](crate::Crossword).
+/// Specifically, the following are read
+/// -   A [`Duration`](std::time::Duration) from a *number of elapsed seconds*
+/// -   A [`TimerState`](crate::TimerState) representing whether the timer is active (`0` for [`TimerState::Running`](crate::TimerState::Running) and `1` for [`TimerState::Stopped`](crate::TimerState::Stopped))
+///
+/// ## GEXT
+/// The [`GEXT`](Gext) sections contains a [grid](crate::Grid) of [styles](crate::CellStyle) that are applied to each of the [squares](crate::Square) in the [puzzle](crate::Crossword).
+/// Each style is represnted with a single [`u8`], where [non-playable squares](crate::Square::Black) always take the value `0`.
+/// For a [cell](crate::Cell), refer to [`CellStyle`](crate::CellStyle) to see which styles are currently supported.
+/// Multiple styles can be set at once as style is represented as (partially complete) bit flags.
+///
 #[derive(Debug, Default)]
 pub struct Extras {
-    /// The GRBS section contains one byte per square of the board.
-    /// Each byte indicates whether or not the corresponding square is a rebus.
-    /// Possible values are
-    /// - `0` to indicate a non-rebus square
-    /// - `1+` to indicate a rebus square, the solution for which is given by the entry with key `n` in the [RTBL] section
+    /// The [GRBS](Grbs) section
     pub grbs: Option<Grbs>,
 
-    /// The RTBL section contains a string that represents the solutions for any rebus squares
-    /// The solutions are separated by semi-colons and contain the square number and actual rebus
-    /// For example, "0:HEART;1:DIAMOND;17:CLUB;23:SPADE" represents 4 rebuses at squares 0, 1, 17 and 23
+    /// The [RTBL](Rtbl) section
     pub rtbl: Option<Rtbl>,
 
-    /// The LTIM section contains information on
-    /// Specifically, two strings are stored which are separated by a comma.
-    /// The former represents how much time the solver has used and the latter whether the timer is running or stopped.
-    /// A value of `0` represents the timer running and `1` that the timer is stopped.
+    /// The [RTBL](Ltim) section
     pub ltim: Option<Ltim>,
 
-    /// The GEXT section contains one byte per square of the board
-    /// Each byte represents a bitmask indicating that some style attributes are set
-    /// The meaning for the following four bits are known:
-    /// - `0x10` means that the square was previously marked incorrect
-    /// - `0x20` means that the square is currently marked incorrect
-    /// - `0x40` means that the contents of the square were given
-    /// - `0x80` means that the square is circled
+    /// The [GEXT](Gext) section
     pub gext: Option<Gext>,
 }
 

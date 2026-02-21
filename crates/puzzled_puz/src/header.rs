@@ -1,7 +1,33 @@
 use crate::{Context, PuzRead, PuzState, PuzWrite, format, read, write};
 use puzzled_core::Version;
 
-#[doc(hidden)]
+pub(crate) const FILE_MAGIC: &str = "ACROSS&DOWN\0";
+
+/// [Header](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#header) section
+///
+/// This section mostly contains [checksums](crate#validating-checksums) to verify whether the binary data is valid.
+/// It also defines a [version](puzzled_core::Version) and the basic layout of a [puzzle](crate::Puz), such as its width, height and how many [clues](puzzled::crossword::Clues) should be read.
+/// We list the components that are read as follows:
+/// - <span style="color:white">White</span> components are directly used to define the resulting [puzzle][Crossword].
+/// - <span style="color:yellow">Yellow</span> components are used for [validating checksums](self#validating-checksums) and checking the byte integrity of the `*.puz` data.
+/// - <span style="color:gray">Gray</span> components are currently ignored
+///
+/// | Component  | Length | Type | Description |
+/// |------------|--------|------|-------------|
+/// | <span style="color:yellow">Checksum</span>   | 2      | u16  | Overall [file checksum](crate#file) |
+/// | <span style="color:yellow">File Magic</span> | 12     | str  | NUL-terminated constant string: `b"ACROSS&DOWN\0"` |
+/// | <span style="color:yellow">CIB Checksum</span>          | 2      | u16  | [CIB checksum](crate#cib) |
+/// | <span style="color:yellow">Masked Low Checksums</span>  | 4      | u32  | A set of low [masked checksums](crate#masked-regions) |
+/// | <span style="color:yellow">Masked High Checksums</span> | 4      | u32  | A set of high [masked checksums](crate#masked-regions) |
+/// | <span style="color:white">Version String(?)</span> | 4      | str  | e.g. "1.2\0" |
+/// | <span style="color:gray">Reserved1C(?)</span>      | 2      | u16  | In many files, this is uninitialized memory |
+/// | <span style="color:gray">Scrambled Checksum</span> | 2      | u16  | In scrambled puzzles, a checksum of the real solution (details below) |
+/// | <span style="color:white">Width</span>        | 1      | u8   | The width of the board |
+/// | <span style="color:white">Height</span>             | 1      | u8   | The height of the board |
+/// | <span style="color:white"># of Clues</span>  | 2      | u16  | The number of clues for this board |
+/// | <span style="color:gray">Unknown Bitmask</span>    | 2      | u16  | A bitmask. Operations unknown. |
+/// | <span style="color:gray">Scrambled Tag</span>      | 2      | u16  | 0 for unscrambled puzzles. Nonzero (often 4) for scrambled puzzles. |
+///
 #[derive(Debug, Default)]
 pub struct Header {
     // Components

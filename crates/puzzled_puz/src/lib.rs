@@ -23,121 +23,7 @@
 //!   Streams specify a separate `*_with_warnings` to return them to the user along with the streaming result.
 //!   For example, consider [`PuzReader::read`] and [`PuzReader::read_with_warnings`]
 //!
-//! # Process
-//! Even though the [`PuzReader`] and [`PuzWriter`] are the only streams using the [Across Lite format][PUZ google spec] format directly, all streams addhere to its underlying data model.
-//! Therefore it may be worthwhile to read through this section, even if you have no interest in working with binary data to represent your [puzzles](crate::Crossword).
-//!
-//! ## Header
-//! First a **[header](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#header)** is read, which mostly contains [checksums][Checksums] to verify whether the binary data is valid.
-//! It also defines a [version](crate::Crossword::version) and the basic layout for the puzzle, such as its [width](crate::Grid<Square>::cols), [height](crate::Grid<Square>::rows) and how many [clues](crate::Clues) should be read.
-//! We list the components that are read as follows:
-//! - <span style="color:white">White</span> components are directly used to define the resulting [puzzle][Crossword].
-//! - <span style="color:yellow">Yellow</span> components are used for [validating checksums](self#validating-checksums) and checking the byte integrity of the `*.puz` data.
-//! - <span style="color:gray">Gray</span> components are currently ignored
-//!
-//! | Component  | Length | Type | Description |
-//! |------------|--------|------|-------------|
-//! | <span style="color:yellow">Checksum</span>   | 2      | u16  | Overall [file checksum](self#file) |
-//! | <span style="color:yellow">File Magic</span> | 12     | str  | NUL-terminated constant string: `b"ACROSS&DOWN\0"` |
-//! | <span style="color:yellow">CIB Checksum</span>          | 2      | u16  | [CIB checksum](self#cib) |
-//! | <span style="color:yellow">Masked Low Checksums</span>  | 4      | u32  | A set of low [masked checksums](self#masked-regions) |
-//! | <span style="color:yellow">Masked High Checksums</span> | 4      | u32  | A set of high [masked checksums](self#masked-regions) |
-//! | <span style="color:white">Version String(?)</span> | 4      | str  | e.g. "1.2\0" |
-//! | <span style="color:gray">Reserved1C(?)</span>      | 2      | u16  | In many files, this is uninitialized memory |
-//! | <span style="color:gray">Scrambled Checksum</span> | 2      | u16  | In scrambled puzzles, a checksum of the real solution (details below) |
-//! | <span style="color:white">Width</span>        | 1      | u8   | The width of the board |
-//! | <span style="color:white">Height</span>             | 1      | u8   | The height of the board |
-//! | <span style="color:white"># of Clues</span>  | 2      | u16  | The number of clues for this board |
-//! | <span style="color:gray">Unknown Bitmask</span>    | 2      | u16  | A bitmask. Operations unknown. |
-//! | <span style="color:gray">Scrambled Tag</span>      | 2      | u16  | 0 for unscrambled puzzles. Nonzero (often 4) for scrambled puzzles. |
-//!
-//! ## Crossword grids
-//! Then the **[grids](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#puzzle-layout-and-state)** which define the layout of [puzzle][Crossword] are read.
-//! Specifically, the following 2 grids are read from the `header.width` and `header.height`:
-//! 1.  A *solution* grid containing the [solution](crate::Solution) to each [square](crate::Square)
-//!     To indicate a [non-playable (black) square](crate::Square::Black), a `b"."` is used.
-//!     The other squares are the playable [cells](crate::Cell) that the user can put their solutions into.
-//! 2.  A *state* grid containing the current [entry](crate::Cell::entry) to each square
-//!     Note that *even if a user has not yet entered any solutions, a full state grid is read*.
-//!     Squares that do not yet contain a user entry are indicate with `b"-"`
-//!
-//! As an example, consider the following puzzle and its underlying puzzle grids in binary form:
-//! ```
-//! use puzzled::crossword::crossword;
-//!
-//! let puzzle = crossword! (
-//!     [C . .]
-//!     [A . .]
-//!     [R O W]
-//! );
-//!
-//! // Underlying byte data to represent the puzzle grids
-//! // Note that the `crossword!` macro doesn't include user entries
-//! let solution = b"C..A..ROW";
-//! let state = b"-..-..---";
-//! ```
-//!
-//! The crate uses a [`Grid<Square>`](crate::Grid<Square>) to store both the solution and state in a single grid.
-//!
-//! ## Strings
-//! Next are the **[strings](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#strings-section)**, which include the "metadata" for the [puzzle](crate::Crossword), such as its [title](crate::Crossword::title) and [author](crate::Crossword::author).
-//! It also includes the text for every [clue](crate::Clue) that should be placed in the puzzle [grid](crate::Squares).
-//! The pseudo-code of how to do so is given [here](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#clue-assignment) and the crate implementation is found in [`Crossword::place_clues`](crate::Crossword::place_clues).
-//!
-//! | Component | Length | Type | Example |
-//! |:------------|:-------------------|:---|:---|
-//! | Title       | ? | str | Theme: .PUZ format |
-//! | Author      | ? | str | J. Puz / W. Shortz |
-//! | Copyright   | ? | str | (c) 2007 J. Puz    |
-//! | Clue `#1`   | ? | str | Cued, in pool      |
-//! | ...         | ... | ... | ... |
-//! | Clue `#n`   | ? | str | Quiet              |
-//! | Notes       | ? | str | http://mywebsite   |
-//!
-//! ## Extra sections
-//! Finally a number of **[extra sections][PUZ google spec]** are optionally read to allow for reading square customization and [solving time](crate::Timer).
-//! The crate currently supports **GRBS**, **RTBL**, **LTIM** and **GEXT** sections are considered, but more may be supported in the future.
-//!
-//! ### GRBS and RTBL
-//! The **GRBS** section contains a [grid](crate::Grid) of keys for each [square](crate::Square) in the [puzzle](crate::Crossword) that has a [rebus solution](crate::Solution::Rebus).
-//! The actual rebus values themselves are read afterwards in the **RTBL** section.
-//! For a [non-rebus (letter) square](crate::Solution::Letter), a `0` byte is used to indicate no rebus needs to be read in RTBL.
-//! Any square that *does* contain a rebus gets a unique identifying byte key of `n`.
-//!
-//! The **RTBL** section then contains an ASCII-string representing the actual rebuses.
-//! It is read as a [`HashMap<u8, String>`](std::collections::HashMap) and correctly sets a rebus solution for the squares represented in GRBS.
-//! Consider the following example to get an idea of how the GRBS and RTBL sections would be layed out in a `*.puz` file:
-//! ```
-//! use puzzled::crossword::crossword;
-//!
-//! let puzzle = crossword! (
-//!     [C      REBUS1 Y     ]
-//!     [A      .      REBUS1]
-//!     [REBUS2 O      W     ]
-//! );
-//!
-//! // Binary data read in the GRBS and RTBL extras section to represent the puzzle above
-//! // Note that
-//! // - The keys are not necessarily consecutive numbers
-//! // - The same key can be used multiple times in GRBS (e.g. `7`)
-//! // - Keys are always represented with 2 digits, so for 1-9 a leading space is used (e.g. ` 7`)
-//! let grbs = [0, 7, 0, 0, 0, 7, 16, 0, 0];
-//! let rtbl = b" 7:REBUS1;16:REBUS2";
-//! ```
-//!
-//! ### LTIM
-//! The **LTIM** section contains the definition of a [`Timer`](crate::Timer) which represents the time already used solving the [puzzle](crate::Crossword).
-//! Specifically, the following are read
-//! -   A [`Duration`](std::time::Duration) from a *number of elapsed seconds*
-//! -   A [`TimerState`](crate::TimerState) representing whether the timer is active (`0` for [`TimerState::Running`](crate::TimerState::Running) and `1` for [`TimerState::Stopped`](crate::TimerState::Stopped))
-//!
-//! ### GEXT
-//! The **GEXT** sections contains a [grid](crate::Grid) of [styles](crate::CellStyle) that are applied to each of the [squares](crate::Square) in the [puzzle](crate::Crossword).
-//! Each style is represnted with a single [`u8`], where [non-playable squares](crate::Square::Black) always take the value `0`.
-//! For a [cell](crate::Cell), refer to [`CellStyle`](crate::CellStyle) to see which styles are currently supported.
-//! Multiple styles can be set at once as style is represented as (partially complete) bit flags.
-//!
-//! ## Validating checksums
+//! # Validating checksums
 //! The main validation technique for `*.puz` files is to *match given checksums with region checksums*.
 //! Every puzzle contains 3 given checksums in its [header](self#header) that need to be matched.
 //! These are explained in the sections below together with a rough outline of how to calculate and validate them.
@@ -165,9 +51,13 @@
 //! ### CIB
 //! The first checksum is the **CIB** checksum, which is specified in the [header](self#header).
 //! We need to validate it against the bytes that define the `width` and `height` of the puzzle:
-//! ```compile_fail
-//! let cib_checksum = find_region_checksum(header.width_height_region, 0);
-//! assert_eq!(cib_checksum, header.cib_checksum);
+//! ```no_run
+//! use puzzled::puz::{find_region_checksum, Header};
+//!
+//! fn validate_cib_checksum<'a>(header: &Header) {
+//!     let cib_checksum = find_region_checksum(&header.cib_region, 0);
+//!     assert_eq!(cib_checksum, header.cib_checksum);
+//! }
 //! ```
 //!
 //! ### File
@@ -256,19 +146,17 @@ pub mod format;
 pub mod read;
 pub mod write;
 
-pub use read::{PuzRead, PuzReader, build_string, windows_1252_to_char};
+pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
 pub(crate) use read::{PuzState, Warning};
 pub use write::{PuzWrite, PuzWriter};
 
 mod checksums;
-mod error;
 mod extras;
 mod grids;
 mod header;
 mod strings;
 
 pub use checksums::*;
-pub use error::*;
 pub use extras::*;
 pub use grids::*;
 pub use header::*;
@@ -290,11 +178,9 @@ pub trait Puz: Sized {
     ) -> read::Result<Self>;
 }
 
-pub(crate) const FILE_MAGIC: &str = "ACROSS&DOWN\0";
-
-use std::ops::Range;
-
-pub type Span = Range<usize>;
+pub(crate) trait Context<T, E> {
+    fn context<S: Into<String>>(self, context: S) -> std::result::Result<T, E>;
+}
 
 pub trait SizeCheck {
     fn check_size(&self) -> format::Result<()>;
