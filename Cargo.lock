@@ -1736,6 +1736,7 @@ version = "0.1.0"
 dependencies = [
  "derive_more",
  "miette",
+ "puzzled",
  "puzzled_core",
  "rstest",
  "serde",
@@ -1750,6 +1751,7 @@ dependencies = [
  "bitvec",
  "derive_more",
  "image",
+ "puzzled",
  "puzzled_core",
  "rstest",
  "serde",

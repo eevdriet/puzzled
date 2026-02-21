@@ -18,6 +18,7 @@ tracing = {workspace = true}
 puzzled_core = { path = "../puzzled_core"}
 
 [dev-dependencies]
+puzzled = {path = "../puzzled", features = ["nonogram"]}
 rstest = {workspace = true}
 tracing-test = {workspace = true}
 

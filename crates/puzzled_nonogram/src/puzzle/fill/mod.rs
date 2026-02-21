@@ -53,6 +53,43 @@ impl Fill {
             },
         }
     }
+
+    pub const fn from_char_const(char: char) -> Self {
+        let id = match char {
+            // Non-colors
+            '.' => return Fill::Blank,
+            '0' | 'x' | 'X' => return Fill::Cross,
+            // 1. Numbers
+            col @ '1'..='9' => (col as u8 - b'1') as usize,
+            // 2. Lowercase letters
+            col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
+            col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
+            // 3. Uppercase letters
+            col @ 'A'..'X' => (col as u8 - b'A' + 9 + 25 + 23) as usize,
+            col @ 'Y'..='Z' => (col as u8 - b'Y' + 9 + 25 + 25) as usize,
+
+            // Unknown
+            _ => {
+                panic!("Found unknown character to represent Fill::Color");
+            }
+        };
+
+        Fill::Color(id)
+    }
+
+    pub const fn from_str_const(str: &str) -> Self {
+        let bytes = str.as_bytes();
+
+        if bytes.is_empty() {
+            return Fill::Blank;
+        }
+
+        if bytes.len() != 1 {
+            panic!("Fill must be represented by 0 (blank) or 1 characters");
+        }
+
+        Self::from_char_const(bytes[0] as char)
+    }
 }
 
 impl From<Fill> for Option<usize> {

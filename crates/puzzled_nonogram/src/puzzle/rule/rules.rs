@@ -2,7 +2,7 @@ use derive_more::Debug;
 
 #[cfg(feature = "serde")]
 use crate::Run;
-use crate::{Nonogram, Rule};
+use crate::{Fill, Fills, Rule};
 
 #[derive(Debug, Default, Clone)]
 pub struct Rules {
@@ -15,24 +15,16 @@ impl Rules {
         Self { rows, cols }
     }
 
-    pub fn from_puzzle(puzzle: &Nonogram) -> Self {
-        let rows = puzzle
-            .fills()
+    pub fn from_fills(fills: &Fills) -> Self {
+        let rows: Vec<_> = fills
             .iter_rows()
-            .map(|row| {
-                let fills = row.copied();
-                Rule::from_fills(fills)
-            })
-            .collect::<Vec<_>>();
+            .map(|row| Rule::from_fills(row.cloned()))
+            .collect();
 
-        let cols = puzzle
-            .fills()
+        let cols: Vec<_> = fills
             .iter_cols()
-            .map(|col| {
-                let fills = col.copied();
-                Rule::from_fills(fills)
-            })
-            .collect::<Vec<_>>();
+            .map(|col| Rule::from_fills(col.cloned()))
+            .collect();
 
         Self { rows, cols }
     }
@@ -42,6 +34,20 @@ impl Rules {
     }
     pub fn col(&self, c: u16) -> &Rule {
         &self.cols[c as usize]
+    }
+
+    pub fn colors(&self) -> Vec<Fill> {
+        let mut colors: Vec<_> = self
+            .rows
+            .iter()
+            .flat_map(|rule| rule.iter_colors())
+            .chain(self.cols.iter().flat_map(|rule| rule.iter_colors()))
+            .collect();
+
+        colors.dedup();
+        colors.sort();
+
+        colors
     }
 
     #[cfg(feature = "serde")]

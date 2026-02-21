@@ -13,7 +13,7 @@ use crate::{CellStyle, Solution};
 /// When calling these methods, the square [style](CellStyle) is updated to match the current correctness.
 /// The correctness of the entry can be checked with [`is_correct`](Self::is_correct)
 /// ```
-/// use puzzled_crossword::{cell, Cell, Solution, CellStyle};
+/// use puzzled::crossword::{cell, Cell, Solution, CellStyle};
 ///
 /// // Cell creation
 /// let mut letter = cell!('A');

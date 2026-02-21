@@ -20,7 +20,7 @@ impl Clues {
     /// Returns an iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -49,7 +49,7 @@ impl Clues {
     /// Returns a mutable iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, Direction::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]
@@ -78,7 +78,7 @@ impl Clues {
     /// Returns an iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, Direction::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -107,7 +107,7 @@ impl Clues {
     /// Returns a mutable iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled_crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, Direction::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]

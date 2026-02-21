@@ -13,6 +13,20 @@ pub struct Grid<T> {
 }
 
 impl<T> Grid<T> {
+    /// Create a new grid filled with the result of the given function
+    ///
+    /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
+    pub fn new_with<F>(rows: usize, cols: usize, value_fn: F) -> Option<Self>
+    where
+        F: FnMut() -> T,
+    {
+        let size = rows.checked_mul(cols)?;
+
+        let mut data = Vec::with_capacity(size);
+        data.fill_with(value_fn);
+        Some(Self { rows, cols, data })
+    }
+
     /// Create a grid from a data [`Vec<T>`] and the number of columns to use
     ///
     /// Returns [`None`] if the data does not divide the number of columns
@@ -188,18 +202,28 @@ where
 
 impl<T> Grid<T>
 where
+    T: Clone,
+{
+    /// Create a new grid filled with the given value
+    ///
+    /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
+    pub fn new_from(rows: usize, cols: usize, value: T) -> Option<Self> {
+        let size = rows.checked_mul(cols)?;
+
+        let data = vec![value; size];
+        Some(Self { rows, cols, data })
+    }
+}
+
+impl<T> Grid<T>
+where
     T: Default,
 {
-    /// Create a new grid with a given size with [`T::Default`][Default]
+    /// Create a new grid filled with [`T::Default`][Default]
     ///
     /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
     pub fn new(rows: usize, cols: usize) -> Option<Self> {
-        let size = rows.checked_mul(cols)?;
-
-        let mut data = Vec::with_capacity(size);
-        data.fill_with(T::default);
-
-        Some(Self { rows, cols, data })
+        Self::new_with(rows, cols, T::default)
     }
 }
 

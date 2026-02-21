@@ -123,7 +123,7 @@ impl Crossword {
     ///
     /// Note that this includes blank squares
     /// ```
-    /// use puzzled_crossword::crossword;
+    /// use puzzled::crossword::crossword;
     ///
     /// let puzzle = crossword! (
     ///    [A B C]
@@ -140,7 +140,7 @@ impl Crossword {
     ///
     /// Note that this includes blank squares
     /// ```
-    /// use puzzled_crossword::crossword;
+    /// use puzzled::crossword::crossword;
     ///
     /// let puzzle = crossword! (
     ///    [A B C]

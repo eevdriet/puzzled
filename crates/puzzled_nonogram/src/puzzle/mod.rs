@@ -1,13 +1,14 @@
 mod error;
 mod fill;
 mod find;
+mod macros;
 mod rule;
 mod run;
 mod style;
 
 use bitvec::vec::BitVec;
 use derive_more::{Index, IndexMut};
-use puzzled_core::Line;
+use puzzled_core::{Grid, Line};
 use std::collections::HashMap;
 
 pub use error::*;
@@ -34,6 +35,20 @@ impl Nonogram {
             rules,
             colors,
         }
+    }
+
+    pub fn empty_from_rules(rules: Rules, colors: Vec<Color>) -> Option<Self> {
+        // Start with a blank grid of the same dimensions as the rules
+        let grid = Grid::new_from(rules.rows.len(), rules.cols.len(), Fill::Blank)?;
+
+        let fills = Fills::new(grid);
+        let nonogram = Self {
+            fills,
+            rules,
+            colors,
+        };
+
+        Some(nonogram)
     }
 
     pub fn fills(&self) -> &Fills {
