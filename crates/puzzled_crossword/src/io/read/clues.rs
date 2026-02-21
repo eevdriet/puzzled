@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use crate::io::{
     PuzReader, SECTION_SEPARATOR, Span, Strings, TxtReader, TxtState, build_string, format, read,
 };
-use crate::{Clue, ClueSpec, Clues, Direction, Squares, SquaresExtension};
+use crate::{Clue, ClueSpec, Clues, Direction, Squares};
 
 impl PuzReader {
     pub(crate) fn read_clues(&self, squares: &Squares, strings: &Strings) -> read::Result<Clues> {

@@ -75,11 +75,11 @@ impl<'a> TxtReader {
             .ok_or(err(GridsError::InvalidDimensions { rows, cols: 0 }))
             .context(context.to_string())?;
 
-        let squares = Squares::from_vec(squares, cols as usize)
+        let squares = Grid::from_vec(squares, cols as usize)
             .ok_or(err(GridsError::InvalidDimensions { rows, cols }))
             .context(context.to_string())?;
 
-        Ok(squares)
+        Ok(Squares::new(squares))
     }
 
     fn parse_row(row: u8, line: &str) -> read::Result<Vec<Square>> {

@@ -1,3 +1,5 @@
+use puzzled_core::Grid;
+
 use crate::io::{Extras, Grids, MISSING_ENTRY_CELL, PuzReader, read, windows_1252_to_char};
 use crate::puzzle::{Cell, Solution, Squares};
 
@@ -35,7 +37,7 @@ impl PuzReader {
         }
 
         let squares =
-            Squares::from_vec(cells, grids.solution.cols()).expect("Read correct length region");
-        Ok(squares)
+            Grid::from_vec(cells, grids.solution.cols()).expect("Read correct length region");
+        Ok(Squares::new(squares))
     }
 }

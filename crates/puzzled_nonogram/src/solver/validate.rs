@@ -147,7 +147,7 @@ impl Solver {
                 }
 
                 // Option 1: skip next position
-                if offset < n && matches!(puzzle[pos.into()], Fill::Cross | Fill::Blank) {
+                if offset < n && matches!(puzzle[pos.absolute()], Fill::Cross | Fill::Blank) {
                     dp[offset + 1][r] = true;
                 }
 
@@ -175,7 +175,7 @@ impl Solver {
                 let mut ok = true;
 
                 for idx in 0..len {
-                    match puzzle[(pos + idx).into()] {
+                    match puzzle[(pos + idx).absolute()] {
                         Fill::Cross => {
                             ok = false;
                             break;
@@ -194,7 +194,7 @@ impl Solver {
 
                 // Make sure to leave a space between runs with the same (colored) fill
                 if next_offset < n
-                    && matches!(puzzle[next_pos.into()], col @Fill::Color(_) if col == run.fill)
+                    && matches!(puzzle[next_pos.absolute()], col @Fill::Color(_) if col == run.fill)
                 {
                     continue;
                 }

@@ -44,7 +44,8 @@ impl Rules {
         &self.cols[c as usize]
     }
 
-    pub fn from_serde(rules: SerdeRules, row_count: usize, col_count: usize) -> Self {
+    #[cfg(feature = "serde")]
+    pub(crate) fn from_serde(rules: SerdeRules, row_count: usize, col_count: usize) -> Self {
         let rows: Vec<_> = rules
             .rows
             .into_iter()
@@ -60,7 +61,7 @@ impl Rules {
     }
 
     #[cfg(feature = "serde")]
-    pub fn to_serde(&self) -> SerdeRules {
+    pub(crate) fn to_serde(&self) -> SerdeRules {
         let rows: Vec<_> = self.rows.iter().map(|rule| rule.runs.clone()).collect();
         let cols: Vec<_> = self.cols.iter().map(|rule| rule.runs.clone()).collect();
 

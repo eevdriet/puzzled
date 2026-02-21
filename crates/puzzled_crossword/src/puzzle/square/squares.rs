@@ -1,27 +1,19 @@
 use std::ops;
 
+use derive_more::{Deref, DerefMut};
 use puzzled_core::{Grid, Offset, Position};
 
 use crate::{Crossword, Direction, Square};
 
-pub type Squares = Grid<Square>;
+#[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone)]
+pub struct Squares(Grid<Square>);
 
-pub(crate) trait SquaresExtension {
-    fn starts_in_dir(&self, pos: Position, dir: Direction) -> bool;
-    fn find_playable_len(&self, pos: Position, dir: Direction) -> u8;
-}
+impl Squares {
+    pub fn new(squares: Grid<Square>) -> Self {
+        Self(squares)
+    }
 
-#[cfg(feature = "serde")]
-pub(crate) trait SquaresSerdeExtension
-where
-    Self: Sized,
-{
-    fn from_data(data: SquaresData, cols: usize) -> Result<Self, String>;
-    fn to_data(&self) -> SquaresData;
-}
-
-impl SquaresExtension for Squares {
-    fn starts_in_dir(&self, pos: Position, dir: Direction) -> bool {
+    pub(crate) fn starts_in_dir(&self, pos: Position, dir: Direction) -> bool {
         let is_blank = |pos: Position| self.get_fill(pos).is_none();
 
         if is_blank(pos) {
@@ -34,7 +26,7 @@ impl SquaresExtension for Squares {
         }
     }
 
-    fn find_playable_len(&self, pos: Position, dir: Direction) -> u8 {
+    pub(crate) fn find_playable_len(&self, pos: Position, dir: Direction) -> u8 {
         let offset = match dir {
             Direction::Across => Offset::RIGHT,
             Direction::Down => Offset::DOWN,
@@ -49,14 +41,12 @@ impl SquaresExtension for Squares {
             })
             .count() as u8
     }
-}
 
-#[cfg(feature = "serde")]
-impl SquaresSerdeExtension for Squares {
-    fn from_data(data: SquaresData, cols: usize) -> Result<Self, String> {
+    #[cfg(feature = "serde")]
+    pub(crate) fn from_data(data: SerdeSquares, cols: usize) -> Result<Self, String> {
         use crate::{CellStyle, EMPTY_SQUARE};
 
-        let SquaresData {
+        let SerdeSquares {
             solution,
             state,
             styles,
@@ -100,14 +90,16 @@ impl SquaresSerdeExtension for Squares {
             })
             .collect();
 
-        let squares: Squares = Squares::from_vec(squares, cols).ok_or(format!(
+        let grid = Grid::from_vec(squares, cols).ok_or(format!(
             "Grid length {len} does not divide the number of columns {cols}"
         ))?;
+        let squares = Squares::new(grid);
 
         Ok(squares)
     }
 
-    fn to_data(&self) -> SquaresData {
+    #[cfg(feature = "serde")]
+    pub(crate) fn to_data(&self) -> SerdeSquares {
         use crate::{CellStyle, EMPTY_SQUARE};
 
         let solution: Vec<_> = self
@@ -142,7 +134,7 @@ impl SquaresSerdeExtension for Squares {
                 .collect::<Vec<_>>(),
         );
 
-        SquaresData {
+        SerdeSquares {
             solution,
             state,
             styles,
@@ -226,7 +218,7 @@ impl ops::IndexMut<Position> for Crossword {
 
 #[cfg(feature = "serde")]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub(crate) struct SquaresData {
+pub(crate) struct SerdeSquares {
     pub(crate) solution: Vec<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

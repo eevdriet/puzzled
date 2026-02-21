@@ -205,8 +205,6 @@ impl Crossword {
         last: &Clue,
         iter: &mut impl Iterator<Item = ClueSpec>,
     ) -> Option<Clue> {
-        use crate::SquaresExtension;
-
         // Cannot position clue at the same start as the last clue in the same direction
         if num > 1 && last.start == start && last.direction() == direction {
             return None;

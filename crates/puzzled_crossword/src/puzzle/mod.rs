@@ -253,7 +253,7 @@ mod serde_impl {
     use puzzled_core::Timer;
     use serde::{Deserialize, Serialize, de::Error};
 
-    use crate::{Clues, CluesData, Crossword, Squares, SquaresData, SquaresSerdeExtension};
+    use crate::{Clues, CluesData, Crossword, SerdeSquares, Squares};
 
     #[derive(Serialize, Deserialize)]
     struct CrosswordData {
@@ -261,7 +261,7 @@ mod serde_impl {
         cols: usize,
 
         #[serde(flatten)]
-        squares: SquaresData,
+        squares: SerdeSquares,
 
         clues: Option<CluesData>,
 
