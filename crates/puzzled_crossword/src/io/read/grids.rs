@@ -5,29 +5,7 @@ use crate::io::{
 };
 use crate::{Cell, Square, Squares};
 
-impl Grids {
-    pub(crate) fn read_from<R: PuzRead>(
-        reader: &mut R,
-        width: u8,
-        height: u8,
-    ) -> read::Result<Self> {
-        let uwidth = width as usize;
-        let size = uwidth * usize::from(height);
-
-        let solution = reader.read_vec(size).context("Solution grid")?;
-        let solution = Grid::from_vec(solution, uwidth).expect("Read correct length");
-
-        let state = reader.read_vec(size).context("State grid")?;
-        let state = Grid::from_vec(state, uwidth).expect("Read correct length");
-
-        Ok(Self {
-            solution,
-            state,
-            width,
-            height,
-        })
-    }
-}
+impl Grids {}
 
 impl<'a> TxtReader {
     pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> read::Result<Squares> {

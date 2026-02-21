@@ -1,34 +1,6 @@
 use crate::Crossword;
 use crate::io::{Context, PuzRead, Strings, TxtReader, TxtState, format, is_valid_version, read};
 
-impl Strings {
-    pub(crate) fn read_from<R: PuzRead>(reader: &mut R, clue_count: u16) -> read::Result<Self> {
-        let title = reader.read_str0().context("Title")?;
-        let author = reader.read_str0().context("Author")?;
-        let copyright = reader.read_str0().context("Copyright")?;
-
-        // Sequentially parse the clues
-        let mut clues = Vec::with_capacity(clue_count as usize);
-
-        for num in 1..=clue_count {
-            let context = format!("Clue #{num}");
-            let clue = reader.read_str0().context(context)?;
-
-            clues.push(clue);
-        }
-
-        let notes = reader.read_str0().context("Notes")?;
-
-        Ok(Strings {
-            title,
-            author,
-            copyright,
-            notes,
-            clues,
-        })
-    }
-}
-
 impl<'a> TxtReader {
     pub(crate) fn parse_strings(
         &self,

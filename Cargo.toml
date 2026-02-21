@@ -6,7 +6,7 @@ members = [
     "crates/puzzled_core",
     "crates/puzzled_crossword",
     "crates/puzzled_nonogram",
-    "crates/puzzled_nonogram_tui",
+    "crates/puzzled_nonogram_tui", "crates/puzzled_puz",
 ]
 
 [workspace.dependencies]

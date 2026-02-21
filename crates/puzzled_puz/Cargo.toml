@@ -1,0 +1,12 @@
+[package]
+name = "puzzled_puz"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = {workspace = true}
+serde = {workspace = true, optional = true}
+puzzled_core = {path = "../puzzled_core/"}
+
+[features]
+serde = ["dep:serde"]

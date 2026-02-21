@@ -44,7 +44,9 @@ impl Squares {
 
     #[cfg(feature = "serde")]
     pub(crate) fn from_data(data: SerdeSquares, cols: usize) -> Result<Self, String> {
-        use crate::{CellStyle, EMPTY_SQUARE};
+        use puzzled_core::CellStyle;
+
+        use crate::EMPTY_SQUARE;
 
         let SerdeSquares {
             solution,
@@ -100,7 +102,9 @@ impl Squares {
 
     #[cfg(feature = "serde")]
     pub(crate) fn to_data(&self) -> SerdeSquares {
-        use crate::{CellStyle, EMPTY_SQUARE};
+        use puzzled_core::CellStyle;
+
+        use crate::EMPTY_SQUARE;
 
         let solution: Vec<_> = self
             .iter()
@@ -225,5 +229,5 @@ pub(crate) struct SerdeSquares {
     pub(crate) state: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) styles: Option<Vec<crate::CellStyle>>,
+    pub(crate) styles: Option<Vec<puzzled_core::CellStyle>>,
 }

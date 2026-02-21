@@ -2,7 +2,7 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::io::{Context, format};
+use crate::{Context, format};
 
 #[derive(Debug, Error)]
 #[error("{kind} while writing '{context}'")]

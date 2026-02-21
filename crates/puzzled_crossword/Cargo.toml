@@ -13,10 +13,12 @@ miette = { workspace = true, optional = true}
 derive_more = {workspace = true}
 thiserror = { workspace = true}
 puzzled_core = { path = "../puzzled_core"}
+puzzled_puz = { path = "../puzzled_puz/", optional = true}
 
 [features]
 default = []
 serde = ["dep:serde"]
+puz = ["dep:puzzled_puz"]
 miette = ["dep:miette"]
 
 [dev-dependencies]

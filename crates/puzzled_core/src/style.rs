@@ -1,4 +1,3 @@
-use crate::Cell;
 use std::ops;
 
 /// Style that changes the way a [cell](Cell) is displayed
@@ -133,6 +132,7 @@ impl ops::BitAndAssign<CellStyle> for CellStyle {
 ///     self.style & CellStyle::REVEALED != CellStyle::EMPTY
 /// }
 /// ```
+#[macro_export]
 macro_rules! check_style {
     ($variant:expr, $style_fn:ident()) => {
         #[doc = concat!("Checks whether [`", stringify!($variant), "`]) is set.")]
@@ -140,13 +140,6 @@ macro_rules! check_style {
             self.style() & $variant != CellStyle::EMPTY
         }
     };
-}
-
-impl Cell {
-    check_style!(CellStyle::REVEALED, is_revealed());
-    check_style!(CellStyle::CIRCLED, is_circled());
-    check_style!(CellStyle::INCORRECT, is_incorrect());
-    check_style!(CellStyle::PREVIOUSLY_INCORRECT, was_incorrect());
 }
 
 #[cfg(feature = "serde")]

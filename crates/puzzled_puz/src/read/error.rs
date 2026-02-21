@@ -1,14 +1,10 @@
 use puzzled_core::Position;
 use thiserror::Error;
 
-use crate::io::{FILE_MAGIC, Span, error::Context, format};
+use crate::{FILE_MAGIC, Span, error::Context, format};
 
 #[derive(Debug, Error)]
-#[cfg_attr(
-    not(feature = "miette"),
-    error("{kind} while reading '{context}' at {span:?}")
-)]
-#[cfg_attr(feature = "miette", error("{kind} while reading '{context}'"))]
+#[error("{kind} while reading '{context}'")]
 pub struct Error {
     /// Where the error occurred
     pub span: Span,
@@ -73,17 +69,3 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 /// [Errors](struct@Error) that can be recovered from when reading in non-strict mode
 pub type Warning = Error;
-
-#[cfg(feature = "miette")]
-mod miette {
-    use crate::io::ReadError;
-    use miette::{Diagnostic, LabeledSpan};
-
-    impl Diagnostic for ReadError {
-        fn labels(&self) -> Option<Box<dyn Iterator<Item = LabeledSpan> + '_>> {
-            let span = LabeledSpan::at(self.span.clone(), "here");
-
-            Some(Box::new(std::iter::once(span)))
-        }
-    }
-}

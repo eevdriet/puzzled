@@ -24,3 +24,6 @@ serde = [
     "puzzled_crossword?/serde",
     "puzzled_nonogram?/serde"
 ]
+puz = [
+    "puzzled_crossword?/puz"
+]

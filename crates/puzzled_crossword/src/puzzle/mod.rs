@@ -7,6 +7,7 @@ mod solve;
 mod square;
 
 pub use clue::*;
+use puzzled_puz::Version;
 pub use square::*;
 
 use puzzled_core::Timer;
@@ -72,10 +73,10 @@ pub struct Crossword {
     squares: Squares,
     clues: Clues,
     timer: Timer,
+    version: Option<Version>,
 
-    // Information
+    // Metadata
     author: Option<String>,
-    version: Option<String>,
     copyright: Option<String>,
     notes: Option<String>,
     title: Option<String>,
@@ -187,17 +188,22 @@ impl Crossword {
         &mut self.timer
     }
 
+    /// Version of the puzzle
+    pub fn version(&self) -> Option<Version> {
+        self.version
+    }
+
+    /// Include puzzle version
+    pub fn with_version(mut self, version: Version) -> Self {
+        self.version = Some(version);
+        self
+    }
+
     string_prop!(
         title,
         "Title of the puzzle",
         with_title,
         "Include puzzle title"
-    );
-    string_prop!(
-        version,
-        "Version of the puzzle",
-        with_version,
-        "Include puzzle version"
     );
 }
 
@@ -251,6 +257,7 @@ impl fmt::Display for Crossword {
 #[cfg(feature = "serde")]
 mod serde_impl {
     use puzzled_core::Timer;
+    use puzzled_puz::Version;
     use serde::{Deserialize, Serialize, de::Error};
 
     use crate::{Clues, CluesData, Crossword, SerdeSquares, Squares};
@@ -270,6 +277,9 @@ mod serde_impl {
         timer: Option<Timer>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
+        version: Option<Version>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         author: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         copyright: Option<String>,
@@ -277,8 +287,6 @@ mod serde_impl {
         notes: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        version: Option<String>,
     }
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -308,7 +316,7 @@ mod serde_impl {
                 copyright: to_owned(self.copyright()),
                 notes: to_owned(self.notes()),
                 title: to_owned(self.title()),
-                version: to_owned(self.version()),
+                version: self.version(),
             }
             .serialize(serializer)
         }

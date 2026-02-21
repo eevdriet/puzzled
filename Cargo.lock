@@ -1738,6 +1738,7 @@ dependencies = [
  "miette",
  "puzzled",
  "puzzled_core",
+ "puzzled_puz",
  "rstest",
  "serde",
  "serde_json",
@@ -1777,6 +1778,15 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
+]
+
+[[package]]
+name = "puzzled_puz"
+version = "0.1.0"
+dependencies = [
+ "puzzled_core",
+ "serde",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

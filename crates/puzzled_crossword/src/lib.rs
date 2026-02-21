@@ -45,4 +45,4 @@ pub mod puzzle;
 pub use puzzled_core::*;
 
 #[doc(hidden)]
-pub use {io::*, puzzle::*};
+pub use puzzle::*;

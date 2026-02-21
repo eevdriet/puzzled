@@ -58,5 +58,8 @@ mod tests {
             [1 . . . 9]
             [1 . . . 1]
         );
+
+        assert_eq!(nonogram.rows(), 3);
+        assert_eq!(nonogram.cols(), 5);
     }
 }

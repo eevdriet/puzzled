@@ -1,11 +1,8 @@
-use crate::{
-    Crossword, SizeCheck, Squares,
-    io::{format, windows_1252_to_char},
-};
+use crate::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
 use puzzled_core::Grid;
 
-pub(crate) const NON_PLAYABLE_CELL: char = '.';
-pub(crate) const MISSING_ENTRY_CELL: char = '-';
+pub const NON_PLAYABLE_CELL: char = '.';
+pub const MISSING_ENTRY_CELL: char = '-';
 
 #[doc(hidden)]
 #[derive(Debug)]
@@ -19,12 +16,6 @@ pub struct Grids {
 
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum GridsError {
-    #[error(
-        "({rows}R, {cols}C) is too large to represent a crossword grid. Make sure rows, cols <= {}",
-        u8::MAX
-    )]
-    Oversized { rows: usize, cols: usize },
-
     #[error("Row {row} in the grid has an invalid width of {found} (expected {expected})")]
     InvalidWidth { row: u8, found: u8, expected: u8 },
 
@@ -50,52 +41,8 @@ pub enum GridsError {
     },
 }
 
-impl SizeCheck for Squares {
-    fn check_size(&self) -> format::Result<()> {
-        let rows = self.rows();
-        let cols = self.cols();
-        let max_size = u8::MAX as usize;
-
-        if cols > max_size || rows > max_size {
-            return Err(format::Error::Grids(GridsError::Oversized { rows, cols }));
-        }
-
-        Ok(())
-    }
-}
-
 impl Grids {
-    pub(crate) fn from_puzzle(puzzle: &Crossword) -> format::Result<Self> {
-        puzzle.squares().check_size()?;
-
-        let rows = puzzle.rows();
-        let cols = puzzle.cols();
-
-        let solution = puzzle.squares().map_ref(|square| match square {
-            Some(cell) => cell.solution().to_string().chars().next().unwrap_or('\0') as u8,
-            _ => NON_PLAYABLE_CELL as u8,
-        });
-
-        let state = puzzle.squares().map_ref(|square| match square {
-            Some(cell) => match cell.entry() {
-                Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL) as u8,
-                None => MISSING_ENTRY_CELL as u8,
-            },
-            _ => NON_PLAYABLE_CELL as u8,
-        });
-
-        let grids = Grids {
-            solution,
-            state,
-            width: cols as u8,
-            height: rows as u8,
-        };
-        grids.validate()?;
-
-        Ok(grids)
-    }
-
-    fn validate(&self) -> format::Result<()> {
+    pub fn validate(&self) -> format::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
         let err = |kind: GridsError| format::Error::Grids(kind);
@@ -139,6 +86,43 @@ impl Grids {
                 }));
             }
         }
+
+        Ok(())
+    }
+}
+
+/// # Read
+impl Grids {
+    pub(crate) fn read_from<R>(reader: &mut R, width: u8, height: u8) -> read::Result<Self>
+    where
+        R: PuzRead,
+    {
+        let uwidth = width as usize;
+        let size = uwidth * usize::from(height);
+
+        let solution = reader.read_vec(size).context("Solution grid")?;
+        let solution = Grid::from_vec(solution, uwidth).expect("Read correct length");
+
+        let state = reader.read_vec(size).context("State grid")?;
+        let state = Grid::from_vec(state, uwidth).expect("Read correct length");
+
+        Ok(Self {
+            solution,
+            state,
+            width,
+            height,
+        })
+    }
+}
+
+/// # Write
+impl Grids {
+    pub(crate) fn write_with<W: PuzWrite>(&self, writer: &mut W) -> write::Result<()> {
+        writer
+            .write_all(self.solution.data())
+            .context("Solution grid")?;
+
+        writer.write_all(self.state.data()).context("State grid")?;
 
         Ok(())
     }

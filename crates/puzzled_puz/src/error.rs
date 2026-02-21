@@ -1,4 +1,4 @@
-use crate::io::{format, read, write};
+use crate::{format, read, write};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

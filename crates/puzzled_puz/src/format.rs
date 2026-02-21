@@ -1,4 +1,4 @@
-use crate::io::{Context, GridsError, Span, read, write};
+use crate::{Context, GridsError, Span, read, write};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -21,6 +21,13 @@ pub enum Error {
 
     #[error("Found invalid property \"{found}\": {reason}")]
     InvalidProperty { found: String, reason: String },
+
+    #[error("Size of {kind} is overflowing (found {size}, expected <= {max_size})")]
+    SizeOverflow {
+        kind: String,
+        size: usize,
+        max_size: usize,
+    },
 }
 
 pub type Result<T> = core::result::Result<T, Error>;

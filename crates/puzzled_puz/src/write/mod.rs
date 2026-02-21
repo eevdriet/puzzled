@@ -1,4 +1,4 @@
-//! Defines all functionality for writing and serializing a [puzzle](Crossword) into a valid [*.puz file][PUZ google spec]
+//! Defines all functionality for writing and serializing a generic [puzzle](Puz) into a valid [*.puz file][PUZ google spec]
 //!
 //! # Usage
 //! The primary type for writing out [puzzles](Crossword) is the [`Writer`], which writes to a [`Vec<T>`].
@@ -9,21 +9,13 @@
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 
-mod checksums;
 mod error;
-mod extras;
-mod grids;
-mod header;
-mod strings;
 
 pub use error::*;
 
 use std::io::{self, Write};
 
-use crate::{
-    Crossword,
-    io::{Context, Extras, Grids, Header, Strings, write},
-};
+use crate::{Context, Puz};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -79,12 +71,16 @@ impl PuzWriter {
         Self {}
     }
 
-    pub fn write<W: PuzWrite>(&self, writer: &mut W, puzzle: &Crossword) -> write::Result<()> {
+    pub fn write<W, P>(&self, writer: &mut W, puzzle: &P) -> Result<()>
+    where
+        W: PuzWrite,
+        P: Puz,
+    {
         // Construct the individual sections from the puzzle
-        let mut header = Header::from_puzzle(puzzle).context("Header")?;
-        let grids = Grids::from_puzzle(puzzle).context("Grids")?;
-        let strings = Strings::from_puzzle(puzzle).context("Strings")?;
-        let extras = Extras::from_puzzle(puzzle).context("Extras")?;
+        let mut header = puzzle.to_header().context("Header")?;
+        let grids = puzzle.to_grids().context("Grids")?;
+        let strings = puzzle.to_strings().context("Strings")?;
+        let extras = puzzle.to_extras().context("Extras")?;
 
         self.write_checksums(&mut header, &grids, &strings);
 

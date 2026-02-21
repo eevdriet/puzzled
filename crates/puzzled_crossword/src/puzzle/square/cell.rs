@@ -1,6 +1,8 @@
 use std::fmt;
 
-use crate::{CellStyle, Solution};
+use puzzled_core::{CellStyle, check_style};
+
+use crate::Solution;
 
 /// Playable [square](crate::Square) that the user can enter their [solution](Solution) into
 ///
@@ -145,6 +147,13 @@ impl Cell {
             }
         }
     }
+}
+
+impl Cell {
+    check_style!(CellStyle::REVEALED, is_revealed());
+    check_style!(CellStyle::CIRCLED, is_circled());
+    check_style!(CellStyle::INCORRECT, is_incorrect());
+    check_style!(CellStyle::PREVIOUSLY_INCORRECT, was_incorrect());
 }
 
 impl PartialEq for Cell {
