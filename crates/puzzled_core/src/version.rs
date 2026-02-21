@@ -31,7 +31,10 @@ impl Version {
             return Err(err);
         }
 
-        Ok(Self { major, minor })
+        Ok(Self {
+            major: major - b'0',
+            minor: minor - b'0',
+        })
     }
 
     pub fn new_unchecked(bytes: &[u8]) -> Self {
@@ -42,7 +45,7 @@ impl Version {
     }
 
     pub fn as_bytes(&self) -> [u8; 4] {
-        [self.major, b'.', self.minor, b'\0']
+        [self.major + b'0', b'.', self.minor + b'0', b'\0']
     }
 }
 

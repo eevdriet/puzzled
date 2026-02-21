@@ -10,16 +10,13 @@ pub struct TxtReader;
 
 impl<'a> TxtReader {
     pub fn read(&self, input: &'a str) -> text::Result<Crossword> {
-        let mut state = TxtState {
-            lines: input.lines(),
-            pos: 0,
-            len: None,
-        };
+        let mut state = TxtState::new(input);
 
         let squares = self.parse_grid(&mut state)?;
         let mut puzzle = Crossword::from_squares(squares);
 
         let clues = self.parse_clues(&mut state)?;
+        eprintln!("Clues: {clues:?}");
         puzzle.insert_clues(clues);
 
         puzzle = self.parse_strings(puzzle, &mut state)?;
@@ -94,14 +91,20 @@ impl<'a> TxtReader {
         let mut cols = None;
         let mut rows = 0;
 
-        while let Some(line) = state.next() {
+        while let Some(line) = state.peek() {
             let line = line.trim();
 
             // Skip empty lines and stop parsing grid at separator
             if line.is_empty() {
+                state.next();
                 continue;
             }
 
+            if !line.starts_with("[") {
+                break;
+            }
+
+            let line = state.next().expect("Already peeked").trim();
             rows += 1;
 
             // Parse the next row and verify its width
@@ -161,14 +164,27 @@ impl<'a> TxtReader {
             reason: reason.to_string(),
         };
 
-        while let Some(line) = state.next() {
+        while let Some(line) = state.peek() {
             let line = line.trim();
+            eprintln!("Clue line: {line}");
 
-            // Skip empty lines and stop parsing grid at separator
+            // Skip empty lines and stop parsing when no more list items `-` found
             if line.is_empty() {
+                state.next();
                 continue;
             }
 
+            if !line.starts_with("-") {
+                break;
+            }
+
+            let line = state.next().expect("Already peeked").trim();
+            let line = match line.strip_prefix("-") {
+                Some(line) => line,
+                _ => break,
+            };
+
+            // Validate direction/text separation
             let (dir_str, text) = line
                 .split_once(':')
                 .ok_or(err("Clues should be specified as <dir> : <text>"))?;
