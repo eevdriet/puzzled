@@ -166,16 +166,6 @@ impl<'a> TxtReader {
 
         Ok(puzzle)
     }
-
-    #[cfg(feature = "miette")]
-    fn report<T>(&self, result: Result<T>, input: &str) -> miette::Result<T> {
-        result.map_err(|err| {
-            use miette::{NamedSource, Report};
-
-            let source = NamedSource::new(".txt", input.to_string());
-            Report::new(err).with_source_code(source)
-        })
-    }
 }
 
 pub(crate) fn build_string(bytes: &[u8]) -> String {

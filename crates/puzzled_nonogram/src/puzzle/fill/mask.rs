@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use bitvec::vec::BitVec;
 
 use crate::{ColorId, Fill};
@@ -45,12 +43,9 @@ impl FillMask {
             .filter(|&idx| idx != 0)
             .map(|idx| Fill::Color(idx as ColorId))
     }
-}
 
-impl Deref for FillMask {
-    type Target = BitVec;
-
-    fn deref(&self) -> &Self::Target {
+    // Retrieve the underlying bits of the mask
+    pub fn bits(&self) -> &BitVec {
         &self.0
     }
 }
