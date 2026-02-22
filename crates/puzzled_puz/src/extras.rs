@@ -249,7 +249,7 @@ impl Extras {
         let mut styles = Vec::with_capacity(size);
 
         for (pos, &mask) in bytes.iter_indexed() {
-            let Some(style) = CellStyle::from_mask(mask) else {
+            let Some(style) = CellStyle::from_bits(mask) else {
                 return Err(read::Error {
                     span: Span::default(),
                     kind: read::ErrorKind::InvalidCellStyle { pos, mask },

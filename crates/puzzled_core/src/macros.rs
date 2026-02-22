@@ -123,7 +123,7 @@ macro_rules! cell {
 #[macro_export]
 macro_rules! style {
     () => {
-        $crate::CellStyle::EMPTY
+        $crate::CellStyle::default()
     };
 
     (~ $($rest:tt)*) => {

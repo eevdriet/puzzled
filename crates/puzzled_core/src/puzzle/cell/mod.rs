@@ -4,12 +4,12 @@ mod style;
 
 pub use style::CellStyle;
 
-/// Playable [square](crate::Square) that the user can enter their solution into
+/// Playable square that the user can enter their solution into
 ///
 /// This is the main structure for interacting with a puzzle after it has been constructed.
 /// User can interact with a cell in the following ways:
 /// - [`enter`](Self::enter) a new guess for the solution
-/// - [`clear`](Self::reveal) the current guess
+/// - [`clear`](Self::clear) the current guess and put back the initial entry
 /// - [`reveal`](Self::reveal) what the solution is by automatically entering it
 ///
 /// When calling these methods, the square [style](CellStyle) is updated to match the current correctness.
@@ -50,30 +50,43 @@ pub use style::CellStyle;
 /// // Style
 /// assert!(number.is_circled());
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Cell<S> {
     solution: S,
+
+    // Initial state
+    is_initially_revealed: bool,
+    initial_style: CellStyle,
+
+    // Current state
     entry: Option<S>,
     style: CellStyle,
 }
 
 impl<S> Cell<S> {
-    check_style!(CellStyle::REVEALED, is_revealed());
-    check_style!(CellStyle::CIRCLED, is_circled());
-    check_style!(CellStyle::PREVIOUSLY_INCORRECT, was_incorrect());
+    // Current styles
+    check_style!(CellStyle::REVEALED, style, is_revealed());
+    check_style!(CellStyle::INCORRECT, style, is_incorrect());
+    check_style!(CellStyle::PREVIOUSLY_INCORRECT, style, was_incorrect());
 
-    /// Construct a cell from its [solution](Solution)
+    // Initial styles
+    check_style!(CellStyle::CIRCLED, initial_style, is_circled());
+    check_style!(CellStyle::REVEALED, initial_style, is_initially_revealed());
+
+    /// Create a "simple cell", i.e. one without entries or styles
     pub fn new(solution: S) -> Self {
-        Self::new_styled(solution, CellStyle::default())
+        Self::new_styled(solution, CellStyle::empty())
     }
 
-    /// Construct a cell from its [solution](Solution) and intial [style](CellStyle).
-    /// Note that the style can only be modified through the methods mentioned above
     pub fn new_styled(solution: S, style: CellStyle) -> Self {
+        let is_initially_revealed = style.contains(CellStyle::INITIALLY_REVEALED);
+
         Self {
             solution,
-            style,
+            initial_style: style.initial(),
             entry: None,
+            is_initially_revealed,
+            style,
         }
     }
 
@@ -87,17 +100,19 @@ impl<S> Cell<S> {
         self.entry.as_ref()
     }
 
+    /// Retrieve the initial entry in the cell
+    pub fn initial_entry(&self) -> Option<&S> {
+        self.is_initially_revealed.then_some(&self.solution)
+    }
+
     /// Retrieve the current style of the cell
     pub fn style(&self) -> CellStyle {
         self.style
     }
 
-    /// Clear the current entry.
-    /// Note that this does not apply to revealed solutions
-    pub fn clear(&mut self) {
-        if !self.is_revealed() {
-            self.entry = None
-        }
+    /// Retrieve the initial style of the cell
+    pub fn initial_style(&self) -> CellStyle {
+        self.initial_style
     }
 }
 
@@ -116,7 +131,7 @@ where
 
     /// Enter a new guess to solve the cell
     /// This updates the cell [style](CellStyle) based on the [current](CellStyle::INCORRECT) and [previous](CellStyle::PREVIOUSLY_INCORRECT) correctness.
-    pub fn enter<G: Into<S>>(&mut self, guess: G) -> bool {
+    pub fn enter<E: Into<S>>(&mut self, guess: E) -> bool {
         // Never overwrite revealed solution
         if self.is_revealed() {
             return false;
@@ -127,8 +142,14 @@ where
             self.style |= CellStyle::PREVIOUSLY_INCORRECT;
         }
 
-        // Enter the new guess
+        // Enter the new guess and set its correctness style
         self.entry = Some(guess.into());
+
+        self.style = match self.is_correct() {
+            true => self.style - CellStyle::INCORRECT,
+            false => self.style | CellStyle::INCORRECT,
+        };
+
         true
     }
 }
@@ -143,7 +164,36 @@ where
         self.style |= CellStyle::REVEALED;
         self.entry = Some(self.solution.clone())
     }
+
+    /// Clear the current entry.
+    /// Note that this does not apply to revealed solutions
+    pub fn clear(&mut self) {
+        if !self.is_revealed() {
+            self.entry = None;
+
+            // NOTE: correctness is guaranteed as `init` only allows correct state
+            // Therefore the style will never be incorrect when set to its initial state
+            self.style -= CellStyle::INCORRECT;
+        }
+    }
 }
+
+impl<S> Clone for Cell<S>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            solution: self.solution.clone(),
+            entry: self.entry.clone(),
+            style: self.style,
+            is_initially_revealed: self.is_initially_revealed,
+            initial_style: self.style,
+        }
+    }
+}
+
+impl<S> Copy for Cell<S> where S: Copy {}
 
 impl<S> PartialEq for Cell<S>
 where
@@ -204,9 +254,7 @@ mod serde_impl {
                 }
             }
         }
-    }
 
-    impl<S> Cell<S> {
         pub fn from_serde(cell: SerdeCell<S>) -> Self {
             match cell {
                 SerdeCell::Simple(solution) => Cell::new(solution),
@@ -214,11 +262,17 @@ mod serde_impl {
                     solution,
                     entry,
                     style,
-                } => Cell {
-                    solution,
-                    entry,
-                    style,
-                },
+                } => {
+                    let is_initially_revealed = style.contains(CellStyle::INITIALLY_REVEALED);
+
+                    Self {
+                        solution,
+                        initial_style: style.initial(),
+                        entry,
+                        is_initially_revealed,
+                        style,
+                    }
+                }
             }
         }
     }
@@ -239,7 +293,7 @@ mod serde_impl {
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de, Sol> Deserialize<'de> for Cell<Sol>
     where
-        Sol: Deserialize<'de>,
+        Sol: Deserialize<'de> + Clone,
     {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where

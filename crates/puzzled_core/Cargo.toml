@@ -8,6 +8,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+bitflags = {workspace = true}
 serde = {workspace = true, optional = true}
 derive_more = {workspace = true}
 thiserror = {workspace = true}
