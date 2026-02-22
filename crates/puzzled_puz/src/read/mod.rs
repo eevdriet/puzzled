@@ -9,9 +9,11 @@
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 mod error;
+mod meta;
 mod state;
 
 pub use error::*;
+pub use meta::*;
 pub(crate) use state::*;
 
 use crate::{Extras, Grids, Header, Puz, Strings};

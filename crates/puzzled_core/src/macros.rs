@@ -47,29 +47,29 @@ macro_rules! squares {
 
 #[macro_export]
 macro_rules! metadata {
-    ($puzzle:ident, author : $val:literal) => {
-        $puzzle = $puzzle.with_author($val);
+    ($meta:ident, author : $author:literal) => {
+        $meta.author = Some($author);
     };
 
-    ($puzzle:ident, copyright : $val:literal) => {
-        $puzzle = $puzzle.with_copyright($val);
+    ($meta:ident, copyright : $copyright:literal) => {
+        $meta.copyright = Some($copyright);
     };
 
-    ($puzzle:ident, notes : $val:literal) => {
-        $puzzle = $puzzle.with_notes($val);
+    ($meta:ident, notes : $notes:literal) => {
+        $meta.notes = Some($val);
     };
 
-    ($puzzle:ident, title : $val:literal) => {
-        $puzzle = $puzzle.with_title($val);
+    ($meta:ident, title : $title:literal) => {
+        $meta.title($title);
     };
 
-    ($puzzle:ident, version : $val:literal) => {
-        if let Ok(version) = $crate::Version::new($val.as_bytes()) {
-            $puzzle = $puzzle.with_version(version);
+    ($meta:ident, version : $version:literal) => {
+        if let Ok(version) = $crate::Version::new($version.as_bytes()) {
+            $meta.version = Some(version);
         }
     };
 
-    ($puzzle:ident, $key:ident : $val:literal) => {
-        compile_error!(concat!("Invalid puzzle property: ", stringify!($key)));
+    ($meta:ident, $key:ident : $val:literal) => {
+        compile_error!(concat!("Invalid meta property: ", stringify!($key)));
     };
 }

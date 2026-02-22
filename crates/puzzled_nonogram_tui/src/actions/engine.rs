@@ -1,9 +1,8 @@
-use puzzled_nonogram::Error;
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
-    Action, ActionInput, ActionKind, ActionOutcome, AppState, Focus, HandleAction, History, Mode,
-    MotionRange, SelectionKind,
+    Action, ActionInput, ActionKind, ActionOutcome, AppState, Error, Focus, HandleAction, History,
+    Mode, MotionRange, SelectionKind,
 };
 
 use super::ActionResult;

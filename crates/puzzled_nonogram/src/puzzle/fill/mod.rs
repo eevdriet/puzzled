@@ -22,12 +22,40 @@ pub enum Fill {
 }
 
 impl Fill {
+    pub const fn from_byte(byte: u8) -> Self {
+        match byte {
+            0 => Fill::Blank,
+            1 => Fill::Cross,
+            b => Fill::Color(b as usize),
+        }
+    }
+
+    pub fn is_color(&self) -> bool {
+        matches!(self, Fill::Color(_))
+    }
+
     pub fn symbol(&self) -> char {
         match self {
             Fill::Blank => '◦',
             Fill::Cross => '×',
             // Fill::Color(_) => '█',
             Fill::Color(_) => '■',
+        }
+    }
+
+    pub fn byte(&self) -> usize {
+        match self {
+            Fill::Blank => b'.' as usize,
+            Fill::Cross => 0,
+            Fill::Color(id) => *id,
+        }
+    }
+
+    pub fn as_key(&self) -> usize {
+        match self {
+            Fill::Blank => 0,
+            Fill::Cross => 1,
+            Fill::Color(id) => id + 2,
         }
     }
 

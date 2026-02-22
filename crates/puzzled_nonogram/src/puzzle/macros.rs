@@ -17,9 +17,12 @@ macro_rules! nonogram {
         let rules = $crate::Rules::from_fills(&fills);
 
         // Add colors
-        let colors = vec![];
+        let colors = $crate::Colors::default();
 
-        $crate::Nonogram::empty_from_rules(rules, colors).expect("Size should be small enough")
+        // Add meta data
+        let meta = $crate::Metadata::default();
+
+        $crate::Nonogram::new_empty(rules, colors, meta).expect("Size should be small enough")
     }};
 }
 

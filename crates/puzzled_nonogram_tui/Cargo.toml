@@ -14,7 +14,7 @@ toml = { workspace = true }
 directories = { workspace = true }
 thiserror = { workspace = true }
 
-puzzled_nonogram = { path = "../puzzled_nonogram/"}
+puzzled_nonogram = { path = "../puzzled_nonogram/", features = ["serde"]}
 
 [dev-dependencies]
 rstest = { workspace = true }

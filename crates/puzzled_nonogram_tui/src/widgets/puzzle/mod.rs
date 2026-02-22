@@ -156,14 +156,14 @@ impl PuzzleWidget {
             Fill::Blank => style.fg(Color::DarkGray).add_modifier(Modifier::DIM),
             Fill::Cross => style.fg(Color::Gray),
             Fill::Color(id) => {
-                let (r, g, b) = state
+                let color = state
                     .puzzle
                     .style
                     .colors
                     .get(*id - 1)
                     .unwrap_or_else(|| panic!("Color for fill {} should be set", id));
 
-                let rcolor = Color::Rgb(*r, *g, *b);
+                let rcolor = Color::Rgb(color.red, color.green, color.blue);
                 style.fg(rcolor)
             }
         };

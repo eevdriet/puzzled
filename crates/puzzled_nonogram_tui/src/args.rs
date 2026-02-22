@@ -4,7 +4,7 @@ use crate::PuzzleStyle;
 use clap::Parser;
 use puzzled_nonogram::{Nonogram, load_nonogram};
 
-use crate::Result;
+use crate::{Error, Result};
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -30,7 +30,8 @@ impl Args {
     }
 
     pub fn parse_puzzle(&self) -> Result<Nonogram> {
-        let nonogram = load_nonogram(&self.file)?;
+        let result = load_nonogram(&self.file).map_err(|err| Error::Custom(err.to_string()));
+        let nonogram = result?;
         Ok(nonogram)
     }
 }

@@ -4,7 +4,7 @@ mod error;
 mod index;
 mod iter;
 
-pub use error::*;
+pub use error::Error as GridError;
 pub use iter::*;
 
 #[derive(Debug, Default)]

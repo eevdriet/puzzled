@@ -154,12 +154,14 @@ mod checksums;
 mod extras;
 mod grids;
 mod header;
+mod size;
 mod strings;
 
 pub use checksums::*;
 pub use extras::*;
 pub use grids::*;
 pub use header::*;
+pub use size::*;
 pub use strings::*;
 
 pub trait Puz: Sized {
@@ -178,10 +180,6 @@ pub trait Puz: Sized {
     ) -> read::Result<Self>;
 }
 
-pub(crate) trait Context<T, E> {
+pub trait Context<T, E> {
     fn context<S: Into<String>>(self, context: S) -> std::result::Result<T, E>;
-}
-
-pub trait SizeCheck {
-    fn check_size(&self) -> format::Result<()>;
 }

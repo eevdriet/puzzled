@@ -1,6 +1,6 @@
 use std::{iter::Peekable, str::Lines};
 
-use crate::io::text;
+use puzzled_puz::format::{self, StringError};
 
 #[derive(Debug)]
 pub(crate) struct TxtState<'a> {
@@ -39,13 +39,14 @@ impl<'a> TxtState<'a> {
         Some(line)
     }
 
-    pub(crate) fn parse_string(&self, text: &str) -> text::Result<String> {
+    pub(crate) fn parse_string(&self, text: &str) -> format::Result<String> {
         let text = text.trim();
 
         if !text.starts_with('"') || !text.ends_with('"') {
-            return Err(text::Error::InvalidStringLiteral {
+            let err = StringError::InvalidLiteral {
                 found: text.to_string(),
-            });
+            };
+            return Err(format::Error::String(err));
         }
 
         Ok(text[1..text.len() - 1].to_string())

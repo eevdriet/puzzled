@@ -15,13 +15,14 @@ thiserror = { workspace = true}
 puzzled_core = { path = "../puzzled_core"}
 puzzled_puz = { path = "../puzzled_puz/", optional = true}
 
+[dev-dependencies]
+rstest = { workspace = true }
+serde_json = {workspace = true}
+puzzled = {path = "../puzzled", features = ["crossword"]}
+
 [features]
 default = []
 serde = ["dep:serde"]
 puz = ["dep:puzzled_puz"]
 miette = ["dep:miette"]
 
-[dev-dependencies]
-rstest = { workspace = true }
-serde_json = {workspace = true}
-puzzled = {path = "../puzzled", features = ["crossword"]}

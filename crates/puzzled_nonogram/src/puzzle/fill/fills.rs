@@ -1,10 +1,10 @@
 use derive_more::{Deref, DerefMut, Index, IndexMut};
-use puzzled_core::{Grid, Line, LineIter};
+use puzzled_core::{ColorId, Grid, Line, LineIter};
 
 use crate::{Fill, Runs};
 
 #[derive(Debug, Default, PartialEq, Eq, Deref, DerefMut, Clone, Index, IndexMut)]
-pub struct Fills(Grid<Fill>);
+pub struct Fills(pub(crate) Grid<Fill>);
 
 impl Fills {
     pub fn new(fills: Grid<Fill>) -> Self {
@@ -14,6 +14,21 @@ impl Fills {
     pub fn iter_line_runs<'a>(&'a self, line: Line) -> Runs<LineIter<'a, Fill>> {
         let fills = self.iter_line(line);
         Runs::new(fills, true)
+    }
+
+    pub fn colors_ids(&self) -> Vec<ColorId> {
+        let mut ids: Vec<_> = self
+            .iter()
+            .flat_map(|fill| match fill {
+                Fill::Color(id) => Some(*id),
+                _ => None,
+            })
+            .collect();
+
+        ids.dedup();
+        ids.sort();
+
+        ids
     }
 }
 

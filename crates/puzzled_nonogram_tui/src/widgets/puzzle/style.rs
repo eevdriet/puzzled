@@ -43,7 +43,7 @@ impl PuzzleStyle {
                 .colors
                 .get(id - 1)
                 .copied()
-                .map(|(r, g, b)| RColor::Rgb(r, g, b)),
+                .map(|color| RColor::Rgb(color.red, color.green, color.blue)),
             _ => Some(RColor::DarkGray),
         }
     }

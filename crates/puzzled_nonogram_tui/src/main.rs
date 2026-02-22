@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     let nonogram = args.parse_puzzle()?;
 
     let style = PuzzleStyle {
-        colors: nonogram.colors().clone(),
+        colors: nonogram.colors().values().cloned().collect(),
         grid_size: config.styles.grid_size,
         ..Default::default()
     };

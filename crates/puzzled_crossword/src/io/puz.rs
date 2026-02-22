@@ -1,46 +1,23 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{CellStyle, Grid, Position, Version};
+use puzzled_core::{CellStyle, Grid, Position};
 use puzzled_puz::{
     Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzWrite, SizeCheck, Span,
-    Strings, build_string, format, read, windows_1252_to_char,
+    Strings, build_string, check_size, format,
+    read::{self, read_metadata},
+    windows_1252_to_char,
 };
 
 use crate::{Cell, Clue, Clues, Crossword, Direction, Solution, Squares};
 
-impl SizeCheck for Squares {
-    fn check_size(&self) -> format::Result<()> {
-        let size = self.size();
-        let rows = self.rows();
-        let cols = self.cols();
-        let max_size = u8::MAX as usize;
-
-        if cols > max_size || rows > max_size {
-            return Err(format::Error::SizeOverflow {
-                kind: "Squares".to_string(),
-                size,
-                max_size,
-            });
-        }
-
-        Ok(())
-    }
-}
-
 impl SizeCheck for Clues {
+    const KIND: &'static str = "Clues";
+
     fn check_size(&self) -> format::Result<()> {
         let size = self.len();
         let max_size = u16::MAX as usize;
 
-        if size > max_size {
-            return Err(format::Error::SizeOverflow {
-                kind: "Clues".to_string(),
-                size,
-                max_size,
-            });
-        }
-
-        Ok(())
+        check_size(Self::KIND, size, max_size)
     }
 }
 
@@ -48,7 +25,7 @@ impl Puz for Crossword {
     fn to_header(&self) -> format::Result<Header> {
         let mut header = Header::default();
 
-        // Squares
+        // Grids
         let squares = self.squares();
         squares.check_size()?;
         header.width = squares.cols() as u8;
@@ -89,6 +66,7 @@ impl Puz for Crossword {
             _ => NON_PLAYABLE_CELL,
         } as u8);
 
+        // Construct the result and validate
         let grids = Grids {
             solution,
             state,
@@ -104,7 +82,10 @@ impl Puz for Crossword {
         let clues = self.clues();
         clues.check_size()?;
 
-        let mut strings = Strings::default();
+        let mut strings = Strings {
+            clues: Vec::with_capacity(clues.len()),
+            ..Default::default()
+        };
 
         strings
             .title
@@ -184,22 +165,9 @@ impl Puz for Crossword {
         // Build the puzzle with owned data
         let squares = read_squares(&grids, &extras);
         let clues = read_clues(&squares, &strings)?;
+        let meta = read_metadata(&header, &strings, &extras);
 
-        let mut crossword = Crossword::new(squares, clues)
-            .with_author(build_string(&strings.author))
-            .with_copyright(build_string(&strings.copyright))
-            .with_notes(build_string(&strings.notes))
-            .with_title(build_string(&strings.title));
-
-        if let Ok(version) = Version::new(&header.version) {
-            crossword = crossword.with_version(version);
-        }
-
-        if let Some(timer) = &extras.ltim {
-            *crossword.timer_mut() = *timer;
-        }
-
-        Ok(crossword)
+        Ok(Crossword::new(squares, clues, meta))
     }
 }
 

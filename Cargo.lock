@@ -1729,6 +1729,7 @@ dependencies = [
 name = "puzzled_core"
 version = "0.1.0"
 dependencies = [
+ "derive_more",
  "puzzled",
  "serde",
  "thiserror 2.0.18",
@@ -1758,6 +1759,7 @@ dependencies = [
  "image",
  "puzzled",
  "puzzled_core",
+ "puzzled_puz",
  "rstest",
  "serde",
  "serde_json",

@@ -45,7 +45,7 @@ impl Grids {
     pub fn validate(&self) -> format::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
-        let err = |kind: GridError| format::Error::Grids(kind);
+        let err = |kind: GridError| format::Error::Grid(kind);
 
         for (grid, _) in &grids {
             let len = grid.rows() as u8;

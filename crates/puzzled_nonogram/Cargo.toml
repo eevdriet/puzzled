@@ -16,6 +16,7 @@ serde_json = {workspace = true}
 thiserror = {workspace = true}
 tracing = {workspace = true}
 puzzled_core = { path = "../puzzled_core"}
+puzzled_puz = { path = "../puzzled_puz/", optional = true}
 
 [dev-dependencies]
 puzzled = {path = "../puzzled", features = ["nonogram"]}
@@ -24,4 +25,9 @@ tracing-test = {workspace = true}
 
 [features]
 default = []
-serde = ["dep:serde"]
+
+serde = [
+    "dep:serde",
+    "puzzled_core/serde"
+]
+puz = ["dep:puzzled_puz"]

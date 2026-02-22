@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error, Clone)]
-pub enum GridError {
+pub enum Error {
     #[error("Row {row} in the grid has an invalid width of {found} (expected {expected})")]
     InvalidWidth { row: u8, found: u8, expected: u8 },
 

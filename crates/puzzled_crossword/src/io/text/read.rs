@@ -1,34 +1,32 @@
-use puzzled_core::{Grid, GridError, Version};
+use std::str::FromStr;
 
-use crate::{
-    Cell, ClueSpec, Crossword, Direction, Square, Squares,
-    io::{TxtState, text},
-};
+use puzzled_core::{Grid, GridError, Metadata, Timer, Version};
+use puzzled_puz::format;
+
+use crate::{Cell, ClueSpec, Crossword, Direction, Square, Squares, io::TxtState};
 
 #[derive(Debug, Default)]
 pub struct TxtReader;
 
 impl<'a> TxtReader {
-    pub fn read(&self, input: &'a str) -> text::Result<Crossword> {
+    pub fn read(&self, input: &'a str) -> format::Result<Crossword> {
         let mut state = TxtState::new(input);
 
         let squares = self.parse_grid(&mut state)?;
-        let mut puzzle = Crossword::from_squares(squares);
-
         let clues = self.parse_clues(&mut state)?;
+        let meta = self.parse_metadata(&mut state)?;
+
+        let mut puzzle = Crossword::from_squares(squares, meta);
+
         eprintln!("Clues: {clues:?}");
         puzzle.insert_clues(clues);
-
-        puzzle = self.parse_strings(puzzle, &mut state)?;
 
         Ok(puzzle)
     }
 
-    pub(crate) fn parse_strings(
-        &self,
-        mut puzzle: Crossword,
-        state: &mut TxtState<'a>,
-    ) -> text::Result<Crossword> {
+    pub(crate) fn parse_metadata(&self, state: &mut TxtState<'a>) -> format::Result<Metadata> {
+        let mut meta = Metadata::default();
+
         while let Some(line) = state.next() {
             let line = line.trim();
 
@@ -37,7 +35,7 @@ impl<'a> TxtReader {
                 continue;
             }
 
-            let (prop, text) = line.split_once(':').ok_or(text::Error::InvalidProperty {
+            let (prop, text) = line.split_once(':').ok_or(format::Error::InvalidProperty {
                 found: line.to_string(),
                 reason: "Property should be formatted as <key>: \"<value>\"".to_string(),
             })?;
@@ -52,27 +50,31 @@ impl<'a> TxtReader {
 
             match prop.to_ascii_lowercase().as_str() {
                 "author" => {
-                    puzzle = puzzle.with_author(text);
+                    meta.author = Some(text);
                 }
                 "copyright" => {
-                    puzzle = puzzle.with_copyright(text);
+                    meta.author = Some(text);
                 }
                 "notes" => {
-                    puzzle = puzzle.with_notes(text);
+                    meta.notes = Some(text);
                 }
                 "title" => {
-                    puzzle = puzzle.with_title(text);
+                    meta.title = Some(text);
                 }
                 "version" => match Version::new(text.as_bytes()) {
                     Ok(version) => {
-                        puzzle = puzzle.with_version(version);
+                        meta.version = Some(version);
                     }
                     Err(reason) => {
-                        return Err(text::Error::InvalidVersion { reason });
+                        return Err(format::Error::Version(reason));
                     }
                 },
+                "timer" => match Timer::from_str(&text) {
+                    Ok(timer) => meta.timer = timer,
+                    Err(reason) => return Err(format::Error::Timer(reason)),
+                },
                 _ => {
-                    return Err(text::Error::InvalidProperty {
+                    return Err(format::Error::InvalidProperty {
                         found: prop.to_string(),
                         reason: "Type is unknown".to_string(),
                     });
@@ -80,13 +82,13 @@ impl<'a> TxtReader {
             }
         }
 
-        Ok(puzzle)
+        Ok(meta)
     }
 
-    pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> text::Result<Squares> {
+    pub(crate) fn parse_grid(&self, state: &mut TxtState<'a>) -> format::Result<Squares> {
         let mut squares = Vec::new();
 
-        let err = |err: GridError| text::Error::Grids(err);
+        let err = |err: GridError| format::Error::Grid(err);
 
         let mut cols = None;
         let mut rows = 0;
@@ -131,12 +133,14 @@ impl<'a> TxtReader {
         Ok(Squares::new(squares))
     }
 
-    fn parse_row(row: u8, line: &str) -> text::Result<Vec<Square>> {
+    fn parse_row(row: u8, line: &str) -> format::Result<Vec<Square>> {
         if !line.starts_with('[') || !line.ends_with(']') {
-            return Err(text::Error::Grids(GridError::InvalidRow {
+            let err = GridError::InvalidRow {
                 row,
                 reason: "Should be delimited by [...]".to_string(),
-            }));
+            };
+
+            return Err(format::Error::Grid(err));
         }
 
         let line = &line[1..line.len() - 1];
@@ -157,10 +161,10 @@ impl<'a> TxtReader {
         Ok(squares)
     }
 
-    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> text::Result<Vec<ClueSpec>> {
+    pub(crate) fn parse_clues(&self, state: &mut TxtState<'a>) -> format::Result<Vec<ClueSpec>> {
         let mut clues = Vec::new();
 
-        let err = |reason: &str| text::Error::InvalidClueSpec {
+        let err = |reason: &str| format::Error::ClueSpec {
             reason: reason.to_string(),
         };
 

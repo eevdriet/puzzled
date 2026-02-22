@@ -2,7 +2,7 @@ use derive_more::Debug;
 
 #[cfg(feature = "serde")]
 use crate::Run;
-use crate::{Fill, Fills, Rule};
+use crate::{Fills, Rule};
 
 #[derive(Debug, Default, Clone)]
 pub struct Rules {
@@ -34,20 +34,6 @@ impl Rules {
     }
     pub fn col(&self, c: u16) -> &Rule {
         &self.cols[c as usize]
-    }
-
-    pub fn colors(&self) -> Vec<Fill> {
-        let mut colors: Vec<_> = self
-            .rows
-            .iter()
-            .flat_map(|rule| rule.iter_colors())
-            .chain(self.cols.iter().flat_map(|rule| rule.iter_colors()))
-            .collect();
-
-        colors.dedup();
-        colors.sort();
-
-        colors
     }
 
     #[cfg(feature = "serde")]

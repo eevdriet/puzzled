@@ -85,7 +85,7 @@ impl Header {
         let version = reader.read_slice::<4>().context("Version bytes")?;
         let version = state.ok_or_warn(
             Version::new(&version)
-                .map_err(|reason| format::Error::InvalidVersion { reason })
+                .map_err(format::Error::Version)
                 .context("Version"),
         )?;
         let version = version.map(|v| v.as_bytes()).unwrap_or_default();

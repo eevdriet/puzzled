@@ -14,6 +14,19 @@ pub struct Error {
     pub context: String,
 }
 
+impl Error {
+    pub fn new<C>(context: C, kind: ErrorKind) -> Self
+    where
+        C: Into<String>,
+    {
+        Self {
+            span: Span::default(),
+            context: context.into(),
+            kind,
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum ErrorKind {
     #[error("I/O error: {0}")]
@@ -33,6 +46,9 @@ pub enum ErrorKind {
 
     #[error("Cannot place clue #{id}: {clue}")]
     MissingClue { id: u16, clue: String },
+
+    #[error("Expected to find {expected} clues, found {found}")]
+    InvalidClueCount { found: usize, expected: usize },
 
     // General
     #[error(

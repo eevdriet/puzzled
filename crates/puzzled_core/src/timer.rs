@@ -1,4 +1,13 @@
-use std::time::{Duration, Instant};
+use std::{
+    str::FromStr,
+    time::{Duration, Instant},
+};
+
+#[derive(Debug, thiserror::Error)]
+#[error("Invalid timer: {reason}")]
+pub struct Error {
+    reason: String,
+}
 
 /// Timer to keep track of how much time is spent playing a puzzle
 ///
@@ -117,6 +126,40 @@ impl From<TimerState> for u8 {
             TimerState::Running => 0,
             TimerState::Stopped => 1,
         }
+    }
+}
+
+impl FromStr for Timer {
+    type Err = Error;
+
+    fn from_str(ltim: &str) -> Result<Self, Self::Err> {
+        let (elapsed_str, state_str) = ltim.split_once(',').ok_or(Self::Err { reason: format!("Timer needs to be specified as '<elapsed>,<state>' where <elapsed> is a non-negative number and state = 0|1 (found '{ltim}')")})?;
+
+        // Make sure the elapsed time is valid
+        let secs: u64 = elapsed_str.parse().map_err(|_| Error {
+            reason: format!("Could not parse '{elapsed_str}' into a non-negative number"),
+        })?;
+        let secs = Duration::from_secs(secs);
+
+        // Make sure the state is valid
+        let state_num: u64 = state_str.parse().map_err(|_| Self::Err {
+            reason: format!("Could not parse '{state_str}' into a 0 or 1"),
+        })?;
+
+        // Create the resulting timer
+        let state: TimerState = match state_num {
+            0 => Ok(TimerState::Running {}),
+            1 => Ok(TimerState::Stopped),
+
+            num => Err(Self::Err {
+                reason: format!(
+                    "Number {num} does not represent a valid timer state (use 0 for running, 1 for stopped)"
+                ),
+            }),
+        }?;
+
+        let timer = Timer::new(secs, state);
+        Ok(timer)
     }
 }
 

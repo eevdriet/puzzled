@@ -1,10 +1,9 @@
-use puzzled_nonogram::Result;
 use std::fs;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, Layer, Registry};
 
-use crate::Args;
+use crate::{Args, Result};
 
 pub fn init_tracing(args: &Args) {
     let crate_level = if args.debug { "debug" } else { "info" };
@@ -53,4 +52,3 @@ pub fn init_logging(args: &Args) -> Result<()> {
 
     Ok(())
 }
-

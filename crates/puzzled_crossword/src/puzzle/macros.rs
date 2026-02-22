@@ -74,13 +74,16 @@ macro_rules! crossword {
             clues.push(clue);
         )*
 
-        let mut puzzle = $crate::Crossword::from_squares(squares);
-        puzzle.insert_clues(clues);
-
         // Add metadata
+        #[allow(unused_mut)]
+        let mut meta = $crate::Metadata::default();
         $(
-            $crate::metadata!(puzzle, $meta_key : $meta_val);
+            $crate::metadata!(meta, $meta_key : $meta_val);
         )*
+
+        // Create puzzle
+        let mut puzzle = $crate::Crossword::from_squares(squares, meta);
+        puzzle.insert_clues(clues);
 
         puzzle
     }};

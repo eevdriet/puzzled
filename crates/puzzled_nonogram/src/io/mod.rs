@@ -21,3 +21,6 @@ pub fn load_nonogram(path: impl AsRef<Path>) -> Result<Nonogram> {
         _ => Err(Error::UnsupportedExtension(ext.to_string())),
     }
 }
+
+#[cfg(feature = "puz")]
+mod puz;

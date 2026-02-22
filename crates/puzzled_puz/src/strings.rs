@@ -1,5 +1,7 @@
 use crate::{Context, PuzRead, PuzWrite, read, write};
 
+pub type ByteStr = Vec<u8>;
+
 /// [Strings](https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#strings-section) section
 ///
 /// This section ncludes the "metadata" for the [puzzle](crate::Puz).
@@ -19,19 +21,19 @@ use crate::{Context, PuzRead, PuzWrite, read, write};
 #[derive(Debug, Default)]
 pub struct Strings {
     /// Title of the puzzle
-    pub title: Vec<u8>,
+    pub title: ByteStr,
 
     /// Author of the puzzle
-    pub author: Vec<u8>,
+    pub author: ByteStr,
 
     /// Copyright of the puzzle
-    pub copyright: Vec<u8>,
+    pub copyright: ByteStr,
 
     /// Notes on the puzzle
-    pub notes: Vec<u8>,
+    pub notes: ByteStr,
 
     /// Clues to be placed in the puzzle
-    pub clues: Vec<Vec<u8>>,
+    pub clues: Vec<ByteStr>,
 }
 
 /// # Read

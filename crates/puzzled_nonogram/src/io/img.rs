@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use crate::{Color, Fill, Fills, Nonogram, Rule, Rules, io};
+use crate::{Colors, Fill, Fills, Nonogram, Rule, Rules, io};
 use image::{DynamicImage, GenericImageView, ImageReader, Pixel, Rgba};
-use puzzled_core::Grid;
+use puzzled_core::{Color, Grid, Metadata};
 
 pub struct ImageLoader;
 
@@ -15,12 +15,14 @@ impl io::PuzzleLoader for ImageLoader {
         let fills = Fills::new(grid);
         let (rules, colors) = read_rules_and_colors(&image)?;
 
-        Ok(Nonogram::new(fills, rules, colors))
+        let meta = Metadata::default();
+
+        Ok(Nonogram::new(fills, rules, colors, meta))
     }
 }
 
-fn read_rules_and_colors(image: &DynamicImage) -> io::Result<(Rules, Vec<Color>)> {
-    let mut colors = Vec::new();
+fn read_rules_and_colors(image: &DynamicImage) -> io::Result<(Rules, Colors)> {
+    let mut colors = Colors::default();
 
     let mut pixel_to_fill = |pixel: Rgba<u8>| -> Fill {
         let [r, g, b] = pixel.to_rgb().0;
@@ -30,16 +32,21 @@ fn read_rules_and_colors(image: &DynamicImage) -> io::Result<(Rules, Vec<Color>)
             // Ignore fully filled/empty pixels
             (0, 0, 0) | (255, 255, 255) => Fill::Blank,
 
-            _ => {
-                let idx = match colors.iter().position(|&col| col == color) {
-                    Some(idx) => idx + 1,
-                    None => {
-                        colors.push(color);
-                        colors.len()
-                    }
-                };
+            (r, g, b) => {
+                let color = Color::rgb(r, g, b);
 
-                Fill::Color(idx)
+                match colors.values().position(|&col| col == color) {
+                    // Retrieve existing colors
+                    Some(idx) => Fill::Color(idx),
+
+                    // Add new colors
+                    None => {
+                        let idx = colors.len();
+                        colors.insert(idx, color);
+
+                        Fill::Color(idx)
+                    }
+                }
             }
         }
     };

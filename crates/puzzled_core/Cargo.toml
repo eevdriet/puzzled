@@ -9,6 +9,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = {workspace = true, optional = true}
+derive_more = {workspace = true}
 thiserror = {workspace = true}
 
 [dev-dependencies]
