@@ -1,13 +1,4 @@
-//! Defines all functionality for formatting the various [*.puz data][PUZ google spec]
-//!
-//! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
-use puzzled_core::{ColorError, GridError, TimerError, VersionError};
-
-mod string;
-
-pub use string::Error as StringError;
-
-use crate::{Context, Span, read, write};
+use crate::{ColorError, GridError, StringError, TimerError, VersionError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -52,22 +43,3 @@ pub enum Error {
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
-
-impl<T> Context<T, read::Error> for Result<T> {
-    fn context<S: Into<String>>(self, context: S) -> read::Result<T> {
-        self.map_err(|err| read::Error {
-            kind: read::ErrorKind::Format(err),
-            span: Span::default(),
-            context: context.into(),
-        })
-    }
-}
-
-impl<T> Context<T, write::Error> for Result<T> {
-    fn context<S: Into<String>>(self, context: S) -> write::Result<T> {
-        self.map_err(|err| write::Error {
-            kind: write::ErrorKind::Format(err),
-            context: context.into(),
-        })
-    }
-}

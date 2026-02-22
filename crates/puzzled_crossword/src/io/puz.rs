@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{CellStyle, Grid, Position};
+use puzzled_core::{CellStyle, Grid, Position, format};
 use puzzled_puz::{
     Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzWrite, SizeCheck, Span,
-    Strings, build_string, check_size, format,
+    Strings, build_string, check_size,
     read::{self, read_metadata},
     windows_1252_to_char,
 };

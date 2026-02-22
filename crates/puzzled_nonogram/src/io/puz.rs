@@ -1,7 +1,9 @@
-use puzzled_core::{Color, Grid};
+use puzzled_core::{
+    Color, Grid,
+    format::{self, StringError},
+};
 use puzzled_puz::{
     Context, Extras, Grids, Header, Puz, PuzWrite, SizeCheck, Strings, check_size,
-    format::{self, StringError},
     read::{self, read_metadata},
 };
 

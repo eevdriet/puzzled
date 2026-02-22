@@ -1,6 +1,6 @@
 use std::{iter::Peekable, str::Lines};
 
-use puzzled_puz::format::{self, StringError};
+use puzzled_core::format::{self, StringError};
 
 #[derive(Debug)]
 pub(crate) struct TxtState<'a> {

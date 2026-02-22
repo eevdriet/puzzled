@@ -142,10 +142,10 @@
 //! [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
 //! [Checksums]: self#validating-checksums
 
-pub mod format;
 pub mod read;
 pub mod write;
 
+use puzzled_core::format;
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
 pub(crate) use read::{PuzState, Warning};
 pub use write::{PuzWrite, PuzWriter};
@@ -182,4 +182,23 @@ pub trait Puz: Sized {
 
 pub trait Context<T, E> {
     fn context<S: Into<String>>(self, context: S) -> std::result::Result<T, E>;
+}
+
+impl<T> Context<T, read::Error> for format::Result<T> {
+    fn context<S: Into<String>>(self, context: S) -> read::Result<T> {
+        self.map_err(|err| read::Error {
+            kind: read::ErrorKind::Format(err),
+            span: Span::default(),
+            context: context.into(),
+        })
+    }
+}
+
+impl<T> Context<T, write::Error> for format::Result<T> {
+    fn context<S: Into<String>>(self, context: S) -> write::Result<T> {
+        self.map_err(|err| write::Error {
+            kind: write::ErrorKind::Format(err),
+            context: context.into(),
+        })
+    }
 }

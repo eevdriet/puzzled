@@ -11,7 +11,7 @@ use std::{
 
 use bitvec::bitvec;
 
-use crate::{Fill, Line, LineMap, LineMask, LinePosition, Nonogram, Position, Result, Rule, Rules};
+use crate::{Fill, Line, LineMap, LineMask, LinePosition, Nonogram, Position, Rule, Rules};
 
 #[derive(Debug, Default)]
 pub struct Solver {
@@ -39,7 +39,7 @@ impl Solver {
         self.masks.clear();
     }
 
-    pub fn solve(&mut self, _puzzle: &mut Nonogram) -> Result<bool> {
+    pub fn solve(&mut self, _puzzle: &mut Nonogram) -> Result<bool, String> {
         Ok(true)
     }
 

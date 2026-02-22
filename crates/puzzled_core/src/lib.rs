@@ -1,5 +1,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod format;
+pub use format::StringError;
+
 mod color;
 mod grid;
 mod line;

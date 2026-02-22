@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
-use puzzled_core::{Grid, GridError, Metadata, Timer, Version};
-use puzzled_puz::format;
+use puzzled_core::{Grid, GridError, Metadata, Timer, Version, format};
 
 use crate::{Cell, ClueSpec, Crossword, Direction, Square, Squares, io::TxtState};
 
