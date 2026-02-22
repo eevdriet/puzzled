@@ -125,6 +125,7 @@ impl Crossword {
         self.squares.cols()
     }
 }
+add_metadata!(Crossword);
 
 impl PartialEq for Crossword {
     fn eq(&self, other: &Self) -> bool {
@@ -166,8 +167,6 @@ impl fmt::Display for Crossword {
         Ok(())
     }
 }
-
-add_metadata!(Crossword);
 
 #[cfg(feature = "serde")]
 mod serde_impl {

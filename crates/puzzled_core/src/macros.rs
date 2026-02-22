@@ -48,24 +48,30 @@ macro_rules! squares {
 #[macro_export]
 macro_rules! metadata {
     ($meta:ident, author : $author:literal) => {
-        $meta.author = Some($author);
+        $meta.author = Some($author.to_string());
     };
 
     ($meta:ident, copyright : $copyright:literal) => {
-        $meta.copyright = Some($copyright);
+        $meta.copyright = Some($copyright.to_string());
     };
 
     ($meta:ident, notes : $notes:literal) => {
-        $meta.notes = Some($val);
+        $meta.notes = Some($val.to_string());
     };
 
     ($meta:ident, title : $title:literal) => {
-        $meta.title($title);
+        $meta.title = Some($title.to_string());
     };
 
     ($meta:ident, version : $version:literal) => {
         if let Ok(version) = $crate::Version::new($version.as_bytes()) {
             $meta.version = Some(version);
+        }
+    };
+
+    ($meta:ident, timer : $timer:literal) => {
+        if let Ok(timer) = $crate::Timer::from_str($timer) {
+            $meta.timer = timer;
         }
     };
 
