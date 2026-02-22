@@ -1,6 +1,8 @@
 use std::fmt::{self, Display};
 
-use crate::{CellStyle, check_style};
+mod style;
+
+pub use style::CellStyle;
 
 /// Playable [square](crate::Square) that the user can enter their solution into
 ///
@@ -252,3 +254,5 @@ mod serde_impl {
 
 #[cfg(feature = "serde")]
 pub use serde_impl::SerdeCell;
+
+use crate::check_style;

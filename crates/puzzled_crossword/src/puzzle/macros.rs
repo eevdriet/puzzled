@@ -295,7 +295,6 @@ mod tests {
     };
 
     const _E: CellStyle = CellStyle::EMPTY;
-    const _I: CellStyle = CellStyle::INCORRECT;
     const _P: CellStyle = CellStyle::PREVIOUSLY_INCORRECT;
     const _R: CellStyle = CellStyle::REVEALED;
     const _C: CellStyle = CellStyle::CIRCLED;
@@ -303,7 +302,7 @@ mod tests {
     #[rstest]
     #[case(square!(A), Letter('A'), None, _E)]
     #[case(square!(A (A)), Letter('A'), Some(Letter('A')), _E)]
-    #[case(square!(A (E)), Letter('A'), Some(Letter('E')), _I)]
+    #[case(square!(A (E)), Letter('A'), Some(Letter('E')), _E)]
     #[case(square!(A@), Letter('A'), None, _C)]
     #[case(square!(A*), Letter('A'), None, _R)]
     fn test_cell(

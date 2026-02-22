@@ -1,4 +1,8 @@
-use crate::{Timer, Version};
+mod timer;
+mod version;
+
+pub use timer::{Error as TimerError, Timer, TimerState};
+pub use version::{Error as VersionError, Version};
 
 #[derive(Debug, PartialEq, Eq, Default, Clone)]
 pub struct Metadata {
