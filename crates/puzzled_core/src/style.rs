@@ -1,4 +1,4 @@
-use std::ops;
+use std::{fmt, ops};
 
 /// Style that changes the way a [cell](Cell) is displayed
 ///
@@ -16,7 +16,7 @@ use std::ops;
 ///
 /// let style = CellStyle::INCORRECT | CellStyle::CIRCLED;
 /// let mut cell = Cell::new_styled(Solution::Letter('A'), style);
-/// assert!(cell.is_incorrect());
+/// assert!(!cell.is_correct());
 /// assert!(cell.is_circled());
 ///
 /// assert!(!cell.is_revealed());
@@ -140,6 +140,27 @@ macro_rules! check_style {
             self.style() & $variant != CellStyle::EMPTY
         }
     };
+}
+
+impl fmt::Display for CellStyle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut style_str = String::new();
+
+        if (*self | CellStyle::REVEALED) != CellStyle::EMPTY {
+            style_str += "@";
+        }
+        if (*self | CellStyle::REVEALED) != CellStyle::EMPTY {
+            style_str += "*";
+        }
+        if (*self | CellStyle::INCORRECT) != CellStyle::EMPTY {
+            style_str += "!";
+        }
+        if (*self | CellStyle::PREVIOUSLY_INCORRECT) != CellStyle::EMPTY {
+            style_str += "~";
+        }
+
+        write!(f, "{style_str}")
+    }
 }
 
 #[cfg(feature = "serde")]

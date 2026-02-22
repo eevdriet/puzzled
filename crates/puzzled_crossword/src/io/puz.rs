@@ -8,7 +8,7 @@ use puzzled_puz::{
     windows_1252_to_char,
 };
 
-use crate::{Cell, Clue, Clues, Crossword, Direction, Solution, Squares};
+use crate::{Cell, Clue, Clues, Crossword, CrosswordCell, Direction, Solution, Squares};
 
 impl SizeCheck for Clues {
     const KIND: &'static str = "Clues";
@@ -60,7 +60,7 @@ impl Puz for Crossword {
 
         let state = squares.map_ref(|square| match square {
             Some(cell) => match cell.entry() {
-                Some(v) => v.chars().next().unwrap_or(MISSING_ENTRY_CELL),
+                Some(v) => v.first_letter(),
                 None => MISSING_ENTRY_CELL,
             },
             _ => NON_PLAYABLE_CELL,
@@ -187,16 +187,27 @@ fn read_squares(grids: &Grids, extras: &Extras) -> Squares {
                     None => Solution::Letter(windows_1252_to_char(byte)),
                 };
 
+                // Derive the entry based on whether a state was given and the solution
+                let entry = if state == MISSING_ENTRY_CELL as u8 {
+                    None
+                } else {
+                    let first_letter = windows_1252_to_char(state);
+
+                    let entry = match &solution {
+                        Solution::Letter(_) => Solution::Letter(first_letter),
+                        Solution::Rebus(_) => Solution::Rebus(first_letter.to_string()),
+                    };
+                    Some(entry)
+                };
+
                 let style = extras.get_style(pos);
                 let mut cell = Cell::new_styled(solution, style);
 
-                // Set the given user state for a playable cell
-                if state != MISSING_ENTRY_CELL as u8 {
-                    let contents = windows_1252_to_char(state).to_string();
-                    cell.enter(contents);
+                if let Some(entry) = entry {
+                    cell.enter(entry);
                 }
 
-                Some(cell)
+                Some(CrosswordCell::new(cell))
             }
         };
 

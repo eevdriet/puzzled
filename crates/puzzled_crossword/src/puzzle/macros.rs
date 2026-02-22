@@ -102,12 +102,17 @@ macro_rules! crossword {
 ///
 /// Note that for the latter two, the syntax is analoguous to using [`cell!`](crate::cell).
 /// ```
-/// use puzzled::crossword::{square, Cell, cell};
+/// use puzzled::crossword::{square, CrosswordCell, cell, Solution, Solution::*};
 ///
-/// assert_eq!(square!(), None::<Cell>);
-/// assert_eq!(square!(.), None::<Cell>);
-/// assert_eq!(square!('L'), Some(cell!('L')));
-/// assert_eq!(square!("Rebus"), Some(cell!("Rebus")));
+/// assert_eq!(square!(), None::<CrosswordCell>);
+/// assert_eq!(square!(.), None::<CrosswordCell>);
+///
+/// let make_cell = |sol: Solution| {
+///     CrosswordCell::new(cell!(sol))
+/// };
+///
+/// assert_eq!(square!('L'), Some(make_cell(Letter('L'))));
+/// assert_eq!(square!("Rebus"), Some(make_cell(Rebus("Rebus".to_string()))));
 ///
 /// // Invalid syntax
 /// // square!(9)
@@ -125,12 +130,27 @@ macro_rules! square {
     };
 
     // Cells
-    ($sol:tt $( ($entry:expr) )? $($style:tt)*) => {
-        Some($crate::cell!($sol $(($entry))? $($style)*))
-    };
+    ($sol:tt $($style:tt)+ ($entry:expr)) => {{
+        let solution = $crate::__solution(stringify!($sol));
+        let entry = $crate::__solution(stringify!($entry));
 
-    ($($invalid:tt)*) => {{
-        $crate::__error($($invalid)*, "square!")
+        let cell = $crate::cell!(solution $($style)+ (entry));
+        Some($crate::CrosswordCell::new(cell))
+    }};
+
+    ($sol:tt ($entry:expr)) => {{
+        let solution = $crate::__solution(stringify!($sol));
+        let entry = $crate::__solution(stringify!($entry));
+
+        let cell = $crate::cell!(solution (entry));
+        Some($crate::CrosswordCell::new(cell))
+    }};
+
+    ($sol:tt $($rest:tt)*) => {{
+        let solution = $crate::__solution(stringify!($sol));
+
+        let cell = $crate::cell!(solution $($rest)*);
+        Some($crate::CrosswordCell::new(cell))
     }};
 }
 
@@ -165,7 +185,7 @@ macro_rules! clue_spec {
     };
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid)*, "clue_spec!")
+        $crate::macro_error($($invalid)*, "clue_spec!")
     }};
 }
 
@@ -208,7 +228,7 @@ macro_rules! clue {
     };
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid)*, "clue!")
+        $crate::macro_error($($invalid)*, "clue!")
     }};
 }
 
@@ -249,90 +269,6 @@ pub fn __solution(sol_str: &str) -> crate::Solution {
     }
 }
 
-/// Macro for constructing a [cell](crate::Cell) inline
-///
-/// Squares can be constructed a 2 different ways
-/// 1. A [`char`] constructs a [letter](crate::Solution::Letter) cell
-/// 2. A [`str`] constructs a [rebus](crate::Solution::Rebus) cell
-///
-/// Note that a [`square!`](crate::square) can be constructed with the same syntax
-/// ```
-/// use puzzled::crossword::{cell, Cell, Solution::*};
-///
-/// assert_eq!(cell!('L'), Cell::new(Letter('L')));
-/// assert_eq!(cell!("ABC"), Cell::new(Rebus("ABC".to_string())));
-///
-/// // Invalid syntax
-/// // cell!(9)
-/// // cell!(L)
-/// // cell!(abc)
-/// ```
-#[macro_export]
-macro_rules! cell {
-// Rebus or Letter with optional entry and optional styles
-    // Solution
-    ($sol:tt) => {{
-        let solution = $crate::__solution(stringify!($sol));
-
-        // Create the cell from solution
-        $crate::Cell::new(solution)
-    }};
-
-    // Solution + entry
-    ($sol:tt ($entry:tt)) => {{
-        let solution = $crate::__solution(stringify!($sol));
-
-        // Create the cell from solution
-        let mut cell = $crate::Cell::new(solution);
-
-        // Add entry
-        let entry_str = $crate::__prepare(stringify!($entry));
-        cell.enter(entry_str);
-
-        cell
-    }};
-
-    // Solution + styles
-    ($sol:tt $($style:tt)+) => {{
-        let solution = $crate::__solution(stringify!($sol));
-        let style = $crate::style!($($style)+);
-
-        // Create the cell from solution and style
-        $crate::Cell::new_styled(solution, style)
-    }};
-
-    // Solution + entry + style
-    ($sol:tt ($entry:tt) $($style:tt)+) => {{
-        let solution = $crate::__solution(stringify!($sol));
-        let style = $crate::style!($($style)+);
-
-        // Create the cell from solution and style
-        let cell = $crate::Cell::new_styled(solution, style)
-
-        // Add entry
-        let entry_str = $crate::__prepare(stringify!($entry));
-        cell.enter(entry_str);
-
-        cell
-    }};
-
-    ($($invalid:tt)*) => {{
-        $crate::__error($($invalid)*, "cell!")
-    }};
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __error {
-    ($($tt:tt)*, $macro:literal) => {
-        compile_error!(concat!(
-            "Invalid syntax for '",
-            $macro,
-            "' found, please read its documentation to see how to construct it"
-        ));
-    };
-}
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __dir {
@@ -353,7 +289,10 @@ mod tests {
     use puzzled_core::CellStyle;
     use rstest::rstest;
 
-    use crate::{Cell, Solution, Solution::*, cell};
+    use crate::{
+        CrosswordCell,
+        Solution::{self, *},
+    };
 
     const _E: CellStyle = CellStyle::EMPTY;
     const _I: CellStyle = CellStyle::INCORRECT;
@@ -362,19 +301,24 @@ mod tests {
     const _C: CellStyle = CellStyle::CIRCLED;
 
     #[rstest]
-    #[case(cell!(A), Letter('A'), None, _E)]
-    #[case(cell!(A (A)), Letter('A'), Some("A"), _E)]
-    #[case(cell!(A (E)), Letter('A'), Some("E"), _I)]
-    #[case(cell!(A@), Letter('A'), None, _C)]
-    #[case(cell!(A*), Letter('A'), None, _R)]
+    #[case(square!(A), Letter('A'), None, _E)]
+    #[case(square!(A (A)), Letter('A'), Some(Letter('A')), _E)]
+    #[case(square!(A (E)), Letter('A'), Some(Letter('E')), _I)]
+    #[case(square!(A@), Letter('A'), None, _C)]
+    #[case(square!(A*), Letter('A'), None, _R)]
     fn test_cell(
-        #[case] cell: Cell,
+        #[case] square: Option<CrosswordCell>,
         #[case] solution: Solution,
-        #[case] entry: Option<&str>,
+        #[case] entry: Option<Solution>,
         #[case] style: CellStyle,
     ) {
-        assert_eq!(cell.solution(), &solution);
-        assert_eq!(cell.entry(), &entry.map(|e| e.to_string()));
-        assert_eq!(cell.style(), style);
+        match square {
+            Some(cell) => {
+                assert_eq!(cell.solution(), &solution);
+                assert_eq!(cell.entry(), entry.as_ref());
+                assert_eq!(cell.style(), style);
+            }
+            _ => unreachable!("No test cases produce an empty square"),
+        }
     }
 }

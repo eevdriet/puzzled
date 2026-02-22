@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use puzzled_core::{Grid, GridError, Metadata, Timer, Version, format};
 
-use crate::{Cell, ClueSpec, Crossword, Direction, Square, Squares, io::TxtState};
+use crate::{ClueSpec, Crossword, CrosswordCell, Direction, Square, Squares, io::TxtState};
 
 #[derive(Debug, Default)]
 pub struct TxtReader;
@@ -148,10 +148,10 @@ impl<'a> TxtReader {
         for token in line.split_whitespace() {
             let square = match token {
                 "." => None,
-                word if word.len() == 1 => Some(Cell::letter(
+                word if word.len() == 1 => Some(CrosswordCell::letter(
                     word.chars().next().expect("Word is not empty"),
                 )),
-                rebus => Some(Cell::rebus(rebus.to_string())),
+                rebus => Some(CrosswordCell::rebus(rebus.to_string())),
             };
 
             squares.push(square);

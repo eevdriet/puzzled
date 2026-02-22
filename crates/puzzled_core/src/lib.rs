@@ -3,6 +3,7 @@
 pub mod format;
 pub use format::StringError;
 
+mod cell;
 mod color;
 mod grid;
 mod line;
@@ -15,6 +16,7 @@ mod style;
 mod timer;
 mod version;
 
+pub use cell::*;
 pub use grid::*;
 pub use line::*;
 pub use metadata::*;

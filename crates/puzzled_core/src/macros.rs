@@ -66,6 +66,60 @@ macro_rules! metadata {
     };
 }
 
+/// Macro for constructing a [cell](crate::Cell) inline
+///
+/// Squares can be constructed a 2 different ways
+/// 1. A [`char`] constructs a [letter](crate::Solution::Letter) cell
+/// 2. A [`str`] constructs a [rebus](crate::Solution::Rebus) cell
+///
+/// Note that a [`square!`](crate::square) can be constructed with the same syntax
+/// TODO: rewrite examples
+#[macro_export]
+macro_rules! cell {
+// Rebus or Letter with optional entry and optional styles
+    // Solution + styles + entry
+    ($sol:tt $($style:tt)+ ($entry:expr)) => {{
+        let style = $crate::style!($($style)+);
+
+        // Create the cell from solution and style
+        let cell = $crate::Cell::new_styled($sol, style);
+
+        // Add entry
+        cell.enter($entry);
+
+        cell
+    }};
+
+    // Solution + entry
+    ($sol:tt ($entry:expr)) => {{
+        // Create the cell from solution
+        let mut cell = $crate::Cell::new($sol);
+
+        // Add entry
+        cell.enter($entry);
+
+        cell
+    }};
+
+    // Solution + styles
+    ($sol:tt $($style:tt)+) => {{
+        let style = $crate::style!($($style)+);
+
+        // Create the cell from solution and style
+        $crate::Cell::new_styled($sol, style)
+    }};
+
+
+    // Solution
+    ($sol:expr) => {{
+        $crate::Cell::new($sol)
+    }};
+
+    ($($invalid:tt)*) => {{
+        $crate::__error($($invalid)*, "cell!")
+    }};
+}
+
 #[macro_export]
 macro_rules! style {
     () => {
@@ -96,3 +150,17 @@ macro_rules! style {
             )
         );
     };}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! macro_error {
+    ($($tt:tt)*, $macro:literal) => {
+        compile_error!(concat!(
+            "Invalid syntax for '",
+            $macro,
+            "' found (",
+            stringify!($($tt)*),
+            "), please read its documentation to see how to construct it"
+        ));
+    };
+}

@@ -5,7 +5,7 @@ use std::fmt;
 /// In almost all cases, solutions consist of a single [letter](Self::Letter).
 /// However, users may define a [rebus](Self::Rebus) to construct a multi-letter solution.
 /// In `*.puz` files, rebuses are defined from the [GRBS and RTBL sections](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Solution {
     /// One-letter solution
     Letter(char),
@@ -13,6 +13,27 @@ pub enum Solution {
     /// Multiple-letter solution, a.k.a. a rebus
     Rebus(String),
 }
+
+impl Solution {
+    pub fn first_letter(&self) -> char {
+        match self {
+            Self::Letter(letter) => *letter,
+            Self::Rebus(rebus) => rebus.chars().next().expect("Non-empty rebus"),
+        }
+    }
+}
+
+impl PartialEq for Solution {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Solution::Letter(lhs), Solution::Letter(rhs)) => lhs.eq_ignore_ascii_case(rhs),
+            (Solution::Rebus(lhs), Solution::Rebus(rhs)) => lhs.eq_ignore_ascii_case(rhs),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Solution {}
 
 impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

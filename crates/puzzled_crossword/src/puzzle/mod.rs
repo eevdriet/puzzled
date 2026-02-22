@@ -142,7 +142,7 @@ impl fmt::Display for Crossword {
 
         for pos in self.squares.positions() {
             match &self.squares[pos] {
-                Some(square) => write!(f, "{square}"),
+                Some(cell) => write!(f, "{cell}"),
                 None => write!(f, "{EMPTY_SQUARE}"),
             }?;
 
@@ -171,10 +171,13 @@ impl fmt::Display for Crossword {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::Metadata;
+    use puzzled_core::{Cell, Grid, Metadata, SerdeCell};
     use serde::{Deserialize, Serialize, de::Error};
 
-    use crate::{Clues, CluesData, Crossword, SerdeSquares, Squares};
+    use crate::{Clues, CluesData, Crossword, CrosswordCell, Solution, Squares};
+
+    type SerdeSquare = Option<SerdeCell<Solution>>;
+    type SerdeSquares = Grid<SerdeSquare>;
 
     #[derive(Serialize, Deserialize)]
     struct CrosswordData {
@@ -198,7 +201,10 @@ mod serde_impl {
             S: serde::Serializer,
         {
             // Puzzle
-            let squares = self.squares().to_data();
+            let squares = self
+                .squares()
+                .map_ref(|square| square.as_ref().map(|cell| cell.to_serde()));
+
             let has_clues = !self.clues().is_empty();
             let clues = has_clues.then_some(self.clues().to_data());
 
@@ -223,14 +229,20 @@ mod serde_impl {
             D: serde::Deserializer<'de>,
         {
             let CrosswordData {
-                cols,
-                squares: squares_data,
+                squares: squares_grid,
                 clues: clues_data,
                 meta,
                 ..
             } = CrosswordData::deserialize(deserializer)?;
 
-            let squares = Squares::from_data(squares_data, cols).map_err(Error::custom)?;
+            let squares_grid = squares_grid.map(|square| {
+                square.map(|cell| {
+                    let cell = Cell::<Solution>::from_serde(cell);
+                    CrosswordCell::new(cell)
+                })
+            });
+
+            let squares = Squares::new(squares_grid);
             let clues = Clues::from_data(clues_data.unwrap_or_default()).map_err(Error::custom)?;
 
             Ok(Crossword {
