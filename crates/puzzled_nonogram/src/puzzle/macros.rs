@@ -6,6 +6,9 @@ macro_rules! nonogram {
 
         // Colors
         $(- $color_id:tt : $color:tt )*
+
+        // Metadata
+        $( $meta_key:ident : $meta_val:literal )*
     ) => {{
         // Add fills and use them to construct the rules
         let grid = $crate::grid![
@@ -19,8 +22,12 @@ macro_rules! nonogram {
         // Add colors
         let colors = $crate::Colors::default();
 
-        // Add meta data
-        let meta = $crate::Metadata::default();
+        // Add metadata
+        #[allow(unused_mut)]
+        let mut meta = $crate::Metadata::default();
+        $(
+            $crate::metadata!(meta, $meta_key : $meta_val);
+        )*
 
         $crate::Nonogram::new_empty(rules, colors, meta).expect("Size should be small enough")
     }};

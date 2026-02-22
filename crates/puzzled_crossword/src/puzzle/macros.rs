@@ -89,7 +89,7 @@ macro_rules! crossword {
     }};
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid:tt)*, "crossword!")
+        $crate::__error($($invalid)*, "crossword!")
     }};
 }
 
@@ -116,6 +116,7 @@ macro_rules! crossword {
 /// ```
 #[macro_export]
 macro_rules! square {
+    // Empty squares
     () => {
         None
     };
@@ -123,24 +124,13 @@ macro_rules! square {
         None
     };
 
-    ($lit:literal) => {{
-        Some($crate::cell!($lit))
-    }};
-
-    ($ident:ident) => {{
-        let s = stringify!($ident);
-
-        let solution = match s.len() {
-            1 => $crate::Solution::Letter(s.chars().next().unwrap()),
-            _ => $crate::Solution::Rebus(s.to_string()),
-        };
-
-        let cell = $crate::Cell::new(solution);
-        Some(cell)
-    }};
+    // Cells
+    ($sol:tt $( ($entry:expr) )? $($style:tt)*) => {
+        Some($crate::cell!($sol $(($entry))? $($style)*))
+    };
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($tt:tt)*, "square!")
+        $crate::__error($($invalid)*, "square!")
     }};
 }
 
@@ -175,7 +165,7 @@ macro_rules! clue_spec {
     };
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid:tt)*, "clue_spec!")
+        $crate::__error($($invalid)*, "clue_spec!")
     }};
 }
 
@@ -218,8 +208,45 @@ macro_rules! clue {
     };
 
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid:tt)*, "clue!")
+        $crate::__error($($invalid)*, "clue!")
     }};
+}
+
+// Trait for converting anything into Solution
+trait __IntoSolution {
+    fn into_solution(self) -> crate::Solution;
+}
+
+impl __IntoSolution for char {
+    fn into_solution(self) -> crate::Solution {
+        crate::Solution::Letter(self)
+    }
+}
+
+impl __IntoSolution for String {
+    fn into_solution(self) -> crate::Solution {
+        crate::Solution::Rebus(self)
+    }
+}
+
+#[doc(hidden)]
+pub fn __prepare(s: &str) -> String {
+    s.trim_matches('"').trim_matches('\'').to_ascii_uppercase()
+}
+
+#[doc(hidden)]
+pub fn __solution(sol_str: &str) -> crate::Solution {
+    let sol_str = __prepare(sol_str);
+
+    if sol_str.len() == 1 {
+        sol_str
+            .chars()
+            .next()
+            .expect("Verified length")
+            .into_solution()
+    } else {
+        sol_str.into_solution()
+    }
 }
 
 /// Macro for constructing a [cell](crate::Cell) inline
@@ -242,29 +269,55 @@ macro_rules! clue {
 /// ```
 #[macro_export]
 macro_rules! cell {
-    ($lit:literal) => {{
-        trait __IntoSolution {
-            fn into_solution(self) -> $crate::Solution;
-        }
+// Rebus or Letter with optional entry and optional styles
+    // Solution
+    ($sol:tt) => {{
+        let solution = $crate::__solution(stringify!($sol));
 
-        impl __IntoSolution for char {
-            fn into_solution(self) -> $crate::Solution {
-                $crate::Solution::Letter(self)
-            }
-        }
-
-        impl __IntoSolution for &str {
-            fn into_solution(self) -> $crate::Solution {
-                $crate::Solution::Rebus(self.to_string())
-            }
-        }
-
-        let solution = __IntoSolution::into_solution($lit);
+        // Create the cell from solution
         $crate::Cell::new(solution)
     }};
 
+    // Solution + entry
+    ($sol:tt ($entry:tt)) => {{
+        let solution = $crate::__solution(stringify!($sol));
+
+        // Create the cell from solution
+        let mut cell = $crate::Cell::new(solution);
+
+        // Add entry
+        let entry_str = $crate::__prepare(stringify!($entry));
+        cell.enter(entry_str);
+
+        cell
+    }};
+
+    // Solution + styles
+    ($sol:tt $($style:tt)+) => {{
+        let solution = $crate::__solution(stringify!($sol));
+        let style = $crate::style!($($style)+);
+
+        // Create the cell from solution and style
+        $crate::Cell::new_styled(solution, style)
+    }};
+
+    // Solution + entry + style
+    ($sol:tt ($entry:tt) $($style:tt)+) => {{
+        let solution = $crate::__solution(stringify!($sol));
+        let style = $crate::style!($($style)+);
+
+        // Create the cell from solution and style
+        let cell = $crate::Cell::new_styled(solution, style)
+
+        // Add entry
+        let entry_str = $crate::__prepare(stringify!($entry));
+        cell.enter(entry_str);
+
+        cell
+    }};
+
     ($($invalid:tt)*) => {{
-        $crate::__error($($invalid:tt)*, "cell!")
+        $crate::__error($($invalid)*, "cell!")
     }};
 }
 
@@ -293,4 +346,35 @@ macro_rules! __dir {
     ($dir:ident) => {
         compile_error!("Invalid direction: only A (across) and D (down) allowed")
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use puzzled_core::CellStyle;
+    use rstest::rstest;
+
+    use crate::{Cell, Solution, Solution::*, cell};
+
+    const _E: CellStyle = CellStyle::EMPTY;
+    const _I: CellStyle = CellStyle::INCORRECT;
+    const _P: CellStyle = CellStyle::PREVIOUSLY_INCORRECT;
+    const _R: CellStyle = CellStyle::REVEALED;
+    const _C: CellStyle = CellStyle::CIRCLED;
+
+    #[rstest]
+    #[case(cell!(A), Letter('A'), None, _E)]
+    #[case(cell!(A (A)), Letter('A'), Some("A"), _E)]
+    #[case(cell!(A (E)), Letter('A'), Some("E"), _I)]
+    #[case(cell!(A@), Letter('A'), None, _C)]
+    #[case(cell!(A*), Letter('A'), None, _R)]
+    fn test_cell(
+        #[case] cell: Cell,
+        #[case] solution: Solution,
+        #[case] entry: Option<&str>,
+        #[case] style: CellStyle,
+    ) {
+        assert_eq!(cell.solution(), &solution);
+        assert_eq!(cell.entry(), &entry.map(|e| e.to_string()));
+        assert_eq!(cell.style(), style);
+    }
 }

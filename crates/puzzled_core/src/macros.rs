@@ -32,20 +32,6 @@ macro_rules! grid {
 }
 
 #[macro_export]
-macro_rules! squares {
-    (
-        [$($x0:tt),+ $(,)?] $(, [$($x:tt),+ $(,)?] $(,)?)*
-    ) => {{
-        let grid = $crate::grid![
-            [$( $crate::square!($x0) ),+]
-            $(, [$( $crate::square!($x) ),+] )*
-        ];
-
-        $crate::OptGrid::new(grid)
-    }};
-}
-
-#[macro_export]
 macro_rules! metadata {
     ($meta:ident, author : $author:literal) => {
         $meta.author = Some($author.to_string());
@@ -79,3 +65,34 @@ macro_rules! metadata {
         compile_error!(concat!("Invalid meta property: ", stringify!($key)));
     };
 }
+
+#[macro_export]
+macro_rules! style {
+    () => {
+        $crate::CellStyle::EMPTY
+    };
+
+    (~ $($rest:tt)*) => {
+        $crate::CellStyle::PREVIOUSLY_INCORRECT
+        | $crate::style!($($rest)*)
+    };
+
+    (* $($rest:tt)*) => {
+        $crate::CellStyle::REVEALED
+        | $crate::style!($($rest)*)
+    };
+
+    (@ $($rest:tt)*) => {
+        $crate::CellStyle::CIRCLED
+        | $crate::style!($($rest)*)
+    };
+
+    ($invalid:tt $($rest:tt)*) => {
+        compile_error!(
+            concat!(
+                "Unknown style suffix: '",
+                stringify!($invalid),
+                "' (only ~, * and @ allowed)"
+            )
+        );
+    };}
