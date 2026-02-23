@@ -44,7 +44,7 @@ mod puzzle;
 #[doc(hidden)]
 pub use puzzled_core::*;
 
-#[doc(hidden)]
+#[doc(inline)]
 pub use puzzle::*;
 
 #[cfg(feature = "macros")]

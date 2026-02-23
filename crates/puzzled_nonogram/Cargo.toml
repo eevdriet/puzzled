@@ -25,13 +25,15 @@ rstest = {workspace = true}
 tracing-test = {workspace = true}
 
 [features]
-default = ["macros"]
+default = ["macros", "text"]
 
 #! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
 #!
 ## Enables support for creating nonograms and related types inline through declarative macros
 macros = []
-## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
+## Enables reading and writing nonograms from plain text
+text = ["puzzled_io/text"]
+## Enables serializing and deserializing nonograms using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = ["dep:serde", "puzzled_core/serde"]
 ## Enables reading and writing nonograms with the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
 puz = ["puzzled_io/puz"]

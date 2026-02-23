@@ -15,7 +15,7 @@ puzzled_nonogram = {path = "../puzzled_nonogram", optional = true}
 document-features = {workspace = true}
 
 [features]
-default = ["macros"]
+default = ["macros", "text"]
 
 #! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
 #!
@@ -40,6 +40,12 @@ nonogram = ["dep:puzzled_nonogram"]
 #! ## I/O
 #! The following features make reading and writing puzzles easier
 #!
+## Enables reading and writing puzzles from plain text
+text = [
+    "puzzled_io/text",
+    "puzzled_crossword?/text",
+    "puzzled_nonogram?/text",
+]
 ## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = [
     "puzzled_core/serde",

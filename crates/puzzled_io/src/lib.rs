@@ -1,10 +1,10 @@
 // Text format
+#[cfg(feature = "text")]
 pub mod text;
 
+#[cfg(feature = "text")]
 #[doc(inline)]
 pub use text::{TxtPuzzle, TxtReader};
-
-pub mod format;
 
 // Puz format
 #[cfg(feature = "puz")]
@@ -25,3 +25,5 @@ pub use image::{ImagePuzzle, ImageReader, ImageWriter};
 // Other
 mod error;
 pub use error::*;
+
+pub mod format;
