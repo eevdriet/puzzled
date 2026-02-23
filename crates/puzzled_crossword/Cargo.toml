@@ -11,6 +11,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 serde = { workspace = true, optional = true }
 miette = { workspace = true, optional = true}
 derive_more = {workspace = true}
+document-features = {workspace = true}
 thiserror = { workspace = true}
 puzzled_core = { path = "../puzzled_core"}
 puzzled_puz = { path = "../puzzled_puz/", optional = true}
@@ -21,8 +22,14 @@ serde_json = {workspace = true}
 puzzled = {path = "../puzzled", features = ["crossword"]}
 
 [features]
-default = []
-serde = ["dep:serde"]
-puz = ["dep:puzzled_puz"]
-miette = ["dep:miette"]
+default = ["macros"]
 
+#! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
+## Enables support for creating puzzles and other structures inline through declarative macros
+macros = []
+## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
+serde = ["dep:serde", "puzzled_core/serde"]
+## Enables reading puzzles from and writing them into the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
+puz = ["dep:puzzled_puz"]
+
+miette = ["dep:miette"]

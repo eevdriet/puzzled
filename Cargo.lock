@@ -1744,6 +1744,7 @@ name = "puzzled_crossword"
 version = "0.1.0"
 dependencies = [
  "derive_more",
+ "document-features",
  "miette",
  "puzzled",
  "puzzled_core",
@@ -1760,6 +1761,7 @@ version = "0.1.0"
 dependencies = [
  "bitvec",
  "derive_more",
+ "document-features",
  "image",
  "puzzled",
  "puzzled_core",

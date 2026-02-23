@@ -63,30 +63,6 @@ impl CellStyle {
     }
 }
 
-/// Generates a method to check whether a style is set on a [`FillSquare`]
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// check_style!(CellStyle::REVEALED, is_revealed());
-///
-/// // generates
-///
-/// #[doc = "Checks whether [`CellStyle::REVEALED`] is set."]
-/// fn is_revealed(self) -> bool {
-///     self.style.contains(CellStyle::REVEALED)
-/// }
-/// ```
-#[macro_export]
-macro_rules! check_style {
-    ($variant:expr, $field:ident, $style_fn:ident()) => {
-        #[doc = concat!("Checks whether [`", stringify!($variant), "`]) is set.")]
-        pub fn $style_fn(&self) -> bool {
-            self.$field.contains($variant)
-        }
-    };
-}
-
 impl fmt::Display for CellStyle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let styles = [

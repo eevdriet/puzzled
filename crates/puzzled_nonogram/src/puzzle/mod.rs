@@ -4,9 +4,6 @@ mod find;
 mod rule;
 mod run;
 
-#[allow(unused_mut)]
-mod macros;
-
 use derive_more::{Index, IndexMut};
 use puzzled_core::{Grid, Metadata, add_metadata};
 

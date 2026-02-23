@@ -134,15 +134,6 @@ mod tests {
             .map(|&val| val.into())
             .collect::<Vec<Run>>()
     }
-    fn runs_to_fills(runs: Vec<Run>) -> Vec<Fill> {
-        let mut fills = vec![];
-
-        for run in runs {
-            fills.extend(vec![run.fill; run.count]);
-        }
-
-        fills
-    }
 
     #[rstest]
     #[case::single_color(vec![C1], vec![(C1, 1)])]

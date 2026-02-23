@@ -155,21 +155,12 @@ mod tests {
     use rstest::{fixture, rstest};
     use tracing_test::traced_test;
 
-    fn fills_from_row(row: &[Fill]) -> Fills {
-        let cols = row.len();
-
-        let grid = Grid::from_vec(row.to_vec(), cols).expect("Single row");
-        Fills::new(grid)
-    }
-
     fn line_pos(pos: usize) -> LinePosition {
         LinePosition::new(Line::Row(0), pos)
     }
 
     const B: Fill = Fill::Blank;
-    const X: Fill = Fill::Cross;
     const C: Fill = Fill::Color(1);
-    const C2: Fill = Fill::Color(2);
 
     #[fixture]
     fn line_fills() -> Fills {

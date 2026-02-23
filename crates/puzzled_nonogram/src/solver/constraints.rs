@@ -219,8 +219,6 @@ mod tests {
     use rstest::rstest;
     use tracing_test::traced_test;
 
-    const B: Fill = Fill::Blank;
-    const X: Fill = Fill::Cross;
     const C: Fill = Fill::Color(1);
     const C2: Fill = Fill::Color(2);
 

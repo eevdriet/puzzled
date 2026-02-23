@@ -224,6 +224,7 @@ mod serde_impl {
 
     use crate::{Cell, CellStyle};
 
+    #[doc(hidden)]
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum SerdeCell<S> {
@@ -243,6 +244,7 @@ mod serde_impl {
     where
         S: Clone,
     {
+        #[doc(hidden)]
         pub fn to_serde(&self) -> SerdeCell<S> {
             if self.entry.is_none() && self.style.is_empty() {
                 SerdeCell::Simple(self.solution.clone())
@@ -255,6 +257,7 @@ mod serde_impl {
             }
         }
 
+        #[doc(hidden)]
         pub fn from_serde(cell: SerdeCell<S>) -> Self {
             match cell {
                 SerdeCell::Simple(solution) => Cell::new(solution),

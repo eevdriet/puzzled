@@ -1,5 +1,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-//! The [`puzzled_crossword`](crate) library provides functionality for reading, writing and solving [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
+
+//! The [`crossword`](crate) library provides functionality for reading, writing and solving [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
 //! A [`Crossword`] is either constructed directly from its [squares](Squares) and [clues](Clues) or using one of the readers from the [`io`] module.
 //! ```
 //! use puzzled::crossword::crossword;
@@ -27,10 +28,8 @@
 //! assert_eq!(puzzle.cols(), 5);
 //! ```
 //!
-//! # Features and dependencies
-//! The library currently has no dependencies, expect for the following features:
-//! - **serde** - Enables support for serializing and deserializing puzzles with [`serde`][serde]
-//! - [`thiserror`][thiserror] to simplify the definition of the [`Error`] type and subtypes
+//! # Features
+#![doc = document_features::document_features!()]
 //!
 //! [puzzled]: crate
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
@@ -46,3 +45,10 @@ pub use puzzled_core::*;
 
 #[doc(hidden)]
 pub use puzzle::*;
+
+#[cfg(feature = "macros")]
+mod macros;
+
+#[cfg(feature = "macros")]
+#[doc(hidden)]
+pub use macros::*;

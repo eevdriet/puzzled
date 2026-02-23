@@ -19,6 +19,15 @@ serde = { workspace = true, optional = true }
 [features]
 #! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
 #!
+#! ## Default
+#! By default, the following features are enabled
+## Enables support for creating puzzles and other structures inline through declarative macros
+macros = [
+    "puzzled_core/macros",
+    "puzzled_crossword?/macros",
+    "puzzled_nonogram?/macros",
+]
+#!
 #! ## Puzzles
 #! The following features enable 
 #! 

@@ -17,5 +17,6 @@ thiserror = {workspace = true}
 puzzled = {path = "../puzzled/", features = ["crossword"]}
 
 [features]
-default = []
+default = ["macros"]
+macros = []
 serde = ["dep:serde"]

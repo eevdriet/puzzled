@@ -25,6 +25,8 @@ pub struct Metadata {
     pub timer: Timer,
 }
 
+// NOTE: this macro not opt-in as every puzzle defines metadata
+#[doc(hidden)]
 #[macro_export]
 macro_rules! add_metadata {
     ($ty:ty) => {

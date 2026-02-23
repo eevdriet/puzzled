@@ -250,8 +250,4 @@ impl Solver {
 
         LineValidation::Valid
     }
-
-    fn validate_fill(&self, _rule: &Rule, _line: Line) -> LineValidation {
-        LineValidation::Valid
-    }
 }

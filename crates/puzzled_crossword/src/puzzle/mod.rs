@@ -2,12 +2,10 @@
 ///
 ///
 mod clue;
-mod macros;
 mod solve;
 mod square;
 
 pub use clue::*;
-pub use macros::*;
 pub use square::*;
 
 use puzzled_core::{Metadata, add_metadata};
