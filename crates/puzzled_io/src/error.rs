@@ -6,23 +6,38 @@ use crate::image;
 use crate::text;
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum ReadError {
     #[error("Text error: {0}")]
-    Text(#[from] text::Error),
+    Text(#[from] text::read::Error),
 
     #[cfg(feature = "puz")]
     #[error("Puz error: {0}")]
-    Puz(#[from] puz::Error),
+    Puz(#[from] puz::read::Error),
 
     #[cfg(feature = "image")]
     #[error("Image error: {0}")]
-    Image(#[from] image::Error),
+    Image(#[from] image::read::Error),
 
-    #[error("Tried to parse nonogram from file with unsupported extension '{0}'")]
-    UnsupportedExtension(String),
+    #[error("Cannot read puzzle from unsupported format '{format}'")]
+    UnsupportedFormat { format: String },
 }
 
-pub type Result<T> = core::result::Result<T, Error>;
+#[derive(Debug, thiserror::Error)]
+pub enum WritError {
+    #[error("Text error: {0}")]
+    Text(#[from] text::read::Error),
+
+    #[cfg(feature = "puz")]
+    #[error("Puz error: {0}")]
+    Puz(#[from] puz::read::Error),
+
+    #[cfg(feature = "image")]
+    #[error("Image error: {0}")]
+    Image(#[from] image::read::Error),
+
+    #[error("Cannot write puzzle with unsupported format '{format}'")]
+    UnsupportedFormat { format: String },
+}
 
 pub trait Context<T, E> {
     fn context<S>(self, context: S) -> std::result::Result<T, E>

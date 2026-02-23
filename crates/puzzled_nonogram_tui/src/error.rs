@@ -4,7 +4,7 @@ pub enum Error {
     Custom(String),
 
     #[error("I/O error: {0}")]
-    Puzzle(#[from] puzzled_io::Error),
+    Puzzle(#[from] puzzled_io::ReadError),
 
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),

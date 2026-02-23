@@ -12,7 +12,7 @@ use std::path::Path;
 use crate::Nonogram;
 
 /// Unified puzzle loader.
-pub fn read_puzzle_from_path<R>(path: R) -> io::Result<Nonogram>
+pub fn read_puzzle_from_path<R>(path: R) -> Result<Nonogram, io::ReadError>
 where
     R: AsRef<Path>,
 {
@@ -29,7 +29,7 @@ where
             use puzzled_io::PuzReader;
 
             let reader = PuzReader::default();
-            Ok(reader.read_from_path(path).map_err(io::puz::Error::Read)?)
+            Ok(reader.read_from_path(path)?)
         }
 
         #[cfg(feature = "image")]
@@ -37,10 +37,10 @@ where
             use puzzled_io::ImageReader;
 
             let reader = ImageReader;
-            Ok(reader
-                .read_from_path(path)
-                .map_err(io::image::Error::Read)?)
+            Ok(reader.read_from_path(path)?)
         }
-        _ => Err(io::Error::UnsupportedExtension(ext.clone())),
+        _ => Err(io::ReadError::UnsupportedFormat {
+            format: ext.clone(),
+        }),
     }
 }

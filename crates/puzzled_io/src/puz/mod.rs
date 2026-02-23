@@ -145,19 +145,20 @@
 pub mod read;
 pub mod write;
 
+#[doc(inline)]
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
-pub(crate) use read::{PuzState, Warning};
+#[doc(inline)]
 pub use write::{PuzSizeCheck, PuzWrite, PuzWriter, check_puz_size};
 
+pub(crate) use read::{PuzState, Warning};
+
 mod checksums;
-mod error;
 mod extras;
 mod grids;
 mod header;
 mod strings;
 
 pub use checksums::*;
-pub use error::*;
 pub use extras::*;
 pub use grids::*;
 pub use header::*;
