@@ -57,7 +57,7 @@ macro_rules! crossword {
         $(- $dir:ident : $clue:literal )*
 
         // Metadata
-        $( $meta_key:ident : $meta_value:expr )*
+        $( $meta_key:ident : $meta_value:literal )*
     ) => {{
         // Add squares
         let grid = $crate::grid![
@@ -70,7 +70,7 @@ macro_rules! crossword {
         let clues = vec![$($crate::clue_spec!($dir : $clue)),*];
 
         // Add metadata
-        let meta = $crate::metadata!( $( $meta_key:ident : $meta_value:expr),*);
+        let meta = $crate::metadata!( $( $meta_key : $meta_value),*);
 
         // Create puzzle
         let mut puzzle = $crate::Crossword::from_squares(squares, meta);

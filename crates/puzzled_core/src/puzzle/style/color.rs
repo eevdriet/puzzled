@@ -75,10 +75,7 @@ impl Color {
             let red = iter.next().expect("Verified length")?;
             let green = iter.next().expect("Verified length")?;
             let blue = iter.next().expect("Verified length")?;
-            let alpha = iter
-                .next()
-                .expect("Verified length")
-                .unwrap_or(ColorValue::MAX);
+            let alpha = iter.next().unwrap_or(Ok(ColorValue::MAX))?;
 
             Ok(Self::rgba(red, green, blue, alpha))
         };

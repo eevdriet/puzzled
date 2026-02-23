@@ -1,13 +1,5 @@
-#[cfg(feature = "macros")]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 mod clue;
-
-#[cfg(feature = "macros")]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 mod crossword;
-
-#[cfg(feature = "macros")]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 mod square;
 
 // Trait for converting anything into Solution

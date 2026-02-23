@@ -20,6 +20,7 @@ puzzled_puz = { path = "../puzzled_puz/", optional = true}
 rstest = { workspace = true }
 serde_json = {workspace = true}
 puzzled = {path = "../puzzled", features = ["crossword"]}
+puzzled_core = { path = "../puzzled_core/", features = ["macros"] }
 
 [features]
 default = ["macros"]

@@ -4,7 +4,7 @@ macro_rules! metadata {
     ( $( $key:ident : $value:expr),* $(,)? ) => {
         $crate::Metadata {
             $(
-                $key: metadata!(@transform $key, $value),
+                $key: $crate::metadata!(@transform $key, $value),
             )*
             ..Default::default()
         }
