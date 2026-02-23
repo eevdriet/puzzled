@@ -1723,9 +1723,8 @@ dependencies = [
  "document-features",
  "puzzled_core",
  "puzzled_crossword",
+ "puzzled_io",
  "puzzled_nonogram",
- "puzzled_puz",
- "serde",
 ]
 
 [[package]]
@@ -1748,10 +1747,19 @@ dependencies = [
  "miette",
  "puzzled",
  "puzzled_core",
- "puzzled_puz",
+ "puzzled_io",
  "rstest",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "puzzled_io"
+version = "0.1.0"
+dependencies = [
+ "puzzled",
+ "puzzled_core",
  "thiserror 2.0.18",
 ]
 
@@ -1765,7 +1773,7 @@ dependencies = [
  "image",
  "puzzled",
  "puzzled_core",
- "puzzled_puz",
+ "puzzled_io",
  "rstest",
  "serde",
  "serde_json",
@@ -1781,6 +1789,7 @@ dependencies = [
  "clap",
  "crossterm",
  "directories",
+ "puzzled_io",
  "puzzled_nonogram",
  "ratatui",
  "rstest",
@@ -1790,16 +1799,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
-]
-
-[[package]]
-name = "puzzled_puz"
-version = "0.1.0"
-dependencies = [
- "puzzled",
- "puzzled_core",
- "serde",
- "thiserror 2.0.18",
 ]
 
 [[package]]

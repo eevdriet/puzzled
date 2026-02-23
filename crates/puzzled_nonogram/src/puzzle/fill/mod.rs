@@ -8,6 +8,16 @@ use std::fmt::Debug;
 
 use crate::ColorId;
 
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("Fill error: {0}")]
+pub enum FillError {
+    #[error("Can only create fill from a single character")]
+    InvalidLen,
+
+    #[error("Invalid character '{0}' used to create fill, only 0..=9, a..=z and A..=Z are allowed")]
+    InvalidChar(char),
+}
+
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fill {
     /// Not yet filled out cell
@@ -22,12 +32,41 @@ pub enum Fill {
 }
 
 impl Fill {
-    pub const fn from_byte(byte: u8) -> Self {
-        match byte {
-            0 => Fill::Blank,
-            1 => Fill::Cross,
-            b => Fill::Color(b as usize),
+    pub const fn decode_char(ch: char) -> Result<Self, FillError> {
+        let id = match ch {
+            // Non-colors
+            '.' => return Ok(Fill::Blank),
+            '0' | 'x' | 'X' => return Ok(Fill::Cross),
+            // 1. Numbers
+            col @ '1'..='9' => (col as u8 - b'1') as usize,
+            // 2. Lowercase letters
+            col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
+            col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
+            // 3. Uppercase letters
+            col @ 'A'..'X' => (col as u8 - b'A' + 9 + 25 + 23) as usize,
+            col @ 'Y'..='Z' => (col as u8 - b'Y' + 9 + 25 + 25) as usize,
+
+            // Unknown
+            _ => {
+                return Err(FillError::InvalidChar(ch));
+            }
+        };
+
+        Ok(Fill::Color(id))
+    }
+
+    pub const fn decode_str(str: &str) -> Result<Self, FillError> {
+        let bytes = str.as_bytes();
+
+        if bytes.is_empty() {
+            return Ok(Fill::Blank);
         }
+
+        if bytes.len() != 1 {
+            return Err(FillError::InvalidLen);
+        }
+
+        Self::decode_char(bytes[0] as char)
     }
 
     pub fn is_color(&self) -> bool {
@@ -81,42 +120,21 @@ impl Fill {
             },
         }
     }
+}
 
-    pub const fn from_char_const(char: char) -> Self {
-        let id = match char {
-            // Non-colors
-            '.' => return Fill::Blank,
-            '0' | 'x' | 'X' => return Fill::Cross,
-            // 1. Numbers
-            col @ '1'..='9' => (col as u8 - b'1') as usize,
-            // 2. Lowercase letters
-            col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
-            col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
-            // 3. Uppercase letters
-            col @ 'A'..'X' => (col as u8 - b'A' + 9 + 25 + 23) as usize,
-            col @ 'Y'..='Z' => (col as u8 - b'Y' + 9 + 25 + 25) as usize,
+impl TryFrom<char> for Fill {
+    type Error = FillError;
 
-            // Unknown
-            _ => {
-                panic!("Found unknown character to represent Fill::Color");
-            }
-        };
-
-        Fill::Color(id)
+    fn try_from(fill_char: char) -> Result<Self, Self::Error> {
+        Self::decode_char(fill_char)
     }
+}
 
-    pub const fn from_str_const(str: &str) -> Self {
-        let bytes = str.as_bytes();
+impl TryFrom<&str> for Fill {
+    type Error = FillError;
 
-        if bytes.is_empty() {
-            return Fill::Blank;
-        }
-
-        if bytes.len() != 1 {
-            panic!("Fill must be represented by 0 (blank) or 1 characters");
-        }
-
-        Self::from_char_const(bytes[0] as char)
+    fn try_from(fill_str: &str) -> Result<Self, Self::Error> {
+        Self::decode_str(fill_str)
     }
 }
 

@@ -44,6 +44,18 @@ impl fmt::Display for Solution {
     }
 }
 
+impl From<&str> for Solution {
+    fn from(value: &str) -> Self {
+        match value.len() {
+            1 => {
+                let letter = value.chars().next().expect("Verified non-zero length");
+                Solution::Letter(letter)
+            }
+            _ => Solution::Rebus(value.to_string()),
+        }
+    }
+}
+
 impl From<String> for Solution {
     fn from(value: String) -> Self {
         match value.len() {

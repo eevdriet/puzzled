@@ -17,7 +17,7 @@ serde_json = {workspace = true}
 thiserror = {workspace = true}
 tracing = {workspace = true}
 puzzled_core = { path = "../puzzled_core"}
-puzzled_puz = { path = "../puzzled_puz/", optional = true}
+puzzled_io = { path = "../puzzled_io/" }
 
 [dev-dependencies]
 puzzled = {path = "../puzzled", features = ["nonogram"]}
@@ -33,6 +33,6 @@ macros = []
 ## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = ["dep:serde", "puzzled_core/serde"]
 ## Enables reading and writing puzzles with the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
-puz = ["dep:puzzled_puz"]
+puz = ["puzzled_io/puz"]
 ## Enables reading and writing puzzles from images using the [`image`](https://docs.rs/serde/latest/image/) crate
 image = ["dep:image"]

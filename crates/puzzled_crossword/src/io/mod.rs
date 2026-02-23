@@ -18,7 +18,8 @@
 //!
 //! For example, the following two ways to construct a puzzle are identical
 //! ```
-//! use puzzled::crossword::{crossword, io::TxtReader};
+//! use puzzled::crossword::crossword;
+//! use puzzled::io::TxtReader;
 //! use std::{path::Path, fs::read_to_string};
 //!
 //! // 1. Macro definition
@@ -31,11 +32,8 @@
 //! };
 //!
 //! // 2. Text file
-//! let path = Path::new("puzzles/ok/alphabet.txt");
-//! let txt = read_to_string(path)?;
-//!
-//! let reader = TxtReader;
-//! let puzzle2 = reader.read(&txt)?;
+//! let reader = TxtReader::new(false);
+//! let puzzle2 = reader.read_from_path("puzzles/ok/alphabet.txt")?;
 //!
 //! assert_eq!(puzzle1, puzzle2);
 //! # Ok::<(), Box<dyn std::error::Error>>(())
@@ -44,6 +42,4 @@
 #[cfg(feature = "puz")]
 mod puz;
 
-pub mod text;
-pub use text::TxtReader;
-pub(crate) use text::TxtState;
+mod text;

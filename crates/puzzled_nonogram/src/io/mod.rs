@@ -1,9 +1,7 @@
-mod error;
 mod text;
 
+use puzzled_io as io;
 use std::path::Path;
-
-pub use error::*;
 
 use crate::Nonogram;
 
@@ -14,9 +12,9 @@ mod puz;
 pub mod img;
 
 /// Unified puzzle loader.
-pub fn read_puzzle_from_path<P>(path: P) -> Result<Nonogram>
+pub fn read_puzzle_from_path<R>(path: R) -> io::Result<Nonogram>
 where
-    P: AsRef<Path>,
+    R: AsRef<Path>,
 {
     let path = path.as_ref();
     let ext = path
@@ -28,20 +26,19 @@ where
     match ext.as_str() {
         #[cfg(feature = "puz")]
         "puz" => {
-            use puzzled_puz::PuzReader;
+            use puzzled_io::puz::PuzReader;
 
             let reader = PuzReader::default();
-            Ok(reader.read_from_path(path)?)
+            Ok(reader.read_from_path(path).map_err(io::puz::Error::Read)?)
         }
 
-        #[cfg(feature = "image")]
-        "png" | "jpg" | "jpeg" => {
-            use img::ImageReader;
-
-            let reader = ImageReader;
-            Ok(reader.read_from_path(path)?)
-        }
-
-        _ => Err(Error::UnsupportedExtension(ext.clone())),
+        // #[cfg(feature = "image")]
+        // "png" | "jpg" | "jpeg" => {
+        //     use img::ImageReader;
+        //
+        //     let reader = ImageReader;
+        //     Ok(reader.read_from_path(path)?)
+        // }
+        _ => Err(io::Error::UnsupportedExtension(ext.clone())),
     }
 }

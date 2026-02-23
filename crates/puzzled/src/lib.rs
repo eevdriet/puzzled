@@ -8,6 +8,9 @@
 pub use puzzled_core as core;
 
 #[doc(hidden)]
+pub use puzzled_io as io;
+
+#[doc(hidden)]
 #[cfg(feature = "crossword")]
 #[cfg_attr(docsrs, doc(cfg(feature = "crossword")))]
 pub use puzzled_crossword as crossword;
@@ -16,8 +19,3 @@ pub use puzzled_crossword as crossword;
 #[cfg(feature = "nonogram")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nonogram")))]
 pub use puzzled_nonogram as nonogram;
-
-#[doc(hidden)]
-#[cfg(feature = "puz")]
-#[cfg_attr(docsrs, doc(cfg(feature = "puz")))]
-pub use puzzled_puz as puz;

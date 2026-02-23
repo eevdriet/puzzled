@@ -15,6 +15,7 @@ directories = { workspace = true }
 thiserror = { workspace = true }
 
 puzzled_nonogram = { path = "../puzzled_nonogram/", features = ["serde"]}
+puzzled_io = { path = "../puzzled_io/" }
 
 [dev-dependencies]
 rstest = { workspace = true }

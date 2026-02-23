@@ -1,18 +1,20 @@
-use puzzled_core::{
-    Color, Grid,
+use puzzled_core::{Color, Grid};
+use puzzled_io::{
+    Context,
     format::{self, StringError},
-};
-use puzzled_puz::{
-    Context, Extras, Grids, Header, Puz, PuzWrite, SizeCheck, Strings, check_size,
-    read::{self, read_metadata},
+    puz::{
+        Extras, Grids, Header, Puz, PuzSizeCheck, PuzWrite, Strings, check_puz_size,
+        read::{self, read_metadata},
+        write,
+    },
 };
 
 use crate::{Colors, Fill, Fills, Nonogram, Rules};
 
-impl SizeCheck for Colors {
+impl PuzSizeCheck for Colors {
     const KIND: &'static str = "Fill colors";
 
-    fn check_size(&self) -> format::Result<()> {
+    fn check_puz_size(&self) -> write::Result<()> {
         let max_color_id = u8::MAX as usize;
         let color_ids = self.keys().filter_map(|fill| match fill {
             Fill::Color(id) => Some(id),
@@ -20,7 +22,7 @@ impl SizeCheck for Colors {
         });
 
         for &color_id in color_ids {
-            check_size("Fill colors", color_id, max_color_id)?;
+            check_puz_size("Fill colors", color_id, max_color_id)?;
         }
 
         Ok(())
@@ -28,18 +30,18 @@ impl SizeCheck for Colors {
 }
 
 impl Puz for Nonogram {
-    fn to_header(&self) -> format::Result<Header> {
+    fn to_header(&self) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
         let fills = self.fills();
-        fills.check_size()?;
+        fills.check_puz_size()?;
         header.width = fills.cols() as u8;
         header.height = fills.rows() as u8;
 
         // Clues
         let colors = self.colors();
-        colors.check_size()?;
+        colors.check_puz_size()?;
         header.clue_count = colors.len() as u16;
 
         // Metadata
@@ -48,10 +50,10 @@ impl Puz for Nonogram {
         Ok(header)
     }
 
-    fn to_grids(&self) -> format::Result<Grids> {
+    fn to_grids(&self) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let fills = self.fills();
-        fills.check_size()?;
+        fills.check_puz_size()?;
 
         let width = fills.rows() as u8;
         let height = fills.cols() as u8;
@@ -68,14 +70,14 @@ impl Puz for Nonogram {
             width,
             height,
         };
-        grids.validate()?;
+        grids.validate().context("Puzzle grids")?;
 
         Ok(grids)
     }
 
-    fn to_strings(&self) -> format::Result<Strings> {
+    fn to_strings(&self) -> write::Result<Strings> {
         let colors = self.colors();
-        colors.check_size()?;
+        colors.check_puz_size()?;
 
         let mut strings = Strings {
             clues: Vec::with_capacity(colors.len()),
@@ -91,7 +93,7 @@ impl Puz for Nonogram {
         Ok(strings)
     }
 
-    fn to_extras(&self) -> format::Result<Extras> {
+    fn to_extras(&self) -> write::Result<Extras> {
         let extras = Extras::default();
 
         Ok(extras)
@@ -114,13 +116,25 @@ impl Puz for Nonogram {
 
 fn read_fills_and_rules(grids: &Grids) -> read::Result<(Fills, Rules)> {
     // Map the solution and state grids into fills
-    let get_fills = |grid: &Grid<u8>| -> Fills {
-        let grid = grid.map_ref(|&byte| Fill::from_byte(byte));
-        Fills::new(grid)
+    let get_fills = |grid: &Grid<u8>| -> format::Result<Fills> {
+        let mut fills = Vec::with_capacity(grid.size());
+
+        for &byte in grid.iter() {
+            let fill_char = byte as char;
+            let fill = Fill::decode_char(fill_char)
+                .map_err(|err| format::Error::Custom(err.to_string()))?;
+
+            fills.push(fill);
+        }
+
+        // let grid = grid.map_ref(|&byte| Fill::decode_byte(byte));
+        let fills = Grid::from_vec(fills, grid.cols()).expect("Valid grid");
+
+        Ok(Fills::new(fills))
     };
 
-    let solution_fills = get_fills(&grids.solution);
-    let fills = get_fills(&grids.state);
+    let solution_fills = get_fills(&grids.solution).context("Solution fills")?;
+    let fills = get_fills(&grids.state).context("State fills")?;
 
     // Construct rules from the solution fills
     let rules = Rules::from_fills(&solution_fills);

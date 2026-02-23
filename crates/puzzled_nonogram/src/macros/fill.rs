@@ -6,7 +6,11 @@ macro_rules! fill {
     };
 
     ($x:tt) => {{
-        const F: $crate::Fill = $crate::Fill::from_str_const(stringify!($x));
+        const F: $crate::Fill = match $crate::Fill::decode_str(stringify!($x)) {
+            Ok(f) => f,
+            Err(_) => panic!(concat!("Invalid fill definition '", stringify!($x), "'")),
+        };
+
         F
     }};
 }

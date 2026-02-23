@@ -1,39 +1,42 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{CellStyle, Grid, Position, format};
-use puzzled_puz::{
-    Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzWrite, SizeCheck, Span,
-    Strings, build_string, check_size,
-    read::{self, read_metadata},
-    windows_1252_to_char,
+use puzzled_core::{CellStyle, Grid, Position};
+use puzzled_io::{
+    Context,
+    puz::{
+        Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzSizeCheck, PuzWrite,
+        Span, Strings, build_string, check_puz_size,
+        read::{self, read_metadata},
+        windows_1252_to_char, write,
+    },
 };
 
 use crate::{Cell, Clue, Clues, Crossword, CrosswordCell, Direction, Solution, Squares};
 
-impl SizeCheck for Clues {
+impl PuzSizeCheck for Clues {
     const KIND: &'static str = "Clues";
 
-    fn check_size(&self) -> format::Result<()> {
+    fn check_puz_size(&self) -> write::Result<()> {
         let size = self.len();
         let max_size = u16::MAX as usize;
 
-        check_size(Self::KIND, size, max_size)
+        check_puz_size(Self::KIND, size, max_size)
     }
 }
 
 impl Puz for Crossword {
-    fn to_header(&self) -> format::Result<Header> {
+    fn to_header(&self) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
         let squares = self.squares();
-        squares.check_size()?;
+        squares.check_puz_size()?;
         header.width = squares.cols() as u8;
         header.height = squares.rows() as u8;
 
         // Clues
         let clues = self.clues();
-        clues.check_size()?;
+        clues.check_puz_size()?;
         header.clue_count = clues.len() as u16;
 
         // Metadata
@@ -44,10 +47,10 @@ impl Puz for Crossword {
         Ok(header)
     }
 
-    fn to_grids(&self) -> format::Result<Grids> {
+    fn to_grids(&self) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let squares = self.squares();
-        squares.check_size()?;
+        squares.check_puz_size()?;
 
         let width = squares.rows() as u8;
         let height = squares.cols() as u8;
@@ -73,14 +76,14 @@ impl Puz for Crossword {
             width,
             height,
         };
-        grids.validate()?;
+        grids.validate().context("Puzzle grids")?;
 
         Ok(grids)
     }
 
-    fn to_strings(&self) -> format::Result<Strings> {
+    fn to_strings(&self) -> write::Result<Strings> {
         let clues = self.clues();
-        clues.check_size()?;
+        clues.check_puz_size()?;
 
         let mut strings = Strings {
             clues: Vec::with_capacity(clues.len()),
@@ -116,9 +119,9 @@ impl Puz for Crossword {
         Ok(strings)
     }
 
-    fn to_extras(&self) -> format::Result<puzzled_puz::Extras> {
+    fn to_extras(&self) -> write::Result<Extras> {
         let squares = self.squares();
-        squares.check_size()?;
+        squares.check_puz_size()?;
 
         let mut extras = Extras::default();
 
@@ -160,7 +163,7 @@ impl Puz for Crossword {
         header: Header,
         grids: Grids,
         strings: Strings,
-        extras: puzzled_puz::Extras,
+        extras: Extras,
     ) -> read::Result<Self> {
         // Build the puzzle with owned data
         let squares = read_squares(&grids, &extras);
@@ -270,7 +273,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
 #[cfg(all(test, feature = "puz"))]
 mod tests {
     use crate::Crossword;
-    use puzzled_puz::{PuzReader, read};
+    use puzzled_io::puz::{PuzReader, read};
     use rstest::rstest;
     use std::fs::File;
     use std::path::PathBuf;

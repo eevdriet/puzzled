@@ -14,7 +14,7 @@ derive_more = {workspace = true}
 document-features = {workspace = true}
 thiserror = { workspace = true}
 puzzled_core = { path = "../puzzled_core"}
-puzzled_puz = { path = "../puzzled_puz/", optional = true}
+puzzled_io = { path = "../puzzled_io"}
 
 [dev-dependencies]
 rstest = { workspace = true }
@@ -31,6 +31,6 @@ macros = []
 ## Enables serializing and deserializing puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = ["dep:serde", "puzzled_core/serde"]
 ## Enables reading puzzles from and writing them into the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
-puz = ["dep:puzzled_puz"]
+puz = ["puzzled_io/puz"]
 
 miette = ["dep:miette"]

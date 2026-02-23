@@ -1,0 +1,16 @@
+[package]
+name = "puzzled_io"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = {workspace = true}
+puzzled_core = {path = "../puzzled_core/"}
+
+[dev-dependencies]
+puzzled = {path = "../puzzled", features = ["puz", "crossword"]}
+
+[features]
+default = []
+puz = []
+image = []
