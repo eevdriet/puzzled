@@ -17,7 +17,7 @@ impl ImageWriter {
     where
         P: ImagePuzzle,
     {
-        let image = puzzle.to_image()?;
+        let image = puzzle.write_image()?;
         Ok(image)
     }
 

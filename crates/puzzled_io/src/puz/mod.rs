@@ -166,9 +166,9 @@ pub use strings::*;
 
 use crate::{Context, format};
 
-pub trait Puz: Sized {
+pub trait BinaryPuzzle: Sized {
     // Read the puzzle from *.puz data
-    fn from_puz(
+    fn read_puz(
         header: Header,
         grids: Grids,
         strings: Strings,
@@ -176,10 +176,10 @@ pub trait Puz: Sized {
     ) -> read::Result<Self>;
 
     // Write the puzzle into the *.puz data parts
-    fn to_header(&self) -> write::Result<Header>;
-    fn to_grids(&self) -> write::Result<Grids>;
-    fn to_strings(&self) -> write::Result<Strings>;
-    fn to_extras(&self) -> write::Result<Extras>;
+    fn write_header(&self) -> write::Result<Header>;
+    fn write_grids(&self) -> write::Result<Grids>;
+    fn write_strings(&self) -> write::Result<Strings>;
+    fn write_extras(&self) -> write::Result<Extras>;
 }
 
 impl<T> Context<T, read::Error> for format::Result<T> {

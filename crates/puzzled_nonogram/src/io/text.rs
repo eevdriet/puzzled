@@ -16,7 +16,7 @@ enum Error {
 }
 
 impl TxtPuzzle for Nonogram {
-    fn from_text(reader: &mut TxtState) -> read::Result<Self> {
+    fn read_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the fills and corresponding rules
         let mut read_fill = |token: &str| -> Fill {
             match token {

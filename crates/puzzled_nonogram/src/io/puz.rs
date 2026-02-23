@@ -3,7 +3,7 @@ use puzzled_io::{
     Context,
     format::{self, StringError},
     puz::{
-        Extras, Grids, Header, Puz, PuzSizeCheck, PuzWrite, Strings, check_puz_size,
+        BinaryPuzzle, Extras, Grids, Header, PuzSizeCheck, PuzWrite, Strings, check_puz_size,
         read::{self, read_metadata},
         write,
     },
@@ -27,8 +27,8 @@ impl PuzSizeCheck for Colors {
     }
 }
 
-impl Puz for Nonogram {
-    fn to_header(&self) -> write::Result<Header> {
+impl BinaryPuzzle for Nonogram {
+    fn write_header(&self) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
@@ -48,7 +48,7 @@ impl Puz for Nonogram {
         Ok(header)
     }
 
-    fn to_grids(&self) -> write::Result<Grids> {
+    fn write_grids(&self) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let fills = self.fills();
         fills.check_puz_size()?;
@@ -72,7 +72,7 @@ impl Puz for Nonogram {
         Ok(grids)
     }
 
-    fn to_strings(&self) -> write::Result<Strings> {
+    fn write_strings(&self) -> write::Result<Strings> {
         let colors = self.colors();
         colors.check_puz_size()?;
 
@@ -90,13 +90,13 @@ impl Puz for Nonogram {
         Ok(strings)
     }
 
-    fn to_extras(&self) -> write::Result<Extras> {
+    fn write_extras(&self) -> write::Result<Extras> {
         let extras = Extras::default();
 
         Ok(extras)
     }
 
-    fn from_puz(
+    fn read_puz(
         header: Header,
         grids: Grids,
         strings: Strings,

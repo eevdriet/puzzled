@@ -16,7 +16,7 @@ enum Error {
 }
 
 impl TxtPuzzle for Crossword {
-    fn from_text(reader: &mut TxtState) -> read::Result<Self> {
+    fn read_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the squares grid
         let mut read_square = |token: &str| -> Square {
             match token {

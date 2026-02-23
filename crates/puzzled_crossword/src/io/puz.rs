@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use puzzled_core::{CellStyle, Grid, Position};
 use puzzled_io::puz::{
-    Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzSizeCheck, PuzWrite,
-    Span, Strings, build_string, check_puz_size,
+    BinaryPuzzle, Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, PuzSizeCheck,
+    PuzWrite, Span, Strings, build_string, check_puz_size,
     read::{self, read_metadata},
     windows_1252_to_char, write,
 };
@@ -19,8 +19,8 @@ impl PuzSizeCheck for Clues {
     }
 }
 
-impl Puz for Crossword {
-    fn to_header(&self) -> write::Result<Header> {
+impl BinaryPuzzle for Crossword {
+    fn write_header(&self) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
@@ -42,7 +42,7 @@ impl Puz for Crossword {
         Ok(header)
     }
 
-    fn to_grids(&self) -> write::Result<Grids> {
+    fn write_grids(&self) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let squares = self.squares();
         squares.check_puz_size()?;
@@ -75,7 +75,7 @@ impl Puz for Crossword {
         Ok(grids)
     }
 
-    fn to_strings(&self) -> write::Result<Strings> {
+    fn write_strings(&self) -> write::Result<Strings> {
         let clues = self.clues();
         clues.check_puz_size()?;
 
@@ -113,7 +113,7 @@ impl Puz for Crossword {
         Ok(strings)
     }
 
-    fn to_extras(&self) -> write::Result<Extras> {
+    fn write_extras(&self) -> write::Result<Extras> {
         let squares = self.squares();
         squares.check_puz_size()?;
 
@@ -153,7 +153,7 @@ impl Puz for Crossword {
         Ok(extras)
     }
 
-    fn from_puz(
+    fn read_puz(
         header: Header,
         grids: Grids,
         strings: Strings,

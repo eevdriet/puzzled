@@ -25,7 +25,7 @@ impl TxtReader {
         P: TxtPuzzle,
     {
         let mut state = TxtState::new(input, self.strict);
-        let puzzle = P::from_text(&mut state)?;
+        let puzzle = P::read_text(&mut state)?;
 
         Ok(puzzle)
     }

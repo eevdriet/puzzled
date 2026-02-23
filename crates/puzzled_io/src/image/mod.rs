@@ -1,13 +1,13 @@
 pub mod read;
 pub mod write;
 
-pub use read::{ImageReader, read_grid};
+pub use read::ImageReader;
 pub use write::{ImageSizeCheck, ImageWriter, check_image_size};
 
 use image::{DynamicImage, RgbaImage};
 
 pub trait ImagePuzzle: Sized {
-    fn from_image(image: &DynamicImage) -> read::Result<Self>;
+    fn read_image(image: &DynamicImage, reader: &ImageReader) -> read::Result<Self>;
 
-    fn to_image(&self) -> write::Result<RgbaImage>;
+    fn write_image(&self) -> write::Result<RgbaImage>;
 }

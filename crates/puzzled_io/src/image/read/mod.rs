@@ -17,7 +17,7 @@ impl ImageReader {
     where
         P: ImagePuzzle,
     {
-        let puzzle = P::from_image(image)?;
+        let puzzle = P::read_image(image, self)?;
 
         Ok(puzzle)
     }
@@ -30,16 +30,16 @@ impl ImageReader {
         let image = BaseImageReader::open(path)?.decode()?;
         self.read(&image)
     }
-}
 
-pub fn read_grid<T, F>(image: &DynamicImage, pixel_fn: &mut F) -> read::Result<Grid<T>>
-where
-    F: FnMut(Rgba<u8>) -> T,
-{
-    let data: Vec<_> = image.pixels().map(|(_, _, rgba)| pixel_fn(rgba)).collect();
+    pub fn read_grid<T, F>(&self, image: &DynamicImage, pixel_fn: &mut F) -> read::Result<Grid<T>>
+    where
+        F: FnMut(Rgba<u8>) -> T,
+    {
+        let data: Vec<_> = image.pixels().map(|(_, _, rgba)| pixel_fn(rgba)).collect();
 
-    let cols = image.width() as usize;
-    let grid = Grid::from_vec(data, cols).expect("Image represents valid grid");
+        let cols = image.width() as usize;
+        let grid = Grid::from_vec(data, cols).expect("Image represents valid grid");
 
-    Ok(grid)
+        Ok(grid)
+    }
 }

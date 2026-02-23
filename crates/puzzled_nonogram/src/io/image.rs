@@ -1,9 +1,9 @@
 use image::{DynamicImage, Pixel, Rgba, RgbaImage};
 use puzzled_core::{Color, Metadata};
 use puzzled_io::{
-    ImagePuzzle, format,
+    ImagePuzzle, ImageReader, format,
     image::{
-        read, read_grid,
+        read,
         write::{self, ImageSizeCheck},
     },
 };
@@ -17,7 +17,7 @@ pub enum Error {
 }
 
 impl ImagePuzzle for Nonogram {
-    fn from_image(image: &DynamicImage) -> read::Result<Self> {
+    fn read_image(image: &DynamicImage, reader: &ImageReader) -> read::Result<Self> {
         let mut colors = Colors::default();
 
         let mut read_pixel = |rgba: Rgba<u8>| {
@@ -41,7 +41,7 @@ impl ImagePuzzle for Nonogram {
             }
         };
 
-        let fills = read_grid(image, &mut read_pixel)?;
+        let fills = reader.read_grid(image, &mut read_pixel)?;
         let fills = Fills::new(fills);
 
         let rules = Rules::from_fills(&fills);
@@ -50,7 +50,7 @@ impl ImagePuzzle for Nonogram {
         Ok(Nonogram::new(fills, rules, colors, metadata))
     }
 
-    fn to_image(&self) -> write::Result<image::RgbaImage> {
+    fn write_image(&self) -> write::Result<image::RgbaImage> {
         let fills = self.fills();
         fills.check_image_size()?;
         let rows = fills.rows() as u32;

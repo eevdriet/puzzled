@@ -17,7 +17,7 @@ pub use size::*;
 
 use std::io::{self, Write};
 
-use crate::puz::Puz;
+use crate::puz::BinaryPuzzle;
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -76,13 +76,13 @@ impl PuzWriter {
     pub fn write<W, P>(&self, writer: &mut W, puzzle: &P) -> Result<()>
     where
         W: PuzWrite,
-        P: Puz,
+        P: BinaryPuzzle,
     {
         // Construct the individual sections from the puzzle
-        let mut header = puzzle.to_header()?;
-        let grids = puzzle.to_grids()?;
-        let strings = puzzle.to_strings()?;
-        let extras = puzzle.to_extras()?;
+        let mut header = puzzle.write_header()?;
+        let grids = puzzle.write_grids()?;
+        let strings = puzzle.write_strings()?;
+        let extras = puzzle.write_extras()?;
 
         self.write_checksums(&mut header, &grids, &strings);
 

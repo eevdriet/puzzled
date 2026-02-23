@@ -16,7 +16,7 @@ pub use error::*;
 pub use metadata::*;
 pub(crate) use state::*;
 
-use crate::puz::{Extras, Grids, Header, Puz, Strings};
+use crate::puz::{BinaryPuzzle, Extras, Grids, Header, Strings};
 use std::{fs::File, io, ops::Range, path::Path};
 
 /// Extension trait for [`Read`](io::Read) to make reading [puzzles](crate::Puz) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
@@ -96,7 +96,7 @@ impl PuzReader {
     pub fn read<R, P>(&self, reader: &mut R) -> Result<P>
     where
         R: PuzRead,
-        P: Puz,
+        P: BinaryPuzzle,
     {
         let (puzzle, _) = self.read_with_warnings(reader)?;
         Ok(puzzle)
@@ -105,7 +105,7 @@ impl PuzReader {
     pub fn read_with_warnings<R, P>(&self, reader: &mut R) -> Result<(P, Vec<Warning>)>
     where
         R: PuzRead,
-        P: Puz,
+        P: BinaryPuzzle,
     {
         let mut state = PuzState::new(self.strict);
 
@@ -120,14 +120,14 @@ impl PuzReader {
         // Read extra sections and the actual structure of the puzzle
         let extras = Extras::read_from(reader, header.width, header.height, &mut state)?;
 
-        let puzzle = P::from_puz(header, grids, strings, extras)?;
+        let puzzle = P::read_puz(header, grids, strings, extras)?;
         Ok((puzzle, state.warnings))
     }
 
     pub fn read_from_path<R, P>(&self, path_ref: R) -> Result<P>
     where
         R: AsRef<Path>,
-        P: Puz,
+        P: BinaryPuzzle,
     {
         let mut file = File::open(path_ref).map_err(|err| Error {
             span: Span::default(),

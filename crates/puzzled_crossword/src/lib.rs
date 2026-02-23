@@ -1,7 +1,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-//! The [`crossword`](crate) library provides functionality for reading, writing and solving [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
-//! A [`Crossword`] is either constructed directly from its [squares](Squares) and [clues](Clues) or using one of the readers from the [`io`] module.
+//! Read, write and solve [crossword](https://en.wikipedia.org/wiki/Crossword) puzzles.
+//!
+//! A [`Crossword`](crate::Crossword) is either constructed directly from its [squares](Squares) and [clues](Clues) or using one of the readers from the [`io`](puzzled_io) crate.
 //! ```
 //! use puzzled::crossword::crossword;
 //!
@@ -37,8 +38,8 @@
 //! [serde]: https://docs.rs/serde
 //! [thiserror]: https://docs.rs/serde
 
-pub mod io;
-pub mod puzzle;
+mod io;
+mod puzzle;
 
 #[doc(hidden)]
 pub use puzzled_core::*;
