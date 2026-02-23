@@ -1,7 +1,7 @@
 use std::fmt;
 
 use derive_more::{Deref, DerefMut};
-use puzzled_core::Cell;
+use puzzled_core::{Cell, Reveal};
 
 use crate::Solution;
 
@@ -34,6 +34,12 @@ impl CrosswordCell {
     }
 }
 
+impl Reveal for CrosswordCell {
+    fn reveal(&mut self) {
+        self.0.reveal();
+    }
+}
+
 impl fmt::Display for CrosswordCell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -43,5 +49,32 @@ impl fmt::Display for CrosswordCell {
 impl fmt::Debug for CrosswordCell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use puzzled_core::Cell;
+    use serde::{Deserialize, Serialize};
+
+    use crate::{CrosswordCell, Solution};
+
+    impl Serialize for CrosswordCell {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for CrosswordCell {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let cell = Cell::<Solution>::deserialize(deserializer)?;
+            Ok(CrosswordCell::new(cell))
+        }
     }
 }

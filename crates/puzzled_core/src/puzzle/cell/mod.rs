@@ -1,7 +1,9 @@
 use std::fmt::{self, Display};
 
+mod reveal;
 mod style;
 
+pub use reveal::*;
 pub use style::CellStyle;
 
 /// Playable square that the user can enter their solution into
@@ -15,7 +17,7 @@ pub use style::CellStyle;
 /// When calling these methods, the square [style](CellStyle) is updated to match the current correctness.
 /// The correctness of the entry can be checked with [`is_correct`](Self::is_correct)
 /// ```
-/// use puzzled::core::{cell, Cell, CellStyle};
+/// use puzzled::core::{cell, Cell, CellStyle, Reveal};
 ///
 /// // Cell creation
 /// let mut number = cell!(100@);
@@ -62,6 +64,8 @@ pub struct Cell<S> {
     entry: Option<S>,
     style: CellStyle,
 }
+
+pub type CellGrid<T> = Grid<Cell<T>>;
 
 impl<S> Cell<S> {
     // Current styles
@@ -116,6 +120,18 @@ impl<S> Cell<S> {
     }
 }
 
+impl<S> Reveal for Cell<S>
+where
+    S: Clone,
+{
+    /// Reveal the square by manually entering its solution.
+    /// This sets its [style](CellStyle) to be [revealed](CellStyle::REVEALED)
+    fn reveal(&mut self) {
+        self.style |= CellStyle::REVEALED;
+        self.entry = Some(self.solution.clone())
+    }
+}
+
 impl<S> Cell<S>
 where
     S: Eq,
@@ -158,13 +174,6 @@ impl<S> Cell<S>
 where
     S: Clone,
 {
-    /// Reveal the square by manually entering its solution.
-    /// This sets its [style](CellStyle) to be [revealed](CellStyle::REVEALED)
-    pub fn reveal(&mut self) {
-        self.style |= CellStyle::REVEALED;
-        self.entry = Some(self.solution.clone())
-    }
-
     /// Clear the current entry.
     /// Note that this does not apply to revealed solutions
     pub fn clear(&mut self) {
@@ -312,4 +321,4 @@ mod serde_impl {
 #[cfg(feature = "serde")]
 pub use serde_impl::SerdeCell;
 
-use crate::check_style;
+use crate::{Grid, check_style};

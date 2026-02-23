@@ -58,7 +58,7 @@ impl BinaryPuzzle for Crossword {
 
         let state = squares.map_ref(|square| match square {
             Some(cell) => match cell.entry() {
-                Some(v) => v.first_letter(),
+                Some(entry) => entry.first_letter(),
                 None => MISSING_ENTRY_CELL,
             },
             _ => NON_PLAYABLE_CELL,

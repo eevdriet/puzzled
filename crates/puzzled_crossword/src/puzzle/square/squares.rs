@@ -6,7 +6,7 @@ use puzzled_core::{Grid, Offset, Position};
 use crate::{Crossword, Direction, Square};
 
 #[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone)]
-pub struct Squares(Grid<Square>);
+pub struct Squares(pub(crate) Grid<Square>);
 
 impl Squares {
     pub fn new(squares: Grid<Square>) -> Self {

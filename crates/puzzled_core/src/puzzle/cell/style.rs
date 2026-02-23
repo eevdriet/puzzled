@@ -15,7 +15,7 @@ bitflags! {
     /// The definitions derive from the **GEXT data section** of the [*.puz spefication](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki).
     ///
     /// ```rust
-    /// use puzzled::crossword::{Cell, CellStyle, Solution};
+    /// use puzzled::crossword::{Cell, CellStyle, Solution, Reveal};
     ///
     /// let style = CellStyle::INCORRECT | CellStyle::CIRCLED;
     /// let mut cell = Cell::new_styled(Solution::Letter('A'), style);

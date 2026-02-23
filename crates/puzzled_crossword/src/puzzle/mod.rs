@@ -169,22 +169,17 @@ impl fmt::Display for Crossword {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::{Cell, Grid, Metadata, SerdeCell};
+    use puzzled_core::{Grid, Metadata};
     use serde::{Deserialize, Serialize, de::Error};
 
-    use crate::{Clues, Crossword, CrosswordCell, SerdeClues, Solution, Squares};
-
-    type SerdeSquare = Option<SerdeCell<Solution>>;
-    type SerdeSquares = Grid<SerdeSquare>;
+    use crate::{Clues, Crossword, SerdeClues, Square, Squares};
 
     #[derive(Serialize, Deserialize)]
     struct SerdeCrossword {
         rows: usize,
         cols: usize,
 
-        #[serde(flatten)]
-        squares: SerdeSquares,
-
+        squares: Grid<Square>,
         clues: Option<SerdeClues>,
 
         // Metadata
@@ -199,9 +194,7 @@ mod serde_impl {
             S: serde::Serializer,
         {
             // Puzzle
-            let squares = self
-                .squares()
-                .map_ref(|square| square.as_ref().map(|cell| cell.to_serde()));
+            let squares = self.squares().0.clone();
 
             let has_clues = !self.clues().is_empty();
             let clues = has_clues.then_some(self.clues().to_serde());
@@ -232,13 +225,6 @@ mod serde_impl {
                 meta,
                 ..
             } = SerdeCrossword::deserialize(deserializer)?;
-
-            let squares_grid = squares_grid.map(|square| {
-                square.map(|cell| {
-                    let cell = Cell::<Solution>::from_serde(cell);
-                    CrosswordCell::new(cell)
-                })
-            });
 
             let squares = Squares::new(squares_grid);
             let clues = Clues::from_serde(clues_data.unwrap_or_default()).map_err(Error::custom)?;
