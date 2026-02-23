@@ -172,20 +172,20 @@ mod serde_impl {
     use puzzled_core::{Cell, Grid, Metadata, SerdeCell};
     use serde::{Deserialize, Serialize, de::Error};
 
-    use crate::{Clues, CluesData, Crossword, CrosswordCell, Solution, Squares};
+    use crate::{Clues, Crossword, CrosswordCell, SerdeClues, Solution, Squares};
 
     type SerdeSquare = Option<SerdeCell<Solution>>;
     type SerdeSquares = Grid<SerdeSquare>;
 
     #[derive(Serialize, Deserialize)]
-    struct CrosswordData {
+    struct SerdeCrossword {
         rows: usize,
         cols: usize,
 
         #[serde(flatten)]
         squares: SerdeSquares,
 
-        clues: Option<CluesData>,
+        clues: Option<SerdeClues>,
 
         // Metadata
         #[serde(flatten)]
@@ -204,12 +204,12 @@ mod serde_impl {
                 .map_ref(|square| square.as_ref().map(|cell| cell.to_serde()));
 
             let has_clues = !self.clues().is_empty();
-            let clues = has_clues.then_some(self.clues().to_data());
+            let clues = has_clues.then_some(self.clues().to_serde());
 
             // Metadata
             let meta = self.meta.clone();
 
-            CrosswordData {
+            SerdeCrossword {
                 rows: self.squares().rows(),
                 cols: self.squares().cols(),
                 squares,
@@ -226,12 +226,12 @@ mod serde_impl {
         where
             D: serde::Deserializer<'de>,
         {
-            let CrosswordData {
+            let SerdeCrossword {
                 squares: squares_grid,
                 clues: clues_data,
                 meta,
                 ..
-            } = CrosswordData::deserialize(deserializer)?;
+            } = SerdeCrossword::deserialize(deserializer)?;
 
             let squares_grid = squares_grid.map(|square| {
                 square.map(|cell| {
@@ -241,7 +241,7 @@ mod serde_impl {
             });
 
             let squares = Squares::new(squares_grid);
-            let clues = Clues::from_data(clues_data.unwrap_or_default()).map_err(Error::custom)?;
+            let clues = Clues::from_serde(clues_data.unwrap_or_default()).map_err(Error::custom)?;
 
             Ok(Crossword {
                 squares,

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use derive_more::{Deref, DerefMut};
 
 #[cfg(feature = "serde")]
-use crate::ClueData;
+use crate::SerdeClue;
 use crate::{Clue, ClueId, Direction};
 
 /// Collection type of all [clues](Clue) in a [puzzle](crate::Crossword)
@@ -136,7 +136,7 @@ impl Clues {
 
 #[cfg(feature = "serde")]
 impl Clues {
-    pub(crate) fn from_data(data: CluesData) -> Result<Self, String> {
+    pub(crate) fn from_serde(data: SerdeClues) -> Result<Self, String> {
         let mut clues = BTreeMap::new();
 
         for (key, val) in data {
@@ -167,11 +167,11 @@ impl Clues {
         Ok(Self(clues))
     }
 
-    pub(crate) fn to_data(&self) -> CluesData {
+    pub(crate) fn to_serde(&self) -> SerdeClues {
         self.iter()
             .map(|((num, dir), clue)| {
                 let key = format!("{num}-{dir}");
-                let val = ClueData {
+                let val = SerdeClue {
                     text: clue.text().clone(),
                     start: clue.start,
                     len: clue.len,
@@ -184,4 +184,4 @@ impl Clues {
 }
 
 #[cfg(feature = "serde")]
-pub(crate) type CluesData = BTreeMap<String, crate::ClueData>;
+pub(crate) type SerdeClues = BTreeMap<String, crate::SerdeClue>;

@@ -31,30 +31,39 @@ pub struct Metadata {
 macro_rules! add_metadata {
     ($ty:ty) => {
         impl $ty {
+            /// Author of the puzzle
             pub fn author(&self) -> Option<&str> {
                 self.meta.author.as_deref()
             }
 
+            /// Copyright of the puzzle
             pub fn copyright(&self) -> Option<&str> {
                 self.meta.copyright.as_deref()
             }
 
+            /// Notes on the puzzle
             pub fn notes(&self) -> Option<&str> {
                 self.meta.notes.as_deref()
             }
 
+            /// Title on the puzzle
             pub fn title(&self) -> Option<&str> {
                 self.meta.title.as_deref()
             }
 
+            /// State of the puzzle's internal timer
             pub fn timer(&self) -> $crate::Timer {
                 self.meta.timer.clone()
             }
 
+            /// Mutable reference to the puzzle's internal timer
+            ///
+            /// This can be used to start/stop playing the puzzle
             pub fn timer_mut(&mut self) -> &mut $crate::Timer {
                 &mut self.meta.timer
             }
 
+            /// Version of the puzzle
             pub fn version(&self) -> Option<$crate::Version> {
                 self.meta.version.clone()
             }

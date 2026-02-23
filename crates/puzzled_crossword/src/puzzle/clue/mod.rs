@@ -231,7 +231,7 @@ impl Crossword {
 
 #[cfg(feature = "serde")]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub(crate) struct ClueData {
+pub(crate) struct SerdeClue {
     text: String,
     start: Position,
     len: u8,
