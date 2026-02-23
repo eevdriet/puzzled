@@ -17,7 +17,7 @@ pub use meta::*;
 pub(crate) use state::*;
 
 use crate::{Extras, Grids, Header, Puz, Strings};
-use std::{io, ops::Range};
+use std::{fs::File, io, ops::Range, path::Path};
 
 /// Extension trait for [`Read`](io::Read) to make reading [puzzles](crate::Puz) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///
@@ -91,6 +91,20 @@ pub struct PuzReader {
 impl PuzReader {
     pub fn new(strict: bool) -> Self {
         Self { strict }
+    }
+
+    pub fn read_from_path<R, P>(&self, path_ref: R) -> Result<P>
+    where
+        R: AsRef<Path>,
+        P: Puz,
+    {
+        let mut file = File::open(path_ref).map_err(|err| Error {
+            span: Span::default(),
+            kind: ErrorKind::Io(err),
+            context: "Reading file".to_string(),
+        })?;
+
+        self.read(&mut file)
     }
 
     pub fn read<R, P>(&self, reader: &mut R) -> Result<P>

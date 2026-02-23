@@ -1,18 +1,17 @@
-use std::io;
+use crate::io::img;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
     Custom(String),
 
-    #[error("I/O error: {0}")]
-    Io(#[from] io::Error),
+    #[cfg(feature = "puz")]
+    #[error("Puz error: {0}")]
+    Puz(#[from] puzzled_puz::read::Error),
 
-    #[error("JSON error: {0}")]
-    Json(#[from] serde_json::Error),
-
+    #[cfg(feature = "image")]
     #[error("Image error: {0}")]
-    Img(#[from] image::ImageError),
+    Image(#[from] img::Error),
 
     #[error("Tried to parse nonogram from file with unsupported extension '{0}'")]
     UnsupportedExtension(String),

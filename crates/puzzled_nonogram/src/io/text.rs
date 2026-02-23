@@ -1,15 +1,3 @@
-use std::path::Path;
-
-use crate::{Nonogram, io};
-
-pub struct TextLoader;
-
-impl io::PuzzleLoader for TextLoader {
-    fn load_nonogram(_path: &Path) -> io::Result<Nonogram> {
-        todo!()
-    }
-}
-
 // fn parse_from_puzzle(buffer: &str, config: &Config) -> Result<(Puzzle, Rules, PuzzleStyle)> {
 //     let mut fills = Vec::<Fill>::with_capacity(buffer.len());
 //     let lines = buffer.lines();

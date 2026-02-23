@@ -26,7 +26,7 @@ macro_rules! nonogram {
             let fill = $crate::fill!($color_id);
             let color = $crate::color!($color);
 
-            colors.insert_fill(fill, color);
+            colors.insert(fill, color);
         )*
 
         // Add metadata

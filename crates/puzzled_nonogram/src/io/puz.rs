@@ -14,8 +14,12 @@ impl SizeCheck for Colors {
 
     fn check_size(&self) -> format::Result<()> {
         let max_color_id = u8::MAX as usize;
+        let color_ids = self.keys().filter_map(|fill| match fill {
+            Fill::Color(id) => Some(id),
+            _ => None,
+        });
 
-        for &color_id in self.keys() {
+        for &color_id in color_ids {
             check_size("Fill colors", color_id, max_color_id)?;
         }
 
@@ -145,9 +149,11 @@ fn read_colors(fills: &Fills, strings: &Strings) -> read::Result<Colors> {
         for (id, color_bytes) in ids.into_iter().zip(clues.iter()) {
             let color_str = str::from_utf8(color_bytes)
                 .map_err(|err| format::Error::String(StringError::Utf8Error(err)))?;
+
+            let fill = Fill::Color(id);
             let color = Color::hex(color_str)?;
 
-            colors.insert(id, color);
+            colors.insert(fill, color);
         }
 
         Ok(colors)

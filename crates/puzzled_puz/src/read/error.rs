@@ -30,7 +30,7 @@ impl Error {
 #[derive(Debug, Error)]
 pub enum ErrorKind {
     #[error("I/O error: {0}")]
-    Io(std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[error("{0}")]
     Format(#[from] format::Error),

@@ -4,6 +4,9 @@ pub enum Error {
     Custom(String),
 
     #[error("I/O error: {0}")]
+    Puzzle(#[from] puzzled_nonogram::io::Error),
+
+    #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 }
 

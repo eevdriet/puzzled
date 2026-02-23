@@ -9,7 +9,7 @@ pub struct Color {
     pub red: ColorValue,
     pub green: ColorValue,
     pub blue: ColorValue,
-    pub alpha: Option<ColorValue>,
+    pub alpha: ColorValue,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -30,7 +30,7 @@ impl Color {
             red,
             green,
             blue,
-            alpha: Some(alpha),
+            alpha,
         }
     }
 
@@ -39,7 +39,7 @@ impl Color {
             red,
             green,
             blue,
-            alpha: None,
+            alpha: u8::MAX,
         }
     }
 
@@ -92,12 +92,13 @@ impl Color {
 
 impl Color {
     pub fn to_hex(&self) -> String {
-        match self.alpha {
-            Some(alpha) => format!(
+        if self.alpha == u8::MAX {
+            format!("#{:02X}{:02X}{:02X}", self.red, self.green, self.blue)
+        } else {
+            format!(
                 "#{:02X}{:02X}{:02X}{:02X}",
-                self.red, self.green, self.blue, alpha
-            ),
-            None => format!("#{:02X}{:02X}{:02X}", self.red, self.green, self.blue),
+                self.red, self.green, self.blue, self.alpha
+            )
         }
     }
 }

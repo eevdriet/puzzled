@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use crate::PuzzleStyle;
 use clap::Parser;
-use puzzled_nonogram::{Nonogram, load_nonogram};
+use puzzled_nonogram::{Nonogram, read_puzzle_from_path};
 
-use crate::{Error, Result};
+use crate::Result;
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -30,8 +30,7 @@ impl Args {
     }
 
     pub fn parse_puzzle(&self) -> Result<Nonogram> {
-        let result = load_nonogram(&self.file).map_err(|err| Error::Custom(err.to_string()));
-        let nonogram = result?;
+        let nonogram = read_puzzle_from_path(&self.file)?;
         Ok(nonogram)
     }
 }
