@@ -33,36 +33,51 @@ macro_rules! grid {
 
 #[macro_export]
 macro_rules! metadata {
-    ($meta:ident, author : $author:literal) => {
-        $meta.author = Some($author.to_string());
-    };
-
-    ($meta:ident, copyright : $copyright:literal) => {
-        $meta.copyright = Some($copyright.to_string());
-    };
-
-    ($meta:ident, notes : $notes:literal) => {
-        $meta.notes = Some($val.to_string());
-    };
-
-    ($meta:ident, title : $title:literal) => {
-        $meta.title = Some($title.to_string());
-    };
-
-    ($meta:ident, version : $version:literal) => {
-        if let Ok(version) = $crate::Version::new($version.as_bytes()) {
-            $meta.version = Some(version);
+    ( $( $key:ident : $value:expr),* $(,)? ) => {
+        $crate::Metadata {
+            $(
+                $key: metadata!(@transform $key, $value),
+            )*
+            ..Default::default()
         }
     };
 
-    ($meta:ident, timer : $timer:literal) => {
-        if let Ok(timer) = $crate::Timer::from_str($timer) {
-            $meta.timer = timer;
+     // String parsing
+    (@transform author, $value:literal) => {
+        Some($value.into())
+    };
+
+    (@transform copyright, $value:literal) => {
+        Some($value.into())
+    };
+
+    (@transform notes, $value:literal) => {
+        Some($value.into())
+    };
+
+    (@transform title, $value:literal) => {
+        Some($value.into())
+    };
+
+    // Version parsing
+    (@transform version, $value:literal) => {
+        match $crate::Version::new($value.as_bytes()) {
+            Ok(v) => Some(v),
+            Err(_) => panic!("Invalid version string"),
         }
     };
 
-    ($meta:ident, $key:ident : $val:literal) => {
-        compile_error!(concat!("Invalid meta property: ", stringify!($key)));
+    // Timer parsing
+    (@transform timer, $value:literal) => {
+        match $crate::Timer::from_str($value) {
+            Ok(t) => t,
+            Err(_) => panic!("Invalid timer string"),
+        }
+    };
+
+    // Unknown key
+    (@transform $key:ident, $value:literal) => {
+        compile_error!(concat!("Unknown metadata: ", stringify!($key)))
     };
 }
 
@@ -149,7 +164,41 @@ macro_rules! style {
                 "' (only ~, * and @ allowed)"
             )
         );
-    };}
+    };
+}
+
+#[macro_export]
+macro_rules! color {
+    // rgba(r, g, b, a)
+    ($r:expr, $g:expr, $b:expr, $a:expr) => {
+        $crate::Color::rgba($r, $g, $b, $a)
+    };
+
+    // rgb(r, g, b)
+    ($r:expr, $g:expr, $b:expr) => {
+        $crate::Color::rgb($r, $g, $b)
+    };
+
+    // hex string literal
+    ($hex:literal) => {{
+        match $crate::Color::hex($hex) {
+            Ok(color) => color,
+            Err(err) => panic!("{}", err),
+        }
+    }};
+
+    // everything else → compile error
+    ($($invalid:tt)*) => {
+        compile_error!(concat!(
+            "Invalid color '",
+            stringify!($($invalid)*),
+            "', use one of:\n\
+             color!(r, g, b)\n\
+             color!(r, g, b, a)\n\
+             color!(\"#RRGGBB\" | \"#RGB\" | \"#RRGGBBAA\" | \"#RGBA\")"
+        ));
+    };
+}
 
 #[doc(hidden)]
 #[macro_export]

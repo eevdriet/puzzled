@@ -5,13 +5,16 @@ pub use constraints::*;
 pub use validate::*;
 
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{BTreeMap, HashMap, VecDeque},
     ops::Index,
 };
 
-use bitvec::bitvec;
+use bitvec::{bitvec, vec::BitVec};
 
-use crate::{Fill, Line, LineMap, LineMask, LinePosition, Nonogram, Position, Rule, Rules};
+pub(crate) type LineMap<T> = BTreeMap<Line, T>;
+pub(crate) type LineMask = BitVec;
+
+use crate::{Fill, Line, LinePosition, Nonogram, Position, Rule, Rules};
 
 #[derive(Debug, Default)]
 pub struct Solver {
@@ -20,7 +23,7 @@ pub struct Solver {
     frontier: VecDeque<Line>,
 
     validations: LineMap<LineValidation>,
-    constraints: LineMap<HashMap<Fill, LineConstraint>>,
+    constraints: LineMap<BTreeMap<Fill, LineConstraint>>,
     masks: LineMap<HashMap<Fill, LineMask>>,
 }
 

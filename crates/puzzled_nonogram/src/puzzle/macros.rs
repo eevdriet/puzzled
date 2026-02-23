@@ -5,10 +5,10 @@ macro_rules! nonogram {
         [$($x0:tt)+] $( [$($x:tt)+])*
 
         // Colors
-        $(- $color_id:tt : $color:tt )*
+        $(- $color_id:tt : $color:literal )*
 
         // Metadata
-        $( $meta_key:ident : $meta_val:literal )*
+        $( $meta_key:ident : $meta_value:expr )*
     ) => {{
         // Add fills and use them to construct the rules
         let grid = $crate::grid![
@@ -20,15 +20,18 @@ macro_rules! nonogram {
         let rules = $crate::Rules::from_fills(&fills);
 
         // Add colors
-        let colors = $crate::Colors::default();
-
-        // Add metadata
-        #[allow(unused_mut)]
-        let mut meta = $crate::Metadata::default();
+        let mut colors = $crate::Colors::default();
         $(
-            $crate::metadata!(meta, $meta_key : $meta_val);
+            let fill = $crate::fill!($color_id);
+            let color = $crate::color!($color);
+
+            colors.insert_fill(fill, color);
         )*
 
+        // Add metadata
+        let meta = $crate::metadata!( $( $meta_key:ident : $meta_value:expr),*);
+
+        // Create puzzle
         $crate::Nonogram::new_empty(rules, colors, meta).expect("Size should be small enough")
     }};
 }
@@ -45,18 +48,6 @@ macro_rules! fill {
     }};
 }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __error {
-    ($($tt:tt)*, $macro:literal) => {
-        compile_error!(concat!(
-            "Invalid syntax for '",
-            $macro,
-            "' found, please read its documentation to see how to construct it"
-        ));
-    };
-}
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -67,6 +58,8 @@ mod tests {
             [1 . 1 . 1]
             [1 . . . 9]
             [1 . . . 1]
+            - 1: "#4a4a4a"
+            - 9: "#aaa"
         );
 
         assert_eq!(nonogram.rows(), 3);

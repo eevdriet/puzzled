@@ -1,18 +1,16 @@
 mod colors;
-mod error;
 mod fill;
 mod find;
-mod macros;
 mod rule;
 mod run;
 
-use bitvec::vec::BitVec;
+#[allow(unused_mut)]
+mod macros;
+
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Grid, Line, Metadata, add_metadata};
-use std::collections::HashMap;
+use puzzled_core::{Grid, Metadata, add_metadata};
 
 pub use colors::*;
-pub use error::*;
 pub use fill::*;
 pub use find::*;
 pub use rule::*;
@@ -89,11 +87,6 @@ impl Nonogram {
         self.fills.rows()
     }
 }
-
-pub type LineMap<T> = HashMap<Line, T>;
-
-pub type LineMask = BitVec;
-
 add_metadata!(Nonogram);
 
 #[cfg(feature = "serde")]

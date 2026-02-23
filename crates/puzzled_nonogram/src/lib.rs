@@ -6,5 +6,3 @@ pub mod solver;
 
 pub use puzzled_core::*;
 pub use {io::*, puzzle::*, solver::*};
-
-mod error;

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, hash_map::Entry};
+use std::collections::{BTreeMap, btree_map::Entry};
 
 use bitvec::prelude::*;
 
@@ -30,7 +30,7 @@ impl Solver {
         // Generate the constraints if they do not yet exists, otherwise return early
         let constraints = match self.constraints.entry(Line::Row(0)) {
             Entry::Occupied(_) => return,
-            Entry::Vacant(v) => v.insert(HashMap::new()),
+            Entry::Vacant(v) => v.insert(BTreeMap::new()),
         };
 
         for color in rule.iter_colors() {

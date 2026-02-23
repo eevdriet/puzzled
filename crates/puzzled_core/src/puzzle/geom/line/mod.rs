@@ -1,6 +1,6 @@
 mod position;
 
-use std::{fmt, ops};
+use std::{cmp::Ordering, fmt, ops};
 
 pub use position::*;
 
@@ -30,6 +30,31 @@ impl Line {
         let line = line + offset;
 
         self.with_line(line as usize)
+    }
+}
+
+impl Ord for Line {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            // Order equal types by their index
+            (Line::Row(row1), Line::Row(row2)) => row1.cmp(row2),
+            (Line::Col(col1), Line::Col(col2)) => col1.cmp(col2),
+
+            // Order unequal types by their index first, then type (Row < Col)
+            (Line::Row(row), Line::Col(col)) => match row.cmp(col) {
+                Ordering::Equal => Ordering::Less,
+                ord => ord,
+            },
+            (Line::Col(col), Line::Row(row)) => match col.cmp(row) {
+                Ordering::Equal => Ordering::Greater,
+                ord => ord,
+            },
+        }
+    }
+}
+impl PartialOrd for Line {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
