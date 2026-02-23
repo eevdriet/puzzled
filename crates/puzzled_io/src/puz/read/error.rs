@@ -53,6 +53,16 @@ pub enum ErrorKind {
     #[error("Expected to find {expected} clues, found {found}")]
     InvalidClueCount { found: usize, expected: usize },
 
+    #[error(
+        "The solution grid has square '{solution_square}' at {row}R{col}C, while the state grid has '{state_square}' at that position"
+    )]
+    CellMismatch {
+        solution_square: char,
+        state_square: char,
+        row: u8,
+        col: u8,
+    },
+
     // General
     #[error(
         "Read invalid section header {found}, expected one of 'GRBS', 'RTBL', 'LTIM' or 'GTEXT'"

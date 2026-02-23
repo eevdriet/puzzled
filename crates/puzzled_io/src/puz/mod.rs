@@ -147,14 +147,13 @@ pub mod write;
 
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
 pub(crate) use read::{PuzState, Warning};
-pub use write::{PuzWrite, PuzWriter};
+pub use write::{PuzSizeCheck, PuzWrite, PuzWriter, check_puz_size};
 
 mod checksums;
 mod error;
 mod extras;
 mod grids;
 mod header;
-mod size;
 mod strings;
 
 pub use checksums::*;
@@ -162,7 +161,6 @@ pub use error::*;
 pub use extras::*;
 pub use grids::*;
 pub use header::*;
-pub use size::*;
 pub use strings::*;
 
 use crate::{Context, format};

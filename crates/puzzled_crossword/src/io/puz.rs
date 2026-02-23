@@ -1,26 +1,21 @@
 use std::collections::BTreeMap;
 
 use puzzled_core::{CellStyle, Grid, Position};
-use puzzled_io::{
-    Context,
-    puz::{
-        Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzSizeCheck, PuzWrite,
-        Span, Strings, build_string, check_puz_size,
-        read::{self, read_metadata},
-        windows_1252_to_char, write,
-    },
+use puzzled_io::puz::{
+    Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, Puz, PuzSizeCheck, PuzWrite,
+    Span, Strings, build_string, check_puz_size,
+    read::{self, read_metadata},
+    windows_1252_to_char, write,
 };
 
 use crate::{Cell, Clue, Clues, Crossword, CrosswordCell, Direction, Solution, Squares};
 
 impl PuzSizeCheck for Clues {
-    const KIND: &'static str = "Clues";
-
     fn check_puz_size(&self) -> write::Result<()> {
         let size = self.len();
         let max_size = u16::MAX as usize;
 
-        check_puz_size(Self::KIND, size, max_size)
+        check_puz_size("Clues", size, max_size)
     }
 }
 
@@ -76,7 +71,6 @@ impl Puz for Crossword {
             width,
             height,
         };
-        grids.validate().context("Puzzle grids")?;
 
         Ok(grids)
     }

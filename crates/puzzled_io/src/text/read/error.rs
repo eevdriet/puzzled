@@ -9,6 +9,9 @@ pub enum Error {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("Found invalid metadata property \"{found}\": {reason}")]
+    InvalidMetaProperty { found: String, reason: String },
+
     #[error("Format error: {0}")]
     Format(#[from] format::Error),
 }

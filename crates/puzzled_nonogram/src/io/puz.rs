@@ -12,8 +12,6 @@ use puzzled_io::{
 use crate::{Colors, Fill, Fills, Nonogram, Rules};
 
 impl PuzSizeCheck for Colors {
-    const KIND: &'static str = "Fill colors";
-
     fn check_puz_size(&self) -> write::Result<()> {
         let max_color_id = u8::MAX as usize;
         let color_ids = self.keys().filter_map(|fill| match fill {
@@ -70,7 +68,6 @@ impl Puz for Nonogram {
             width,
             height,
         };
-        grids.validate().context("Puzzle grids")?;
 
         Ok(grids)
     }
@@ -121,8 +118,10 @@ fn read_fills_and_rules(grids: &Grids) -> read::Result<(Fills, Rules)> {
 
         for &byte in grid.iter() {
             let fill_char = byte as char;
-            let fill = Fill::decode_char(fill_char)
-                .map_err(|err| format::Error::Custom(err.to_string()))?;
+            let fill = Fill::decode_char(fill_char).map_err(|err| {
+                let boxed_err = Box::new(err);
+                format::Error::PuzzleSpecific(boxed_err)
+            })?;
 
             fills.push(fill);
         }

@@ -1,4 +1,4 @@
-use crate::puz::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
+use crate::puz::{Context, PuzRead, PuzWrite, Span, format, read, windows_1252_to_char, write};
 use puzzled_core::{Grid, GridError};
 
 pub const NON_PLAYABLE_CELL: char = '.';
@@ -42,19 +42,19 @@ pub struct Grids {
 }
 
 impl Grids {
-    pub fn validate(&self) -> format::Result<()> {
+    pub fn validate(&self) -> read::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
-        let err = |kind: GridError| format::Error::Grid(kind);
+        let err = |kind: GridError| Err(format::Error::Grid(kind)).context("Grid error");
 
         for (grid, _) in &grids {
             let len = grid.rows() as u8;
 
             if len != self.height {
-                return Err(err(GridError::InvalidHeight {
+                return err(GridError::InvalidHeight {
                     found: len,
                     expected: self.height,
-                }));
+                });
             }
 
             // Check whether the rows have the correct width
@@ -62,11 +62,11 @@ impl Grids {
                 let len = row.count() as u8;
 
                 if len != self.width {
-                    return Err(err(GridError::InvalidWidth {
+                    return err(GridError::InvalidWidth {
                         row: r as u8,
                         found: len,
                         expected: self.width,
-                    }));
+                    });
                 }
             }
         }
@@ -78,12 +78,18 @@ impl Grids {
             if (solution_square == NON_PLAYABLE_CELL as u8)
                 != (state_square == NON_PLAYABLE_CELL as u8)
             {
-                return Err(format::Error::CellMismatch {
-                    solution_square: windows_1252_to_char(solution_square),
-                    state_square: windows_1252_to_char(state_square),
-                    row: pos.row as u8,
-                    col: pos.col as u8,
-                });
+                let err = read::Error {
+                    span: Span::default(),
+                    kind: read::ErrorKind::CellMismatch {
+                        solution_square: windows_1252_to_char(solution_square),
+                        state_square: windows_1252_to_char(state_square),
+                        row: pos.row as u8,
+                        col: pos.col as u8,
+                    },
+                    context: "Solution/state grids".to_string(),
+                };
+
+                return Err(err);
             }
         }
 

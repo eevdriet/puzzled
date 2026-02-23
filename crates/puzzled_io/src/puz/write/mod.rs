@@ -10,8 +10,10 @@
 //! [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 
 mod error;
+mod size;
 
 pub use error::*;
+pub use size::*;
 
 use std::io::{self, Write};
 

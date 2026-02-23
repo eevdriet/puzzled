@@ -1758,6 +1758,7 @@ dependencies = [
 name = "puzzled_io"
 version = "0.1.0"
 dependencies = [
+ "image",
  "puzzled",
  "puzzled_core",
  "thiserror 2.0.18",

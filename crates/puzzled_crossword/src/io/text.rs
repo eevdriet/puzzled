@@ -9,6 +9,12 @@ use puzzled_io::{
 
 use crate::{ClueSpec, Crossword, CrosswordCell, Direction, Solution, Square, Squares};
 
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("Invalid clue specification: {reason}")]
+    InvalidClueSpec { reason: String },
+}
+
 impl TxtPuzzle for Crossword {
     fn from_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the squares grid
@@ -43,10 +49,10 @@ fn read_clues(reader: &mut TxtState) -> read::Result<Vec<ClueSpec>> {
     let mut clues = Vec::new();
 
     let err = |reason: &str| {
-        format::Error::ClueSpec {
+        let error = Error::InvalidClueSpec {
             reason: reason.to_string(),
-        }
-        .into()
+        };
+        format::Error::PuzzleSpecific(Box::new(error))
     };
 
     while let Some(line) = reader.next_prefixed("-") {
@@ -60,9 +66,7 @@ fn read_clues(reader: &mut TxtState) -> read::Result<Vec<ClueSpec>> {
             "A" => Direction::Across,
             "D" => Direction::Down,
             _ => {
-                return Err(err(
-                    "Clue direction should be either A (across) or D (down)",
-                ));
+                return Err(err("Clue direction should be either A (across) or D (down)").into());
             }
         };
 

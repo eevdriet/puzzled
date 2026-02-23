@@ -24,10 +24,12 @@ impl<'a> TxtState<'a> {
             }
 
             // Read each property as `<prop>: "<text>"`
-            let (prop, text) = line.split_once(':').ok_or(format::Error::InvalidProperty {
-                found: line.to_string(),
-                reason: "Property should be formatted as <key>: \"<value>\"".to_string(),
-            })?;
+            let (prop, text) = line
+                .split_once(':')
+                .ok_or(read::Error::InvalidMetaProperty {
+                    found: line.to_string(),
+                    reason: "Property should be formatted as <key>: \"<value>\"".to_string(),
+                })?;
 
             let text = self.read_string(text)?;
 
@@ -58,11 +60,10 @@ impl<'a> TxtState<'a> {
                     Err(reason) => return Err(format::Error::Timer(reason).into()),
                 },
                 _ => {
-                    return Err(format::Error::InvalidProperty {
+                    return Err(read::Error::InvalidMetaProperty {
                         found: prop.to_string(),
                         reason: "Type is unknown".to_string(),
-                    }
-                    .into());
+                    });
                 }
             }
         }

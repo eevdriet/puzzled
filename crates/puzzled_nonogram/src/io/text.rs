@@ -9,6 +9,12 @@ use puzzled_io::{
 
 use crate::{Colors, Fill, Fills, Nonogram, Rules};
 
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("Fill colors should be specified as `<fill_id> : \"<text>\"`")]
+    InvalidColorSpec,
+}
+
 impl TxtPuzzle for Nonogram {
     fn from_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the fills and corresponding rules
@@ -35,14 +41,19 @@ impl TxtPuzzle for Nonogram {
 fn read_colors(reader: &mut TxtState) -> read::Result<Colors> {
     let mut colors = Colors::default();
 
-    let err = |reason: &str| -> read::Error { format::Error::Custom(reason.to_string()).into() };
+    fn wrap_err<T>(err: T) -> format::Error
+    where
+        T: std::error::Error + Send + Sync + 'static,
+    {
+        format::Error::PuzzleSpecific(Box::new(err))
+    }
 
     while let Some(line) = reader.next_prefixed("-") {
-        let (fill_str, color_str) = line.split_once(':').ok_or(err(
-            "Fill colors should be specified as `<fill_id> : \"<text>\"`",
-        ))?;
+        let (fill_str, color_str) = line
+            .split_once(':')
+            .ok_or(wrap_err(Error::InvalidColorSpec))?;
 
-        let fill = Fill::try_from(fill_str).map_err(|err| read::Error::Custom(err.to_string()))?;
+        let fill = Fill::try_from(fill_str).map_err(wrap_err)?;
 
         let color = Color::hex(color_str).map_err(format::Error::Color)?;
         colors.insert(fill, color);

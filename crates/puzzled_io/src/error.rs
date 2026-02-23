@@ -7,9 +7,6 @@ use crate::text;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("{0}")]
-    Custom(String),
-
     #[error("Text error: {0}")]
     Text(#[from] text::Error),
 
