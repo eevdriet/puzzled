@@ -32,7 +32,7 @@ impl Fills {
             .enumerate()
             .take(pos + 1)
             .rev()
-            .take_while(|(_, cell)| none_or_fill(cell, **fill))
+            .take_while(|(_, cell)| some_and_fill(cell, **fill))
             .map(|(i, _)| i)
             .last()
             .map(|start| LinePosition::new(line, start));
@@ -52,16 +52,13 @@ impl Fills {
             return None;
         };
 
-        let end = self
-            .iter_line(line)
+        self.iter_line(line)
             .enumerate()
-            .skip(pos + 1)
+            .skip(pos)
             .take_while(|(_, cell)| none_or_fill(cell, **fill))
             .map(|(i, _)| i)
             .last()
-            .map(|end| LinePosition::new(line, end));
-
-        end
+            .map(|end| LinePosition::new(line, end))
     }
 
     pub fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
@@ -169,7 +166,7 @@ impl Fills {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use puzzled_core::Grid;
+    use puzzled_core::{Cell, Grid};
     use rstest::{fixture, rstest};
     use tracing_test::traced_test;
 
@@ -182,11 +179,19 @@ mod tests {
 
     #[fixture]
     fn line_fills() -> Fills {
-        //               0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18
-        let fills = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B];
-        let cols = fills.len();
+        //                       0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18
+        let cells: Vec<_> = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B]
+            .into_iter()
+            .map(|fill| {
+                let mut cell = Cell::new(fill);
+                cell.enter(fill);
 
-        let grid = Grid::from_vec(fills, cols).expect("Single row");
+                NonogramCell::new(cell)
+            })
+            .collect();
+        let cols = cells.len();
+
+        let grid = Grid::from_vec(cells, cols).expect("Single row");
         Fills::new(grid)
     }
 

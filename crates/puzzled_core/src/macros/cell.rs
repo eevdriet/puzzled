@@ -16,7 +16,7 @@ macro_rules! cell {
         let style = $crate::cell_style!($($style)+);
 
         // Create the cell from solution and style
-        let cell = $crate::Cell::new_styled($sol, style);
+        let mut cell = $crate::Cell::new_styled($sol, style);
 
         // Add entry
         cell.enter($entry);

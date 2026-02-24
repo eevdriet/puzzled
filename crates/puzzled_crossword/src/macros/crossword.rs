@@ -83,3 +83,54 @@ macro_rules! crossword {
         $crate::__error($($invalid)*, "crossword!")
     }};
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __crossword_square {
+    // CONTINUE: * adds to the current style
+    (@case * $($tail:tt)* [$sol:expr] [$($styles:tt)*] [$($out:expr),*]) => {
+        $crate::__crossword_square!(
+            @case $($tail)* [$sol] [$($styles)* *] [$($out),*]
+        )
+    };
+
+    // CONTINUE: ~ adds to the current style
+    (@case ~ $($tail:tt)* [$sol:expr] [$($styles:tt)*] [$($out:expr),*]) => {
+        $crate::__crossword_square!(
+            @case $($tail)* [$sol] [$($styles)* ~] [$($out),*]
+        )
+    };
+
+    // CONTINUE: @ adds to the current style
+    (@case @ $($tail:tt)* [$sol:expr] [$($styles:tt)*] [$($out:expr),*]) => {
+        $crate::__crossword_square!(
+            @case $($tail)* [$sol] [$($styles)* @] [$($out),*]
+        )
+    };
+
+    // END: entry -> create solution + entry cell -> add to $out and continue with row
+    (@case ( $entry:tt ) $($tail:tt)* [$sol:expr] [$($styles:tt)*] [$($out:expr),*]) => {
+        $crate::__crossword_row!(
+            @case $($tail)* [$($out),*, Some({
+                let entry = $crate::__solution(stringify!($entry));
+                let style = $crate::cell_style!($($styles)*);
+
+                let mut cell = $crate::Cell::new_styled($sol, style);
+                cell.enter(entry);
+
+                cell
+            })]
+        )
+    };
+
+    // END: ? -> create solution cell -> add to $out and continue with row
+    (@case $($tail:tt)* [$sol:expr] [$($styles:tt)*] [$($out:expr),*]) => {
+        $crate::__crossword_row!(
+            @case $($tail)* [$($out),*, Some({
+                let style = $crate::cell_style!($($styles)*);
+
+                $crate::Cell::new_styled($sol, style)
+            })]
+        )
+    };
+}

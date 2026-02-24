@@ -202,7 +202,7 @@ fn read_colors(fills: &Fills, strings: &Strings) -> read::Result<Colors> {
             let color_str = str::from_utf8(color_bytes)
                 .map_err(|err| format::Error::String(StringError::Utf8Error(err)))?;
 
-            let fill = Fill::Color(id as u32);
+            let fill = Fill::Color(id);
             let color = Color::hex(color_str)?;
 
             colors.insert(fill, color);

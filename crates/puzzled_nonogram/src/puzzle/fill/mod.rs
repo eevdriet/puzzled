@@ -123,10 +123,10 @@ impl Fill {
                 id if color_count.is_some() && *id > color_count.unwrap() as u32 => None,
 
                 // Use 0-9 for first 10 colors
-                id @ 1..=9 => char::from_u32(b'0' as u32 + *id as u32),
+                id @ 1..=9 => char::from_u32(b'0' as u32 + *id),
 
                 // Use alphabet for next 25 colors (skip 'x' for cross)
-                id @ 10..24 | id @ 25..=26 => char::from_u32(b'a' as u32 + *id as u32 - 9),
+                id @ 10..24 | id @ 25..=26 => char::from_u32(b'a' as u32 + *id - 9),
                 24 => Some(','),
 
                 _ => None,

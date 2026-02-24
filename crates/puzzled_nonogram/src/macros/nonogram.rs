@@ -13,8 +13,8 @@ macro_rules! nonogram {
     ) => {{
         // Add fills and use them to construct the rules
         let grid = $crate::grid![
-            [$( $crate::fill!($x0) ),+]
-            $(, [$( $crate::fill!($x) ),+] )*
+            [$( $crate::cell!($x0) ),+]
+            $(, [$( $crate::cell!($x) ),+] )*
         ];
 
         let fills = $crate::Fills::new(grid);

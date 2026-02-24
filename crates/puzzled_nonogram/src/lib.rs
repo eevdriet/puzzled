@@ -11,7 +11,7 @@ pub mod puzzle;
 pub mod solver;
 
 #[doc(hidden)]
-pub use puzzled_core::*;
+pub use puzzled_core::{cell as __core_cell, *};
 
 #[doc(inline)]
 pub use {io::*, puzzle::*, solver::*};
