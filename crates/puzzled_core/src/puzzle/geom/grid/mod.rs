@@ -6,7 +6,7 @@ mod iter;
 mod reveal;
 
 pub use error::Error as GridError;
-pub use iter::*;
+pub(crate) use iter::*;
 
 #[derive(Debug, Default)]
 pub struct Grid<T> {

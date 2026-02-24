@@ -1,8 +1,10 @@
 mod position;
-
-use std::{cmp::Ordering, fmt, ops};
+mod segment;
 
 pub use position::*;
+pub use segment::*;
+
+use std::{cmp::Ordering, fmt, ops};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Line {
