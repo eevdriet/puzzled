@@ -15,6 +15,7 @@ thiserror = {workspace = true}
 
 [dev-dependencies]
 puzzled = {path = "../puzzled/", features = ["crossword"]}
+rstest = {workspace = true}
 
 [features]
 default = ["macros"]

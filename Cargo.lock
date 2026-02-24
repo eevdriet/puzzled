@@ -1734,6 +1734,7 @@ dependencies = [
  "bitflags 2.11.0",
  "derive_more",
  "puzzled",
+ "rstest",
  "serde",
  "thiserror 2.0.18",
 ]

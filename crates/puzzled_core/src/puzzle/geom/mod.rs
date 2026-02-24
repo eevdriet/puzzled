@@ -1,10 +1,12 @@
 mod grid;
+mod lattice;
 mod line;
 mod offset;
 mod order;
 mod position;
 
 pub use grid::*;
+pub use lattice::*;
 pub use line::*;
 pub use offset::*;
 pub use order::*;

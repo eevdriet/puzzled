@@ -1,9 +1,7 @@
 use std::fmt::{self, Display};
 
-mod reveal;
 mod style;
 
-pub use reveal::*;
 pub use style::CellStyle;
 
 /// Playable square that the user can enter their solution into
@@ -66,6 +64,10 @@ pub struct Cell<S> {
 }
 
 pub type CellGrid<T> = Grid<Cell<T>>;
+
+pub trait Reveal {
+    fn reveal(&mut self);
+}
 
 impl<S> Cell<S> {
     // Current styles

@@ -1,6 +1,7 @@
 mod cell;
 mod color;
 mod grid;
+mod lattice;
 mod metadata;
 
 #[doc(hidden)]

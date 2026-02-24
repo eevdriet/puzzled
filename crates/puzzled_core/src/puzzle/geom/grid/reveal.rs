@@ -1,8 +1,4 @@
-pub trait Reveal {
-    fn reveal(&mut self);
-}
-
-use crate::{Grid, Position};
+use crate::{Grid, Position, Reveal};
 
 impl<R> Grid<R>
 where

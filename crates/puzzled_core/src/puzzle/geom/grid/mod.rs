@@ -3,6 +3,7 @@ use crate::{Line, Position};
 mod error;
 mod index;
 mod iter;
+mod reveal;
 
 pub use error::Error as GridError;
 pub use iter::*;
