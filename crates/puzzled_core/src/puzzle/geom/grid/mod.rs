@@ -235,17 +235,15 @@ where
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use serde::{Deserialize, Serialize, ser::SerializeStruct};
+    use std::marker::PhantomData;
+
+    use serde::{
+        Deserialize, Serialize,
+        de::{self, Visitor},
+        ser::SerializeSeq,
+    };
 
     use crate::Grid;
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "lowercase")]
-    struct SerdeGrid<T> {
-        cols: usize,
-        rows: usize,
-        data: Vec<T>,
-    }
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<T: Serialize> Serialize for Grid<T> {
@@ -253,12 +251,16 @@ mod serde_impl {
         where
             S: serde::Serializer,
         {
-            let mut grid = serializer.serialize_struct("Grid", 3)?;
-            grid.serialize_field("cols", &self.cols)?;
-            grid.serialize_field("rows", &self.rows)?;
-            grid.serialize_field("data", &self.data)?;
+            let mut seq = serializer.serialize_seq(Some(self.rows))?;
 
-            grid.end()
+            for row in 0..self.rows {
+                let start = row * self.cols;
+                let end = start + self.cols;
+
+                seq.serialize_element(&self.data[start..end])?;
+            }
+
+            seq.end()
         }
     }
 
@@ -268,10 +270,52 @@ mod serde_impl {
         where
             D: serde::Deserializer<'de>,
         {
-            let SerdeGrid { cols, rows, data } = SerdeGrid::deserialize(deserializer)?;
-            let grid = Grid { cols, rows, data };
+            struct GridVisitor<T> {
+                marker: PhantomData<T>,
+            }
 
-            Ok(grid)
+            impl<'de, T> Visitor<'de> for GridVisitor<T>
+            where
+                T: Deserialize<'de>,
+            {
+                type Value = Grid<T>;
+
+                fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    write!(
+                        f,
+                        "A 2-dimensional grid as a Vec<Vec<T>> where each row has the same width"
+                    )
+                }
+
+                fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+                where
+                    A: serde::de::SeqAccess<'de>,
+                {
+                    let mut rows = Vec::new();
+                    while let Some(row) = seq.next_element::<Vec<T>>()? {
+                        rows.push(row);
+                    }
+
+                    let row_count = rows.len();
+                    let col_count = rows.first().map(|row| row.len()).unwrap_or(0);
+
+                    if rows.iter().any(|row| row.len() != col_count) {
+                        return Err(de::Error::custom("Each row should have the same width"));
+                    }
+
+                    let data = rows.into_iter().flatten().collect();
+
+                    Ok(Grid {
+                        rows: row_count,
+                        cols: col_count,
+                        data,
+                    })
+                }
+            }
+
+            deserializer.deserialize_seq(GridVisitor {
+                marker: PhantomData,
+            })
         }
     }
 }
