@@ -5,6 +5,8 @@ mod puzzle;
 mod region;
 mod rules;
 
+use puzzled_nonogram::{Colors, Fill};
+use ratatui::style::{Color, Modifier};
 use std::fmt::Display;
 
 pub use footer::*;
@@ -43,5 +45,27 @@ pub fn x_aligned(area: Rect, width: u16, alignment: Alignment) -> u16 {
         Alignment::Left => area.x,
         Alignment::Right => area.right().saturating_sub(width),
         Alignment::Center => area.x + (area.width.saturating_sub(width)) / 2,
+    }
+}
+
+pub trait ColorsExt {
+    fn get_style(&self, fill: Fill) -> Style;
+}
+
+impl ColorsExt for Colors {
+    fn get_style(&self, fill: Fill) -> Style {
+        let style = Style::default();
+
+        match fill {
+            Fill::Blank => style.fg(Color::DarkGray).add_modifier(Modifier::DIM),
+            Fill::Cross => style.fg(Color::Gray),
+            col @ Fill::Color(_) => {
+                let color = self
+                    .get(&col)
+                    .unwrap_or_else(|| panic!("Color for fill {col:?} should be set"));
+
+                style.fg(Color::Rgb(color.red, color.green, color.blue))
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use crate::{Fill, Fills, Line, LinePosition};
+use crate::{Fill, Fills, Line, LinePosition, NonogramCell};
 
 #[derive(Debug, Clone, Copy)]
 pub enum FindDirection {
@@ -8,48 +8,60 @@ pub enum FindDirection {
     Backwards,
 }
 
-impl Fills {
-    pub fn find_run_start(&self, pos: LinePosition) -> Option<LinePosition> {
-        let line = pos.line;
-        let offset = pos.pos;
+fn none_or_fill(cell: &NonogramCell, fill: Fill) -> bool {
+    cell.entry().is_none_or(|f| *f == fill)
+}
+fn some_and_fill(cell: &NonogramCell, fill: Fill) -> bool {
+    cell.entry().is_some_and(|f| *f == fill)
+}
 
-        if offset >= self.line_len(line) {
+impl Fills {
+    pub fn find_run_start(&self, line_pos: LinePosition) -> Option<LinePosition> {
+        let LinePosition { line, pos } = line_pos;
+
+        if pos >= self.line_len(line) {
             return None;
         }
 
-        let fill = self[pos];
+        let Some(fill) = &self[line_pos].entry() else {
+            return None;
+        };
 
         let start = self
             .iter_line(line)
             .enumerate()
-            .take(offset + 1)
+            .take(pos + 1)
             .rev()
-            .take_while(|(_, f)| **f == fill)
+            .take_while(|(_, cell)| none_or_fill(cell, **fill))
             .map(|(i, _)| i)
             .last()
             .map(|start| LinePosition::new(line, start));
 
-        tracing::debug!("Start {start:?} found from {pos:?}");
+        tracing::debug!("Start {start:?} found from {line_pos:?}");
         start
     }
 
-    pub fn find_run_end(&self, pos: LinePosition) -> Option<LinePosition> {
-        let line = pos.line;
-        let offset = pos.pos;
+    pub fn find_run_end(&self, line_pos: LinePosition) -> Option<LinePosition> {
+        let LinePosition { line, pos } = line_pos;
 
-        if offset >= self.line_len(line) {
+        if pos >= self.line_len(line) {
             return None;
         }
 
-        let fill = self[pos];
+        let Some(fill) = &self[line_pos].entry() else {
+            return None;
+        };
 
-        self.iter_line(line)
+        let end = self
+            .iter_line(line)
             .enumerate()
-            .skip(offset)
-            .take_while(|(_, f)| **f == fill)
+            .skip(pos + 1)
+            .take_while(|(_, cell)| none_or_fill(cell, **fill))
             .map(|(i, _)| i)
             .last()
-            .map(|start| LinePosition::new(pos.line, start))
+            .map(|end| LinePosition::new(line, end));
+
+        end
     }
 
     pub fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
@@ -122,11 +134,14 @@ impl Fills {
 
         let iter = self.iter_line(line).enumerate();
         let found = match direction {
-            FindDirection::Forwards => iter.skip(offset).find(|(_, f)| **f == fill),
+            FindDirection::Forwards => iter
+                .skip(offset)
+                .find(|(_, cell)| some_and_fill(cell, fill)),
+
             FindDirection::Backwards => iter
                 .take(offset.saturating_sub(1))
                 .rev()
-                .find(|(_, f)| **f == fill),
+                .find(|(_, cell)| some_and_fill(cell, fill)),
         };
 
         found.map(|(idx, _)| LinePosition::new(line, idx))
@@ -138,11 +153,14 @@ impl Fills {
         direction: FindDirection,
     ) -> Option<LinePosition> {
         let mut iter = self.iter_line(line).enumerate();
-        let non_blank = |fill: &Fill| !matches!(fill, Fill::Blank);
+        let non_blank = |cell: &NonogramCell| {
+            cell.entry()
+                .is_some_and(|fill| !matches!(fill, Fill::Blank))
+        };
 
         match direction {
-            FindDirection::Forwards => iter.find(|(_, fill)| non_blank(fill)),
-            FindDirection::Backwards => iter.rev().find(|(_, fill)| non_blank(fill)),
+            FindDirection::Forwards => iter.find(|(_, cell)| non_blank(cell)),
+            FindDirection::Backwards => iter.rev().find(|(_, cell)| non_blank(cell)),
         }
         .map(|(idx, _)| LinePosition::new(line, idx))
     }

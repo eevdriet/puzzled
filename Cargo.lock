@@ -1790,6 +1790,7 @@ dependencies = [
  "clap",
  "crossterm",
  "directories",
+ "puzzled_core",
  "puzzled_io",
  "puzzled_nonogram",
  "ratatui",

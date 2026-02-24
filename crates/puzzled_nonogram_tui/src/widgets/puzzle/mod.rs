@@ -8,7 +8,7 @@ pub use state::*;
 pub use style::*;
 pub use viewport::*;
 
-use puzzled_nonogram::Fill;
+use puzzled_nonogram::{Fill, NonogramCell};
 use ratatui::{
     buffer::Buffer,
     layout::{Position as AppPosition, Rect},
@@ -16,7 +16,7 @@ use ratatui::{
     widgets::StatefulWidgetRef,
 };
 
-use crate::{AppState, Focus, app_to_puzzle, safe_draw_str};
+use crate::{AppState, ColorsExt, Focus, app_to_puzzle, safe_draw_str};
 
 #[derive(Debug, Copy, Clone)]
 pub struct PuzzleWidget;
@@ -55,9 +55,9 @@ impl PuzzleWidget {
 
             for col in vp.col_start..vp.col_end {
                 let pos = AppPosition::new(col, row);
-                let fill = state.puzzle[app_to_puzzle(pos)];
+                let cell = &state.puzzle[app_to_puzzle(pos)];
                 let is_selected = selection.contains(&pos);
-                let style = PuzzleWidget::cell_style(&fill, pos, is_selected, app_state);
+                let style = PuzzleWidget::cell_style(cell, pos, is_selected, app_state);
 
                 let col = col as usize;
 
@@ -65,7 +65,7 @@ impl PuzzleWidget {
                 let repeat = state.style.cell_width;
                 let symbol = match pos == state.cursor {
                     true => 'E',
-                    false => fill.symbol(),
+                    false => cell.fill().symbol(),
                 }
                 .to_string()
                 .repeat(repeat);
@@ -148,30 +148,19 @@ impl PuzzleWidget {
         buf.set_string(x_end, y_end, "┘", style);
     }
 
-    fn cell_style(fill: &Fill, pos: AppPosition, is_selected: bool, state: &AppState) -> Style {
-        let mut style = Style::default();
-
-        // Fill
-        style = match fill {
-            Fill::Blank => style.fg(Color::DarkGray).add_modifier(Modifier::DIM),
-            Fill::Cross => style.fg(Color::Gray),
-            Fill::Color(id) => {
-                let color = state
-                    .puzzle
-                    .style
-                    .colors
-                    .get(*id - 1)
-                    .unwrap_or_else(|| panic!("Color for fill {} should be set", id));
-
-                let rcolor = Color::Rgb(color.red, color.green, color.blue);
-                style.fg(rcolor)
-            }
-        };
+    fn cell_style(
+        cell: &NonogramCell,
+        pos: AppPosition,
+        is_selected: bool,
+        state: &AppState,
+    ) -> Style {
+        let colors = state.puzzle.puzzle.colors();
+        let mut style = colors.get_style(cell.fill());
 
         // Active line
         if matches!(state.focus, Focus::Puzzle) {
             if pos.x == state.puzzle.cursor.x || pos.y == state.puzzle.cursor.y {
-                if !matches!(fill, Fill::Color(_)) {
+                if !matches!(cell.fill(), Fill::Color(_)) {
                     style = style.fg(Color::White);
                 }
 

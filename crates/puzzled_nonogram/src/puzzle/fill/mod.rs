@@ -1,7 +1,5 @@
-mod fills;
 mod mask;
 
-pub use fills::*;
 pub use mask::*;
 
 use std::fmt::Debug;
@@ -16,6 +14,11 @@ pub enum FillError {
 
     #[error("Invalid character '{0}' used to create fill, only 0..=9, a..=z and A..=Z are allowed")]
     InvalidChar(char),
+
+    #[error(
+        "Invalid id '{0} used to create fill, only ASCII 0..=9, a..=z, A..=Z and . are allowed"
+    )]
+    InvalidId(u32),
 }
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -33,26 +36,16 @@ pub enum Fill {
 
 impl Fill {
     pub const fn decode_char(ch: char) -> Result<Self, FillError> {
-        let id = match ch {
+        match ch {
             // Non-colors
-            '.' => return Ok(Fill::Blank),
-            '0' | 'x' | 'X' => return Ok(Fill::Cross),
-            // 1. Numbers
-            col @ '1'..='9' => (col as u8 - b'1') as usize,
-            // 2. Lowercase letters
-            col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
-            col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
-            // 3. Uppercase letters
-            col @ 'A'..'X' => (col as u8 - b'A' + 9 + 25 + 23) as usize,
-            col @ 'Y'..='Z' => (col as u8 - b'Y' + 9 + 25 + 25) as usize,
+            '.' => Ok(Fill::Blank),
+            '0' | 'x' | 'X' => Ok(Fill::Cross),
+
+            id @ ('1'..='9' | 'a'..='z' | 'A'..='Z') => Ok(Fill::Color(id as u32)),
 
             // Unknown
-            _ => {
-                return Err(FillError::InvalidChar(ch));
-            }
-        };
-
-        Ok(Fill::Color(id))
+            _ => Err(FillError::InvalidChar(ch)),
+        }
     }
 
     pub const fn decode_str(str: &str) -> Result<Self, FillError> {
@@ -69,6 +62,34 @@ impl Fill {
         Self::decode_char(bytes[0] as char)
     }
 
+    pub fn index(&self) -> Result<usize, FillError> {
+        match *self {
+            Fill::Blank => Ok(0),
+            Fill::Cross => Ok(1),
+            Fill::Color(id) => {
+                let color_char = char::from_u32(id).ok_or(FillError::InvalidId(id))?;
+
+                let id = match color_char {
+                    '.' => 0,             // Blank
+                    '0' | 'x' | 'X' => 1, // Cross
+
+                    // Colors
+                    // 1. Numbers
+                    col @ '1'..='9' => (col as u8 - b'1') as usize,
+                    // 2. Lowercase letters
+                    col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
+                    col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
+                    // 3. Uppercase letters
+                    col @ 'A'..'X' => (col as u8 - b'A' + 9 + 25 + 23) as usize,
+                    col @ 'Y'..='Z' => (col as u8 - b'Y' + 9 + 25 + 25) as usize,
+                    _ => return Err(FillError::InvalidChar(color_char)),
+                };
+
+                Ok(id)
+            }
+        }
+    }
+
     pub fn is_color(&self) -> bool {
         matches!(self, Fill::Color(_))
     }
@@ -82,15 +103,7 @@ impl Fill {
         }
     }
 
-    pub fn byte(&self) -> usize {
-        match self {
-            Fill::Blank => b'.' as usize,
-            Fill::Cross => 0,
-            Fill::Color(id) => *id,
-        }
-    }
-
-    pub fn as_key(&self) -> usize {
+    pub fn as_key(&self) -> u32 {
         match self {
             Fill::Blank => 0,
             Fill::Cross => 1,
@@ -107,7 +120,7 @@ impl Fill {
             // 0-9 for <=10 colors (most puzzles)
             Fill::Color(id) => match id {
                 // Color is undefined
-                id if color_count.is_some() && *id > color_count.unwrap() => None,
+                id if color_count.is_some() && *id > color_count.unwrap() as u32 => None,
 
                 // Use 0-9 for first 10 colors
                 id @ 1..=9 => char::from_u32(b'0' as u32 + *id as u32),
@@ -130,21 +143,30 @@ impl TryFrom<char> for Fill {
     }
 }
 
+impl TryFrom<Fill> for char {
+    type Error = FillError;
+
+    fn try_from(fill: Fill) -> Result<Self, Self::Error> {
+        match fill {
+            Fill::Blank => Ok('.'),
+            Fill::Cross => Ok('X'),
+            Fill::Color(id) => {
+                let color_char = char::from_u32(id).ok_or(FillError::InvalidId(id))?;
+
+                match color_char {
+                    '.' | '0'..='9' | 'a'..='z' | 'A'..='Z' => Ok(color_char),
+                    _ => Err(FillError::InvalidId(id)),
+                }
+            }
+        }
+    }
+}
+
 impl TryFrom<&str> for Fill {
     type Error = FillError;
 
     fn try_from(fill_str: &str) -> Result<Self, Self::Error> {
         Self::decode_str(fill_str)
-    }
-}
-
-impl From<Fill> for Option<usize> {
-    fn from(fill: Fill) -> Self {
-        match fill {
-            Fill::Blank => None,
-            Fill::Cross => Some(0),
-            Fill::Color(col) => Some(col),
-        }
     }
 }
 
@@ -156,7 +178,7 @@ impl From<&Fill> for Fill {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use serde::{Deserialize, Serialize};
+    use serde::{Deserialize, Serialize, de, ser};
 
     use crate::Fill;
 
@@ -166,12 +188,8 @@ mod serde_impl {
         where
             S: serde::Serializer,
         {
-            match self {
-                Fill::Blank => 0,
-                Fill::Cross => 1,
-                Fill::Color(color) => *color,
-            }
-            .serialize(serializer)
+            let fill_char = char::try_from(*self).map_err(ser::Error::custom)?;
+            fill_char.serialize(serializer)
         }
     }
 
@@ -181,11 +199,8 @@ mod serde_impl {
         where
             D: serde::Deserializer<'de>,
         {
-            let fill = match usize::deserialize(deserializer)? {
-                0 => Fill::Blank,
-                1 => Fill::Cross,
-                color => Fill::Color(color),
-            };
+            let fill_char = char::deserialize(deserializer)?;
+            let fill = Fill::decode_char(fill_char).map_err(de::Error::custom)?;
 
             Ok(fill)
         }

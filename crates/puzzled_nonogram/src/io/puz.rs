@@ -1,15 +1,37 @@
-use puzzled_core::{Color, Grid};
+use puzzled_core::{Cell, Color, Grid};
 use puzzled_io::{
     Context,
     format::{self, StringError},
     puz::{
-        BinaryPuzzle, Extras, Grids, Header, PuzSizeCheck, PuzWrite, Strings, check_puz_size,
+        BinaryPuzzle, Extras, Grids, Header, MISSING_ENTRY_CELL, PuzSizeCheck, PuzWrite, Strings,
+        check_puz_size,
         read::{self, read_metadata},
         write,
     },
 };
 
-use crate::{Colors, Fill, Fills, Nonogram, Rules};
+use crate::{Colors, Fill, Fills, Nonogram, NonogramCell};
+
+impl PuzSizeCheck for Fills {
+    fn check_puz_size(&self) -> write::Result<()> {
+        // Make sure the grid is of valid size
+        self.0.check_puz_size()?;
+
+        // Make sure every color fits in a single byte
+        let max_size = u8::MAX as usize;
+
+        let color_ids = self.iter_colors().filter_map(|fill| match fill {
+            Fill::Color(id) => Some(id),
+            _ => None,
+        });
+
+        for &id in color_ids {
+            check_puz_size("Fill color", id as usize, max_size)?;
+        }
+
+        Ok(())
+    }
+}
 
 impl PuzSizeCheck for Colors {
     fn check_puz_size(&self) -> write::Result<()> {
@@ -20,7 +42,7 @@ impl PuzSizeCheck for Colors {
         });
 
         for &color_id in color_ids {
-            check_puz_size("Fill colors", color_id, max_color_id)?;
+            check_puz_size("Fill colors", color_id as usize, max_color_id)?;
         }
 
         Ok(())
@@ -57,9 +79,21 @@ impl BinaryPuzzle for Nonogram {
         let height = fills.cols() as u8;
 
         // Write the individual grids from the squares
-        let solution = fills.map_ref(|_| 0);
+        let solution = fills.map_ref(|cell| {
+            let fill = *cell.solution();
+            let fill_char = char::try_from(fill).expect("Checked fills");
 
-        let state = fills.map_ref(|fill| fill.byte() as u8);
+            fill_char as u8
+        });
+
+        let state = fills.map_ref(|cell| {
+            let fill = *cell
+                .entry()
+                .unwrap_or(&Fill::Color(MISSING_ENTRY_CELL as u32));
+            let fill_char = char::try_from(fill).expect("Checked fills");
+
+            fill_char as u8
+        });
 
         // Construct the result and validate
         let grids = Grids {
@@ -102,43 +136,48 @@ impl BinaryPuzzle for Nonogram {
         strings: Strings,
         extras: Extras,
     ) -> read::Result<Self> {
-        let (fills, rules) = read_fills_and_rules(&grids)?;
+        let fills = read_fills(&grids)?;
         let colors = read_colors(&fills, &strings)?;
         let meta = read_metadata(&header, &strings, &extras);
 
-        let nonogram = Nonogram::new(fills, rules, colors, meta);
+        let nonogram = Nonogram::new(fills, colors, meta);
         Ok(nonogram)
     }
 }
 
-fn read_fills_and_rules(grids: &Grids) -> read::Result<(Fills, Rules)> {
-    // Map the solution and state grids into fills
-    let get_fills = |grid: &Grid<u8>| -> format::Result<Fills> {
-        let mut fills = Vec::with_capacity(grid.size());
+fn read_fills(grids: &Grids) -> read::Result<Fills> {
+    grids.validate().context("Fills grids")?;
 
-        for &byte in grid.iter() {
-            let fill_char = byte as char;
-            let fill = Fill::decode_char(fill_char).map_err(|err| {
-                let boxed_err = Box::new(err);
-                format::Error::PuzzleSpecific(boxed_err)
-            })?;
+    let size = usize::from(grids.width) * usize::from(grids.height);
+    let mut data = Vec::with_capacity(size);
 
-            fills.push(fill);
-        }
-
-        // let grid = grid.map_ref(|&byte| Fill::decode_byte(byte));
-        let fills = Grid::from_vec(fills, grid.cols()).expect("Valid grid");
-
-        Ok(Fills::new(fills))
+    let byte_fill = |byte: u8| -> format::Result<Fill> {
+        Fill::decode_char(byte as char).map_err(|err| {
+            let boxed_err = Box::new(err);
+            format::Error::PuzzleSpecific(boxed_err)
+        })
     };
 
-    let solution_fills = get_fills(&grids.solution).context("Solution fills")?;
-    let fills = get_fills(&grids.state).context("State fills")?;
+    for (&solution_byte, &state_byte) in grids.solution.iter().zip(grids.state.iter()) {
+        // Create the inner cell with its solution
+        let solution = byte_fill(solution_byte).context("Solution fill")?;
+        let mut cell = Cell::new(solution);
 
-    // Construct rules from the solution fills
-    let rules = Rules::from_fills(&solution_fills);
+        // Optionally enter a state
+        let state = byte_fill(state_byte).context("State fill")?;
+        if char::try_from(state).is_ok_and(|ch| ch != MISSING_ENTRY_CELL) {
+            cell.enter(state);
+        }
 
-    Ok((fills, rules))
+        // Create cell
+        let cell = NonogramCell::new(cell);
+        data.push(cell);
+    }
+
+    let fills = Grid::from_vec(data, grids.width as usize).expect("Valid grids");
+    let fills = Fills::new(fills);
+
+    Ok(fills)
 }
 
 fn read_colors(fills: &Fills, strings: &Strings) -> read::Result<Colors> {
@@ -156,14 +195,14 @@ fn read_colors(fills: &Fills, strings: &Strings) -> read::Result<Colors> {
     }
 
     // Then construct the colors
-    fn get_colors(ids: Vec<usize>, clues: &[Vec<u8>]) -> format::Result<Colors> {
+    fn get_colors(ids: Vec<u32>, clues: &[Vec<u8>]) -> format::Result<Colors> {
         let mut colors = Colors::default();
 
         for (id, color_bytes) in ids.into_iter().zip(clues.iter()) {
             let color_str = str::from_utf8(color_bytes)
                 .map_err(|err| format::Error::String(StringError::Utf8Error(err)))?;
 
-            let fill = Fill::Color(id);
+            let fill = Fill::Color(id as u32);
             let color = Color::hex(color_str)?;
 
             colors.insert(fill, color);

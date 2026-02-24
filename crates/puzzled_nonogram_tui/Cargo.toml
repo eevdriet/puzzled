@@ -16,6 +16,7 @@ thiserror = { workspace = true }
 
 puzzled_nonogram = { path = "../puzzled_nonogram/", features = ["serde"]}
 puzzled_io = { path = "../puzzled_io/" }
+puzzled_core = { path = "../puzzled_core/" }
 
 [dev-dependencies]
 rstest = { workspace = true }

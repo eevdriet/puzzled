@@ -211,7 +211,7 @@ impl Crossword {
         }
 
         // Cannot start the clue in the given direction from the given start
-        if !self.squares.starts_in_dir(start, direction) {
+        if !self.squares.can_clue_start_in_dir(start, direction) {
             return None;
         }
 
@@ -224,7 +224,7 @@ impl Crossword {
             direction,
             start,
             text: clue.text().clone(),
-            len: self.squares.find_playable_len(start, direction),
+            len: self.squares.find_clue_len(start, direction),
         })
     }
 }

@@ -5,6 +5,7 @@ pub use state::*;
 
 use ratatui::{
     prelude::{Buffer, Rect},
+    style::Color,
     symbols::Marker,
     widgets::{
         StatefulWidgetRef, Widget,
@@ -22,6 +23,7 @@ impl StatefulWidgetRef for &MiniMapWidget {
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let puzzle = &state.puzzle.puzzle;
+        let colors = puzzle.colors();
         let cell_width = state.puzzle.style.cell_width;
         let cell_height = state.puzzle.style.cell_height;
 
@@ -33,11 +35,12 @@ impl StatefulWidgetRef for &MiniMapWidget {
                 for (r, row) in puzzle.fills().iter_rows().enumerate() {
                     let y_start = cell_height * (puzzle.rows() - r);
 
-                    for (c, fill) in row.enumerate() {
+                    for (c, cell) in row.enumerate() {
                         let x_start = cell_width * c;
+                        let fill = cell.fill();
 
                         if matches!(fill, Fill::Color(_))
-                            && let Some(color) = state.puzzle.style.fill_color(*fill)
+                            && let Some(c) = colors.get(&fill)
                         {
                             let coords: Vec<_> = (x_start..x_start + cell_width)
                                 .flat_map(move |x| {
@@ -48,7 +51,7 @@ impl StatefulWidgetRef for &MiniMapWidget {
 
                             let points = Points {
                                 coords: &coords,
-                                color,
+                                color: Color::Rgb(c.red, c.green, c.blue),
                             };
 
                             ctx.draw(&points);

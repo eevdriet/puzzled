@@ -51,19 +51,21 @@ impl Solver {
     }
 
     pub fn update_cell(&mut self, puzzle: &mut Nonogram, pos: Position, fill: Fill) {
-        // Record the previous fill and set the current
-        let prev = puzzle[pos];
-        puzzle[pos] = fill;
-
+        // Determine current line positions
         let (row_pos, col_pos) = pos.relative();
         let row = row_pos.line;
         let col = col_pos.line;
         let row_len = puzzle.fills().line_len(row);
         let col_len = puzzle.fills().line_len(col);
 
-        // Set the fill in the row and column masks
-        self.set_mask(row_pos, row_len, prev, fill);
-        self.set_mask(col_pos, col_len, prev, fill);
+        // Override the previous fill if any and record the current
+        if let Some(prev) = puzzle[pos].entry() {
+            // Set the fill in the row and column masks
+            self.set_mask(row_pos, row_len, *prev, fill);
+            self.set_mask(col_pos, col_len, *prev, fill);
+        }
+
+        puzzle[pos].enter(fill);
 
         // Assure the rule constraints are generated for both lines
         self.generate_rule_constraints(row);

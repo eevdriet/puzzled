@@ -13,7 +13,7 @@ use ratatui::{
     widgets::{LineGauge, StatefulWidgetRef, Widget},
 };
 
-use crate::{AppState, Focus, MotionRange, PuzzleState, Region, x_aligned};
+use crate::{AppState, ColorsExt, Focus, MotionRange, PuzzleState, Region, x_aligned};
 
 #[derive(Debug)]
 pub struct FooterWidget;
@@ -43,17 +43,15 @@ impl StatefulWidgetRef for &FooterWidget {
 
 impl FooterWidget {
     fn create_fill_spans(&self, fill: Fill, state: &PuzzleState) -> Vec<(Span<'_>, Option<Fill>)> {
+        let colors = state.puzzle.colors();
         let mut spans: Vec<(Span, Option<Fill>)> = Vec::new();
 
         let mut style = match state.fill == fill {
             true => Style::default().bold().underlined(),
             _ => Style::default(),
         };
-        let color = state
-            .style
-            .fill_color(fill)
-            .expect("Fill {fill:?} should have a defined color");
 
+        let color = colors.get_style(fill).fg.expect("Foreground should be set");
         style = style.underline_color(color);
 
         // Color brush itself
@@ -62,10 +60,7 @@ impl FooterWidget {
         spans.push((span, Some(fill)));
 
         // Id of the color
-        let key = state
-            .style
-            .key_from_fill(fill)
-            .expect("Fill {fill:?} should define a id char");
+        let key = char::try_from(fill).expect("Fill {fill:?} should define a id char");
 
         let span = Span::styled(key.to_string(), style.fg(Color::White));
         spans.push((span, Some(fill)));
@@ -81,13 +76,12 @@ impl FooterWidget {
         state: &mut AppState,
     ) {
         // Show the available colors
+        let colors = state.puzzle.puzzle.colors();
         let mut fill_spans: Vec<(Span, Option<Fill>)> = Vec::new();
 
-        let fills: Vec<_> = (0..state.puzzle.style.colors.len())
-            .map(|c| Fill::Color(c + 1))
-            .collect();
+        let fills: Vec<_> = colors.keys().collect();
 
-        for (f, fill) in fills.iter().enumerate() {
+        for (f, &fill) in fills.iter().enumerate() {
             fill_spans.extend(self.create_fill_spans(*fill, &state.puzzle));
 
             if f != fills.len() - 1 {
@@ -155,8 +149,10 @@ impl FooterWidget {
         let fill_symbol = fill.symbol();
         let color = state
             .puzzle
-            .style
-            .fill_color(fill)
+            .puzzle
+            .colors()
+            .get(&fill)
+            .map(|c| Color::Rgb(c.red, c.green, c.blue))
             .expect("Current fill {fill:?} should have a defined color");
 
         let order = state.puzzle.motion_order;
@@ -198,7 +194,7 @@ impl FooterWidget {
             .puzzle
             .fills()
             .iter()
-            .filter(|fill| !matches!(fill, Fill::Blank))
+            .filter(|cell| !matches!(cell.fill(), Fill::Blank))
             .count() as u16;
 
         let fill_perc = fill_count as f64 / state.puzzle.puzzle.fills().size() as f64;

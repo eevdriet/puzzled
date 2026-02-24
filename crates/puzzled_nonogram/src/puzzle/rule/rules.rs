@@ -18,12 +18,18 @@ impl Rules {
     pub fn from_fills(fills: &Fills) -> Self {
         let rows: Vec<_> = fills
             .iter_rows()
-            .map(|row| Rule::from_fills(row.cloned()))
+            .map(|row| {
+                let fills = row.map(|cell| cell.solution().to_owned());
+                Rule::from_fills(fills)
+            })
             .collect();
 
         let cols: Vec<_> = fills
             .iter_cols()
-            .map(|col| Rule::from_fills(col.cloned()))
+            .map(|col| {
+                let fills = col.map(|cell| cell.solution().to_owned());
+                Rule::from_fills(fills)
+            })
             .collect();
 
         Self { rows, cols }

@@ -18,16 +18,18 @@ impl HandleAction for &FooterWidget {
 
         match action {
             Action::MoveLeft | Action::ScrollLeft | Action::MoveRight | Action::ScrollRight => {
-                if let Fill::Color(curr) = state.puzzle.fill {
+                let fill = state.puzzle.fill;
+                if matches!(fill, Fill::Color(_)) {
+                    let colors = state.puzzle.puzzle.colors();
                     let next = match action {
-                        Action::MoveLeft | Action::ScrollLeft => (curr - 1).max(1),
-                        Action::MoveRight | Action::ScrollRight => {
-                            (curr + 1).min(state.puzzle.style.colors.len() - 1)
-                        }
-                        _ => curr,
+                        Action::MoveLeft | Action::ScrollLeft => colors.prev(fill),
+                        Action::MoveRight | Action::ScrollRight => colors.next(fill),
+                        _ => Some(fill),
                     };
 
-                    state.puzzle.fill = Fill::Color(next);
+                    if let Some(next) = next {
+                        state.puzzle.fill = next;
+                    }
                 }
             }
             a if a.is_mouse() => {

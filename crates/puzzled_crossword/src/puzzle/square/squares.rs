@@ -13,7 +13,7 @@ impl Squares {
         Self(squares)
     }
 
-    pub(crate) fn starts_in_dir(&self, pos: Position, dir: Direction) -> bool {
+    pub fn can_clue_start_in_dir(&self, pos: Position, dir: Direction) -> bool {
         let is_blank = |pos: Position| self.get_fill(pos).is_none();
 
         if is_blank(pos) {
@@ -26,7 +26,7 @@ impl Squares {
         }
     }
 
-    pub(crate) fn find_playable_len(&self, pos: Position, dir: Direction) -> u8 {
+    pub fn find_clue_len(&self, pos: Position, dir: Direction) -> u8 {
         let offset = match dir {
             Direction::Across => Offset::RIGHT,
             Direction::Down => Offset::DOWN,

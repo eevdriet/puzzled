@@ -1,6 +1,6 @@
 use std::fmt;
 
-pub type ColorId = usize;
+pub type ColorId = u32;
 
 type ColorValue = u8;
 

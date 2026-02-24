@@ -1,4 +1,4 @@
-use puzzled_core::Color;
+use puzzled_core::{Cell, Color};
 use puzzled_io::{
     format,
     text::{
@@ -7,7 +7,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{Colors, Fill, Fills, Nonogram, Rules};
+use crate::{Colors, Fill, Fills, Nonogram, NonogramCell};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -18,23 +18,23 @@ enum Error {
 impl TxtPuzzle for Nonogram {
     fn read_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the fills and corresponding rules
-        let mut read_fill = |token: &str| -> Fill {
-            match token {
+        let mut read_fill = |token: &str| -> NonogramCell {
+            let fill = match token {
                 "." => Fill::Blank,
                 _ => Fill::Cross,
-            }
+            };
+
+            NonogramCell::new(Cell::new(fill))
         };
 
         let fills = reader.read_grid(&mut read_fill)?;
         let fills = Fills::new(fills);
 
-        let rules = Rules::from_fills(&fills);
-
         // Read the colors and metadata
         let colors = read_colors(reader)?;
         let metadata = reader.read_metadata(None)?;
 
-        Ok(Nonogram::new(fills, rules, colors, metadata))
+        Ok(Nonogram::new(fills, colors, metadata))
     }
 }
 

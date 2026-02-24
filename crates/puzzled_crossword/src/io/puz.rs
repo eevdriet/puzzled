@@ -223,7 +223,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
 
     let mut start_at_pos = |num: u8, start: Position, direction: Direction| -> bool {
         // Cannot start clue at current position
-        if !squares.starts_in_dir(start, direction) {
+        if !squares.can_clue_start_in_dir(start, direction) {
             return false;
         }
 
@@ -232,7 +232,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
             None => return false,
             Some((_, clue)) => build_string(clue),
         };
-        let len = squares.find_playable_len(start, direction);
+        let len = squares.find_clue_len(start, direction);
 
         let entry = Clue::new(num, direction, text, start, len);
         entries.insert((num, direction), entry);

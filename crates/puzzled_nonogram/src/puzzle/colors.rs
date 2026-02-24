@@ -18,6 +18,23 @@ impl Colors {
 
         Self(colors)
     }
+
+    pub fn prev(&self, fill: Fill) -> Option<Fill> {
+        let Fill::Color(_) = fill else {
+            return None;
+        };
+
+        self.0.range(..fill).next_back().map(|(prev, _)| *prev)
+    }
+
+    pub fn next(&self, fill: Fill) -> Option<Fill> {
+        let Fill::Color(id) = fill else {
+            return None;
+        };
+        let next = Fill::Color(id + 1);
+
+        self.0.range(next..).next().map(|(next, _)| *next)
+    }
 }
 
 #[cfg(feature = "serde")]

@@ -1,3 +1,4 @@
+mod cell;
 mod colors;
 mod fill;
 mod find;
@@ -5,15 +6,16 @@ mod rule;
 mod run;
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Grid, Metadata, add_metadata};
+use puzzled_core::{Metadata, add_metadata};
 
+pub use cell::*;
 pub use colors::*;
 pub use fill::*;
 pub use find::*;
 pub use rule::*;
 pub use run::*;
 
-#[derive(Debug, Default, Index, IndexMut)]
+#[derive(Debug, Index, IndexMut)]
 pub struct Nonogram {
     #[index]
     #[index_mut]
@@ -26,28 +28,15 @@ pub struct Nonogram {
 }
 
 impl Nonogram {
-    pub fn new(fills: Fills, rules: Rules, colors: Colors, meta: Metadata) -> Self {
+    pub fn new(fills: Fills, colors: Colors, meta: Metadata) -> Self {
+        let rules = Rules::from_fills(&fills);
+
         Self {
             fills,
             rules,
             colors,
             meta,
         }
-    }
-
-    pub fn new_empty(rules: Rules, colors: Colors, meta: Metadata) -> Option<Self> {
-        // Start with a blank grid of the same dimensions as the rules
-        let grid = Grid::new_from(rules.rows.len(), rules.cols.len(), Fill::Blank)?;
-
-        let fills = Fills::new(grid);
-        let nonogram = Self {
-            fills,
-            rules,
-            colors,
-            meta,
-        };
-
-        Some(nonogram)
     }
 
     pub fn fills(&self) -> &Fills {

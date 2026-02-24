@@ -132,12 +132,15 @@ impl Solver {
         let n = puzzle.fills().line_len(line);
         let m = runs.len();
 
+        let fill_at = |pos: LinePosition| *puzzle[pos.absolute()].entry().unwrap_or(&Fill::Blank);
+
         // dp[offset][r]: first offset cells can fit the first r runs
         let mut dp = vec![vec![false; m + 1]; n + 1];
         dp[0][0] = true;
 
         for offset in 0..=n {
             let pos = LinePosition::new(line, offset);
+            let fill = fill_at(pos);
 
             #[allow(clippy::needless_range_loop)]
             for r in 0..=m {
@@ -147,7 +150,7 @@ impl Solver {
                 }
 
                 // Option 1: skip next position
-                if offset < n && matches!(puzzle[pos.absolute()], Fill::Cross | Fill::Blank) {
+                if offset < n && matches!(fill, Fill::Cross | Fill::Blank) {
                     dp[offset + 1][r] = true;
                 }
 
@@ -175,7 +178,7 @@ impl Solver {
                 let mut ok = true;
 
                 for idx in 0..len {
-                    match puzzle[(pos + idx).absolute()] {
+                    match fill_at(pos + idx) {
                         Fill::Cross => {
                             ok = false;
                             break;
@@ -194,7 +197,7 @@ impl Solver {
 
                 // Make sure to leave a space between runs with the same (colored) fill
                 if next_offset < n
-                    && matches!(puzzle[next_pos.absolute()], col @Fill::Color(_) if col == run.fill)
+                    && matches!(fill_at(next_pos), col @Fill::Color(_) if col == run.fill)
                 {
                     continue;
                 }

@@ -14,14 +14,11 @@ where
 
 impl<I> Runs<I>
 where
-    I: Iterator,
+    I: Iterator<Item = Fill>,
     I::Item: Into<Fill>,
 {
     pub fn new(mut iter: I, skip_non_colored: bool) -> Self {
-        let curr = iter.next().map(|fill| Run {
-            fill: fill.into(),
-            count: 1,
-        });
+        let curr = iter.next().map(|fill| Run { fill, count: 1 });
 
         Self {
             iter,

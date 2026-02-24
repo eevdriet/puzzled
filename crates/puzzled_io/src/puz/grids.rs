@@ -1,4 +1,4 @@
-use crate::puz::{Context, PuzRead, PuzWrite, Span, format, read, windows_1252_to_char, write};
+use crate::puz::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
 use puzzled_core::{Grid, GridError};
 
 pub const NON_PLAYABLE_CELL: char = '.';
@@ -41,11 +41,24 @@ pub struct Grids {
     pub height: u8,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(
+        "The solution grid has square '{solution_square}' at {row}R{col}C, while the state grid has '{state_square}' at that position"
+    )]
+    CellMismatch {
+        solution_square: char,
+        state_square: char,
+        row: u8,
+        col: u8,
+    },
+}
+
 impl Grids {
-    pub fn validate(&self) -> read::Result<()> {
+    pub fn validate(&self) -> format::Result<()> {
         let grids = [(&self.state, "puzzle"), (&self.solution, "answer")];
 
-        let err = |kind: GridError| Err(format::Error::Grid(kind)).context("Grid error");
+        let err = |kind: GridError| Err(format::Error::Grid(kind));
 
         for (grid, _) in &grids {
             let len = grid.rows() as u8;
@@ -78,18 +91,14 @@ impl Grids {
             if (solution_square == NON_PLAYABLE_CELL as u8)
                 != (state_square == NON_PLAYABLE_CELL as u8)
             {
-                let err = read::Error {
-                    span: Span::default(),
-                    kind: read::ErrorKind::CellMismatch {
-                        solution_square: windows_1252_to_char(solution_square),
-                        state_square: windows_1252_to_char(state_square),
-                        row: pos.row as u8,
-                        col: pos.col as u8,
-                    },
-                    context: "Solution/state grids".to_string(),
+                let err = Error::CellMismatch {
+                    solution_square: windows_1252_to_char(solution_square),
+                    state_square: windows_1252_to_char(state_square),
+                    row: pos.row as u8,
+                    col: pos.col as u8,
                 };
 
-                return Err(err);
+                return Err(format::Error::PuzzleSpecific(Box::new(err)));
             }
         }
 

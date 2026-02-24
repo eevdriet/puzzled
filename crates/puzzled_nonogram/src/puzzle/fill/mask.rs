@@ -16,7 +16,7 @@ impl FillMask {
     ///
     /// * `fill`: Fill to add
     pub fn add(&mut self, fill: Fill) {
-        if let Some(idx) = Into::<Option<usize>>::into(fill) {
+        if let Ok(idx) = fill.index() {
             let len = idx + 1;
 
             if len > self.0.len() {
@@ -31,7 +31,7 @@ impl FillMask {
     ///
     /// * `fill`: Fill to remove
     pub fn remove(&mut self, fill: Fill) {
-        if let Some(idx) = Into::<Option<usize>>::into(fill) {
+        if let Ok(idx) = fill.index() {
             self.0.set(idx, false);
         }
     }

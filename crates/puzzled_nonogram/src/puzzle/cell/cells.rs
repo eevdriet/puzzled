@@ -1,25 +1,35 @@
 use derive_more::{Deref, DerefMut, Index, IndexMut};
-use puzzled_core::{ColorId, Grid, Line, LineIter};
+use puzzled_core::{ColorId, Grid, Line};
 
-use crate::{Fill, Runs};
+use crate::{Fill, NonogramCell, Runs};
 
-#[derive(Debug, Default, PartialEq, Eq, Deref, DerefMut, Clone, Index, IndexMut)]
-pub struct Fills(pub(crate) Grid<Fill>);
+#[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone, Index, IndexMut)]
+pub struct Fills(pub(crate) Grid<NonogramCell>);
 
 impl Fills {
-    pub fn new(fills: Grid<Fill>) -> Self {
+    pub fn new(fills: Grid<NonogramCell>) -> Self {
         Self(fills)
     }
 
-    pub fn iter_line_runs<'a>(&'a self, line: Line) -> Runs<LineIter<'a, Fill>> {
-        let fills = self.iter_line(line);
+    pub fn iter_line_runs<'a>(
+        &'a self,
+        line: Line,
+    ) -> Runs<impl Iterator<Item = Fill> + 'a + Clone> {
+        let fills = self.iter_line(line).map(|cell| cell.solution().to_owned());
         Runs::new(fills, true)
+    }
+
+    pub fn iter_colors(&self) -> impl Iterator<Item = &Fill> {
+        self.0.iter().filter_map(|cell| match cell.solution() {
+            color @ Fill::Color(_) => Some(color),
+            _ => None,
+        })
     }
 
     pub fn colors_ids(&self) -> Vec<ColorId> {
         let mut ids: Vec<_> = self
             .iter()
-            .flat_map(|fill| match fill {
+            .flat_map(|cell| match cell.solution() {
                 Fill::Color(id) => Some(*id),
                 _ => None,
             })
@@ -37,7 +47,7 @@ mod serde_impl {
     use puzzled_core::Grid;
     use serde::{Deserialize, Serialize};
 
-    use crate::{Fill, Fills};
+    use crate::{Fills, NonogramCell};
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Fills {
@@ -55,7 +65,7 @@ mod serde_impl {
         where
             D: serde::Deserializer<'de>,
         {
-            let grid = Grid::<Fill>::deserialize(deserializer)?;
+            let grid = Grid::<NonogramCell>::deserialize(deserializer)?;
             let fills = Fills::new(grid);
 
             Ok(fills)

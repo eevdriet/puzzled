@@ -26,11 +26,11 @@ pub fn run_style(info: &RuleInfo, fill: Fill, idx: u16, state: &AppState) -> Sty
     let RuleInfo {
         line, validation, ..
     } = info;
+    let colors = state.puzzle.puzzle.colors();
 
-    let color = state
-        .puzzle
-        .style
-        .fill_color(fill)
+    let color = colors
+        .get(&fill)
+        .map(|c| Color::Rgb(c.red, c.green, c.blue))
         .expect("Fill {fill:?} should have a defined color");
 
     let base = Style::default().fg(color);

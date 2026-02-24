@@ -2,7 +2,7 @@ mod fill;
 
 pub use fill::*;
 
-use crossterm::event::Event;
+use crossterm::event::{Event, KeyCode};
 use puzzled_nonogram::{Fill, FindDirection, LinePosition, Nonogram, Position};
 use ratatui::layout::Position as AppPosition;
 
@@ -214,7 +214,8 @@ impl HandleAction for &PuzzleWidget {
 
         if matches!(action, Action::SwitchFill)
             && let Event::Key(key) = *input.event
-            && let Some(fill) = state.puzzle.style.fill_from_key(key)
+            && let KeyCode::Char(ch) = key.code
+            && let Ok(fill) = Fill::decode_char(ch)
         {
             state.puzzle.fill = fill;
             return Ok(ActionOutcome::Consumed);
@@ -226,7 +227,7 @@ impl HandleAction for &PuzzleWidget {
             }
             Action::SampleFill => {
                 let pos = app_to_puzzle(state.puzzle.cursor);
-                let fill = state.puzzle.puzzle[pos];
+                let fill = state.puzzle.puzzle[pos].fill();
                 state.puzzle.fill = fill;
             }
 
@@ -313,7 +314,7 @@ fn handle_fills(fill: Fill, range: Option<MotionRange>, state: &AppState) -> Act
 
     for pos in range.positions(&bounds) {
         let pos = app_to_puzzle(pos);
-        let before = state.puzzle.puzzle[pos];
+        let before = state.puzzle.puzzle[pos].fill();
 
         // Only record actual changes
         if before == fill {
