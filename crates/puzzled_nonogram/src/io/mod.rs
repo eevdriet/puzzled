@@ -38,7 +38,8 @@ where
             use puzzled_io::ImageReader;
 
             let reader = ImageReader;
-            Ok(reader.read_from_path(path)?)
+            let (nonogram, _) = reader.read_from_path(path)?;
+            Ok(nonogram)
         }
         _ => Err(io::ReadError::UnsupportedFormat {
             format: ext.clone(),

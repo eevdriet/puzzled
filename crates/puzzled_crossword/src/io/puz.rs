@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
 
 use puzzled_core::{Cell, Grid, Position, Square};
-use puzzled_io::puz::{
-    BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR,
-    PuzSizeCheck, Span, Strings, check_puz_size,
-    read::{self, read_metadata},
-    windows_1252_to_char, write,
+use puzzled_io::{
+    Context,
+    puz::{
+        BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR,
+        PuzSizeCheck, Span, Strings, check_puz_size,
+        read::{self, read_metadata},
+        windows_1252_to_char, write,
+    },
 };
 
 use crate::{Clue, Clues, Crossword, CrosswordState, Direction, Entry, Solution, Squares};
@@ -55,7 +58,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
         let height = squares.cols() as u8;
 
         // Write the individual grids from the squares
-        let solution = state.solution().map_ref(|square| match square.inner() {
+        let solution = state.solutions.map_ref(|square| match square.inner() {
             None => NON_PLAYABLE_CHAR,
             Some(solution) => solution
                 .as_ref()
@@ -63,7 +66,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
                 .unwrap_or(MISSING_ENTRY_CHAR),
         } as u8);
 
-        let state = state.entries().map_ref(|square| match square.inner() {
+        let state = state.entries.map_ref(|square| match square.inner() {
             None => NON_PLAYABLE_CHAR,
             Some(entry) => match entry.entry() {
                 Some(solution) => solution.first_letter(),
@@ -132,10 +135,10 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
         }
 
         // LTIM
-        extras.ltim = Some(state.timer());
+        // TODO: add back timer extras.ltim = Some(state.timer());
 
         // GEXT
-        let entries = state.entries();
+        let entries = &state.entries;
         entries.check_puz_size()?;
 
         let gext: Vec<_> = squares
@@ -172,7 +175,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
         extras: Extras,
     ) -> read::Result<(Self, CrosswordState)> {
         // Build the puzzle with owned data
-        let (squares, state) = read_state(&grids, &extras);
+        let (squares, state) = read_state(&grids, &extras)?;
 
         let clues = read_clues(&squares, &strings)?;
         let meta = read_metadata(&header, &strings);
@@ -182,7 +185,8 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
     }
 }
 
-fn read_state(grids: &Grids, extras: &Extras) -> (Squares, CrosswordState) {
+fn read_state(grids: &Grids, extras: &Extras) -> read::Result<(Squares, CrosswordState)> {
+    grids.validate().context("Squares grids")?;
     let cols = grids.width as usize;
 
     let (squares, entries) = grids
@@ -214,7 +218,7 @@ fn read_state(grids: &Grids, extras: &Extras) -> (Squares, CrosswordState) {
             let entry = match windows_1252_to_char(state) {
                 NON_PLAYABLE_CHAR => Square::new_empty(),
                 letter => {
-                    let mut entry = Entry::new_styled(style);
+                    let mut entry = Entry::default_with_style(style);
 
                     if letter != MISSING_ENTRY_CHAR {
                         let solution = Solution::Letter(letter);
@@ -230,15 +234,15 @@ fn read_state(grids: &Grids, extras: &Extras) -> (Squares, CrosswordState) {
         .unzip();
 
     let squares = Grid::from_vec(squares, cols).expect("Read correct length squares");
-    let solution = squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+    let solutions = squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
     let squares = Squares::new(squares);
 
     let entries = Grid::from_vec(entries, cols).expect("Read correct lenght entries");
 
-    let timer = extras.ltim.unwrap_or_default();
-    let state = CrosswordState::new(solution, entries, timer);
+    // TODO: add back timer let timer = extras.ltim.unwrap_or_default();
+    let state = CrosswordState::new(solutions, entries);
 
-    (squares, state)
+    Ok((squares, state))
 }
 
 fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {

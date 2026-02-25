@@ -10,7 +10,7 @@ use puzzled_io::puz::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
 pub use square::*;
 pub use state::*;
 
-use puzzled_core::{Entry, Grid, Metadata, Puzzle, Square, Timer};
+use puzzled_core::{Grid, Metadata, Puzzle, Square};
 use std::fmt;
 
 /// A [crossword](https://en.wikipedia.org/wiki/Crossword) puzzle
@@ -154,7 +154,7 @@ impl fmt::Display for Crossword {
                     Some(ref solution) => write!(f, "{solution}"),
                     None => write!(f, "{MISSING_ENTRY_CHAR}"),
                 },
-            };
+            }?;
 
             if pos.col == cols - 1 {
                 writeln!(f)?

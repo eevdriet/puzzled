@@ -1,27 +1,20 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Grid, Solve, Square, State, Timer, forward_solve};
+use puzzled_core::{Entry, Grid, Solve, Square, SquareGridState, impl_solve_for_square_grid_state};
 
 use crate::{ClueId, Crossword, Solution};
 
 #[derive(Debug, Deref, DerefMut)]
-pub struct CrosswordState(
-    pub(crate) State<Grid<Square<Option<Solution>>>, Grid<Square<Entry<Solution>>>>,
-);
+pub struct CrosswordState(pub(crate) SquareGridState<Solution>);
 
-forward_solve!(
-    CrosswordState,
-    State<Grid<Square<Option<Solution>>>, Grid<Square<Entry<Solution>>>>,
-    Crossword
-);
+impl_solve_for_square_grid_state!(Crossword, Solution);
 
 /// # Mutation and solving
 impl CrosswordState {
     pub fn new(
-        solution: Grid<Square<Option<Solution>>>,
+        solutions: Grid<Square<Option<Solution>>>,
         entries: Grid<Square<Entry<Solution>>>,
-        timer: Timer,
     ) -> Self {
-        let state = State::new_timed(solution, entries, timer);
+        let state = SquareGridState { solutions, entries };
         Self(state)
     }
 
@@ -49,7 +42,7 @@ impl From<&Crossword> for CrosswordState {
 
         let entries = squares.map_ref(|square| {
             square.map_ref(|cell| {
-                let mut entry = Entry::new_styled(cell.style);
+                let mut entry = Entry::default_with_style(cell.style);
 
                 if let Some(ref solution) = cell.solution {
                     entry.enter(solution.clone());
@@ -59,8 +52,6 @@ impl From<&Crossword> for CrosswordState {
             })
         });
 
-        let timer = Timer::default();
-
-        CrosswordState::new(solutions, entries, timer)
+        CrosswordState::new(solutions, entries)
     }
 }

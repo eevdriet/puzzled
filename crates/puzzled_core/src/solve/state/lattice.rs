@@ -1,7 +1,5 @@
-use crate::{Entry, Lattice, State};
-
-pub type LatticeState<C, V, E> =
-    State<Lattice<Option<C>, Option<V>, Option<E>>, Lattice<Entry<C>, Entry<V>, Entry<E>>>;
+// pub type LatticeState<C, V, E> =
+//     State<Lattice<Option<C>, Option<V>, Option<E>>, Lattice<Entry<C>, Entry<V>, Entry<E>>>;
 
 // use crate::{Lattice, Line, Offset, Position};
 //

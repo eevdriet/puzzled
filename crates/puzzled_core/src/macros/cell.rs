@@ -11,36 +11,12 @@
 #[macro_export]
 macro_rules! cell {
 // Rebus or Letter with optional entry and optional styles
-    // Solution + styles + entry
-    ($sol:tt $($style:tt)+ ($entry:expr)) => {{
-        let style = $crate::cell_style!($($style)+);
-
-        // Create the cell from solution and style
-        let mut cell = $crate::Cell::new_styled($sol, style);
-
-        // Add entry
-        cell.enter($entry);
-
-        cell
-    }};
-
-    // Solution + entry
-    ($sol:tt ($entry:expr)) => {{
-        // Create the cell from solution
-        let mut cell = $crate::Cell::new($sol);
-
-        // Add entry
-        cell.enter($entry);
-
-        cell
-    }};
-
     // Solution + styles
     ($sol:tt $($style:tt)+) => {{
         let style = $crate::cell_style!($($style)+);
 
         // Create the cell from solution and style
-        $crate::Cell::new_styled($sol, style)
+        $crate::Cell::new_with_style($sol, style)
     }};
 
 

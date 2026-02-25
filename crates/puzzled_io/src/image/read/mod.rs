@@ -13,19 +13,19 @@ use crate::image::{ImagePuzzle, read};
 pub struct ImageReader;
 
 impl ImageReader {
-    pub fn read<P>(&self, image: &DynamicImage) -> read::Result<P>
+    pub fn read<P, S>(&self, image: &DynamicImage) -> read::Result<(P, S)>
     where
-        P: ImagePuzzle,
+        P: ImagePuzzle<S>,
     {
         let puzzle = P::read_image(image, self)?;
 
         Ok(puzzle)
     }
 
-    pub fn read_from_path<R, P>(&self, path: R) -> read::Result<P>
+    pub fn read_from_path<R, P, S>(&self, path: R) -> read::Result<(P, S)>
     where
         R: AsRef<Path>,
-        P: ImagePuzzle,
+        P: ImagePuzzle<S>,
     {
         let image = BaseImageReader::open(path)?.decode()?;
         self.read(&image)

@@ -9,10 +9,10 @@ pub enum FindDirection {
 }
 
 fn none_or_fill(cell: &NonogramCell, fill: Fill) -> bool {
-    cell.entry().is_none_or(|f| *f == fill)
+    cell.solution.is_none_or(|f| f == fill)
 }
 fn some_and_fill(cell: &NonogramCell, fill: Fill) -> bool {
-    cell.entry().is_some_and(|f| *f == fill)
+    cell.solution.is_some_and(|f| f == fill)
 }
 
 impl Fills {
@@ -23,7 +23,7 @@ impl Fills {
             return None;
         }
 
-        let Some(fill) = &self[line_pos].entry() else {
+        let Some(fill) = &self[line_pos].solution else {
             return None;
         };
 
@@ -32,7 +32,7 @@ impl Fills {
             .enumerate()
             .take(pos + 1)
             .rev()
-            .take_while(|(_, cell)| some_and_fill(cell, **fill))
+            .take_while(|(_, cell)| some_and_fill(cell, *fill))
             .map(|(i, _)| i)
             .last()
             .map(|start| LinePosition::new(line, start));
@@ -48,14 +48,14 @@ impl Fills {
             return None;
         }
 
-        let Some(fill) = &self[line_pos].entry() else {
+        let Some(fill) = &self[line_pos].solution else {
             return None;
         };
 
         self.iter_line(line)
             .enumerate()
             .skip(pos)
-            .take_while(|(_, cell)| none_or_fill(cell, **fill))
+            .take_while(|(_, cell)| none_or_fill(cell, *fill))
             .map(|(i, _)| i)
             .last()
             .map(|end| LinePosition::new(line, end))
@@ -151,7 +151,7 @@ impl Fills {
     ) -> Option<LinePosition> {
         let mut iter = self.iter_line(line).enumerate();
         let non_blank = |cell: &NonogramCell| {
-            cell.entry()
+            cell.solution
                 .is_some_and(|fill| !matches!(fill, Fill::Blank))
         };
 
@@ -166,7 +166,7 @@ impl Fills {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use puzzled_core::{Entry, Grid};
+    use puzzled_core::{Cell, Entry, Grid};
     use rstest::{fixture, rstest};
     use tracing_test::traced_test;
 
@@ -182,12 +182,7 @@ mod tests {
         //                       0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18
         let cells: Vec<_> = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B]
             .into_iter()
-            .map(|fill| {
-                let mut cell = Entry::new(fill);
-                cell.enter(fill);
-
-                NonogramCell::new(cell)
-            })
+            .map(Cell::new)
             .collect();
         let cols = cells.len();
 

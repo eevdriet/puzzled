@@ -58,8 +58,6 @@ mod tests {
 
     #[rstest]
     #[case(square!(A), Letter('A'), None, _E)]
-    #[case(square!(A (A)), Letter('A'), Some(Letter('A')), _E)]
-    #[case(square!(A (E)), Letter('A'), Some(Letter('E')), _I)]
     #[case(square!(A@), Letter('A'), None, _C)]
     #[case(square!(A*), Letter('A'), None, _R)]
     fn test_cell(

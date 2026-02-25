@@ -1,5 +1,5 @@
 use image::{DynamicImage, Pixel, Rgba, RgbaImage};
-use puzzled_core::{Color, Entry, Metadata};
+use puzzled_core::{Cell, Color, Entry, Metadata};
 use puzzled_io::{
     ImagePuzzle, ImageReader, format,
     image::{
@@ -8,7 +8,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{Colors, Fill, Fills, Nonogram, NonogramCell};
+use crate::{Colors, Fill, Fills, Nonogram, NonogramState};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -16,8 +16,11 @@ pub enum Error {
     MissingFillColor { fill: Fill },
 }
 
-impl ImagePuzzle for Nonogram {
-    fn read_image(image: &DynamicImage, reader: &ImageReader) -> read::Result<Self> {
+impl ImagePuzzle<NonogramState> for Nonogram {
+    fn read_image(
+        image: &DynamicImage,
+        reader: &ImageReader,
+    ) -> read::Result<(Self, NonogramState)> {
         let mut colors = Colors::default();
 
         let mut read_pixel = |rgba: Rgba<u8>| {
@@ -40,18 +43,19 @@ impl ImagePuzzle for Nonogram {
                 }
             };
 
-            let cell = Entry::new(fill);
-            NonogramCell::new(cell)
+            Cell::new(fill)
         };
 
         let fills = reader.read_grid(image, &mut read_pixel)?;
         let fills = Fills::new(fills);
         let metadata = Metadata::default();
 
-        Ok(Nonogram::new(fills, colors, metadata))
+        let nonogram = Nonogram::new(fills, colors, metadata);
+        let state = NonogramState::from(&nonogram);
+        Ok((nonogram, state))
     }
 
-    fn write_image(&self) -> write::Result<image::RgbaImage> {
+    fn write_image(&self, _state: &NonogramState) -> write::Result<image::RgbaImage> {
         let fills = self.fills();
         fills.check_image_size()?;
         let rows = fills.rows() as u32;
@@ -61,7 +65,7 @@ impl ImagePuzzle for Nonogram {
         let colors = self.colors();
 
         for (pos, cell) in fills.iter_indexed() {
-            let fill = *cell.solution();
+            let fill = cell.solution.unwrap_or_default();
             let color = colors.get(&fill).ok_or_else(|| {
                 let err = Error::MissingFillColor { fill };
 

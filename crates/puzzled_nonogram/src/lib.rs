@@ -8,13 +8,13 @@
 
 pub mod io;
 pub mod puzzle;
-pub mod solver;
-
-#[doc(hidden)]
-pub use puzzled_core::{cell as __core_cell, *};
+pub mod solve;
 
 #[doc(inline)]
-pub use {io::*, puzzle::*, solver::*};
+pub use {io::*, puzzle::*, solve::*};
+
+#[doc(hidden)]
+pub use puzzled_core::{Solve, Solver, cell as __core_cell, *};
 
 #[cfg(feature = "macros")]
 mod macros;

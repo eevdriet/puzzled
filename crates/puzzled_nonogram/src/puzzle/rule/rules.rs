@@ -1,4 +1,5 @@
 use derive_more::Debug;
+use puzzled_core::Line;
 
 #[cfg(feature = "serde")]
 use crate::Run;
@@ -19,7 +20,7 @@ impl Rules {
         let rows: Vec<_> = fills
             .iter_rows()
             .map(|row| {
-                let fills = row.map(|cell| cell.solution().to_owned());
+                let fills = row.filter_map(|cell| cell.solution.to_owned());
                 Rule::from_fills(fills)
             })
             .collect();
@@ -27,7 +28,7 @@ impl Rules {
         let cols: Vec<_> = fills
             .iter_cols()
             .map(|col| {
-                let fills = col.map(|cell| cell.solution().to_owned());
+                let fills = col.filter_map(|cell| cell.solution.to_owned());
                 Rule::from_fills(fills)
             })
             .collect();
@@ -40,6 +41,13 @@ impl Rules {
     }
     pub fn col(&self, c: u16) -> &Rule {
         &self.cols[c as usize]
+    }
+    pub fn line(&self, line: Line) -> Option<&Rule> {
+        match line {
+            Line::Row(r) if r < self.rows.len() => Some(&self.rows[r]),
+            Line::Col(c) if c < self.cols.len() => Some(&self.cols[c]),
+            _ => None,
+        }
     }
 
     #[cfg(feature = "serde")]

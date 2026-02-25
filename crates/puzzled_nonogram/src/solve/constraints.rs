@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, btree_map::Entry};
 
 use bitvec::prelude::*;
 
-use crate::{Fill, Line, LineMask, Run, Solver};
+use crate::{Fill, Line, LineMask, Nonogram, NonogramState, Run};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineConstraint {
@@ -10,10 +10,10 @@ pub struct LineConstraint {
     pub optional: LineMask,
 }
 
-impl Solver {
-    pub fn generate_rule_constraints(&mut self, line: Line) {
+impl NonogramState {
+    pub fn generate_rule_constraints(&mut self, puzzle: &Nonogram, line: Line) {
         // Find the rule to generate constraints for
-        let Some(rule) = self.rules.get(&line) else {
+        let Some(rule) = puzzle.rules().line(line) else {
             tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
             return;
         };

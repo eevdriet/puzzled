@@ -15,15 +15,20 @@ impl Fills {
         &'a self,
         line: Line,
     ) -> Runs<impl Iterator<Item = Fill> + 'a + Clone> {
-        let fills = self.iter_line(line).map(|cell| cell.solution().to_owned());
+        let fills = self
+            .iter_line(line)
+            .filter_map(|cell| cell.solution.to_owned());
+
         Runs::new(fills, true)
     }
 
     pub fn iter_colors(&self) -> impl Iterator<Item = &Fill> {
-        self.0.iter().filter_map(|cell| match cell.solution {
-            color @ Some(Fill::Color(_)) => Some(color),
-            _ => None,
-        })
+        self.0
+            .iter()
+            .filter_map(|cell| match cell.solution.as_ref() {
+                color @ Some(Fill::Color(_)) => color,
+                _ => None,
+            })
     }
 
     pub fn colors_ids(&self) -> Vec<ColorId> {

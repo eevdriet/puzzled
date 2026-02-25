@@ -6,7 +6,7 @@ mod rule;
 mod run;
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Entry, Grid, Metadata, Puzzle, State, add_metadata};
+use puzzled_core::{Grid, Metadata, Puzzle};
 
 pub use cell::*;
 pub use colors::*;
@@ -25,6 +25,10 @@ pub struct Nonogram {
     colors: Colors,
 
     meta: Metadata,
+}
+
+impl Puzzle for Nonogram {
+    type Solution = Grid<Fill>;
 }
 
 impl Nonogram {
@@ -72,15 +76,9 @@ impl Nonogram {
     pub fn rows(&self) -> usize {
         self.fills.rows()
     }
-}
-add_metadata!(Nonogram);
 
-impl Puzzle for Nonogram {
-    type Solution = Grid<Fill>;
-    type State = u8;
-
-    fn initial_state(&self) -> Self::State {
-        4
+    pub fn meta(&self) -> &Metadata {
+        &self.meta
     }
 }
 

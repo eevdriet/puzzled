@@ -3,7 +3,7 @@ mod clue;
 
 pub use cell::*;
 pub use clue::*;
-use puzzled_core::{Metadata, add_metadata};
+use puzzled_core::Metadata;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Skyscrapers {
@@ -14,8 +14,6 @@ pub struct Skyscrapers {
     // Metadata
     meta: Metadata,
 }
-
-add_metadata!(Skyscrapers);
 
 impl Skyscrapers {
     pub fn new(cells: Cells, clues: Clues, meta: Metadata) -> Self {
@@ -36,5 +34,9 @@ impl Skyscrapers {
 
     pub fn clues_mut(&mut self) -> &mut Clues {
         &mut self.clues
+    }
+
+    pub fn meta(&self) -> &Metadata {
+        &self.meta
     }
 }

@@ -13,20 +13,20 @@ use image::RgbaImage;
 pub struct ImageWriter;
 
 impl ImageWriter {
-    pub fn write<P>(&self, puzzle: &P) -> write::Result<RgbaImage>
+    pub fn write<P, S>(&self, puzzle: &P, state: &S) -> write::Result<RgbaImage>
     where
-        P: ImagePuzzle,
+        P: ImagePuzzle<S>,
     {
-        let image = puzzle.write_image()?;
+        let image = puzzle.write_image(state)?;
         Ok(image)
     }
 
-    pub fn write_to_path<R, P>(&self, puzzle: &P, path: R) -> write::Result<()>
+    pub fn write_to_path<R, P, S>(&self, puzzle: &P, state: &S, path: R) -> write::Result<()>
     where
         R: AsRef<Path>,
-        P: ImagePuzzle,
+        P: ImagePuzzle<S>,
     {
-        let img = self.write(puzzle)?;
+        let img = self.write(puzzle, state)?;
         img.save(path)?;
 
         Ok(())

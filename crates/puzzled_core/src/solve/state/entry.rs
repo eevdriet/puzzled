@@ -65,6 +65,14 @@ impl<E> Entry<E> {
     // Initial styles
     check_style!(CellStyle::CIRCLED, style, is_circled());
 
+    pub fn default_with_style(style: CellStyle) -> Self {
+        Self {
+            entry: None,
+            guesses: Vec::new(),
+            style,
+        }
+    }
+
     pub fn new<T>(entry: T) -> Self
     where
         T: Into<E>,
@@ -75,8 +83,12 @@ impl<E> Entry<E> {
         }
     }
 
-    pub fn new_styled(style: CellStyle) -> Self {
+    pub fn new_with_style<T>(entry: T, style: CellStyle) -> Self
+    where
+        T: Into<E>,
+    {
         Self {
+            entry: Some(entry.into()),
             style,
             ..Default::default()
         }

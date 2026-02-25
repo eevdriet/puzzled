@@ -1,4 +1,4 @@
-use crate::{Fill, Line, LineConstraint, LinePosition, Nonogram, Rule, Solver};
+use crate::{Fill, Line, LinePosition, Nonogram, NonogramSolver, NonogramState, Rule};
 
 #[derive(Debug, Clone, Copy)]
 pub enum LineValidation {
@@ -37,9 +37,14 @@ impl LineValidation {
     }
 }
 
-impl Solver {
-    pub fn validate(&mut self, puzzle: &Nonogram, line: Line) -> LineValidation {
-        let Some(rule) = self.rules.get(&line) else {
+impl NonogramSolver {
+    pub fn validate(
+        &mut self,
+        puzzle: &Nonogram,
+        state: &mut NonogramState,
+        line: Line,
+    ) -> LineValidation {
+        let Some(rule) = puzzle.rules().line(line) else {
             tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
             return LineValidation::MissingRule(line);
         };
@@ -57,7 +62,7 @@ impl Solver {
         }
 
         // Then do a quick validation with the rule masks
-        let validation = self.validate_masks(line);
+        let validation = state.validate_masks(line);
         if !validation.is_valid() {
             return validation;
         }
@@ -132,7 +137,7 @@ impl Solver {
         let n = puzzle.fills().line_len(line);
         let m = runs.len();
 
-        let fill_at = |pos: LinePosition| *puzzle[pos.absolute()].entry().unwrap_or(&Fill::Blank);
+        let fill_at = |pos: LinePosition| puzzle[pos.absolute()].solution.unwrap_or(Fill::Blank);
 
         // dp[offset][r]: first offset cells can fit the first r runs
         let mut dp = vec![vec![false; m + 1]; n + 1];
@@ -212,45 +217,5 @@ impl Solver {
         } else {
             LineValidation::Invalid
         }
-    }
-
-    fn validate_masks(&self, line: Line) -> LineValidation {
-        // Get the puzzle masks for the current
-        // If none are set (empty line), it is always valid
-        let Some(masks) = self.masks.get(&line) else {
-            return LineValidation::Valid;
-        };
-
-        // Get the line constraints for the current rule
-        // If it is unconstrained, the line is always valid
-        let Some(constraints) = self.constraints.get(&line) else {
-            return LineValidation::Solved;
-        };
-
-        tracing::info!("Validate {line:?}");
-        tracing::info!("\tMasks: {masks:?}");
-        tracing::info!("\tConstraints: {constraints:?}");
-
-        // Verify each of the fills in the line that are currently set
-        // Note the .filter to avoid fills that have been previously been set but not currently
-        for (&fill, mask) in masks.iter().filter(|(_, mask)| mask.any()) {
-            // Invalidate right away if rule doesn't include current fill
-            let Some(LineConstraint { required, optional }) = constraints.get(&fill) else {
-                tracing::info!("Constraint not found for {fill:?} on {line:?}");
-                return LineValidation::InvalidFill(fill);
-            };
-
-            // Fill is invalid if it's not placed on one of the optional cells
-            if !(optional.clone() & mask).any() {
-                tracing::info!("Invalid fill for {line:?}");
-                tracing::info!("\tRequired bits: {required}");
-                tracing::info!("\tOptional bits: {optional}");
-                tracing::info!("\tSet:           {mask}");
-
-                return LineValidation::InvalidFill(fill);
-            }
-        }
-
-        LineValidation::Valid
     }
 }

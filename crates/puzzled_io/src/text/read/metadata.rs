@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use puzzled_core::{Metadata, Timer, Version};
+use puzzled_core::{Metadata, Version};
 
 use crate::format;
 use crate::text::read::{self, TxtState};

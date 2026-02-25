@@ -36,26 +36,10 @@ macro_rules! square {
     };
 
     // Cells
-    ($sol:tt $($style:tt)+ ($entry:expr)) => {{
-        let solution = $crate::__solution(stringify!($sol));
-        let entry = $crate::__solution(stringify!($entry));
-
-        let cell = $crate::cell!(solution $($style)+ (entry));
-        Some($crate::CrosswordCell::new(cell))
-    }};
-
-    ($sol:tt ($entry:expr)) => {{
-        let solution = $crate::__solution(stringify!($sol));
-        let entry = $crate::__solution(stringify!($entry));
-
-        let cell = $crate::cell!(solution (entry));
-        Some($crate::CrosswordCell::new(cell))
-    }};
-
-    ($sol:tt $($rest:tt)*) => {{
+    ($sol:tt $($style:tt)*) => {{
         let solution = $crate::__solution(stringify!($sol));
 
-        let cell = $crate::cell!(solution $($rest)*);
-        Some($crate::CrosswordCell::new(cell))
+        let cell = $crate::cell!(solution $($style)*);
+        Some($crate::Square::new(cell))
     }};
 }
