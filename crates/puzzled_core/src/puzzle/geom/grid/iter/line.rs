@@ -244,10 +244,7 @@ fn resolve_range(start: &Bound<usize>, end: &Bound<usize>, max: usize) -> Option
 }
 
 impl<T> Grid<T> {
-    pub fn iter_segment<'a, R>(&'a self, segment: &LineSegment) -> LineSegmentIter<'a, T>
-    where
-        R: RangeBounds<usize>,
-    {
+    pub fn iter_segment<'a>(&'a self, segment: &LineSegment) -> LineSegmentIter<'a, T> {
         match segment.line {
             Line::Row(row) if row < self.rows => {
                 let iter = self.iter_row(row);
