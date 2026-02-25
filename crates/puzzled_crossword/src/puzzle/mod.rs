@@ -59,29 +59,6 @@ pub struct Crossword {
 
 impl Puzzle for Crossword {
     type Solution = Grid<Square<Solution>>;
-    type State = CrosswordState;
-
-    fn initial_state(&self) -> Self::State {
-        let solutions = self
-            .squares
-            .map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
-
-        let entries = self.squares.map_ref(|square| {
-            square.map_ref(|cell| {
-                let mut entry = Entry::new_styled(cell.style);
-
-                if let Some(ref solution) = cell.solution {
-                    entry.enter(solution.clone());
-                }
-
-                Some(entry)
-            })
-        });
-
-        let timer = Timer::default();
-
-        CrosswordState::new(solutions, entries, timer)
-    }
 }
 
 /// # Constructors

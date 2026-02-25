@@ -57,10 +57,10 @@ impl PuzWriter {
         Self {}
     }
 
-    pub fn write<'a, W, P>(&self, writer: &mut W, puzzle: &P, state: &P::State) -> Result<()>
+    pub fn write<W, P, S>(&self, writer: &mut W, puzzle: &P, state: &S) -> Result<()>
     where
         W: PuzWrite,
-        P: BinaryPuzzle,
+        P: BinaryPuzzle<S>,
     {
         // Construct the individual sections from the puzzle
         let mut header = puzzle.write_header(state)?;

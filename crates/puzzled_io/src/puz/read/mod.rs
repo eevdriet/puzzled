@@ -93,19 +93,19 @@ impl PuzReader {
         Self { strict }
     }
 
-    pub fn read<R, P>(&self, reader: &mut R) -> Result<(P, P::State)>
+    pub fn read<R, P, S>(&self, reader: &mut R) -> Result<(P, S)>
     where
         R: PuzRead,
-        P: BinaryPuzzle,
+        P: BinaryPuzzle<S>,
     {
         let (puzzle, state, _) = self.read_with_warnings(reader)?;
         Ok((puzzle, state))
     }
 
-    pub fn read_with_warnings<R, P>(&self, reader: &mut R) -> Result<(P, P::State, Vec<Warning>)>
+    pub fn read_with_warnings<R, P, S>(&self, reader: &mut R) -> Result<(P, S, Vec<Warning>)>
     where
         R: PuzRead,
-        P: BinaryPuzzle,
+        P: BinaryPuzzle<S>,
     {
         let mut read_state = PuzState::new(self.strict);
 
@@ -124,10 +124,10 @@ impl PuzReader {
         Ok((puzzle, state, read_state.warnings))
     }
 
-    pub fn read_from_path<R, P>(&self, path_ref: R) -> Result<(P, P::State)>
+    pub fn read_from_path<R, P, S>(&self, path_ref: R) -> Result<(P, S)>
     where
         R: AsRef<Path>,
-        P: BinaryPuzzle,
+        P: BinaryPuzzle<S>,
     {
         let mut file = File::open(path_ref).map_err(|err| Error {
             span: Span::default(),

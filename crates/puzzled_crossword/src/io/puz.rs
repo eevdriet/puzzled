@@ -19,7 +19,7 @@ impl PuzSizeCheck for Clues {
     }
 }
 
-impl BinaryPuzzle for Crossword {
+impl BinaryPuzzle<CrosswordState> for Crossword {
     fn write_header(&self, _state: &CrosswordState) -> write::Result<Header> {
         let mut header = Header::default();
 
@@ -170,7 +170,7 @@ impl BinaryPuzzle for Crossword {
         grids: Grids,
         strings: Strings,
         extras: Extras,
-    ) -> read::Result<(Self, Self::State)> {
+    ) -> read::Result<(Self, CrosswordState)> {
         // Build the puzzle with owned data
         let (squares, state) = read_state(&grids, &extras);
 

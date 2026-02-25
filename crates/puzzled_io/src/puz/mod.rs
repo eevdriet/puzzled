@@ -167,20 +167,20 @@ pub use strings::*;
 
 use crate::{Context, format};
 
-pub trait BinaryPuzzle: Puzzle {
+pub trait BinaryPuzzle<S>: Puzzle {
     // Read the puzzle from *.puz data
     fn read_puz(
         header: Header,
         grids: Grids,
         strings: Strings,
         extras: Extras,
-    ) -> read::Result<(Self, Self::State)>;
+    ) -> read::Result<(Self, S)>;
 
     // Write the puzzle into the *.puz data parts
-    fn write_header(&self, state: &Self::State) -> write::Result<Header>;
-    fn write_grids(&self, state: &Self::State) -> write::Result<Grids>;
-    fn write_strings(&self, state: &Self::State) -> write::Result<Strings>;
-    fn write_extras(&self, state: &Self::State) -> write::Result<Extras>;
+    fn write_header(&self, state: &S) -> write::Result<Header>;
+    fn write_grids(&self, state: &S) -> write::Result<Grids>;
+    fn write_strings(&self, state: &S) -> write::Result<Strings>;
+    fn write_extras(&self, state: &S) -> write::Result<Extras>;
 }
 
 impl<T> Context<T, read::Error> for format::Result<T> {

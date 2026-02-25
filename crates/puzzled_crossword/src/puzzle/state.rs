@@ -1,11 +1,17 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Grid, Solve, Square, State, Timer};
+use puzzled_core::{Entry, Grid, Solve, Square, State, Timer, forward_solve};
 
 use crate::{ClueId, Crossword, Solution};
 
 #[derive(Debug, Deref, DerefMut)]
 pub struct CrosswordState(
     pub(crate) State<Grid<Square<Option<Solution>>>, Grid<Square<Entry<Solution>>>>,
+);
+
+forward_solve!(
+    CrosswordState,
+    State<Grid<Square<Option<Solution>>>, Grid<Square<Entry<Solution>>>>,
+    Crossword
 );
 
 /// # Mutation and solving
@@ -31,5 +37,30 @@ impl CrosswordState {
 
         // Try reveal all squares that the is positioned in
         clue.positions().all(|pos| self.reveal(&pos))
+    }
+}
+
+impl From<&Crossword> for CrosswordState {
+    fn from(crossword: &Crossword) -> Self {
+        let squares = crossword.squares();
+
+        let solutions =
+            squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+
+        let entries = squares.map_ref(|square| {
+            square.map_ref(|cell| {
+                let mut entry = Entry::new_styled(cell.style);
+
+                if let Some(ref solution) = cell.solution {
+                    entry.enter(solution.clone());
+                }
+
+                Some(entry)
+            })
+        });
+
+        let timer = Timer::default();
+
+        CrosswordState::new(solutions, entries, timer)
     }
 }
