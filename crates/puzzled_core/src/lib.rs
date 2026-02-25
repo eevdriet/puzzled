@@ -7,10 +7,10 @@ mod puzzle;
 pub use puzzle::*;
 
 // Solver
-mod solver;
+mod solve;
 
 #[doc(inline)]
-pub use solver::*;
+pub use solve::*;
 
 // Macros
 #[cfg(feature = "macros")]

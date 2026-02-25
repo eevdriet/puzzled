@@ -10,9 +10,25 @@ pub use metadata::*;
 pub use square::*;
 pub use style::*;
 
+use crate::{Solve, Solver};
+
 pub trait Puzzle: Sized {
     type Solution;
-    type State;
 
-    fn initial_state(&self) -> Self::State;
+    fn solve_with<'a, S, T>(&'a self, solver: &mut S) -> Self::Solution
+    where
+        S: Solver<Self>,
+        T: Solve<Self> + From<&'a Self>,
+    {
+        let mut state = T::from(self);
+        solver.solve(self, &mut state)
+    }
+
+    fn solve_with_state<S, T>(&self, solver: &mut S, state: &mut T) -> Self::Solution
+    where
+        S: Solver<Self>,
+        T: Solve<Self>,
+    {
+        solver.solve(self, state)
+    }
 }

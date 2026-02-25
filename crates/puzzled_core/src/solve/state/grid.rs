@@ -1,7 +1,8 @@
-use crate::{Entry, Grid, Position, Solve, Square, State};
+use crate::{Entry, Grid, Position, Puzzle, Solve, Square, State};
 
-impl<T> Solve for State<Grid<Option<T>>, Grid<Entry<T>>>
+impl<P, T> Solve<P> for State<Grid<Option<T>>, Grid<Entry<T>>>
 where
+    P: Puzzle<Solution = Grid<T>>,
     T: Clone + Eq,
 {
     type Value = T;
@@ -73,10 +74,23 @@ where
             }
         }
     }
+
+    fn try_finalize(&self) -> Result<Grid<T>, Box<dyn std::error::Error>> {
+        let values: Vec<_> = self
+            .solutions
+            .iter()
+            .filter_map(|s| s.as_ref())
+            .cloned()
+            .collect();
+
+        let a = Grid::from_vec(values, 2).expect("Yeet");
+        Ok(a)
+    }
 }
 
-impl<T> Solve for State<Grid<Square<Option<T>>>, Grid<Square<Entry<T>>>>
+impl<P, T> Solve<P> for State<Grid<Square<Option<T>>>, Grid<Square<Entry<T>>>>
 where
+    P: Puzzle<Solution = Grid<Square<T>>>,
     T: Clone + Eq,
 {
     type Value = T;
@@ -147,5 +161,18 @@ where
                 entry.check(solution);
             }
         }
+    }
+
+    fn try_finalize(&self) -> Result<Grid<Square<T>>, Box<dyn std::error::Error>> {
+        let values: Vec<_> = self
+            .solutions
+            .iter_fills()
+            .filter_map(|s| s.as_ref())
+            .cloned()
+            .map(|s| Square::new(s))
+            .collect();
+
+        let a = Grid::from_vec(values, 2).expect("Yeet");
+        Ok(a)
     }
 }
