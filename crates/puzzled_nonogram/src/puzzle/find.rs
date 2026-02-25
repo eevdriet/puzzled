@@ -166,7 +166,7 @@ impl Fills {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use puzzled_core::{Cell, Grid};
+    use puzzled_core::{Entry, Grid};
     use rstest::{fixture, rstest};
     use tracing_test::traced_test;
 
@@ -183,7 +183,7 @@ mod tests {
         let cells: Vec<_> = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B]
             .into_iter()
             .map(|fill| {
-                let mut cell = Cell::new(fill);
+                let mut cell = Entry::new(fill);
                 cell.enter(fill);
 
                 NonogramCell::new(cell)

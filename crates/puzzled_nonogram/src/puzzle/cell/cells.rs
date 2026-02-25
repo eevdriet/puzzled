@@ -20,8 +20,8 @@ impl Fills {
     }
 
     pub fn iter_colors(&self) -> impl Iterator<Item = &Fill> {
-        self.0.iter().filter_map(|cell| match cell.solution() {
-            color @ Fill::Color(_) => Some(color),
+        self.0.iter().filter_map(|cell| match cell.solution {
+            color @ Some(Fill::Color(_)) => Some(color),
             _ => None,
         })
     }
@@ -29,8 +29,8 @@ impl Fills {
     pub fn colors_ids(&self) -> Vec<ColorId> {
         let mut ids: Vec<_> = self
             .iter()
-            .flat_map(|cell| match cell.solution() {
-                Fill::Color(id) => Some(*id),
+            .filter_map(|cell| match cell.solution {
+                Some(Fill::Color(id)) => Some(id),
                 _ => None,
             })
             .collect();

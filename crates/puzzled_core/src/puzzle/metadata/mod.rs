@@ -7,73 +7,81 @@ pub use version::{Error as VersionError, Version};
 #[derive(Debug, PartialEq, Eq, Default, Clone)]
 pub struct Metadata {
     /// Author of the puzzle
-    pub author: Option<String>,
+    author: Option<String>,
 
     /// Copyright of the puzzle
-    pub copyright: Option<String>,
+    copyright: Option<String>,
 
     /// Notes on the puzzle
-    pub notes: Option<String>,
+    notes: Option<String>,
 
     /// Title of the puzzle
-    pub title: Option<String>,
+    title: Option<String>,
 
     /// Version of the puzzle
-    pub version: Option<Version>,
-
-    /// Timer that keeps track of playing time
-    pub timer: Timer,
+    version: Option<Version>,
 }
 
-// NOTE: this macro not opt-in as every puzzle defines metadata
-#[doc(hidden)]
-#[macro_export]
-macro_rules! add_metadata {
-    ($ty:ty) => {
-        impl $ty {
-            /// Author of the puzzle
-            pub fn author(&self) -> Option<&str> {
-                self.meta.author.as_deref()
-            }
+impl Metadata {
+    /// Author of the puzzle
+    pub fn author(&self) -> Option<&str> {
+        self.author.as_deref()
+    }
 
-            /// Copyright of the puzzle
-            pub fn copyright(&self) -> Option<&str> {
-                self.meta.copyright.as_deref()
-            }
+    /// Copyright information of the puzzle
+    pub fn copyright(&self) -> Option<&str> {
+        self.copyright.as_deref()
+    }
 
-            /// Notes on the puzzle
-            pub fn notes(&self) -> Option<&str> {
-                self.meta.notes.as_deref()
-            }
+    /// Notes on the puzzle
+    pub fn notes(&self) -> Option<&str> {
+        self.notes.as_deref()
+    }
 
-            /// Title on the puzzle
-            pub fn title(&self) -> Option<&str> {
-                self.meta.title.as_deref()
-            }
+    /// Title on the puzzle
+    pub fn title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
 
-            /// State of the puzzle's internal timer
-            pub fn timer(&self) -> $crate::Timer {
-                self.meta.timer.clone()
-            }
+    /// Version of the puzzle
+    pub fn version(&self) -> Option<Version> {
+        self.version
+    }
 
-            /// Mutable reference to the puzzle's internal timer
-            ///
-            /// This can be used to start/stop playing the puzzle
-            pub fn timer_mut(&mut self) -> &mut $crate::Timer {
-                &mut self.meta.timer
-            }
+    /// Define the author of the puzzle
+    pub fn with_author(mut self, author: String) -> Self {
+        self.author = Some(author);
+        self
+    }
 
-            /// Version of the puzzle
-            pub fn version(&self) -> Option<$crate::Version> {
-                self.meta.version.clone()
-            }
-        }
-    };
+    /// Define copyright information of the puzzle
+    pub fn with_copyright(mut self, copyright: String) -> Self {
+        self.copyright = Some(copyright);
+        self
+    }
+
+    /// Define notes on the puzzle
+    pub fn with_notes(mut self, notes: String) -> Self {
+        self.notes = Some(notes);
+        self
+    }
+
+    /// Define the author of the puzzle
+    pub fn with_title(mut self, title: String) -> Self {
+        self.title = Some(title);
+        self
+    }
+
+    /// Define the version of the puzzle
+    pub fn with_version(mut self, version: Version) -> Self {
+        self.version = Some(version);
+        self
+    }
 }
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use crate::{Metadata, Timer, Version};
+    use crate::{Metadata, Version};
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize)]
@@ -86,10 +94,6 @@ mod serde_impl {
         notes: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
-
-        // Metadata
-        #[serde(skip_serializing_if = "Option::is_none")]
-        timer: Option<Timer>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         version: Option<Version>,
@@ -107,7 +111,6 @@ mod serde_impl {
                 notes,
                 title,
                 version,
-                timer,
             } = self.clone();
 
             SerdeMetadata {
@@ -116,7 +119,6 @@ mod serde_impl {
                 notes,
                 title,
                 version,
-                timer: Some(timer),
             }
             .serialize(serializer)
         }
@@ -133,7 +135,6 @@ mod serde_impl {
                 copyright,
                 notes,
                 title,
-                timer,
                 version,
             } = SerdeMetadata::deserialize(deserializer)?;
 
@@ -143,7 +144,6 @@ mod serde_impl {
                 notes,
                 title,
                 version,
-                timer: timer.unwrap_or_default(),
             })
         }
     }

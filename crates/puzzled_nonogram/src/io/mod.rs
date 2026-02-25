@@ -29,7 +29,8 @@ where
             use puzzled_io::PuzReader;
 
             let reader = PuzReader::default();
-            Ok(reader.read_from_path(path)?)
+            let (nonogram, _) = reader.read_from_path(path)?;
+            Ok(nonogram)
         }
 
         #[cfg(feature = "image")]

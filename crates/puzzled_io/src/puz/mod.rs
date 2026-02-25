@@ -145,6 +145,7 @@
 pub mod read;
 pub mod write;
 
+use puzzled_core::Puzzle;
 #[doc(inline)]
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
 #[doc(inline)]
@@ -166,20 +167,20 @@ pub use strings::*;
 
 use crate::{Context, format};
 
-pub trait BinaryPuzzle: Sized {
+pub trait BinaryPuzzle: Puzzle {
     // Read the puzzle from *.puz data
     fn read_puz(
         header: Header,
         grids: Grids,
         strings: Strings,
         extras: Extras,
-    ) -> read::Result<Self>;
+    ) -> read::Result<(Self, Self::State)>;
 
     // Write the puzzle into the *.puz data parts
-    fn write_header(&self) -> write::Result<Header>;
-    fn write_grids(&self) -> write::Result<Grids>;
-    fn write_strings(&self) -> write::Result<Strings>;
-    fn write_extras(&self) -> write::Result<Extras>;
+    fn write_header(&self, state: &Self::State) -> write::Result<Header>;
+    fn write_grids(&self, state: &Self::State) -> write::Result<Grids>;
+    fn write_strings(&self, state: &Self::State) -> write::Result<Strings>;
+    fn write_extras(&self, state: &Self::State) -> write::Result<Extras>;
 }
 
 impl<T> Context<T, read::Error> for format::Result<T> {

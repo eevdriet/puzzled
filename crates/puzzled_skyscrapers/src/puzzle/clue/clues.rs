@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
 use derive_more::{Deref, DerefMut};
-use puzzled_core::Line;
 
 use crate::ClueId;
 

@@ -1,8 +1,8 @@
 use crate::puz::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
 use puzzled_core::{Grid, GridError};
 
-pub const NON_PLAYABLE_CELL: char = '.';
-pub const MISSING_ENTRY_CELL: char = '-';
+pub const NON_PLAYABLE_CHAR: char = '.';
+pub const MISSING_ENTRY_CHAR: char = '-';
 
 /// [Grids]((https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#puzzle-layout-and-state)) section
 ///
@@ -88,8 +88,8 @@ impl Grids {
         for ((pos, &solution_square), &state_square) in
             self.solution.iter_indexed().zip(self.state.iter())
         {
-            if (solution_square == NON_PLAYABLE_CELL as u8)
-                != (state_square == NON_PLAYABLE_CELL as u8)
+            if (solution_square == NON_PLAYABLE_CHAR as u8)
+                != (state_square == NON_PLAYABLE_CHAR as u8)
             {
                 let err = Error::CellMismatch {
                     solution_square: windows_1252_to_char(solution_square),

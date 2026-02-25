@@ -1,9 +1,7 @@
-mod cell;
 mod solution;
 mod squares;
 
-pub use {cell::*, solution::*, squares::*};
+use puzzled_core::{Cell, Square};
+pub use {solution::*, squares::*};
 
-pub type Square = Option<CrosswordCell>;
-
-pub(crate) const EMPTY_SQUARE: char = '.';
+pub type CrosswordSquare = Square<Cell<Solution>>;

@@ -1,13 +1,14 @@
 use puzzled_core::Cell;
 use puzzled_io::{
     format,
+    puz::NON_PLAYABLE_CHAR,
     text::{
         TxtPuzzle,
         read::{self, TxtState},
     },
 };
 
-use crate::{ClueSpec, Crossword, CrosswordCell, Direction, Solution, Square, Squares};
+use crate::{ClueSpec, Crossword, Direction, Solution, Square, Squares};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -18,19 +19,25 @@ enum Error {
 impl TxtPuzzle for Crossword {
     fn read_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the squares grid
-        let mut read_square = |token: &str| -> Square {
-            match token {
-                "." => None,
-                word => {
-                    let solution = Solution::from(word);
-                    let cell = Cell::new(solution);
+        let mut read_row = |line: &str| {
+            line.split_whitespace()
+                .map(|token| {
+                    if token.len() == 1
+                        && token.chars().next().expect("Verified non-zero length")
+                            == NON_PLAYABLE_CHAR
+                    {
+                        Square::new_empty()
+                    } else {
+                        let solution = Solution::from(token);
+                        let cell = Cell::new(solution);
 
-                    Some(CrosswordCell::new(cell))
-                }
-            }
+                        Square::new(cell)
+                    }
+                })
+                .collect()
         };
 
-        let squares = reader.read_grid(&mut read_square)?;
+        let squares = reader.read_grid(&mut read_row)?;
         let squares = Squares::new(squares);
 
         // Read the clues and metadata

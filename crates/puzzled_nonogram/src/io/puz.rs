@@ -1,9 +1,9 @@
-use puzzled_core::{Cell, Color, Grid};
+use puzzled_core::{Color, Entry, Grid};
 use puzzled_io::{
     Context,
     format::{self, StringError},
     puz::{
-        BinaryPuzzle, Extras, Grids, Header, MISSING_ENTRY_CELL, PuzSizeCheck, PuzWrite, Strings,
+        BinaryPuzzle, Extras, Grids, Header, MISSING_ENTRY_CHAR, PuzSizeCheck, PuzWrite, Strings,
         check_puz_size,
         read::{self, read_metadata},
         write,
@@ -50,7 +50,7 @@ impl PuzSizeCheck for Colors {
 }
 
 impl BinaryPuzzle for Nonogram {
-    fn write_header(&self) -> write::Result<Header> {
+    fn write_header(&self, state: &Self::State) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
@@ -70,7 +70,7 @@ impl BinaryPuzzle for Nonogram {
         Ok(header)
     }
 
-    fn write_grids(&self) -> write::Result<Grids> {
+    fn write_grids(&self, state: &Self::State) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let fills = self.fills();
         fills.check_puz_size()?;
@@ -89,7 +89,7 @@ impl BinaryPuzzle for Nonogram {
         let state = fills.map_ref(|cell| {
             let fill = *cell
                 .entry()
-                .unwrap_or(&Fill::Color(MISSING_ENTRY_CELL as u32));
+                .unwrap_or(&Fill::Color(MISSING_ENTRY_CHAR as u32));
             let fill_char = char::try_from(fill).expect("Checked fills");
 
             fill_char as u8
@@ -106,9 +106,11 @@ impl BinaryPuzzle for Nonogram {
         Ok(grids)
     }
 
-    fn write_strings(&self) -> write::Result<Strings> {
+    fn write_strings(&self, state: &Self::State) -> write::Result<Strings> {
         let colors = self.colors();
         colors.check_puz_size()?;
+
+        let mut strings = Strings::from_metadata(self.)
 
         let mut strings = Strings {
             clues: Vec::with_capacity(colors.len()),
@@ -124,7 +126,7 @@ impl BinaryPuzzle for Nonogram {
         Ok(strings)
     }
 
-    fn write_extras(&self) -> write::Result<Extras> {
+    fn write_extras(&self, state: &Self::State) -> write::Result<Extras> {
         let extras = Extras::default();
 
         Ok(extras)
@@ -138,7 +140,7 @@ impl BinaryPuzzle for Nonogram {
     ) -> read::Result<Self> {
         let fills = read_fills(&grids)?;
         let colors = read_colors(&fills, &strings)?;
-        let meta = read_metadata(&header, &strings, &extras);
+        let meta = read_metadata(&header, &strings);
 
         let nonogram = Nonogram::new(fills, colors, meta);
         Ok(nonogram)
@@ -161,11 +163,11 @@ fn read_fills(grids: &Grids) -> read::Result<Fills> {
     for (&solution_byte, &state_byte) in grids.solution.iter().zip(grids.state.iter()) {
         // Create the inner cell with its solution
         let solution = byte_fill(solution_byte).context("Solution fill")?;
-        let mut cell = Cell::new(solution);
+        let mut cell = Entry::new(solution);
 
         // Optionally enter a state
         let state = byte_fill(state_byte).context("State fill")?;
-        if char::try_from(state).is_ok_and(|ch| ch != MISSING_ENTRY_CELL) {
+        if char::try_from(state).is_ok_and(|ch| ch != MISSING_ENTRY_CHAR) {
             cell.enter(state);
         }
 

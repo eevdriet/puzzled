@@ -21,6 +21,16 @@ impl Solution {
             Self::Rebus(rebus) => rebus.chars().next().expect("Non-empty rebus"),
         }
     }
+
+    /// Verify whether the solution to the cell is a letter
+    pub fn is_letter(&self) -> bool {
+        matches!(self, Solution::Letter(_))
+    }
+
+    /// Verify whether the solution to the cell is a rebus
+    pub fn is_rebus(&self) -> bool {
+        matches!(self, Solution::Rebus(_))
+    }
 }
 
 impl PartialEq for Solution {

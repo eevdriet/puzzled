@@ -1,12 +1,14 @@
 mod indexed;
 mod line;
 
+pub(crate) use indexed::*;
+
 use std::{
     iter::StepBy,
     slice::{Iter, IterMut},
 };
 
-use crate::{Grid, Line, Order, Position, puzzle::geom::grid::iter::indexed::PosIter};
+use crate::{Grid, Line, Order, Position};
 
 pub(crate) type RowIter<'a, T> = Iter<'a, T>;
 pub(crate) type RowIterMut<'a, T> = IterMut<'a, T>;
@@ -236,48 +238,6 @@ impl<T> Grid<T> {
     /// ```
     pub fn iter_cols(&self) -> impl Iterator<Item = impl Iterator<Item = &T>> {
         (0..self.cols).map(move |col| self.iter_col(col))
-    }
-}
-
-impl<T> Grid<Option<T>> {
-    /// Returns an iterator over the filled squares of the puzzle.
-    ///
-    /// The filled squares are traversed in row-major order.
-    /// ```
-    /// use puzzled_core::grid;
-    ///
-    /// let opt_grid = grid! (
-    ///    [None, Some(1)],
-    ///    [Some(2), None]
-    /// );
-    /// let mut iter = opt_grid.iter_fills();
-    ///
-    /// assert_eq!(iter.next(), Some(&1));
-    /// assert_eq!(iter.next(), Some(&2));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_fills(&self) -> impl Iterator<Item = &T> {
-        self.iter().filter_map(|opt| opt.as_ref())
-    }
-
-    /// Returns a mutable iterator over the filled squares of the puzzle.
-    ///
-    /// The filled squares are traversed in row-major order.
-    /// ```
-    /// use puzzled_core::grid;
-    ///
-    /// let mut opt_grid = grid! (
-    ///    [None, Some(1)],
-    ///    [Some(2), None]
-    /// );
-    /// let mut iter = opt_grid.iter_fills_mut();
-    ///
-    /// assert_eq!(iter.next(), Some(&mut 1));
-    /// assert_eq!(iter.next(), Some(&mut 2));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_fills_mut(&mut self) -> impl Iterator<Item = &mut T> {
-        self.iter_mut().filter_map(|opt| opt.as_mut())
     }
 }
 

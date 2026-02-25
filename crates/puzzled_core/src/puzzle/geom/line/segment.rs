@@ -29,8 +29,8 @@ impl LineSegment {
     {
         Self {
             line,
-            start: self.start.clone(),
-            end: self.end.clone(),
+            start: self.start,
+            end: self.end,
         }
     }
 }

@@ -38,7 +38,7 @@ where
     }
 }
 
-struct PosIterMut<'a, T, I> {
+pub(crate) struct PosIterMut<'a, T, I> {
     iter: I,
     cols: usize,
     is_empty: bool,

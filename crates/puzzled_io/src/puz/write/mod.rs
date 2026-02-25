@@ -17,7 +17,7 @@ pub use size::*;
 
 use std::io::{self, Write};
 
-use crate::puz::BinaryPuzzle;
+use crate::puz::{BinaryPuzzle, ByteStr};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -45,24 +45,8 @@ pub trait PuzWrite: Write {
     ///
     /// # Assumptions
     /// The argument does not already include a terminated `\0` byte
-    fn write_str0(&mut self, val: &str) -> io::Result<()> {
-        self.write_all(val.as_bytes())?;
-        self.write_u8(b'\0')
-    }
-
-    /// Optionally write a [`str`] as a null-terminated string or [pad](PuzWrite::pad) the writer
-    ///
-    /// If the value is [`None`], `pad` 0-bytes will be written
-    /// # Assumptions
-    /// The argument does not already include a terminated `\0` byte
-    fn write_opt_str0(&mut self, val: Option<&str>, pad: usize) -> io::Result<()> {
-        match val {
-            Some(str) => self.write_str0(str),
-            None => {
-                self.pad(pad)?;
-                self.write_u8(b'\0')
-            }
-        }
+    fn write_byte_str(&mut self, str: &ByteStr) -> io::Result<()> {
+        self.write_all(str.bytes(true))
     }
 }
 
@@ -73,16 +57,16 @@ impl PuzWriter {
         Self {}
     }
 
-    pub fn write<W, P>(&self, writer: &mut W, puzzle: &P) -> Result<()>
+    pub fn write<'a, W, P>(&self, writer: &mut W, puzzle: &P, state: &P::State) -> Result<()>
     where
         W: PuzWrite,
         P: BinaryPuzzle,
     {
         // Construct the individual sections from the puzzle
-        let mut header = puzzle.write_header()?;
-        let grids = puzzle.write_grids()?;
-        let strings = puzzle.write_strings()?;
-        let extras = puzzle.write_extras()?;
+        let mut header = puzzle.write_header(state)?;
+        let grids = puzzle.write_grids(state)?;
+        let strings = puzzle.write_strings(state)?;
+        let extras = puzzle.write_extras(state)?;
 
         self.write_checksums(&mut header, &grids, &strings);
 

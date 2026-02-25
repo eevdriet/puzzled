@@ -1,5 +1,5 @@
 use image::{DynamicImage, Pixel, Rgba, RgbaImage};
-use puzzled_core::{Cell, Color, Metadata};
+use puzzled_core::{Color, Entry, Metadata};
 use puzzled_io::{
     ImagePuzzle, ImageReader, format,
     image::{
@@ -40,7 +40,7 @@ impl ImagePuzzle for Nonogram {
                 }
             };
 
-            let cell = Cell::new(fill);
+            let cell = Entry::new(fill);
             NonogramCell::new(cell)
         };
 

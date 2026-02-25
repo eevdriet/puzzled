@@ -36,28 +36,24 @@ impl<'a> TxtState<'a> {
             // Try to set a property in the metadata
             match prop.trim().to_ascii_lowercase().as_str() {
                 "author" => {
-                    metadata.author = Some(text);
+                    metadata = metadata.with_author(text);
                 }
                 "copyright" => {
-                    metadata.author = Some(text);
+                    metadata = metadata.with_copyright(text);
                 }
                 "notes" => {
-                    metadata.notes = Some(text);
+                    metadata = metadata.with_notes(text);
                 }
                 "title" => {
-                    metadata.title = Some(text);
+                    metadata = metadata.with_title(text);
                 }
                 "version" => match Version::new(text.as_bytes()) {
                     Ok(version) => {
-                        metadata.version = Some(version);
+                        metadata = metadata.with_version(version);
                     }
                     Err(reason) => {
                         return Err(format::Error::Version(reason).into());
                     }
-                },
-                "timer" => match Timer::from_str(&text) {
-                    Ok(timer) => metadata.timer = timer,
-                    Err(reason) => return Err(format::Error::Timer(reason).into()),
                 },
                 _ => {
                     return Err(read::Error::InvalidMetaProperty {

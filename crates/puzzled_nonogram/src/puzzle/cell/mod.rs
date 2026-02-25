@@ -3,12 +3,12 @@ mod cells;
 pub use cells::*;
 
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Cell, Reveal};
+use puzzled_core::Cell;
 
 use crate::Fill;
 
 #[derive(Deref, Debug, DerefMut, PartialEq, Eq, Clone)]
-pub struct NonogramCell(Cell<Fill>);
+pub struct NonogramCell(pub(crate) Cell<Fill>);
 
 impl NonogramCell {
     pub fn new(cell: Cell<Fill>) -> Self {
@@ -16,19 +16,13 @@ impl NonogramCell {
     }
 
     pub fn fill(&self) -> Fill {
-        *self.entry().unwrap_or(&Fill::Blank)
-    }
-}
-
-impl Reveal for NonogramCell {
-    fn reveal(&mut self) {
-        self.0.reveal();
+        self.solution.unwrap_or_default()
     }
 }
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::Cell;
+    use puzzled_core::Entry;
     use serde::{Deserialize, Serialize};
 
     use crate::{Fill, NonogramCell};
@@ -49,7 +43,7 @@ mod serde_impl {
         where
             D: serde::Deserializer<'de>,
         {
-            let cell = Cell::<Fill>::deserialize(deserializer)?;
+            let cell = Entry::<Fill>::deserialize(deserializer)?;
             let cell = NonogramCell::new(cell);
 
             Ok(cell)

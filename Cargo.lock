@@ -1805,6 +1805,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "puzzled_skyscrapers"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "document-features",
+ "puzzled_core",
+ "puzzled_io",
+ "rstest",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "pxfm"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"

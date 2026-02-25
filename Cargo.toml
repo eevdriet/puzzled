@@ -8,6 +8,7 @@ members = [
     "crates/puzzled_io",
     "crates/puzzled_nonogram",
     "crates/puzzled_nonogram_tui",
+    "crates/puzzled_skyscrapers",
 ]
 
 [workspace.dependencies]

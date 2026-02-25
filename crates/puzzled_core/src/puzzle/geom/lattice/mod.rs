@@ -1,7 +1,6 @@
 mod builder;
 mod error;
 mod iter;
-mod reveal;
 
 pub use error::Error as LatticeError;
 

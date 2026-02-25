@@ -3,18 +3,18 @@ use std::ops;
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Grid, Offset, Position};
 
-use crate::{Crossword, Direction, Square};
+use crate::{Crossword, CrosswordSquare, Direction};
 
 #[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone)]
-pub struct Squares(pub(crate) Grid<Square>);
+pub struct Squares(pub(crate) Grid<CrosswordSquare>);
 
 impl Squares {
-    pub fn new(squares: Grid<Square>) -> Self {
+    pub fn new(squares: Grid<CrosswordSquare>) -> Self {
         Self(squares)
     }
 
     pub fn can_clue_start_in_dir(&self, pos: Position, dir: Direction) -> bool {
-        let is_blank = |pos: Position| self.get_fill(pos).is_none();
+        let is_blank = |pos: Position| self[pos].is_none();
 
         if is_blank(pos) {
             return false;
@@ -34,7 +34,7 @@ impl Squares {
 
         (0..)
             .scan(pos, |acc, _| {
-                let square = self.get_fill(*acc)?;
+                let square = self.get(*acc)?;
                 *acc += offset;
 
                 Some(square)
@@ -44,7 +44,7 @@ impl Squares {
 }
 
 impl ops::Index<Position> for Crossword {
-    type Output = Square;
+    type Output = CrosswordSquare;
 
     /// Index the puzzle to retrieve a reference to the [square](Square) at the given [position](Position).
     /// ```
@@ -114,5 +114,36 @@ impl ops::IndexMut<Position> for Crossword {
     /// ```
     fn index_mut(&mut self, pos: Position) -> &mut Self::Output {
         &mut self.squares[pos]
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use puzzled_core::Grid;
+    use serde::{Deserialize, Serialize};
+
+    use crate::{CrosswordSquare, Squares};
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl Serialize for Squares {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
+    }
+
+    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+    impl<'de> Deserialize<'de> for Squares {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let squares = Grid::<CrosswordSquare>::deserialize(deserializer)?;
+            let squares = Squares::new(squares);
+
+            Ok(squares)
+        }
     }
 }

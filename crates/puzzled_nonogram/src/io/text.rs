@@ -1,4 +1,4 @@
-use puzzled_core::{Cell, Color};
+use puzzled_core::{Color, Entry};
 use puzzled_io::{
     format,
     text::{
@@ -24,7 +24,7 @@ impl TxtPuzzle for Nonogram {
                 _ => Fill::Cross,
             };
 
-            NonogramCell::new(Cell::new(fill))
+            NonogramCell::new(Entry::new(fill))
         };
 
         let fills = reader.read_grid(&mut read_fill)?;

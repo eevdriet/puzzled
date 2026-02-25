@@ -16,7 +16,7 @@ pub use error::*;
 pub use metadata::*;
 pub(crate) use state::*;
 
-use crate::puz::{BinaryPuzzle, Extras, Grids, Header, Strings};
+use crate::puz::{BinaryPuzzle, ByteStr, Extras, Grids, Header, Strings};
 use std::{fs::File, io, ops::Range, path::Path};
 
 /// Extension trait for [`Read`](io::Read) to make reading [puzzles](crate::Puz) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
@@ -40,7 +40,7 @@ pub trait PuzRead: io::Read {
     }
 
     /// Read a null-terminated string into a [`Vec<u8>`]
-    fn read_str0(&mut self) -> io::Result<Vec<u8>> {
+    fn read_byte_str(&mut self) -> io::Result<ByteStr> {
         let mut buf = Vec::new();
         let mut byte = [0];
 
@@ -53,7 +53,7 @@ pub trait PuzRead: io::Read {
             }
         }
 
-        Ok(buf)
+        Ok(ByteStr::new(&buf))
     }
 
     /// Read a [`[u8]`](core::slice) of constant size `N`
@@ -93,38 +93,38 @@ impl PuzReader {
         Self { strict }
     }
 
-    pub fn read<R, P>(&self, reader: &mut R) -> Result<P>
+    pub fn read<R, P>(&self, reader: &mut R) -> Result<(P, P::State)>
     where
         R: PuzRead,
         P: BinaryPuzzle,
     {
-        let (puzzle, _) = self.read_with_warnings(reader)?;
-        Ok(puzzle)
+        let (puzzle, state, _) = self.read_with_warnings(reader)?;
+        Ok((puzzle, state))
     }
 
-    pub fn read_with_warnings<R, P>(&self, reader: &mut R) -> Result<(P, Vec<Warning>)>
+    pub fn read_with_warnings<R, P>(&self, reader: &mut R) -> Result<(P, P::State, Vec<Warning>)>
     where
         R: PuzRead,
         P: BinaryPuzzle,
     {
-        let mut state = PuzState::new(self.strict);
+        let mut read_state = PuzState::new(self.strict);
 
         // Read main components
-        let header = Header::read_from(reader, &mut state)?;
+        let header = Header::read_from(reader, &mut read_state)?;
         let grids = Grids::read_from(reader, header.width, header.height)?;
         let strings = Strings::read_from(reader, header.clue_count)?;
 
         // Validate checksums
-        self.validate_checksums(&header, &grids, &strings, &mut state)?;
+        self.validate_checksums(&header, &grids, &strings, &mut read_state)?;
 
         // Read extra sections and the actual structure of the puzzle
-        let extras = Extras::read_from(reader, header.width, header.height, &mut state)?;
+        let extras = Extras::read_from(reader, header.width, header.height, &mut read_state)?;
 
-        let puzzle = P::read_puz(header, grids, strings, extras)?;
-        Ok((puzzle, state.warnings))
+        let (puzzle, state) = P::read_puz(header, grids, strings, extras)?;
+        Ok((puzzle, state, read_state.warnings))
     }
 
-    pub fn read_from_path<R, P>(&self, path_ref: R) -> Result<P>
+    pub fn read_from_path<R, P>(&self, path_ref: R) -> Result<(P, P::State)>
     where
         R: AsRef<Path>,
         P: BinaryPuzzle,

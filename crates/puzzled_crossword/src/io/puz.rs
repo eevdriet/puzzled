@@ -1,14 +1,14 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{CellStyle, Grid, Position};
+use puzzled_core::{Cell, Grid, Position, Square};
 use puzzled_io::puz::{
-    BinaryPuzzle, Extras, Grids, Header, MISSING_ENTRY_CELL, NON_PLAYABLE_CELL, PuzSizeCheck,
-    PuzWrite, Span, Strings, build_string, check_puz_size,
+    BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR,
+    PuzSizeCheck, Span, Strings, check_puz_size,
     read::{self, read_metadata},
     windows_1252_to_char, write,
 };
 
-use crate::{Cell, Clue, Clues, Crossword, CrosswordCell, Direction, Solution, Squares};
+use crate::{Clue, Clues, Crossword, CrosswordState, Direction, Entry, Solution, Squares};
 
 impl PuzSizeCheck for Clues {
     fn check_puz_size(&self) -> write::Result<()> {
@@ -20,7 +20,7 @@ impl PuzSizeCheck for Clues {
 }
 
 impl BinaryPuzzle for Crossword {
-    fn write_header(&self) -> write::Result<Header> {
+    fn write_header(&self, _state: &CrosswordState) -> write::Result<Header> {
         let mut header = Header::default();
 
         // Grids
@@ -35,14 +35,18 @@ impl BinaryPuzzle for Crossword {
         header.clue_count = clues.len() as u16;
 
         // Metadata
-        let version = self.version().map(|v| v.as_bytes()).unwrap_or_default();
+        let version = self
+            .meta()
+            .version()
+            .map(|v| v.as_bytes())
+            .unwrap_or_default();
         header.version = version;
         header.write_cib();
 
         Ok(header)
     }
 
-    fn write_grids(&self) -> write::Result<Grids> {
+    fn write_grids(&self, state: &CrosswordState) -> write::Result<Grids> {
         // Get the squares and check for overflow of their size
         let squares = self.squares();
         squares.check_puz_size()?;
@@ -51,17 +55,20 @@ impl BinaryPuzzle for Crossword {
         let height = squares.cols() as u8;
 
         // Write the individual grids from the squares
-        let solution = squares.map_ref(|square| match square {
-            Some(cell) => cell.solution().to_string().chars().next().unwrap_or('\0'),
-            _ => NON_PLAYABLE_CELL,
+        let solution = state.solution().map_ref(|square| match square.inner() {
+            None => NON_PLAYABLE_CHAR,
+            Some(solution) => solution
+                .as_ref()
+                .map(|solution| solution.first_letter())
+                .unwrap_or(MISSING_ENTRY_CHAR),
         } as u8);
 
-        let state = squares.map_ref(|square| match square {
-            Some(cell) => match cell.entry() {
-                Some(entry) => entry.first_letter(),
-                None => MISSING_ENTRY_CELL,
+        let state = state.entries().map_ref(|square| match square.inner() {
+            None => NON_PLAYABLE_CHAR,
+            Some(entry) => match entry.entry() {
+                Some(solution) => solution.first_letter(),
+                _ => MISSING_ENTRY_CHAR,
             },
-            _ => NON_PLAYABLE_CELL,
         } as u8);
 
         // Construct the result and validate
@@ -75,63 +82,49 @@ impl BinaryPuzzle for Crossword {
         Ok(grids)
     }
 
-    fn write_strings(&self) -> write::Result<Strings> {
+    fn write_strings(&self, _state: &CrosswordState) -> write::Result<Strings> {
         let clues = self.clues();
         clues.check_puz_size()?;
 
-        let mut strings = Strings {
-            clues: Vec::with_capacity(clues.len()),
-            ..Default::default()
-        };
-
-        strings
-            .title
-            .write_opt_str0(self.title(), 0)
-            .expect("Title");
-        strings
-            .author
-            .write_opt_str0(self.author(), 0)
-            .expect("Author");
-        strings
-            .copyright
-            .write_opt_str0(self.copyright(), 0)
-            .expect("Copyright");
-
+        let mut strings = Strings::from_metadata(self.meta());
         strings.clues = Vec::with_capacity(clues.len());
 
         for (idx, clue) in clues.values().enumerate() {
-            let num = idx + 1;
-            let context = format!("Clue #{num}");
-            strings.clues[idx].write_str0(clue.text()).expect(&context);
+            let byte_str = ByteStr::new(clue.text().as_bytes());
+            strings.clues[idx] = byte_str;
         }
-
-        strings
-            .notes
-            .write_opt_str0(self.notes(), 0)
-            .expect("Notes");
 
         Ok(strings)
     }
 
-    fn write_extras(&self) -> write::Result<Extras> {
+    fn write_extras(&self, state: &CrosswordState) -> write::Result<Extras> {
         let squares = self.squares();
         squares.check_puz_size()?;
 
         let mut extras = Extras::default();
 
         // GRBS / RTBL
-        if squares.iter_fills().any(|cell| cell.is_rebus()) {
+        if squares
+            .iter_fills()
+            .any(|cell| cell.solution.as_ref().is_some_and(|sol| sol.is_rebus()))
+        {
             let mut rebuses: BTreeMap<u8, String> = BTreeMap::new();
             let mut num = 0;
 
-            let grbs = squares.map_ref(|square| match square {
-                Some(cell) if cell.is_rebus() => {
-                    num += 1;
-                    rebuses.insert(num, cell.solution().to_string());
+            let grbs = squares.map_ref(|square| {
+                match square
+                    .inner()
+                    .as_ref()
+                    .and_then(|cell| cell.solution.as_ref())
+                {
+                    Some(solution) if solution.is_rebus() => {
+                        num += 1;
+                        rebuses.insert(num, solution.to_string());
 
-                    num
+                        num
+                    }
+                    _ => 0,
                 }
-                _ => 0,
             });
 
             extras.grbs = Some(grbs);
@@ -139,16 +132,35 @@ impl BinaryPuzzle for Crossword {
         }
 
         // LTIM
-        extras.ltim = Some(self.timer());
+        extras.ltim = Some(state.timer());
 
         // GEXT
-        if !squares.iter_fills().all(|cell| cell.style().is_empty()) {
-            let gext = squares.map_ref(|square| match square {
-                Some(cell) => cell.style(),
-                _ => CellStyle::default(),
-            });
-            extras.gext = Some(gext);
-        }
+        let entries = state.entries();
+        entries.check_puz_size()?;
+
+        let gext: Vec<_> = squares
+            .iter()
+            .zip(entries.iter())
+            .map(|(puzzle_square, entry_square)| {
+                let puzzle_style = puzzle_square
+                    .inner()
+                    .as_ref()
+                    .map(|sq| sq.style)
+                    .unwrap_or_default();
+
+                let user_style = entry_square
+                    .inner()
+                    .as_ref()
+                    .map(|sq| sq.style())
+                    .unwrap_or_default();
+
+                puzzle_style | user_style
+            })
+            .collect();
+        let gext = Grid::from_vec(gext, squares.cols())
+            .expect("Constructing GEXT from valid squares and entries");
+
+        extras.gext = Some(gext);
 
         Ok(extras)
     }
@@ -158,61 +170,75 @@ impl BinaryPuzzle for Crossword {
         grids: Grids,
         strings: Strings,
         extras: Extras,
-    ) -> read::Result<Self> {
+    ) -> read::Result<(Self, Self::State)> {
         // Build the puzzle with owned data
-        let squares = read_squares(&grids, &extras);
-        let clues = read_clues(&squares, &strings)?;
-        let meta = read_metadata(&header, &strings, &extras);
+        let (squares, state) = read_state(&grids, &extras);
 
-        Ok(Crossword::new(squares, clues, meta))
+        let clues = read_clues(&squares, &strings)?;
+        let meta = read_metadata(&header, &strings);
+
+        let crossword = Crossword::new(squares, clues, meta);
+        Ok((crossword, state))
     }
 }
 
-fn read_squares(grids: &Grids, extras: &Extras) -> Squares {
-    let mut cells = Vec::new();
-    eprintln!("Extras: {extras:?}");
+fn read_state(grids: &Grids, extras: &Extras) -> (Squares, CrosswordState) {
+    let cols = grids.width as usize;
 
-    for ((pos, &solution), &state) in grids.solution.iter_indexed().zip(grids.state.iter()) {
-        let cell = match solution {
-            // Non-playable cells are always black
-            b'.' => None,
+    let (squares, entries) = grids
+        .solution
+        .iter_indexed()
+        .zip(grids.state.iter())
+        .map(|((pos, &solution), &state)| {
+            let style = extras.get_style(pos);
 
-            byte => {
-                // Derive the solution based on the rebus information in the extras
-                let solution = match extras.get_rebus(pos) {
-                    Some(rebus) => Solution::Rebus(rebus.clone()),
-                    None => Solution::Letter(windows_1252_to_char(byte)),
-                };
+            let square = match windows_1252_to_char(solution) {
+                NON_PLAYABLE_CHAR => Square::new_empty(),
+                letter => {
+                    let cell = match letter {
+                        MISSING_ENTRY_CHAR => Cell::default_with_style(style),
+                        letter => {
+                            let solution = match extras.get_rebus(pos) {
+                                Some(rebus) => Solution::Rebus(rebus.clone()),
+                                None => Solution::Letter(letter),
+                            };
 
-                // Derive the entry based on whether a state was given and the solution
-                let entry = if state == MISSING_ENTRY_CELL as u8 {
-                    None
-                } else {
-                    let first_letter = windows_1252_to_char(state);
-
-                    let entry = match &solution {
-                        Solution::Letter(_) => Solution::Letter(first_letter),
-                        Solution::Rebus(_) => Solution::Rebus(first_letter.to_string()),
+                            Cell::new_with_style(solution, style)
+                        }
                     };
-                    Some(entry)
-                };
 
-                let style = extras.get_style(pos);
-                let mut cell = Cell::new_styled(solution, style);
-
-                if let Some(entry) = entry {
-                    cell.enter(entry);
+                    Square::new(cell)
                 }
+            };
 
-                Some(CrosswordCell::new(cell))
-            }
-        };
+            let entry = match windows_1252_to_char(state) {
+                NON_PLAYABLE_CHAR => Square::new_empty(),
+                letter => {
+                    let mut entry = Entry::new_styled(style);
 
-        cells.push(cell);
-    }
+                    if letter != MISSING_ENTRY_CHAR {
+                        let solution = Solution::Letter(letter);
+                        entry.enter(solution);
+                    }
 
-    let squares = Grid::from_vec(cells, grids.solution.cols()).expect("Read correct length region");
-    Squares::new(squares)
+                    Square::new(entry)
+                }
+            };
+
+            (square, entry)
+        })
+        .unzip();
+
+    let squares = Grid::from_vec(squares, cols).expect("Read correct length squares");
+    let solution = squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+    let squares = Squares::new(squares);
+
+    let entries = Grid::from_vec(entries, cols).expect("Read correct lenght entries");
+
+    let timer = extras.ltim.unwrap_or_default();
+    let state = CrosswordState::new(solution, entries, timer);
+
+    (squares, state)
 }
 
 fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
@@ -230,7 +256,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
         // No more clues to parse
         let text = match clues_iter.next() {
             None => return false,
-            Some((_, clue)) => build_string(clue),
+            Some((_, clue)) => clue.to_string(),
         };
         let len = squares.find_clue_len(start, direction);
 
@@ -255,7 +281,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
             span: Span::default(),
             kind: read::ErrorKind::MissingClue {
                 id,
-                clue: build_string(clue),
+                clue: clue.to_string(),
             },
             context: "Clues".to_string(),
         });

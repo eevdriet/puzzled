@@ -2,13 +2,15 @@
 ///
 ///
 mod clue;
-mod solve;
 mod square;
+mod state;
 
 pub use clue::*;
+use puzzled_io::puz::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
 pub use square::*;
+pub use state::*;
 
-use puzzled_core::{Metadata, add_metadata};
+use puzzled_core::{Entry, Grid, Metadata, Puzzle, Square, Timer};
 use std::fmt;
 
 /// A [crossword](https://en.wikipedia.org/wiki/Crossword) puzzle
@@ -55,6 +57,33 @@ pub struct Crossword {
     meta: Metadata,
 }
 
+impl Puzzle for Crossword {
+    type Solution = Grid<Square<Solution>>;
+    type State = CrosswordState;
+
+    fn initial_state(&self) -> Self::State {
+        let solutions = self
+            .squares
+            .map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+
+        let entries = self.squares.map_ref(|square| {
+            square.map_ref(|cell| {
+                let mut entry = Entry::new_styled(cell.style);
+
+                if let Some(ref solution) = cell.solution {
+                    entry.enter(solution.clone());
+                }
+
+                Some(entry)
+            })
+        });
+
+        let timer = Timer::default();
+
+        CrosswordState::new(solutions, entries, timer)
+    }
+}
+
 /// # Constructors
 impl Crossword {
     /// Constructs a new puzzle from its [squares](Square) and [clues](Clue)
@@ -88,6 +117,10 @@ impl Crossword {
 
     pub fn clues_mut(&mut self) -> &mut Clues {
         &mut self.clues
+    }
+
+    pub fn meta(&self) -> &Metadata {
+        &self.meta
     }
 
     /// Number of rows (height) in the puzzle.
@@ -124,7 +157,6 @@ impl Crossword {
         self.squares.cols()
     }
 }
-add_metadata!(Crossword);
 
 impl PartialEq for Crossword {
     fn eq(&self, other: &Self) -> bool {
@@ -138,11 +170,14 @@ impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cols = self.squares.cols();
 
-        for pos in self.squares.positions() {
-            match &self.squares[pos] {
-                Some(cell) => write!(f, "{cell}"),
-                None => write!(f, "{EMPTY_SQUARE}"),
-            }?;
+        for (pos, square) in self.squares.iter_indexed() {
+            match square.inner() {
+                None => write!(f, "{NON_PLAYABLE_CHAR}"),
+                Some(cell) => match cell.solution {
+                    Some(ref solution) => write!(f, "{solution}"),
+                    None => write!(f, "{MISSING_ENTRY_CHAR}"),
+                },
+            };
 
             if pos.col == cols - 1 {
                 writeln!(f)?
@@ -169,17 +204,17 @@ impl fmt::Display for Crossword {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::{Grid, Metadata};
+    use puzzled_core::Metadata;
     use serde::{Deserialize, Serialize, de::Error};
 
-    use crate::{Clues, Crossword, SerdeClues, Square, Squares};
+    use crate::{Clues, Crossword, SerdeClues, Squares};
 
     #[derive(Serialize, Deserialize)]
     struct SerdeCrossword {
         rows: usize,
         cols: usize,
 
-        squares: Grid<Square>,
+        squares: Squares,
         clues: Option<SerdeClues>,
 
         // Metadata
@@ -194,7 +229,7 @@ mod serde_impl {
             S: serde::Serializer,
         {
             // Puzzle
-            let squares = self.squares().0.clone();
+            let squares = self.squares().clone();
 
             let has_clues = !self.clues().is_empty();
             let clues = has_clues.then_some(self.clues().to_serde());
@@ -220,13 +255,12 @@ mod serde_impl {
             D: serde::Deserializer<'de>,
         {
             let SerdeCrossword {
-                squares: squares_grid,
+                squares,
                 clues: clues_data,
                 meta,
                 ..
             } = SerdeCrossword::deserialize(deserializer)?;
 
-            let squares = Squares::new(squares_grid);
             let clues = Clues::from_serde(clues_data.unwrap_or_default()).map_err(Error::custom)?;
 
             Ok(Crossword {

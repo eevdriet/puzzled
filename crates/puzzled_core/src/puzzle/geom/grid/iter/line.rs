@@ -1,6 +1,6 @@
 use std::{
     iter::{Skip, Take},
-    ops::{Bound, RangeBounds},
+    ops::Bound,
 };
 
 use crate::{ColIter, ColIterMut, Grid, Line, LineSegment, Order, RowIter, RowIterMut};

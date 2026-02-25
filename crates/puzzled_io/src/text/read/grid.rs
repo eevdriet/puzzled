@@ -6,9 +6,9 @@ use crate::{
 };
 
 impl<'a> TxtState<'a> {
-    pub fn read_grid<T, F>(&mut self, cell_fn: &mut F) -> read::Result<Grid<T>>
+    pub fn read_grid<T, F>(&mut self, row_fn: &mut F) -> read::Result<Grid<T>>
     where
-        F: FnMut(&'a str) -> T,
+        F: FnMut(&'a str) -> Vec<T>,
     {
         let mut grid = Vec::new();
 
@@ -34,7 +34,7 @@ impl<'a> TxtState<'a> {
             rows += 1;
 
             // Parse the next row and verify its width
-            let row = read_grid_row(rows, line, cell_fn)?;
+            let row = read_grid_row(rows, line, row_fn)?;
             let row_width = row.len() as u8;
             grid.extend(row);
 
@@ -59,9 +59,9 @@ impl<'a> TxtState<'a> {
     }
 }
 
-fn read_grid_row<'a, T, F>(row: u8, line: &'a str, cell_fn: &mut F) -> format::Result<Vec<T>>
+fn read_grid_row<'a, T, F>(row: u8, line: &'a str, row_fn: &mut F) -> format::Result<Vec<T>>
 where
-    F: FnMut(&'a str) -> T,
+    F: FnMut(&'a str) -> Vec<T>,
 {
     if !line.starts_with('[') || !line.ends_with(']') {
         let err = GridError::InvalidRow {
@@ -74,6 +74,6 @@ where
 
     let line = &line[1..line.len() - 1];
 
-    let cells = line.split_whitespace().map(cell_fn).collect();
+    let cells = row_fn(line);
     Ok(cells)
 }

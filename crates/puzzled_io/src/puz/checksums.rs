@@ -1,4 +1,4 @@
-use crate::puz::{Grids, Header, PuzReader, PuzState, PuzWriter, Span, Strings, read};
+use crate::puz::{ByteStr, Grids, Header, PuzReader, PuzState, PuzWriter, Span, Strings, read};
 
 #[doc(hidden)]
 pub fn find_region_checksum(region: &[u8], start: u16) -> u16 {
@@ -17,12 +17,12 @@ pub fn find_region_checksum(region: &[u8], start: u16) -> u16 {
 }
 
 #[doc(hidden)]
-pub(crate) fn find_str_checksum(str: &[u8], start: u16, ignore_empty: bool) -> u16 {
-    if ignore_empty && matches!(str, [] | [b'\0']) {
+pub(crate) fn find_str_checksum(byte_str: &ByteStr, start: u16, ignore_empty: bool) -> u16 {
+    if ignore_empty && byte_str.str_len() == 0 {
         return start;
     }
 
-    find_region_checksum(str, start)
+    find_region_checksum(byte_str.bytes(!ignore_empty), start)
 }
 
 pub(crate) fn find_cib_checksum(cib_region: &[u8]) -> u16 {
@@ -55,12 +55,7 @@ pub fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
     file_checksum = find_str_checksum(&strings.copyright, file_checksum, true);
 
     for clue in &strings.clues {
-        let clue_without_end = match clue.strip_suffix(&[0]) {
-            None => clue,
-            Some(prefix) => &prefix.to_vec(),
-        };
-
-        file_checksum = find_str_checksum(clue_without_end, file_checksum, false);
+        file_checksum = find_str_checksum(clue, file_checksum, false);
     }
 
     file_checksum = find_str_checksum(&strings.notes, file_checksum, true);

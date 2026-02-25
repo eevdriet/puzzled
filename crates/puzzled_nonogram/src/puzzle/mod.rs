@@ -6,7 +6,7 @@ mod rule;
 mod run;
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Metadata, add_metadata};
+use puzzled_core::{Entry, Grid, Metadata, Puzzle, State, add_metadata};
 
 pub use cell::*;
 pub use colors::*;
@@ -74,6 +74,15 @@ impl Nonogram {
     }
 }
 add_metadata!(Nonogram);
+
+impl Puzzle for Nonogram {
+    type Solution = Grid<Fill>;
+    type State = u8;
+
+    fn initial_state(&self) -> Self::State {
+        4
+    }
+}
 
 #[cfg(feature = "serde")]
 mod serde_impl {

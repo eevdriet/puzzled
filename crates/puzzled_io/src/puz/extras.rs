@@ -1,6 +1,8 @@
 use std::{collections::BTreeMap, str::FromStr};
 
-use crate::puz::{Context, PuzRead, PuzState, PuzWrite, Span, build_string, format, read, write};
+use crate::puz::{
+    ByteStr, Context, PuzRead, PuzState, PuzWrite, Span, build_string, format, read, write,
+};
 use puzzled_core::{CellStyle, Grid, Position, Timer};
 
 /// Grid Rebus (GRBS) type
@@ -173,8 +175,8 @@ impl Extras {
         let context = "RTBL";
         let mut rtbl = Rtbl::default();
 
-        let rebuses_str = reader.read_str0().context("RTBL")?;
-        let rebuses_str = build_string(&rebuses_str);
+        let rebuses_str = reader.read_byte_str().context("RTBL")?;
+        let rebuses_str = rebuses_str.to_string();
 
         let err = |square: u16, reason: String| read::Error {
             span: Span::default(),
@@ -233,8 +235,8 @@ impl Extras {
 
     fn read_ltim<R: PuzRead>(reader: &mut R) -> read::Result<Ltim> {
         let context = "LTIM";
-        let ltim = reader.read_str0().context(context)?;
-        let ltim = build_string(&ltim);
+        let ltim = reader.read_byte_str().context(context)?;
+        let ltim = ltim.to_string();
 
         Timer::from_str(&ltim)
             .map_err(format::Error::Timer)
@@ -296,8 +298,8 @@ impl Extras {
             let secs = ltim.elapsed().as_secs();
             let state: u8 = ltim.state().into();
 
-            let format = format!("{secs},{state}");
-            writer.write_str0(&format).context("LTIM")?;
+            let format = ByteStr::new(format!("{secs},{state}").as_bytes());
+            writer.write_byte_str(&format).context("LTIM")?;
         }
 
         if let Some(gext) = &self.gext {
