@@ -28,22 +28,22 @@ impl CellChange {
 
 impl UndoAction for FillAction {
     fn execute(&mut self, state: &mut AppState) -> ActionResult {
-        for change in &self.changes {
-            let puzzle = &mut state.puzzle.puzzle;
+        for _change in &self.changes {
+            let _puzzle = &mut state.puzzle.puzzle;
 
             // Then update the cell state in the solver
-            state.solver.update_cell(puzzle, change.pos, change.after);
+            // TODO: put back update cell state.solver.update_cell(puzzle, change.pos, change.after);
         }
 
         Ok(ActionOutcome::Consumed)
     }
 
     fn undo(&mut self, state: &mut AppState) -> ActionResult {
-        for change in &self.changes {
-            let puzzle = &mut state.puzzle.puzzle;
+        for _change in &self.changes {
+            let _puzzle = &mut state.puzzle.puzzle;
 
             // Then update the cell state in the solver
-            state.solver.update_cell(puzzle, change.pos, change.before);
+            // TODO: put back update cell state.solver.update_cell(puzzle, change.pos, change.before);
         }
 
         Ok(ActionOutcome::Consumed)

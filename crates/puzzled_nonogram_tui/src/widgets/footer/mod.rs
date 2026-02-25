@@ -194,7 +194,10 @@ impl FooterWidget {
             .puzzle
             .fills()
             .iter()
-            .filter(|cell| !matches!(cell.fill(), Fill::Blank))
+            .filter(|cell| {
+                cell.solution
+                    .is_some_and(|fill| !matches!(fill, Fill::Blank))
+            })
             .count() as u16;
 
         let fill_perc = fill_count as f64 / state.puzzle.puzzle.fills().size() as f64;

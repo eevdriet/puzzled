@@ -296,13 +296,16 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
 
 #[cfg(all(test, feature = "puz"))]
 mod tests {
-    use crate::Crossword;
+    use crate::{Crossword, CrosswordState};
     use puzzled_io::puz::{PuzReader, read};
     use rstest::rstest;
     use std::fs::File;
     use std::path::PathBuf;
 
-    fn parse_puz(path: PathBuf, strict: bool) -> read::Result<(Crossword, Vec<read::Warning>)> {
+    fn parse_puz(
+        path: PathBuf,
+        strict: bool,
+    ) -> read::Result<(Crossword, CrosswordState, Vec<read::Warning>)> {
         let mut file = File::open(path).expect("puzzle file exists");
         let parser = PuzReader::new(strict);
 
@@ -312,7 +315,7 @@ mod tests {
     #[rstest]
     fn parse_ok_puz(#[files("puzzles/ok/*.puz")] path: PathBuf) {
         let result = parse_puz(path, false);
-        let (puzzle, _) = result.expect("puzzle is parsed correctly");
+        let (puzzle, _, _) = result.expect("puzzle is parsed correctly");
 
         assert!(puzzle.rows() > 0);
         assert!(puzzle.cols() > 0);
@@ -329,7 +332,7 @@ mod tests {
     #[rstest]
     fn parse_warn(#[files("puzzles/warn/*.puz")] path: PathBuf) {
         let result = parse_puz(path, false);
-        let (_, warnings) = result.expect("puzzle is parsed correctly");
+        let (_, _, warnings) = result.expect("puzzle is parsed correctly");
 
         assert!(!warnings.is_empty());
     }

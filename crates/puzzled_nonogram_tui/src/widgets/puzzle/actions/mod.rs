@@ -227,7 +227,7 @@ impl HandleAction for &PuzzleWidget {
             }
             Action::SampleFill => {
                 let pos = app_to_puzzle(state.puzzle.cursor);
-                let fill = state.puzzle.puzzle[pos].fill();
+                let fill = state.puzzle.puzzle[pos].solution.unwrap_or_default();
                 state.puzzle.fill = fill;
             }
 
@@ -314,7 +314,7 @@ fn handle_fills(fill: Fill, range: Option<MotionRange>, state: &AppState) -> Act
 
     for pos in range.positions(&bounds) {
         let pos = app_to_puzzle(pos);
-        let before = state.puzzle.puzzle[pos].fill();
+        let before = state.puzzle.puzzle[pos].solution.unwrap_or_default();
 
         // Only record actual changes
         if before == fill {

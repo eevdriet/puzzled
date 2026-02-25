@@ -41,14 +41,15 @@ pub fn __solution(sol_str: &str) -> crate::Solution {
 
 #[cfg(all(test, feature = "macros"))]
 mod tests {
-    use puzzled_core::CellStyle;
+    use puzzled_core::{Cell, CellStyle, Square};
     use rstest::rstest;
 
     use crate::{
-        CrosswordCell,
         Solution::{self, *},
         square,
     };
+
+    type CrosswordCell = Cell<Solution>;
 
     const _E: CellStyle = CellStyle::empty();
     const _I: CellStyle = CellStyle::INCORRECT;
@@ -57,20 +58,18 @@ mod tests {
     const _C: CellStyle = CellStyle::CIRCLED;
 
     #[rstest]
-    #[case(square!(A), Letter('A'), None, _E)]
-    #[case(square!(A@), Letter('A'), None, _C)]
-    #[case(square!(A*), Letter('A'), None, _R)]
+    #[case(square!(A), Letter('A'), _E)]
+    #[case(square!(A@), Letter('A'), _C)]
+    #[case(square!(A*), Letter('A'), _R)]
     fn test_cell(
-        #[case] square: Option<CrosswordCell>,
+        #[case] square: Square<CrosswordCell>,
         #[case] solution: Solution,
-        #[case] entry: Option<Solution>,
         #[case] style: CellStyle,
     ) {
-        match square {
+        match square.inner() {
             Some(cell) => {
-                assert_eq!(cell.solution(), &solution);
-                assert_eq!(cell.entry(), entry.as_ref());
-                assert_eq!(cell.style(), style);
+                assert_eq!(cell.solution.clone().unwrap(), solution);
+                assert_eq!(cell.style, style);
             }
             _ => unreachable!("No test cases produce an empty square"),
         }

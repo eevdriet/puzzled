@@ -65,7 +65,7 @@ impl PuzzleWidget {
                 let repeat = state.style.cell_width;
                 let symbol = match pos == state.cursor {
                     true => 'E',
-                    false => cell.fill().symbol(),
+                    false => cell.solution.unwrap_or_default().symbol(),
                 }
                 .to_string()
                 .repeat(repeat);
@@ -154,13 +154,14 @@ impl PuzzleWidget {
         is_selected: bool,
         state: &AppState,
     ) -> Style {
+        let fill = cell.solution.unwrap_or_default();
         let colors = state.puzzle.puzzle.colors();
-        let mut style = colors.get_style(cell.fill());
+        let mut style = colors.get_style(fill);
 
         // Active line
         if matches!(state.focus, Focus::Puzzle) {
             if pos.x == state.puzzle.cursor.x || pos.y == state.puzzle.cursor.y {
-                if !matches!(cell.fill(), Fill::Color(_)) {
+                if !matches!(fill, Fill::Color(_)) {
                     style = style.fg(Color::White);
                 }
 

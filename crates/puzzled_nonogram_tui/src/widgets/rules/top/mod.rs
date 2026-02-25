@@ -1,6 +1,6 @@
 mod actions;
 
-use puzzled_nonogram::{Fill, Line, Rule, Run};
+use puzzled_nonogram::{Fill, Line, LineValidation, Rule, Run};
 use ratatui::{
     layout::{Alignment, Position},
     prelude::{Buffer, Rect},
@@ -78,7 +78,8 @@ impl ColRulesWidget {
 
             let rule = &self.rules[col];
             let line = Line::Col(col);
-            let validation = state.solver[line];
+            // TODO: add back validation getter let validation = state.solver[line];
+            let validation = LineValidation::Valid;
 
             let info = RuleInfo {
                 rule,

@@ -1,4 +1,4 @@
-use puzzled_nonogram::{Fill, Nonogram, Order, Rules, Solver};
+use puzzled_nonogram::{Fill, Nonogram, NonogramSolver, Order, Rules, Solver};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
@@ -18,15 +18,14 @@ pub struct AppState {
     pub footer: FooterState,
     pub minimap: MiniMapState,
 
-    pub solver: Solver,
+    pub solver: NonogramSolver,
 }
 
 impl AppState {
     pub fn new(puzzle: Nonogram, rules: Rules, style: PuzzleStyle, settings: Settings) -> Self {
         let start_fill = Fill::Color(1);
 
-        let mut solver = Solver::new();
-        solver.insert_rules(&rules);
+        let solver = NonogramSolver::new();
 
         Self {
             settings,

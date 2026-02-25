@@ -37,7 +37,7 @@ impl StatefulWidgetRef for &MiniMapWidget {
 
                     for (c, cell) in row.enumerate() {
                         let x_start = cell_width * c;
-                        let fill = cell.fill();
+                        let fill = cell.solution.unwrap_or_default();
 
                         if matches!(fill, Fill::Color(_))
                             && let Some(c) = colors.get(&fill)

@@ -18,7 +18,7 @@ use crossterm::{
     execute,
     terminal::EnterAlternateScreen,
 };
-use puzzled_nonogram::{Nonogram, Solver};
+use puzzled_nonogram::{Nonogram, NonogramSolver, Solver};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Margin, Position, Rect},
@@ -39,7 +39,7 @@ const TICK_DURATION: Duration = Duration::from_millis(200);
 pub struct App {
     // State
     pub state: AppState,
-    pub solver: Solver,
+    pub solver: NonogramSolver,
 
     // Input
     pub events: EventEngine,
@@ -67,7 +67,7 @@ impl App {
             events,
             actions: ActionEngine::default(),
 
-            solver: Solver::default(),
+            solver: NonogramSolver::default(),
             puzzle_widget: PuzzleWidget,
             rules_left,
             rules_top,

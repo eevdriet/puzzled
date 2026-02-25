@@ -1,44 +1,45 @@
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 #[macro_export]
 macro_rules! metadata {
-    ( $( $key:ident : $value:expr),* $(,)? ) => {
-        $crate::Metadata {
-            $(
-                $key: $crate::metadata!(@transform $key, $value),
-            )*
-            ..Default::default()
-        }
-    };
+    ( $( $key:ident : $value:expr),* $(,)? ) => {{
+        let mut metadata = $crate::Metadata::default();
+
+        $(
+            $key: $crate::metadata!(@transform metadata, $key, $value),
+        )*
+
+        metadata
+    }};
 
      // String parsing
-    (@transform author, $value:literal) => {
-        Some($value.into())
+    (@transform $meta:ident, author, $value:literal) => {
+        $meta = $meta.with_author($value.into())
     };
 
-    (@transform copyright, $value:literal) => {
-        Some($value.into())
+    (@transform $meta:ident, copyright, $value:literal) => {
+        $meta = $meta.with_copyright($value.into())
     };
 
-    (@transform notes, $value:literal) => {
-        Some($value.into())
+    (@transform $meta:ident, notes, $value:literal) => {
+        $meta = $meta.with_notes($value.into())
     };
 
-    (@transform title, $value:literal) => {
-        Some($value.into())
+    (@transform $meta:ident, title, $value:literal) => {
+        $meta = $meta.with_title($value.into())
     };
 
     // Version parsing
-    (@transform version, $value:literal) => {
+    (@transform $meta:ident, version, $value:literal) => {
         match $crate::Version::new($value.as_bytes()) {
-            Ok(v) => Some(v),
+            Ok(v) => $meta = $meta.with_version(v),
             Err(_) => panic!("Invalid version string"),
         }
     };
 
     // Timer parsing
-    (@transform timer, $value:literal) => {
+    (@transform $meta:ident, timer, $value:literal) => {
         match $crate::Timer::from_str($value) {
-            Ok(t) => t,
+            Ok(t) => $meta = $meta.with_timer(t),
             Err(_) => panic!("Invalid timer string"),
         }
     };

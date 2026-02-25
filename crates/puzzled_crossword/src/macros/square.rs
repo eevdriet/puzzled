@@ -29,10 +29,10 @@
 macro_rules! square {
     // Empty squares
     () => {
-        None
+        $crate::Square::new_empty()
     };
     (.) => {
-        None
+        $crate::Square::new_empty()
     };
 
     // Cells
@@ -40,6 +40,6 @@ macro_rules! square {
         let solution = $crate::__solution(stringify!($sol));
 
         let cell = $crate::cell!(solution $($style)*);
-        Some($crate::Square::new(cell))
+        $crate::Square::new(cell)
     }};
 }
