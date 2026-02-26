@@ -1,9 +1,17 @@
 [placeholders]
+puzzle = {prompt = "Puzzle name", type = "string"}
+puzzles = {prompt = "Plural of the puzzle name", type = "string"}
+solution = {prompt = "Solutlion type (e.g. `u8`, `bool`)"}
+
 support_serde = {prompt = "Support serde?", type = "bool", default = true }
 support_puz = {prompt = "Support .puz reading and writing?", type = "bool", default = true }
 support_images = {prompt = "Support image reading and writing?", type = "bool", default = false }
 
 [template]
+include = [
+    "Cargo.toml",
+    "*.rs"
+]
 exclude = [
     "src/io/puz.rs",
     "src/io/image.rs",
@@ -14,4 +22,4 @@ exclude = [
 include = ["src/io/puz.rs"]
 
 [conditional.'support_images == true']
-include = ["src/io/images.rs"]
+include = ["src/io/image.rs"]

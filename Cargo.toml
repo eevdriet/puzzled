@@ -7,6 +7,10 @@ members = [
     "crates/puzzled_nonogram",
     "crates/puzzled_nonogram_tui",
     "crates/puzzled_skyscrapers",
+    "puzzled_Binario",
+    "puzzled_binario",
+    "puzzled_slither",
+    "puzzled_slithre",
 ]
 resolver = "2"
 

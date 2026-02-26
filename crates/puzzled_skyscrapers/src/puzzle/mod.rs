@@ -3,7 +3,7 @@ mod clue;
 
 pub use cell::*;
 pub use clue::*;
-use puzzled_core::Metadata;
+use puzzled_core::{Grid, Metadata, Puzzle};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Skyscrapers {
@@ -39,4 +39,8 @@ impl Skyscrapers {
     pub fn meta(&self) -> &Metadata {
         &self.meta
     }
+}
+
+impl Puzzle for Skyscrapers {
+    type Solution = Grid<u8>;
 }

@@ -2,10 +2,8 @@ mod cells;
 mod direction;
 
 pub use cells::*;
-use derive_more::{Deref, DerefMut};
 pub use direction::*;
 
-use puzzled_core::Entry;
+use puzzled_core::Cell;
 
-#[derive(Debug, Deref, DerefMut, PartialEq, Eq, Clone)]
-pub struct SkyscraperCell(pub(crate) Entry<u8>);
+pub type SkyscraperCell = Cell<u8>;

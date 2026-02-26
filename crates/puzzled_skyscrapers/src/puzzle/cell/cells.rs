@@ -19,10 +19,10 @@ impl Cells {
         let mut count = 0;
 
         for cell in iter {
-            if let Some(height) = cell.entry()
-                && *height > max_height
+            if let Some(height) = cell.solution
+                && height > max_height
             {
-                max_height = *height;
+                max_height = height;
                 count += 1;
             }
         }
