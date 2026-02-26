@@ -11,13 +11,17 @@
 
 mod error;
 mod size;
+mod util;
 
 pub use error::*;
 pub use size::*;
+pub use util::*;
+
+use puzzled_core::Metadata;
 
 use std::io::{self, Write};
 
-use crate::puz::{BinaryPuzzle, ByteStr};
+use crate::puz::{BinaryPuzzle, ByteStr, Grids, Header, Strings, write};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -62,11 +66,23 @@ impl PuzWriter {
         W: PuzWrite,
         P: BinaryPuzzle<S>,
     {
+        // Verify that the puzzle is sized correctly
+        let width = puzzle.width();
+        let height = puzzle.height();
+
+        check_puz_size("Puzzle width", width, u8::MAX as usize)?;
+        check_puz_size("Puzzle height", height, u8::MAX as usize)?;
+
+        let clues = puzzle.clues();
+        check_puz_size("Clue count", clues.len(), u16::MAX as usize)?;
+
         // Construct the individual sections from the puzzle
-        let mut header = puzzle.write_header(state)?;
-        let grids = puzzle.write_grids(state)?;
-        let strings = puzzle.write_strings(state)?;
-        let extras = puzzle.write_extras(state)?;
+        let meta = puzzle.metadata();
+
+        let mut header = self.build_header(puzzle, clues.len() as u16, &meta);
+        let strings = self.build_strings(clues, &meta);
+        let grids = self.build_grids(puzzle, state)?;
+        let extras = puzzle.extras(state)?;
 
         self.write_checksums(&mut header, &grids, &strings);
 
@@ -77,5 +93,55 @@ impl PuzWriter {
         extras.write_with(writer)?;
 
         Ok(())
+    }
+
+    pub fn build_header<P, S>(
+        &self,
+        puzzle: &P,
+        clue_count: u16,
+        metadata: &Option<&Metadata>,
+    ) -> Header
+    where
+        P: BinaryPuzzle<S>,
+    {
+        let mut header = Header {
+            width: puzzle.width() as u8,
+            height: puzzle.height() as u8,
+            clue_count,
+            ..Default::default()
+        };
+
+        if let Some(Some(version)) = metadata.map(|m| m.version()) {
+            header.version = version.as_bytes();
+        }
+
+        header.write_cib();
+        header
+    }
+
+    pub fn build_grids<P, S>(&self, puzzle: &P, state: &S) -> write::Result<Grids>
+    where
+        P: BinaryPuzzle<S>,
+    {
+        let (solution, state) = puzzle.grids(state)?;
+
+        Ok(Grids {
+            solution,
+            state,
+            width: puzzle.width() as u8,
+            height: puzzle.height() as u8,
+        })
+    }
+
+    pub fn build_strings(&self, clues: Vec<ByteStr>, metadata: &Option<&Metadata>) -> Strings {
+        let meta = match metadata {
+            Some(m) => m,
+            None => &Metadata::default(),
+        };
+
+        let mut strings = Strings::from_metadata(meta);
+        strings.clues = clues;
+
+        strings
     }
 }

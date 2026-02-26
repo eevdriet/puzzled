@@ -1,108 +1,73 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{Cell, Grid, Position, Square};
+use puzzled_core::{Cell, Grid, Metadata, Position, Square};
 use puzzled_io::{
     Context,
     puz::{
         BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR,
-        PuzSizeCheck, Span, Strings, check_puz_size,
+        PuzSizeCheck, Span, Strings, WriteStateGrid, check_puz_size,
         read::{self, read_metadata},
-        windows_1252_to_char, write,
+        windows_1252_to_char,
+        write::{self, WriteStyleGrid},
     },
 };
 
 use crate::{Clue, Clues, Crossword, CrosswordState, Direction, Entry, Solution, Squares};
 
-impl PuzSizeCheck for Clues {
+impl PuzSizeCheck for Crossword {
     fn check_puz_size(&self) -> write::Result<()> {
-        let size = self.len();
-        let max_size = u16::MAX as usize;
+        let squares = self.squares();
+        let clues = self.clues();
 
-        check_puz_size("Clues", size, max_size)
+        // Squares grid is of valid size
+        squares.check_puz_size()?;
+
+        // Clue count fits into a u16
+        check_puz_size("Clues", clues.len(), u16::MAX as usize)?;
+
+        Ok(())
     }
 }
 
 impl BinaryPuzzle<CrosswordState> for Crossword {
-    fn write_header(&self, _state: &CrosswordState) -> write::Result<Header> {
-        let mut header = Header::default();
-
-        // Grids
-        let squares = self.squares();
-        squares.check_puz_size()?;
-        header.width = squares.cols() as u8;
-        header.height = squares.rows() as u8;
-
-        // Clues
-        let clues = self.clues();
-        clues.check_puz_size()?;
-        header.clue_count = clues.len() as u16;
-
-        // Metadata
-        let version = self
-            .meta()
-            .version()
-            .map(|v| v.as_bytes())
-            .unwrap_or_default();
-        header.version = version;
-        header.write_cib();
-
-        Ok(header)
+    fn width(&self) -> usize {
+        self.squares().cols()
     }
 
-    fn write_grids(&self, state: &CrosswordState) -> write::Result<Grids> {
-        // Get the squares and check for overflow of their size
+    fn height(&self) -> usize {
+        self.squares().rows()
+    }
+
+    fn clues(&self) -> Vec<ByteStr> {
+        self.clues()
+            .values()
+            .map(|clue| {
+                let bytes = clue.text().as_bytes();
+                ByteStr::new(bytes)
+            })
+            .collect()
+    }
+
+    fn grids(&self, state: &CrosswordState) -> write::Result<(Grid<u8>, Grid<u8>)> {
+        let solution = state
+            .solutions
+            .write_state_grid(|sol| sol.first_letter() as u8);
+        let state = state
+            .entries
+            .write_state_grid(|sol| sol.first_letter() as u8);
+
+        Ok((solution, state))
+    }
+
+    fn metadata(&self) -> Option<&Metadata> {
+        Some(self.meta())
+    }
+
+    fn extras(&self, state: &CrosswordState) -> write::Result<Extras> {
         let squares = self.squares();
         squares.check_puz_size()?;
 
-        let width = squares.rows() as u8;
-        let height = squares.cols() as u8;
-
-        // Write the individual grids from the squares
-        let solution = state.solutions.map_ref(|square| match square.inner() {
-            None => NON_PLAYABLE_CHAR,
-            Some(solution) => solution
-                .as_ref()
-                .map(|solution| solution.first_letter())
-                .unwrap_or(MISSING_ENTRY_CHAR),
-        } as u8);
-
-        let state = state.entries.map_ref(|square| match square.inner() {
-            None => NON_PLAYABLE_CHAR,
-            Some(entry) => match entry.entry() {
-                Some(solution) => solution.first_letter(),
-                _ => MISSING_ENTRY_CHAR,
-            },
-        } as u8);
-
-        // Construct the result and validate
-        let grids = Grids {
-            solution,
-            state,
-            width,
-            height,
-        };
-
-        Ok(grids)
-    }
-
-    fn write_strings(&self, _state: &CrosswordState) -> write::Result<Strings> {
-        let clues = self.clues();
-        clues.check_puz_size()?;
-
-        let mut strings = Strings::from_metadata(self.meta());
-        strings.clues = Vec::with_capacity(clues.len());
-
-        for (idx, clue) in clues.values().enumerate() {
-            let byte_str = ByteStr::new(clue.text().as_bytes());
-            strings.clues[idx] = byte_str;
-        }
-
-        Ok(strings)
-    }
-
-    fn write_extras(&self, state: &CrosswordState) -> write::Result<Extras> {
-        let squares = self.squares();
-        squares.check_puz_size()?;
+        let entries = &state.entries;
 
         let mut extras = Extras::default();
 
@@ -138,31 +103,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
         // TODO: add back timer extras.ltim = Some(state.timer());
 
         // GEXT
-        let entries = &state.entries;
-        entries.check_puz_size()?;
-
-        let gext: Vec<_> = squares
-            .iter()
-            .zip(entries.iter())
-            .map(|(puzzle_square, entry_square)| {
-                let puzzle_style = puzzle_square
-                    .inner()
-                    .as_ref()
-                    .map(|sq| sq.style)
-                    .unwrap_or_default();
-
-                let user_style = entry_square
-                    .inner()
-                    .as_ref()
-                    .map(|sq| sq.style())
-                    .unwrap_or_default();
-
-                puzzle_style | user_style
-            })
-            .collect();
-        let gext = Grid::from_vec(gext, squares.cols())
-            .expect("Constructing GEXT from valid squares and entries");
-
+        let gext = squares.write_combined_style(entries);
         extras.gext = Some(gext);
 
         Ok(extras)

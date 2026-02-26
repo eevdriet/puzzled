@@ -145,11 +145,13 @@
 pub mod read;
 pub mod write;
 
-use puzzled_core::Puzzle;
+use puzzled_core::{Grid, Metadata, Puzzle};
 #[doc(inline)]
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
 #[doc(inline)]
-pub use write::{PuzSizeCheck, PuzWrite, PuzWriter, check_puz_size};
+pub use write::{
+    PuzSizeCheck, PuzWrite, PuzWriter, WriteStateGrid, WriteStyleGrid, check_puz_size,
+};
 
 pub(crate) use read::{PuzState, Warning};
 
@@ -167,7 +169,7 @@ pub use strings::*;
 
 use crate::{Context, format};
 
-pub trait BinaryPuzzle<S>: Puzzle {
+pub trait BinaryPuzzle<S>: Puzzle + PuzSizeCheck {
     // Read the puzzle from *.puz data
     fn read_puz(
         header: Header,
@@ -177,10 +179,19 @@ pub trait BinaryPuzzle<S>: Puzzle {
     ) -> read::Result<(Self, S)>;
 
     // Write the puzzle into the *.puz data parts
-    fn write_header(&self, state: &S) -> write::Result<Header>;
-    fn write_grids(&self, state: &S) -> write::Result<Grids>;
-    fn write_strings(&self, state: &S) -> write::Result<Strings>;
-    fn write_extras(&self, state: &S) -> write::Result<Extras>;
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+
+    fn grids(&self, state: &S) -> write::Result<(Grid<u8>, Grid<u8>)>;
+    fn extras(&self, state: &S) -> write::Result<Extras>;
+
+    fn clues(&self) -> Vec<ByteStr> {
+        Vec::new()
+    }
+
+    fn metadata(&self) -> Option<&Metadata> {
+        None
+    }
 }
 
 impl<T> Context<T, read::Error> for format::Result<T> {

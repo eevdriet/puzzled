@@ -65,16 +65,8 @@ impl<C, V, E, H, HC, HV, HEH, HEV> Builder<C, V, E, H, HC, HV, HEH, HEV> {
 
 impl<C, V, E, HC, HV, HEH, HEV> Builder<C, V, E, Set, HC, HV, HEH, HEV> {
     pub fn build(self) -> Lattice<C, V, E> {
-        let (rows, cols) = self.dims.expect("Rows and columns should have been set");
-
-        Lattice {
-            rows,
-            cols,
-            cells: self.cells,
-            vertices: self.vertices,
-            horizontal_edges: self.h_edges,
-            vertical_edges: self.v_edges,
-        }
+        Lattice::new(self.cells, self.vertices, self.h_edges, self.v_edges)
+            .expect("Builder builds Lattice correctly")
     }
 }
 

@@ -18,7 +18,7 @@ use crossterm::{
     execute,
     terminal::EnterAlternateScreen,
 };
-use puzzled_nonogram::{Nonogram, NonogramSolver, Solver};
+use puzzled_nonogram::{Nonogram, NonogramSolver};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Margin, Position, Rect},

@@ -1,4 +1,4 @@
-use puzzled_nonogram::{Fill, Nonogram, NonogramSolver, Order, Rules, Solver};
+use puzzled_nonogram::{Fill, Nonogram, NonogramSolver, Order, Rules};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{

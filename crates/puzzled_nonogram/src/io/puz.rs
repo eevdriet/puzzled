@@ -1,26 +1,31 @@
-use puzzled_core::{Cell, Color, Entry, Grid};
+use puzzled_core::{Cell, Color, Entry, Grid, Metadata};
 use puzzled_io::{
     Context,
     format::{self, StringError},
     puz::{
         BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, PuzSizeCheck, Strings,
-        check_puz_size,
+        WriteStyleGrid, check_puz_size,
         read::{self, read_metadata},
-        windows_1252_to_char, write,
+        windows_1252_to_char,
+        write::{self, WriteStateGrid},
     },
 };
 
 use crate::{Colors, Fill, Fills, Nonogram, NonogramState};
 
-impl PuzSizeCheck for Fills {
+impl PuzSizeCheck for Nonogram {
     fn check_puz_size(&self) -> write::Result<()> {
-        // Make sure the grid is of valid size
-        self.0.check_puz_size()?;
+        let fills = self.fills();
+        let colors = self.colors();
+        let rules = self.rules();
 
-        // Make sure every color fits in a single byte
+        // Fills grid is of valid size
+        fills.check_puz_size()?;
+
+        // Every fill color fits in a single byte
         let max_size = u8::MAX as usize;
 
-        let color_ids = self.iter_colors().filter_map(|fill| match fill {
+        let color_ids = fills.iter_colors().filter_map(|fill| match fill {
             Fill::Color(id) => Some(id),
             _ => None,
         });
@@ -29,99 +34,50 @@ impl PuzSizeCheck for Fills {
             check_puz_size("Fill color", id as usize, max_size)?;
         }
 
-        Ok(())
-    }
-}
-
-impl PuzSizeCheck for Colors {
-    fn check_puz_size(&self) -> write::Result<()> {
-        let max_color_id = u8::MAX as usize;
-        let color_ids = self.keys().filter_map(|fill| match fill {
-            Fill::Color(id) => Some(id),
-            _ => None,
-        });
-
-        for &color_id in color_ids {
-            check_puz_size("Fill colors", color_id as usize, max_color_id)?;
-        }
+        // Clue count fits into a u16
+        let clue_count = colors.len() + rules.rows.len() + rules.cols.len();
+        check_puz_size("Clue count", clue_count, u16::MAX as usize)?;
 
         Ok(())
     }
 }
 
 impl BinaryPuzzle<NonogramState> for Nonogram {
-    fn write_header(&self, _state: &NonogramState) -> write::Result<Header> {
-        let mut header = Header::default();
-
-        // Grids
-        let fills = self.fills();
-        fills.check_puz_size()?;
-        header.width = fills.cols() as u8;
-        header.height = fills.rows() as u8;
-
-        // Clues
-        let colors = self.colors();
-        colors.check_puz_size()?;
-        header.clue_count = colors.len() as u16;
-
-        // Metadata
-        header.write_cib();
-
-        Ok(header)
+    fn width(&self) -> usize {
+        self.fills().cols()
     }
 
-    fn write_grids(&self, state: &NonogramState) -> write::Result<Grids> {
-        // Get the squares and check for overflow of their size
-        let fills = self.fills();
-        fills.check_puz_size()?;
-
-        let width = fills.rows() as u8;
-        let height = fills.cols() as u8;
-
-        // Write the individual grids from the squares
-        let solution = state.inner.solutions.map_ref(|fill| match fill {
-            None => MISSING_ENTRY_CHAR,
-            Some(fill) => {
-                let fill_char = char::try_from(*fill).expect("Solution fill to be valid");
-                fill_char
-            }
-        } as u8);
-
-        let state = state.inner.entries.map_ref(|entry| match entry.entry() {
-            None => MISSING_ENTRY_CHAR,
-            Some(fill) => {
-                let fill_char = char::try_from(*fill).expect("State fill to be valid");
-                fill_char
-            }
-        } as u8);
-
-        // Construct the result and validate
-        let grids = Grids {
-            solution,
-            state,
-            width,
-            height,
-        };
-
-        Ok(grids)
+    fn height(&self) -> usize {
+        self.fills().rows()
     }
 
-    fn write_strings(&self, _state: &NonogramState) -> write::Result<Strings> {
-        let colors = self.colors();
-        colors.check_puz_size()?;
-
-        let mut strings = Strings::from_metadata(self.meta());
-        strings.clues = Vec::with_capacity(colors.len());
-
-        for (idx, &color) in colors.values().enumerate() {
-            let color_str = ByteStr::new(format!("{color:?}").as_bytes());
-            strings.clues[idx] = color_str;
-        }
-
-        Ok(strings)
+    fn clues(&self) -> Vec<ByteStr> {
+        self.colors()
+            .values()
+            .map(|color| format!("{color:?}"))
+            .chain(std::iter::empty())
+            .map(|str| ByteStr::new(str.as_bytes()))
+            .collect()
     }
 
-    fn write_extras(&self, state: &NonogramState) -> write::Result<Extras> {
+    fn grids(&self, state: &NonogramState) -> write::Result<(Grid<u8>, Grid<u8>)> {
+        let solution = state.inner.solutions.write_state_grid(|fill| {
+            char::try_from(*fill).expect("Solution fill to be valid") as u8
+        });
+
+        let state = state
+            .inner
+            .entries
+            .write_state_grid(|fill| char::try_from(*fill).expect("State fill to be valid") as u8);
+
+        Ok((solution, state))
+    }
+
+    fn metadata(&self) -> Option<&Metadata> {
+        Some(self.meta())
+    }
+
+    fn extras(&self, state: &NonogramState) -> write::Result<Extras> {
         let mut extras = Extras::default();
 
         // LTIM
@@ -129,19 +85,9 @@ impl BinaryPuzzle<NonogramState> for Nonogram {
 
         // GEXT
         let fills = self.fills();
-        fills.check_puz_size()?;
-
         let entries = &state.inner.entries;
-        entries.check_puz_size()?;
 
-        let gext: Vec<_> = fills
-            .iter()
-            .zip(entries.iter())
-            .map(|(cell, entry)| cell.style | entry.style())
-            .collect();
-        let gext = Grid::from_vec(gext, fills.cols())
-            .expect("Constructing GEXT from valid squares and entries");
-
+        let gext = fills.write_combined_style(entries);
         extras.gext = Some(gext);
 
         Ok(extras)

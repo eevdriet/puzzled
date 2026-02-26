@@ -4,7 +4,7 @@ use puzzled_core::Metadata;
 
 use crate::puz::{Context, PuzRead, PuzWrite, build_string, read, write};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ByteStr(Vec<u8>);
 
 impl ByteStr {

@@ -166,7 +166,7 @@ impl Fills {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use puzzled_core::{Cell, Entry, Grid};
+    use puzzled_core::{Cell, Grid};
     use rstest::{fixture, rstest};
     use tracing_test::traced_test;
 

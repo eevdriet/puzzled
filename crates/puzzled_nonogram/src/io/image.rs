@@ -1,5 +1,5 @@
 use image::{DynamicImage, Pixel, Rgba, RgbaImage};
-use puzzled_core::{Cell, Color, Entry, Metadata};
+use puzzled_core::{Cell, Color, Metadata};
 use puzzled_io::{
     ImagePuzzle, ImageReader, format,
     image::{

@@ -74,7 +74,7 @@ impl NonogramState {
         self.masks.clear();
     }
 
-    fn set_mask(&mut self, pos: LinePosition, line_len: usize, prev: Fill, curr: Fill) {
+    fn _set_mask(&mut self, pos: LinePosition, line_len: usize, prev: Fill, curr: Fill) {
         // Retrieve the masks for the given line
         let line = pos.line;
         let pos = pos.pos;
@@ -143,12 +143,12 @@ impl From<&Nonogram> for NonogramState {
     fn from(nonogram: &Nonogram) -> Self {
         let fills = nonogram.fills();
 
-        let solutions = fills.map_ref(|cell| cell.solution.clone());
+        let solutions = fills.map_ref(|cell| cell.solution);
         let entries = fills.map_ref(|cell| {
             let mut entry = Entry::default_with_style(cell.style);
 
             if let Some(ref solution) = cell.solution {
-                entry.enter(solution.clone());
+                entry.enter(solution);
             }
 
             entry
