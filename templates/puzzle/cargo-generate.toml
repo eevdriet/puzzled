@@ -1,0 +1,17 @@
+[placeholders]
+support_serde = {prompt = "Support serde?", type = "bool", default = true }
+support_puz = {prompt = "Support .puz reading and writing?", type = "bool", default = true }
+support_images = {prompt = "Support image reading and writing?", type = "bool", default = false }
+
+[template]
+exclude = [
+    "src/io/puz.rs",
+    "src/io/image.rs",
+    "src/io/text.rs",
+]
+
+[conditional.'support_puz == true']
+include = ["src/io/puz.rs"]
+
+[conditional.'support_images == true']
+include = ["src/io/images.rs"]

@@ -1,0 +1,37 @@
+[package]
+name = "puzzled_{{ project-name }}"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+derive_more = {workspace = true}
+document-features = {workspace = true}
+serde = {workspace = true, optional = true}
+thiserror = {workspace = true}
+puzzled_core = { path = "../puzzled_core"}
+puzzled_io = { path = "../puzzled_io/" }
+
+[dev-dependencies]
+rstest = {workspace = true}
+
+[features]
+default = ["macros", "text"]
+
+#! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
+#!
+## Enables support for creating nonograms and related types inline through declarative macros
+macros = []
+## Enables reading and writing nonograms from plain text
+text = ["puzzled_io/text"]
+{% if support_serde %}
+## Enables serializing and deserializing nonograms using [`serde`](https://docs.rs/serde/latest/serde/)
+serde = ["dep:serde", "puzzled_core/serde"]
+{% endif %}
+## Enables reading and writing nonograms with the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
+puz = ["puzzled_io/puz"]
+## Enables reading and writing nonograms from images using the [`image`](https://docs.rs/serde/latest/image/) crate
+image = ["dep:image", "puzzled_io/image"]
