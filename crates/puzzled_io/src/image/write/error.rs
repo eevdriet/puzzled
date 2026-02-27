@@ -6,6 +6,9 @@ pub enum Error {
     #[error("Write error")]
     Custom(String),
 
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+
     #[error("Image error: {0}")]
     Image(#[from] image::ImageError),
 

@@ -6,7 +6,7 @@ macro_rules! bit {
         Cell::default()
     };
 
-    (_) => {
+    (-) => {
         None
     };
 

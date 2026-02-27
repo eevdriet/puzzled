@@ -53,7 +53,7 @@ pub trait PuzWrite: Write {
     /// # Assumptions
     /// The argument does not already include a terminated `\0` byte
     fn write_byte_str(&mut self, str: &ByteStr) -> io::Result<()> {
-        self.write_all(str.bytes(false))
+        self.write_all(str.bytes(true))
     }
 }
 

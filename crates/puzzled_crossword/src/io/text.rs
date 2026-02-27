@@ -7,7 +7,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{ClueDirection, ClueSpec, Crossword, Solution, Square};
+use crate::{ClueDirection, ClueSpec, Crossword, CrosswordState, Solution, Square};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -15,7 +15,7 @@ enum Error {
     InvalidClueSpec { reason: String },
 }
 
-impl TxtPuzzle for Crossword {
+impl TxtPuzzle<CrosswordState> for Crossword {
     fn read_text(reader: &mut TxtState) -> read::Result<Self> {
         // Read in the squares grid
         let mut read_row = |line: &str| {

@@ -5,9 +5,10 @@ pub use error::*;
 use puzzled_core::Grid;
 pub use size::*;
 
-use std::path::Path;
-
-use crate::image::{ImagePuzzle, write};
+use crate::{
+    image::{ImagePuzzle, write},
+    puzzle_dir,
+};
 use image::{Rgba, RgbaImage};
 
 #[derive(Debug, Default)]
@@ -29,11 +30,13 @@ impl ImageWriter {
         Ok(image)
     }
 
-    pub fn write_to_path<R, P, S>(&self, puzzle: &P, state: &S, path: R) -> write::Result<()>
+    pub fn write_to_file<P, S>(&self, puzzle: &P, state: &S, name: &str) -> write::Result<()>
     where
-        R: AsRef<Path>,
         P: ImagePuzzle<S>,
     {
+        let dir = puzzle_dir::<P>()?;
+        let path = dir.join(name).with_extension("png");
+
         let img = self.write(puzzle, state)?;
         img.save(path)?;
 

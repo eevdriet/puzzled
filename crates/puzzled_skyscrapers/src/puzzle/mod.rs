@@ -42,5 +42,7 @@ impl Skyscrapers {
 }
 
 impl Puzzle for Skyscrapers {
+    const NAME: &'static str = "Skyscrapers";
+
     type Solution = Grid<u8>;
 }

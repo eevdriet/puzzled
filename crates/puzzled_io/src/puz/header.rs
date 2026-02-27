@@ -64,8 +64,10 @@ impl Header {
     pub fn write_cib(&mut self) {
         self.cib_region[0] = self.width;
         self.cib_region[1] = self.height;
-        self.cib_region
-            .copy_from_slice(&self.clue_count.to_le_bytes());
+
+        let count = self.clue_count.to_le_bytes();
+        self.cib_region[2] = count[0];
+        self.cib_region[3] = count[1];
     }
 }
 

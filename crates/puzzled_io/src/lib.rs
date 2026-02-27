@@ -24,7 +24,9 @@ pub use image::{ImagePuzzle, ImageReader, ImageWriter};
 
 // Other
 mod error;
+mod util;
 
 pub use error::*;
+pub use util::*;
 
 pub mod format;

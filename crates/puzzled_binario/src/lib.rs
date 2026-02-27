@@ -8,6 +8,7 @@
 //! use puzzled::binario::binario;
 //!
 //! let puzzle = binario! (
+//!     [ 0 1 -]
 //! );
 //! ```
 //!

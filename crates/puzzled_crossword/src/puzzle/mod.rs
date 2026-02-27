@@ -57,6 +57,8 @@ pub struct Crossword {
 }
 
 impl Puzzle for Crossword {
+    const NAME: &'static str = "Crossword";
+
     type Solution = Grid<Square<Solution>>;
 }
 

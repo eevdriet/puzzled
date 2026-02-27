@@ -13,6 +13,8 @@ pub use style::*;
 use crate::{Solve, Solver};
 
 pub trait Puzzle: Sized {
+    const NAME: &'static str;
+
     type Solution;
 
     fn solve_with<'a, S, T>(&'a self, solver: &mut S) -> Result<Self::Solution, S::Error>

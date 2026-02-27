@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 thiserror = {workspace = true}
 puzzled_core = {path = "../puzzled_core/"}
+directories = {workspace = true}
 image = {workspace = true, optional = true}
 
 [dev-dependencies]

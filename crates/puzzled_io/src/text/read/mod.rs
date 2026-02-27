@@ -20,9 +20,9 @@ impl TxtReader {
         Self { strict }
     }
 
-    pub fn read<P>(&self, input: &str) -> Result<P>
+    pub fn read<P, S>(&self, input: &str) -> Result<P>
     where
-        P: TxtPuzzle,
+        P: TxtPuzzle<S>,
     {
         let mut state = TxtState::new(input, self.strict);
         let puzzle = P::read_text(&mut state)?;
@@ -30,10 +30,10 @@ impl TxtReader {
         Ok(puzzle)
     }
 
-    pub fn read_from_path<R, P>(&self, path: R) -> Result<P>
+    pub fn read_from_path<R, P, S>(&self, path: R) -> Result<P>
     where
         R: AsRef<Path>,
-        P: TxtPuzzle,
+        P: TxtPuzzle<S>,
     {
         let file_str = fs::read_to_string(path)?;
         self.read(&file_str)

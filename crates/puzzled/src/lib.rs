@@ -11,6 +11,11 @@ pub use puzzled_core as core;
 pub use puzzled_io as io;
 
 #[doc(inline)]
+#[cfg(feature = "binario")]
+#[cfg_attr(docsrs, doc(cfg(feature = "binario")))]
+pub use puzzled_binario as binario;
+
+#[doc(inline)]
 #[cfg(feature = "crossword")]
 #[cfg_attr(docsrs, doc(cfg(feature = "crossword")))]
 pub use puzzled_crossword as crossword;

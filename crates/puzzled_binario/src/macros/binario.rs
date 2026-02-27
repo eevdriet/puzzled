@@ -36,10 +36,7 @@ mod tests {
 
     #[test]
     fn binario() {
-        let puzzle = binario!(
-            [0 _ 0]
-            [1 _ 1]
-        );
+        let puzzle = binario!([0 - 0][1 - 1]);
 
         let mut solver = BinarioSolver {};
         let _ = puzzle.solve_with(&mut solver);

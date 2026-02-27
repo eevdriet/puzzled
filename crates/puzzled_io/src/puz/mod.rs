@@ -145,6 +145,8 @@
 pub mod read;
 pub mod write;
 
+use std::fs::File;
+
 use puzzled_core::{Grid, Metadata, Puzzle};
 #[doc(inline)]
 pub use read::{PuzRead, PuzReader, Span, build_string, windows_1252_to_char};
@@ -167,7 +169,7 @@ pub use grids::*;
 pub use header::*;
 pub use strings::*;
 
-use crate::{Context, format};
+use crate::{Context, format, image, puz, puzzle_dir};
 
 pub trait BinaryPuzzle<S>: Puzzle {
     // Read the puzzle from *.puz data
@@ -191,6 +193,37 @@ pub trait BinaryPuzzle<S>: Puzzle {
 
     fn metadata(&self) -> Option<&Metadata> {
         None
+    }
+
+    fn load_puz(name: &str) -> puz::read::Result<(Self, S)> {
+        let reader = PuzReader::new(false);
+
+        let dir = puzzle_dir::<Self>().context("Puzzle directory")?;
+        let path = dir.join(name).with_extension("puz");
+        let mut file = File::open(path).context("Puzzle file")?;
+
+        reader.read(&mut file)
+    }
+
+    fn save_puz(&self, name: &str) -> puz::write::Result<()>
+    where
+        S: for<'a> From<&'a Self>,
+    {
+        let state = S::from(self);
+        self.save_puz_with_state(name, &state)
+    }
+
+    fn save_puz_with_state(&self, name: &str, state: &S) -> puz::write::Result<()>
+    where
+        S: for<'a> From<&'a Self>,
+    {
+        let writer = PuzWriter;
+
+        let dir = puzzle_dir::<Self>().context("Puzzle directory")?;
+        let path = dir.join(name).with_extension("puz");
+        let mut file = File::create(path).context("Puzzle file")?;
+
+        writer.write(&mut file, self, &state)
     }
 }
 

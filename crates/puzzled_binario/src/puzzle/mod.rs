@@ -46,6 +46,8 @@ impl fmt::Display for Binario {
 }
 
 impl Puzzle for Binario {
+    const NAME: &'static str = "Binario";
+
     type Solution = Grid<Bit>;
 }
 
@@ -53,17 +55,24 @@ impl Puzzle for Binario {
 mod tests {
     use puzzled_core::{CellStyle, Position};
 
+    #[cfg(feature = "image")]
+    use puzzled_io::{BinaryPuzzle, ImagePuzzle, TxtPuzzle};
+
     use crate::binario;
 
     #[test]
     fn binario() {
         let mut puzzle = binario!(
-            [ 0 _ 0 ]
-            [ 0 0 0 ]
+            [ 0 - 1 ]
+            [ 0 1 0 ]
+            [ - 1 1 ]
         );
         puzzle[Position::new(0, 0)].style |= CellStyle::INCORRECT | CellStyle::REVEALED;
 
         print!("{puzzle}");
+
+        #[cfg(feature = "image")]
+        puzzle.save_text("yeet").unwrap();
 
         assert_eq!(puzzle.to_string(), "".to_string());
     }

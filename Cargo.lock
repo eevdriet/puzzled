@@ -1787,6 +1787,7 @@ dependencies = [
 name = "puzzled_io"
 version = "0.1.0"
 dependencies = [
+ "directories",
  "image",
  "puzzled",
  "puzzled_core",

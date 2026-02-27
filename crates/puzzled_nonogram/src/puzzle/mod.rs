@@ -28,6 +28,8 @@ pub struct Nonogram {
 }
 
 impl Puzzle for Nonogram {
+    const NAME: &'static str = "Nonogram";
+
     type Solution = Grid<Fill>;
 }
 
