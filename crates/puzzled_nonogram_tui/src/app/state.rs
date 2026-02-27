@@ -25,7 +25,7 @@ impl AppState {
     pub fn new(puzzle: Nonogram, rules: Rules, style: PuzzleStyle, settings: Settings) -> Self {
         let start_fill = Fill::Color(1);
 
-        let solver = NonogramSolver::new();
+        let solver = NonogramSolver {};
 
         Self {
             settings,

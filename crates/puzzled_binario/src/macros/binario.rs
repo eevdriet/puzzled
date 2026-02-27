@@ -8,20 +8,20 @@ macro_rules! binario {
 
         // Metadata
         $( $meta_key:ident : $meta_value:literal )*
-    ) =>{
+    ) => {{
         // Add bits
         let bits = $crate::grid![
             [$( $crate::bit!($x0) ),+]
             $(, [$( $crate::bit!($x) ),+] )*
         ];
-        let bits = $crate::Bits::new(bits);
+        let bits = bits.map(|b| $crate::Cell::new(b));
 
         // Add metadata
         let meta = $crate::metadata!($( $meta_key : $meta_value),*);
 
         // Create puzzle
         $crate::Binario::new(bits, meta)
-    };
+    }};
 
     ($($invalid:tt)*) => {{
         $crate::__error($($invalid)*, "binario!")

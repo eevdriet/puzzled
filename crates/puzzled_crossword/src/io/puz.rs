@@ -12,7 +12,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{Clue, Clues, Crossword, CrosswordState, Direction, Entry, Solution, Squares};
+use crate::{Clue, ClueDirection, Clues, Crossword, CrosswordState, Entry, Solution, Squares};
 
 impl PuzSizeCheck for Crossword {
     fn check_puz_size(&self) -> write::Result<()> {
@@ -192,7 +192,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
     let mut num: u8 = 1;
     let mut clues_iter = strings.clues.iter().enumerate();
 
-    let mut start_at_pos = |num: u8, start: Position, direction: Direction| -> bool {
+    let mut start_at_pos = |num: u8, start: Position, direction: ClueDirection| -> bool {
         // Cannot start clue at current position
         if !squares.can_clue_start_in_dir(start, direction) {
             return false;
@@ -212,8 +212,8 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
     };
 
     for start in squares.positions() {
-        let starts_across = start_at_pos(num, start, Direction::Across);
-        let starts_down = start_at_pos(num, start, Direction::Down);
+        let starts_across = start_at_pos(num, start, ClueDirection::Across);
+        let starts_down = start_at_pos(num, start, ClueDirection::Down);
 
         if starts_across || starts_down {
             num += 1;

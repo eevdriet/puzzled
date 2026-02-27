@@ -12,7 +12,7 @@
 macro_rules! cell {
 // Rebus or Letter with optional entry and optional styles
     // Solution + styles
-    ($sol:tt $($style:tt)+) => {{
+    ($sol:expr, $($style:tt)+) => {{
         let style = $crate::cell_style!($($style)+);
 
         // Create the cell from solution and style
@@ -23,10 +23,6 @@ macro_rules! cell {
     // Solution
     ($sol:expr) => {{
         $crate::Cell::new($sol)
-    }};
-
-    ($($invalid:tt)*) => {{
-        $crate::__error($($invalid)*, "cell!")
     }};
 }
 

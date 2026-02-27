@@ -8,7 +8,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{ClueSpec, Crossword, Direction, Solution, Square, Squares};
+use crate::{ClueDirection, ClueSpec, Crossword, Solution, Square, Squares};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -70,8 +70,8 @@ fn read_clues(reader: &mut TxtState) -> read::Result<Vec<ClueSpec>> {
 
         // Validate the direction of the clue
         let direction = match dir_str.trim() {
-            "A" => Direction::Across,
-            "D" => Direction::Down,
+            "A" => ClueDirection::Across,
+            "D" => ClueDirection::Down,
             _ => {
                 return Err(err("Clue direction should be either A (across) or D (down)").into());
             }

@@ -14,10 +14,11 @@ impl<T> GridState<T> {
 
 #[macro_export]
 macro_rules! impl_solve_for_grid_state {
-    ($puzzle:ty, $ty:ty) => {
-        impl Solve<$puzzle> for GridState<$ty> {
-            type Value = $ty;
+    ($puzzle:ty, $val:ty) => {
+        impl Solve<$puzzle> for GridState<$val> {
+            type Value = $val;
             type Position = $crate::Position;
+            type Error = $crate::GridError;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
                 let Some(solution) = self.solutions.get_mut(*pos) else {
@@ -88,7 +89,7 @@ macro_rules! impl_solve_for_grid_state {
                 }
             }
 
-            fn try_finalize(&self) -> Result<Grid<$ty>, Box<dyn std::error::Error>> {
+            fn try_finalize(&self) -> Result<Grid<$val>, Self::Error> {
                 let values: Vec<_> = self
                     .solutions
                     .iter()
@@ -96,8 +97,7 @@ macro_rules! impl_solve_for_grid_state {
                     .cloned()
                     .collect();
 
-                let grid = Grid::from_vec(values, self.solutions.cols()).map_err(Box::new)?;
-                Ok(grid)
+                Grid::from_vec(values, self.solutions.cols())
             }
         }
     };
@@ -115,6 +115,7 @@ macro_rules! impl_solve_for_square_grid_state {
         impl $crate::Solve<$puzzle> for SquareGridState<$ty> {
             type Value = $ty;
             type Position = $crate::Position;
+            type Error = $crate::GridError;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
                 let Some(solution) = self.solutions.get_fill_mut(*pos) else {
@@ -185,7 +186,7 @@ macro_rules! impl_solve_for_square_grid_state {
                 }
             }
 
-            fn try_finalize(&self) -> Result<Grid<Square<$ty>>, Box<dyn std::error::Error>> {
+            fn try_finalize(&self) -> Result<Grid<Square<$ty>>, Self::Error> {
                 let values: Vec<_> = self
                     .solutions
                     .iter_fills()
@@ -194,8 +195,7 @@ macro_rules! impl_solve_for_square_grid_state {
                     .map(|s| Square::new(s))
                     .collect();
 
-                let a = Grid::from_vec(values, 2).expect("Yeet");
-                Ok(a)
+                Grid::from_vec(values, self.solutions.cols())
             }
         }
     };

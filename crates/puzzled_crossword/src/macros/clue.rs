@@ -83,10 +83,10 @@ macro_rules! clue {
 #[macro_export]
 macro_rules! __dir {
     (A) => {
-        $crate::Direction::Across
+        $crate::ClueDirection::Across
     };
     (D) => {
-        $crate::Direction::Down
+        $crate::ClueDirection::Down
     };
 
     ($dir:ident) => {

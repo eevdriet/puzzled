@@ -10,9 +10,9 @@ impl Cells {
         Self(cells)
     }
 
-    pub fn count_visible(&self, line: Position, dir: Direction) -> usize {
+    pub fn count_visible(&self, pos: Position, dir: Direction) -> usize {
         // Iterate over all remaining positions (including the current) in the direction
-        let segment = line + dir;
+        let segment = pos.as_segment(dir);
         let iter = self.0.iter_segment(&segment);
 
         let mut max_height = 0;

@@ -1,4 +1,4 @@
-use std::ops::Neg;
+use std::ops::{Mul, Neg};
 
 /// Amounts by which to move a [`Position`](crate::Position).
 ///
@@ -32,6 +32,28 @@ impl Neg for Offset {
         Self {
             rows: -self.rows,
             cols: -self.cols,
+        }
+    }
+}
+
+impl Mul<isize> for Offset {
+    type Output = Offset;
+
+    fn mul(self, rhs: isize) -> Self::Output {
+        Self {
+            rows: self.rows * rhs,
+            cols: self.cols * rhs,
+        }
+    }
+}
+
+impl Mul<Offset> for isize {
+    type Output = Offset;
+
+    fn mul(self, rhs: Offset) -> Self::Output {
+        Offset {
+            rows: self * rhs.rows,
+            cols: self * rhs.cols,
         }
     }
 }

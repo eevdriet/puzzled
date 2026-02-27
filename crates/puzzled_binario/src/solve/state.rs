@@ -1,5 +1,9 @@
+use std::collections::VecDeque;
+
 use delegate::delegate;
-use puzzled_core::{Entry, Grid, GridState, Position, Solve, Timer, impl_solve_for_grid_state};
+use puzzled_core::{
+    Entry, Grid, GridError, GridState, Position, Solve, Timer, impl_solve_for_grid_state,
+};
 
 use crate::{Binario, Bit};
 
@@ -7,6 +11,8 @@ use crate::{Binario, Bit};
 pub struct BinarioState {
     pub state: GridState<Bit>,
     pub timer: Timer,
+
+    pub frontier: VecDeque<(Position, Bit)>,
 }
 
 impl_solve_for_grid_state!(Binario, Bit);
@@ -14,8 +20,9 @@ impl_solve_for_grid_state!(Binario, Bit);
 impl BinarioState {
     pub fn new(solutions: Grid<Option<Bit>>, entries: Grid<Entry<Bit>>, timer: Timer) -> Self {
         Self {
-            state: GridState { solutions, entries },
             timer,
+            state: GridState { solutions, entries },
+            frontier: VecDeque::default(),
         }
     }
 
@@ -35,16 +42,14 @@ impl From<&Binario> for BinarioState {
         let entries = bits.map_ref(|cell| Entry::new_with_style(cell.solution, cell.style));
         let timer = Timer::default();
 
-        BinarioState {
-            state: GridState { solutions, entries },
-            timer,
-        }
+        BinarioState::new(solutions, entries, timer)
     }
 }
 
 impl Solve<Binario> for BinarioState {
     type Value = Bit;
     type Position = Position;
+    type Error = GridError;
 
     delegate! {
         to self.state {
@@ -62,7 +67,7 @@ impl Solve<Binario> for BinarioState {
 
             fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
 
-            fn try_finalize(&self) -> Result<Grid<Bit>, Box<dyn std::error::Error>>;
+            fn try_finalize(&self) -> Result<Grid<Bit>, Self::Error>;
         }
     }
 }

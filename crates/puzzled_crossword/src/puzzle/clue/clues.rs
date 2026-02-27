@@ -4,11 +4,11 @@ use derive_more::{Deref, DerefMut};
 
 #[cfg(feature = "serde")]
 use crate::SerdeClue;
-use crate::{Clue, ClueId, Direction};
+use crate::{Clue, ClueDirection, ClueId};
 
 /// Collection type of all [clues](Clue) in a [puzzle](crate::Crossword)
 ///
-/// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`Direction`].
+/// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`ClueDirection`].
 #[derive(Debug, Default, PartialEq, Eq, Clone, Deref, DerefMut)]
 pub struct Clues(BTreeMap<ClueId, Clue>);
 
@@ -20,7 +20,7 @@ impl Clues {
     /// Returns an iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, ClueDirection::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -43,13 +43,13 @@ impl Clues {
     pub fn iter_across(&self) -> impl Iterator<Item = &Clue> {
         self.0
             .values()
-            .filter(|clue| matches!(clue.direction(), Direction::Across))
+            .filter(|clue| matches!(clue.direction(), ClueDirection::Across))
     }
 
     /// Returns a mutable iterator over just the across entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, ClueDirection::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]
@@ -72,13 +72,13 @@ impl Clues {
     pub fn iter_across_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
         self.0
             .values_mut()
-            .filter(|clue| matches!(clue.direction(), Direction::Across))
+            .filter(|clue| matches!(clue.direction(), ClueDirection::Across))
     }
 
     /// Returns an iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, ClueDirection::*};
     ///
     /// let puzzle = crossword! (
     ///     [C A N]
@@ -101,13 +101,13 @@ impl Clues {
     pub fn iter_down(&self) -> impl Iterator<Item = &Clue> {
         self.0
             .values()
-            .filter(|clue| matches!(clue.direction(), Direction::Down))
+            .filter(|clue| matches!(clue.direction(), ClueDirection::Down))
     }
 
     /// Returns a mutable iterator over just the down entries of the puzzle.
     /// The order is defined by the [`Ord`] implementation on [`Clue`].
     /// ```
-    /// use puzzled::crossword::{crossword, clue, Direction::*};
+    /// use puzzled::crossword::{crossword, clue, ClueDirection::*};
     ///
     /// let mut puzzle = crossword! (
     ///     [C A N]
@@ -130,7 +130,7 @@ impl Clues {
     pub fn iter_down_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
         self.0
             .values_mut()
-            .filter(|clue| matches!(clue.direction(), Direction::Down))
+            .filter(|clue| matches!(clue.direction(), ClueDirection::Down))
     }
 }
 
@@ -149,7 +149,7 @@ impl Clues {
             let num: u8 = num_str
                 .parse()
                 .map_err(|_| format!("Expected number, found '{num_str}'"))?;
-            let direction = Direction::from_str(dir_str)?;
+            let direction = ClueDirection::from_str(dir_str)?;
 
             // Then construct the clue and insert it into the clues
             let id: ClueId = (num, direction);

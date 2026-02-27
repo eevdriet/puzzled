@@ -1,8 +1,10 @@
 use std::fmt;
 use std::ops;
 
+use crate::Direction;
 use crate::Line;
 use crate::LinePosition;
+use crate::LineSegment;
 use crate::Offset;
 use crate::Order;
 use crate::clamped_add;
@@ -63,6 +65,15 @@ impl Position {
         match order {
             Order::Rows => LinePosition::new(Line::Row(self.row), self.col),
             Order::Cols => LinePosition::new(Line::Col(self.col), self.row),
+        }
+    }
+
+    pub fn as_segment(&self, direction: Direction) -> LineSegment {
+        match direction {
+            Direction::Up => LineSegment::new(Line::Col(self.row), ..self.row + 1),
+            Direction::Down => LineSegment::new(Line::Col(self.row), self.row..),
+            Direction::Left => LineSegment::new(Line::Row(self.col), ..self.col + 1),
+            Direction::Right => LineSegment::new(Line::Row(self.col), ..self.row),
         }
     }
 }

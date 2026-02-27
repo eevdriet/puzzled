@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, VecDeque};
 use bitvec::{bitvec, vec::BitVec};
 use delegate::delegate;
 use puzzled_core::{
-    Entry, Grid, GridState, Line, LinePosition, Position, Solve, Timer, impl_solve_for_grid_state,
+    Entry, Grid, GridError, GridState, Line, LinePosition, Position, Solve, Timer,
+    impl_solve_for_grid_state,
 };
 
 use crate::{Fill, LineConstraint, LineValidation, Nonogram};
@@ -166,6 +167,7 @@ impl From<&Nonogram> for NonogramState {
 impl Solve<Nonogram> for NonogramState {
     type Value = Fill;
     type Position = Position;
+    type Error = GridError;
 
     delegate! {
         to self.state {
@@ -183,7 +185,7 @@ impl Solve<Nonogram> for NonogramState {
 
             fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
 
-            fn try_finalize(&self) -> Result<Grid<Fill>, Box<dyn std::error::Error>>;
+            fn try_finalize(&self) -> Result<Grid<Fill>, Self::Error>;
         }
     }
 }

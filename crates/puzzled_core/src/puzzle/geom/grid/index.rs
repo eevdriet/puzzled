@@ -1,6 +1,6 @@
 use std::ops;
 
-use crate::{Grid, Position};
+use crate::{Grid, Offset, Position};
 
 impl<T> Grid<T> {
     pub fn get<P>(&self, pos: P) -> Option<&T>
@@ -36,6 +36,30 @@ impl<T> Grid<T> {
         let col = idx % self.cols;
 
         Some(Position::new(row, col))
+    }
+}
+
+impl<T> Grid<T> {
+    pub fn adjacent4(&self, pos: Position) -> [Option<&T>; 4] {
+        [
+            self.get(pos + Offset::UP),
+            self.get(pos + Offset::RIGHT),
+            self.get(pos + Offset::DOWN),
+            self.get(pos + Offset::LEFT),
+        ]
+    }
+
+    pub fn adjacent8(&self, pos: Position) -> [Option<&T>; 8] {
+        [
+            self.get(pos + Offset::UP),
+            self.get(pos + Offset::UP + Offset::RIGHT),
+            self.get(pos + Offset::RIGHT),
+            self.get(pos + Offset::DOWN + Offset::RIGHT),
+            self.get(pos + Offset::DOWN),
+            self.get(pos + Offset::DOWN + Offset::LEFT),
+            self.get(pos + Offset::LEFT),
+            self.get(pos + Offset::LEFT + Offset::UP),
+        ]
     }
 }
 

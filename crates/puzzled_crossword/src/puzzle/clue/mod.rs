@@ -20,7 +20,7 @@ use crate::Crossword;
 pub struct Clue {
     // Specification
     text: String,
-    direction: Direction,
+    direction: ClueDirection,
 
     // Placement
     num: u8,
@@ -35,7 +35,7 @@ impl Clue {
     /// Panics if `len == 0`, i.e. the clue should always occupy at least one [square](crate::Square)
     pub fn new<S: Into<String>>(
         num: u8,
-        direction: Direction,
+        direction: ClueDirection,
         text: S,
         start: Position,
         len: u8,
@@ -54,11 +54,11 @@ impl Clue {
     /// Returns an iterator over every [position](Position) that the clue covers in the [puzzle grid](crate::Squares)
     pub fn positions(&self) -> impl Iterator<Item = Position> + '_ {
         (0..self.len).map(move |offset| match self.direction {
-            Direction::Across => Position {
+            ClueDirection::Across => Position {
                 row: self.start.row,
                 col: self.start.col + offset as usize,
             },
-            Direction::Down => Position {
+            ClueDirection::Down => Position {
                 row: self.start.row + offset as usize,
                 col: self.start.col,
             },
@@ -71,7 +71,7 @@ impl Clue {
     }
 
     /// [Direction] of the clue within the puzzle
-    pub fn direction(&self) -> Direction {
+    pub fn direction(&self) -> ClueDirection {
         self.direction
     }
 
@@ -145,7 +145,7 @@ impl Crossword {
         // Split the clues into across and down
         let (across, down): (Vec<_>, Vec<_>) = clues
             .into_iter()
-            .partition(|clue| clue.direction() == Direction::Across);
+            .partition(|clue| clue.direction() == ClueDirection::Across);
 
         let mut across_iter = across.into_iter();
         let mut down_iter = down.into_iter();
@@ -170,7 +170,7 @@ impl Crossword {
 
             // Try to position the clue directed across
             if let Some(clue) =
-                self.try_clue_position(num, start, Direction::Across, &last, &mut across_iter)
+                self.try_clue_position(num, start, ClueDirection::Across, &last, &mut across_iter)
             {
                 positioned.push(clue);
                 started = true;
@@ -178,7 +178,7 @@ impl Crossword {
 
             // Try to position the clue directed down
             if let Some(clue) =
-                self.try_clue_position(num, start, Direction::Down, &last, &mut down_iter)
+                self.try_clue_position(num, start, ClueDirection::Down, &last, &mut down_iter)
             {
                 positioned.push(clue);
                 started = true;
@@ -201,7 +201,7 @@ impl Crossword {
         &self,
         num: u8,
         start: Position,
-        direction: Direction,
+        direction: ClueDirection,
         last: &Clue,
         iter: &mut impl Iterator<Item = ClueSpec>,
     ) -> Option<Clue> {

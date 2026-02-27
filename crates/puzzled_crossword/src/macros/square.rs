@@ -37,9 +37,9 @@ macro_rules! square {
 
     // Cells
     ($sol:tt $($style:tt)*) => {{
-        let solution = $crate::__solution(stringify!($sol));
+        let solution = Some($crate::__solution(stringify!($sol)));
 
-        let cell = $crate::cell!(solution $($style)*);
+        let cell = $crate::cell!(solution $(, $style)*);
         $crate::Square::new(cell)
     }};
 }

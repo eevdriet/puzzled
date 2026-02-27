@@ -12,6 +12,7 @@ where
 {
     type Value: Clone + Eq;
     type Position;
+    type Error;
 
     fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
     fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
@@ -35,5 +36,5 @@ where
         self.check(pos)
     }
 
-    fn try_finalize(&self) -> Result<P::Solution, Box<dyn std::error::Error>>;
+    fn try_finalize(&self) -> Result<P::Solution, Self::Error>;
 }

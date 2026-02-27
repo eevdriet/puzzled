@@ -3,7 +3,9 @@ use std::{
     ops::Bound,
 };
 
-use crate::{ColIter, ColIterMut, Grid, Line, LineSegment, Order, RowIter, RowIterMut};
+use crate::{
+    ColIter, ColIterMut, Grid, Line, LineSegment, Order, PosIter, Position, RowIter, RowIterMut,
+};
 
 #[doc(hidden)]
 #[derive(Clone)]
@@ -264,5 +266,121 @@ impl<T> Grid<T> {
             }
             _ => LineSegmentIter::Empty,
         }
+    }
+}
+
+enum LinePosIter<'a, T, I, J> {
+    Row(PosIter<'a, T, I>),
+    Col(PosIter<'a, T, J>),
+    Empty,
+}
+
+impl<'a, T, I, J> Iterator for LinePosIter<'a, T, I, J>
+where
+    I: Iterator<Item = (usize, &'a T)>,
+    J: Iterator<Item = (usize, &'a T)>,
+    T: 'a,
+{
+    type Item = (Position, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Row(iter) => iter.next(),
+            Self::Col(iter) => iter.next(),
+            _ => None,
+        }
+    }
+}
+
+impl<T> Grid<T> {
+    /// Creates an indexed iterator over a specified [line](Line) of the grid
+    /// ```
+    /// use puzzled_core::{grid, Position, Line};
+    ///
+    /// let grid = grid![
+    ///    ['A', 'B'],
+    ///    ['C', 'D']
+    /// ];
+    /// let mut iter = grid.iter_indexed_line(Line::Row(0));
+    /// assert_eq!(iter.next(), Some((Position::new(0, 0), &'A')));
+    /// assert_eq!(iter.next(), Some((Position::new(0, 1), &'B')));
+    /// assert_eq!(iter.next(), None);
+    ///
+    /// let mut iter = grid.iter_indexed_line(Line::Col(0));
+    /// assert_eq!(iter.next(), Some((Position::new(0, 0), &'A')));
+    /// assert_eq!(iter.next(), Some((Position::new(1, 0), &'C')));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter_indexed_line(&self, line: Line) -> impl Iterator<Item = (Position, &T)> {
+        match line {
+            Line::Row(row) if row < self.rows => {
+                let iter = self
+                    .data
+                    .iter()
+                    .enumerate()
+                    .skip(row * self.cols)
+                    .take(self.cols);
+
+                LinePosIter::Row(PosIter::new(iter, self.cols, false))
+            }
+            Line::Col(col) if col < self.cols => {
+                let iter = self.data.iter().enumerate().skip(col).step_by(self.cols);
+
+                LinePosIter::Col(PosIter::new(iter, self.cols, false))
+            }
+            _ => LinePosIter::Empty,
+        }
+    }
+
+    /// Creates an indexed iterator over the [lines](Line) of the grid in a specified [order](Order)
+    /// ```
+    /// use puzzled_core::{grid, Order};
+    ///
+    /// let grid = grid![
+    ///    [1, 2, 3],
+    ///    [4, 5, 6],
+    ///    [7, 8, 9]
+    /// ];
+    /// let mut row_sums = grid
+    ///     .iter_indexed_lines(Order::Rows)
+    ///     .map(|row| {
+    ///         row.fold(0, |acc, (pos, val)| {
+    ///             acc + 100 * val + 10 * pos.row + pos.col
+    ///         })
+    ///     });
+    ///
+    /// assert_eq!(row_sums.next(), Some(100 + 200 + 300 + 00 + 01 + 02));
+    /// assert_eq!(row_sums.next(), Some(400 + 500 + 600 + 10 + 11 + 12));
+    /// assert_eq!(row_sums.next(), Some(700 + 800 + 900 + 20 + 21 + 22));
+    /// assert_eq!(row_sums.next(), None);
+    ///
+    /// let mut col_sums = grid
+    ///     .iter_indexed_lines(Order::Cols)
+    ///     .map(|row| {
+    ///         row.fold(0, |acc, (pos, val)| {
+    ///             acc + 100 * val + 10 * pos.row + pos.col
+    ///         })
+    ///     });
+    ///
+    /// assert_eq!(col_sums.next(), Some(100 + 400 + 700 + 00 + 10 + 20));
+    /// assert_eq!(col_sums.next(), Some(200 + 500 + 800 + 01 + 11 + 21));
+    /// assert_eq!(col_sums.next(), Some(300 + 600 + 900 + 02 + 12 + 22));
+    /// assert_eq!(col_sums.next(), None);
+    /// ```
+    pub fn iter_indexed_lines(
+        &self,
+        order: Order,
+    ) -> impl Iterator<Item = impl Iterator<Item = (Position, &T)>> {
+        let range = match order {
+            Order::Rows => 0..self.rows,
+            Order::Cols => 0..self.cols,
+        };
+
+        let lines = range.map(move |line| match order {
+            Order::Rows => Line::Row(line),
+            Order::Cols => Line::Col(line),
+        });
+
+        lines.map(|line| self.iter_indexed_line(line))
     }
 }

@@ -1,3 +1,4 @@
+mod direction;
 mod grid;
 mod lattice;
 mod line;
@@ -5,6 +6,7 @@ mod offset;
 mod order;
 mod position;
 
+pub use direction::*;
 pub use grid::*;
 pub use lattice::*;
 pub use line::*;

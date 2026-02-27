@@ -3,7 +3,7 @@ use std::ops;
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Grid, Offset, Position};
 
-use crate::{Crossword, CrosswordSquare, Direction};
+use crate::{ClueDirection, Crossword, CrosswordSquare};
 
 #[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone)]
 pub struct Squares(pub(crate) Grid<CrosswordSquare>);
@@ -13,7 +13,7 @@ impl Squares {
         Self(squares)
     }
 
-    pub fn can_clue_start_in_dir(&self, pos: Position, dir: Direction) -> bool {
+    pub fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool {
         let is_blank = |pos: Position| self[pos].is_none();
 
         if is_blank(pos) {
@@ -21,15 +21,15 @@ impl Squares {
         }
 
         match dir {
-            Direction::Across => pos.col == 0 || is_blank(pos + Offset::LEFT),
-            Direction::Down => pos.row == 0 || is_blank(pos + Offset::UP),
+            ClueDirection::Across => pos.col == 0 || is_blank(pos + Offset::LEFT),
+            ClueDirection::Down => pos.row == 0 || is_blank(pos + Offset::UP),
         }
     }
 
-    pub fn find_clue_len(&self, pos: Position, dir: Direction) -> u8 {
+    pub fn find_clue_len(&self, pos: Position, dir: ClueDirection) -> u8 {
         let offset = match dir {
-            Direction::Across => Offset::RIGHT,
-            Direction::Down => Offset::DOWN,
+            ClueDirection::Across => Offset::RIGHT,
+            ClueDirection::Down => Offset::DOWN,
         };
 
         (0..)
