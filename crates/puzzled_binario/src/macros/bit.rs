@@ -3,7 +3,7 @@
 #[macro_export]
 macro_rules! bit {
     () => {
-        Cell::default()
+        None
     };
 
     (-) => {

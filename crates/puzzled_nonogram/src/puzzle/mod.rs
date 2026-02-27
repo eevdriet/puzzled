@@ -37,7 +37,13 @@ impl Puzzle for Nonogram {
 
 impl fmt::Display for Nonogram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{}", self.fills())?;
+        writeln!(f, "{}", self.fills)?;
+
+        if !self.colors.is_empty() {
+            writeln!(f, "{}", self.colors)?;
+        }
+
+        writeln!(f, "{}", self.meta)?;
 
         Ok(())
     }
@@ -160,5 +166,41 @@ mod serde_impl {
 
             Ok(nonogram)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use puzzled_core::{CellStyle, Position};
+
+    #[cfg(feature = "text")]
+    use puzzled_io::TxtPuzzle;
+
+    use crate::nonogram;
+
+    #[test]
+    fn nonogram() {
+        let mut puzzle = nonogram!(
+            [ 0 - 1 ]
+            [ 0 a 0 ]
+            [ - 1 b ]
+            - b: "#23AF"
+            - 0: "#FFF"
+            - a: "#0000"
+
+            version: "1.0"
+            author: "Eertze"
+            copyright: " Yeet"
+            title : "My first puzzle"
+        );
+        puzzle[Position::new(0, 0)].style |= CellStyle::INCORRECT | CellStyle::REVEALED;
+
+        print!("{puzzle}");
+        print!("{puzzle:?}");
+
+        #[cfg(feature = "text")]
+        puzzle.save_text("yeet").unwrap();
+
+        panic!("Auto fail")
     }
 }

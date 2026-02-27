@@ -44,7 +44,7 @@ impl NonogramSolver {
         state: &mut NonogramState,
         line: Line,
     ) -> LineValidation {
-        let Some(rule) = puzzle.rules().line(line) else {
+        let Some(rule) = puzzle.rules().get(&line) else {
             tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
             return LineValidation::MissingRule(line);
         };

@@ -33,6 +33,14 @@ impl Line {
 
         self.with_line(line as usize)
     }
+
+    pub fn is_row(&self) -> bool {
+        matches!(self, Line::Row(_))
+    }
+
+    pub fn is_col(&self) -> bool {
+        matches!(self, Line::Col(_))
+    }
 }
 
 impl Ord for Line {

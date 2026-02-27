@@ -42,9 +42,9 @@ impl Fill {
         match ch {
             // Non-colors
             '.' => Ok(Fill::Blank),
-            '0' | 'x' | 'X' => Ok(Fill::Cross),
+            'x' | 'X' => Ok(Fill::Cross),
 
-            id @ ('1'..='9' | 'a'..='z' | 'A'..='Z') => Ok(Fill::Color(id as u32)),
+            id @ ('0'..='9' | 'a'..='z' | 'A'..='Z') => Ok(Fill::Color(id as u32)),
 
             // Unknown
             _ => Err(FillError::InvalidChar(ch)),

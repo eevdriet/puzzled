@@ -3,8 +3,7 @@ use std::str::FromStr;
 use puzzled_core::{Grid, GridError};
 
 use crate::{
-    format,
-    puz::read::{CellEntries, SquareEntries},
+    CellEntries, SquareEntries, format,
     text::read::{self, TxtState},
 };
 

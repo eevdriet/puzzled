@@ -2,6 +2,7 @@
 #[cfg(feature = "text")]
 pub mod text;
 
+use puzzled_core::{Cell, Entry, Grid, Square};
 #[cfg(feature = "text")]
 #[doc(inline)]
 pub use text::{TxtPuzzle, TxtReader};
@@ -30,3 +31,6 @@ pub use error::*;
 pub use util::*;
 
 pub mod format;
+
+pub(crate) type CellEntries<T> = (Grid<Cell<T>>, Grid<Entry<T>>);
+pub(crate) type SquareEntries<T> = (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>);

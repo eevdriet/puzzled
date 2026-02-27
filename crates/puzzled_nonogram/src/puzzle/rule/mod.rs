@@ -8,7 +8,7 @@ use derive_more::Debug;
 
 use crate::{Fill, FillMask, Run, Runs};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Rule {
     runs: Vec<Run>,
 
@@ -116,6 +116,9 @@ impl Rule {
         &self.runs
     }
 }
+
+#[cfg(feature = "serde")]
+pub(crate) type SerdeRule = Vec<Run>;
 
 #[cfg(test)]
 mod tests {

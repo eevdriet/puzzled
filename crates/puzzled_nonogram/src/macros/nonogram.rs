@@ -5,34 +5,43 @@ macro_rules! nonogram {
         // Grid definition
         [$($x0:tt)+] $( [$($x:tt)+])*
 
+        // Rules
+        $($line:ident $num:literal : [$($count:literal $fill:tt),+])*
+
+     // R 1: [1 a, 2 b]
+     // R 2: [2 b, 1 a]
+     // R 3: [1 a]
+
         // Colors
         $(- $color_id:tt : $color:literal )*
 
         // Metadata
         $( $meta_key:ident : $meta_value:expr )*
     ) => {{
-        // Add fills and use them to construct the rules
-        let grid = $crate::grid![
-            [$( $crate::cell!($x0) ),+]
-            $(, [$( $crate::cell!($x) ),+] )*
+        // Create fills grid and count the number of columns
+        let fills = $crate::grid![
+            [$( $crate::fill!($x0) ),+]
+            $(, [$( $crate::fill!($x) ),+] )*
         ];
+        let fills = fills.map(|b| $crate::Cell::new(b));
 
-        let fills = $crate::Fills::new(grid);
-        let rules = $crate::Rules::from_fills(&fills);
+        // Create the rules
 
-        // Add colors
+        // Create the colors colors
+        #[allow(unused_mut)]
         let mut colors = $crate::Colors::default();
         $(
-            let fill = $crate::fill!($color_id);
-            let color = $crate::color!($color);
+            if let Some(fill) = $crate::fill!($color_id) {
+                let color = $crate::color!($color);
 
-            colors.insert(fill, color);
+                colors.insert(fill, color);
+            }
         )*
 
         // Add metadata
-        let meta = $crate::metadata!( $( $meta_key:ident : $meta_value:expr),*);
+        let meta = $crate::metadata!($( $meta_key : $meta_value),*);
 
         // Create puzzle
-        $crate::Nonogram::new_empty(rules, colors, meta).expect("Size should be small enough")
+        $crate::Nonogram::new(fills, colors, meta)
     }};
 }

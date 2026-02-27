@@ -56,8 +56,15 @@ pub struct App {
 impl App {
     pub fn new(puzzle: Nonogram, style: PuzzleStyle, config: Config) -> Self {
         let rules = puzzle.rules().clone();
-        let rules_left = RowRulesWidget::new("Rules [Rows]".to_string(), rules.rows.clone());
-        let rules_top = ColRulesWidget::new("Rules [Cols]".to_string(), rules.cols.clone());
+        let rules_left = RowRulesWidget::new(
+            "Rules [Rows]".to_string(),
+            rules.iter_rows().map(|(_, rule)| rule.clone()).collect(),
+        );
+
+        let rules_top = ColRulesWidget::new(
+            "Rules [Cols]".to_string(),
+            rules.iter_cols().map(|(_, rule)| rule.clone()).collect(),
+        );
 
         let state = AppState::new(puzzle, rules, style, config.settings);
         let events = EventEngine::new(config.actions.clone(), TICK_DURATION);

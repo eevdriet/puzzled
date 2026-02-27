@@ -13,7 +13,7 @@ pub struct LineConstraint {
 impl NonogramState {
     pub fn generate_rule_constraints(&mut self, puzzle: &Nonogram, line: Line) {
         // Find the rule to generate constraints for
-        let Some(rule) = puzzle.rules().line(line) else {
+        let Some(rule) = puzzle.rules().get(&line) else {
             tracing::warn!("No rule exists that matches {line:?} to generate constraints for");
             return;
         };

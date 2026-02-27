@@ -1,5 +1,7 @@
 mod fill;
 mod nonogram;
+mod rule;
+mod run;
 
 // #[cfg(test)]
 // mod tests {

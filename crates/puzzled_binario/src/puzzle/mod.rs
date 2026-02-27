@@ -55,7 +55,7 @@ impl Puzzle for Binario {
 mod tests {
     use puzzled_core::{CellStyle, Position};
 
-    #[cfg(feature = "image")]
+    #[cfg(feature = "text")]
     use puzzled_io::TxtPuzzle;
 
     use crate::binario;
@@ -66,6 +66,11 @@ mod tests {
             [ 0 - 1 ]
             [ 0 1 0 ]
             [ - 1 1 ]
+
+            version: "1.0"
+            author: "Eertze"
+            copyright: " Yeet"
+            title : "My first puzzle"
         );
         puzzle[Position::new(0, 0)].style |= CellStyle::INCORRECT | CellStyle::REVEALED;
 

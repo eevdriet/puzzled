@@ -5,7 +5,7 @@ macro_rules! metadata {
         let mut metadata = $crate::Metadata::default();
 
         $(
-            $key: $crate::metadata!(@transform metadata, $key, $value),
+            $crate::metadata!(@transform metadata, $key, $value);
         )*
 
         metadata

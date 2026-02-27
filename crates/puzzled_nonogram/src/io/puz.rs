@@ -34,7 +34,7 @@ impl PuzSizeCheck for Nonogram {
         }
 
         // Clue count fits into a u16
-        let clue_count = colors.len() + rules.rows.len() + rules.cols.len();
+        let clue_count = colors.len() + rules.len();
         check_puz_size("Clue count", clue_count, u16::MAX as usize)?;
 
         Ok(())

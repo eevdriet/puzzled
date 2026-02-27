@@ -1,83 +1,133 @@
-use derive_more::Debug;
+use std::collections::BTreeMap;
+
+use derive_more::Deref;
 use puzzled_core::{Cell, Grid, Line};
 
-#[cfg(feature = "serde")]
-use crate::Run;
 use crate::{Fill, Rule};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, thiserror::Error)]
+pub enum RulesError {
+    #[error("Rules contain {found} row rules, expected {expected}")]
+    InvalidRowCount { found: usize, expected: usize },
+
+    #[error("Rules contain {found} column rules, expected {expected}")]
+    InvalidColCount { found: usize, expected: usize },
+}
+
+#[derive(Debug, Default, PartialEq, Eq, Deref, Clone)]
 pub struct Rules {
-    pub rows: Vec<Rule>,
-    pub cols: Vec<Rule>,
+    #[deref]
+    rules: BTreeMap<Line, Rule>,
+
+    rows: usize,
+    cols: usize,
 }
 
 impl Rules {
-    pub fn new(rows: Vec<Rule>, cols: Vec<Rule>) -> Self {
-        Self { rows, cols }
+    pub fn new(rules: BTreeMap<Line, Rule>, rows: usize, cols: usize) -> Result<Self, RulesError> {
+        let row_count = rules.keys().filter(|line| line.is_row()).count();
+        if row_count != rows {
+            return Err(RulesError::InvalidRowCount {
+                found: row_count,
+                expected: rows,
+            });
+        }
+
+        let col_count = rules.keys().filter(|line| line.is_col()).count();
+        if col_count != cols {
+            return Err(RulesError::InvalidColCount {
+                found: col_count,
+                expected: cols,
+            });
+        }
+
+        Ok(Rules { rules, rows, cols })
+    }
+
+    pub fn new_with_default_missing(
+        mut rules: BTreeMap<Line, Rule>,
+        rows: usize,
+        cols: usize,
+    ) -> Self {
+        // Add empty rules for missing rows
+        for r in 0..rows {
+            rules.entry(Line::Row(r)).or_default();
+        }
+
+        // Add empty rules for missing columns
+        for c in 0..cols {
+            rules.entry(Line::Col(c)).or_default();
+        }
+
+        Rules { rules, rows, cols }
     }
 
     pub fn from_fills(fills: &Grid<Cell<Fill>>) -> Self {
-        let rows: Vec<_> = fills
-            .iter_rows()
-            .map(|row| {
-                let fills = row.filter_map(|cell| cell.solution.to_owned());
-                Rule::from_fills(fills)
-            })
-            .collect();
+        let mut rules = BTreeMap::new();
 
-        let cols: Vec<_> = fills
-            .iter_cols()
-            .map(|col| {
-                let fills = col.filter_map(|cell| cell.solution.to_owned());
-                Rule::from_fills(fills)
-            })
-            .collect();
+        for (r, row) in fills.iter_rows().enumerate() {
+            let fills = row.filter_map(|cell| cell.solution.to_owned());
+            let line = Line::Row(r);
 
-        Self { rows, cols }
-    }
+            rules.insert(line, Rule::from_fills(fills));
+        }
 
-    pub fn row(&self, r: u16) -> &Rule {
-        &self.rows[r as usize]
-    }
-    pub fn col(&self, c: u16) -> &Rule {
-        &self.cols[c as usize]
-    }
-    pub fn line(&self, line: Line) -> Option<&Rule> {
-        match line {
-            Line::Row(r) if r < self.rows.len() => Some(&self.rows[r]),
-            Line::Col(c) if c < self.cols.len() => Some(&self.cols[c]),
-            _ => None,
+        for (c, col) in fills.iter_cols().enumerate() {
+            let fills = col.filter_map(|cell| cell.solution.to_owned());
+            let line = Line::Col(c);
+
+            rules.insert(line, Rule::from_fills(fills));
+        }
+
+        Self {
+            rules,
+            rows: fills.rows(),
+            cols: fills.cols(),
         }
     }
 
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
+
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
+
+    pub fn iter_rows(&self) -> impl Iterator<Item = (&Line, &Rule)> {
+        self.iter().filter(|(line, _)| line.is_row())
+    }
+
+    pub fn iter_cols(&self) -> impl Iterator<Item = (&Line, &Rule)> {
+        self.iter().filter(|(line, _)| line.is_col())
+    }
+
     #[cfg(feature = "serde")]
-    pub(crate) fn from_serde(rules: SerdeRules, row_count: usize, col_count: usize) -> Self {
-        let rows: Vec<_> = rules
-            .rows
+    pub(crate) fn from_serde(data: SerdeRules, rows: usize, cols: usize) -> Self {
+        let rules = data
             .into_iter()
-            .map(|runs| Rule::new(runs, row_count))
-            .collect();
-        let cols: Vec<_> = rules
-            .cols
-            .into_iter()
-            .map(|runs| Rule::new(runs, col_count))
+            .map(|(line, runs)| {
+                let line_len = match line {
+                    Line::Row(_) => cols,
+                    Line::Col(_) => rows,
+                };
+                let rule = Rule::new(runs, line_len);
+
+                (line, rule)
+            })
             .collect();
 
-        Self { rows, cols }
+        Self { rules, rows, cols }
     }
 
     #[cfg(feature = "serde")]
     pub(crate) fn to_serde(&self) -> SerdeRules {
-        let rows: Vec<_> = self.rows.iter().map(|rule| rule.runs.clone()).collect();
-        let cols: Vec<_> = self.cols.iter().map(|rule| rule.runs.clone()).collect();
-
-        SerdeRules { rows, cols }
+        self.rules
+            .iter()
+            .map(|(line, rule)| (*line, rule.runs.clone()))
+            .collect()
     }
 }
 
 #[cfg(feature = "serde")]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub(crate) struct SerdeRules {
-    rows: Vec<Vec<Run>>,
-    cols: Vec<Vec<Run>>,
-}
+pub(crate) type SerdeRules = BTreeMap<Line, crate::SerdeRule>;

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt};
 
 use derive_more::{Deref, DerefMut};
 use puzzled_core::Color;
@@ -34,6 +34,16 @@ impl Colors {
         let next = Fill::Color(id + 1);
 
         self.0.range(next..).next().map(|(next, _)| *next)
+    }
+}
+
+impl fmt::Display for Colors {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (id, color) in self.iter() {
+            writeln!(f, "{id}: {color}")?;
+        }
+
+        Ok(())
     }
 }
 

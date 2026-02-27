@@ -32,8 +32,14 @@ impl AppState {
             solver,
             puzzle: PuzzleState::new(puzzle, style, start_fill),
             focus: Focus::default(),
-            rules_left: RuleState::new(rules.rows.clone(), Order::Rows),
-            rules_top: RuleState::new(rules.cols.clone(), Order::Cols),
+            rules_left: RuleState::new(
+                rules.iter_rows().map(|(_, rule)| rule.clone()).collect(),
+                Order::Rows,
+            ),
+            rules_top: RuleState::new(
+                rules.iter_cols().map(|(_, rule)| rule.clone()).collect(),
+                Order::Cols,
+            ),
             minimap: MiniMapState::default(),
             footer: FooterState::new(),
         }

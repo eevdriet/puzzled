@@ -2,15 +2,29 @@
 #[macro_export]
 macro_rules! fill {
     () => {
-        $crate::Fill::Blank
+        None
+    };
+    (-) => {
+        None
+    };
+
+    (x) => {
+        Some($crate::Fill::Cross)
+    };
+    (X) => {
+        Some($crate::Fill::Cross)
     };
 
     ($x:tt) => {{
-        const F: $crate::Fill = match $crate::Fill::decode_str(stringify!($x)) {
+        const F: $crate::Fill = match $crate::Fill::decode_str($crate::smart_stringify!($x)) {
             Ok(f) => f,
-            Err(_) => panic!(concat!("Invalid fill definition '", stringify!($x), "'")),
+            Err(_) => panic!(concat!("Invalid fill literal '", stringify!($x), "'"))
         };
 
-        F
+        Some(F)
+    }};
+
+    ($($invalid:tt)*) => {{
+        $crate::macro_error($($invalid)*, "fill!")
     }};
 }

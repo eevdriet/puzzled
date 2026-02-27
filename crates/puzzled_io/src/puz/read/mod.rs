@@ -15,16 +15,12 @@ mod util;
 
 pub use error::*;
 pub use metadata::*;
-use puzzled_core::{Cell, Entry, Grid, Square};
 pub use util::*;
 
 pub(crate) use state::*;
 
 use crate::puz::{BinaryPuzzle, ByteStr, Extras, Grids, Header, Strings};
 use std::{fs::File, io, ops::Range, path::Path};
-
-pub(crate) type CellEntries<T> = (Grid<Cell<T>>, Grid<Entry<T>>);
-pub(crate) type SquareEntries<T> = (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>);
 
 /// Extension trait for [`Read`](io::Read) to make reading [puzzles](crate::Puz) from a [binary format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki) easier
 ///

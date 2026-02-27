@@ -1,10 +1,10 @@
 use puzzled_core::{Cell, Entry, Grid, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, Square};
 
 use crate::{
-    Context,
+    CellEntries, Context, SquareEntries,
     puz::{
         Extras, Grids,
-        read::{self, CellEntries, SquareEntries},
+        read::{self},
         windows_1252_to_char,
     },
 };

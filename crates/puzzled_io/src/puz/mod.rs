@@ -69,22 +69,22 @@
 //! fn find_strings_checksum(strings: &Strings, start: u16) -> u16 {
 //!     let mut checksum = start;
 //!
-//!     if strings.title.len() > 1 {
-//!         checksum = find_region_checksum(&strings.title, checksum);
+//!     if strings.title.str_len() > 0 {
+//!         checksum = find_region_checksum(&strings.title.bytes(true), checksum);
 //!     }
-//!     if strings.author.len() > 1 {
-//!         checksum = find_region_checksum(&strings.author, checksum);
+//!     if strings.author.str_len() > 0 {
+//!         checksum = find_region_checksum(&strings.author.bytes(true), checksum);
 //!     }
-//!     if strings.copyright.len() > 1 {
-//!         checksum = find_region_checksum(&strings.copyright, checksum);
+//!     if strings.copyright.str_len() > 0 {
+//!         checksum = find_region_checksum(&strings.copyright.bytes(true), checksum);
 //!     }
 //!
 //!     for clue in &strings.clues {
-//!         checksum = find_region_checksum(&clue[..clue.len() - 1], checksum);
+//!         checksum = find_region_checksum(clue.bytes(false), checksum);
 //!     }
 //!     
-//!     if strings.notes.len() > 1 {
-//!         checksum = find_region_checksum(&strings.notes, checksum);
+//!     if strings.notes.str_len() > 0 {
+//!         checksum = find_region_checksum(strings.notes.bytes(true), checksum);
 //!     }
 //!
 //!     checksum
