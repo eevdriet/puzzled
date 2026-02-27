@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use bitflags::bitflags;
 
@@ -79,6 +79,27 @@ impl fmt::Display for CellStyle {
         }
 
         Ok(())
+    }
+}
+
+impl FromStr for CellStyle {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut style = CellStyle::default();
+
+        for char in s.chars() {
+            match char {
+                '@' => style |= CellStyle::CIRCLED,
+                '*' => style |= CellStyle::REVEALED,
+                '!' => style |= CellStyle::INCORRECT,
+                '~' => style |= CellStyle::PREVIOUSLY_INCORRECT,
+                ch if ch.is_whitespace() => {}
+                _ => return Err(()),
+            }
+        }
+
+        Ok(style)
     }
 }
 

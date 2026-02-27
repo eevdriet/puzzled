@@ -1,5 +1,3 @@
-use std::{iter::Peekable, str::Lines};
-
 use crate::{format, text::read};
 
 #[derive(Debug)]
@@ -7,10 +5,12 @@ pub struct TxtState<'a> {
     pub(crate) strict: bool,
     pub(crate) warnings: Vec<read::Error>,
 
-    pub(crate) lines: Peekable<Lines<'a>>,
-    pub(crate) pos: usize,
-    pub(crate) len: Option<usize>,
+    pub(crate) remainder: &'a str,
     pub(crate) peeked: Option<&'a str>,
+
+    pub(crate) pos: usize,
+    pub(crate) line: usize,
+    pub(crate) col: usize,
 }
 
 impl<'a> TxtState<'a> {
@@ -18,52 +18,123 @@ impl<'a> TxtState<'a> {
         Self {
             strict,
             warnings: Vec::new(),
-            lines: input.lines().peekable(),
-            pos: 0,
-            len: None,
+            remainder: input,
             peeked: None,
+
+            pos: 0,
+            line: 0,
+            col: 0,
+        }
+    }
+
+    pub fn is_eof(&self) -> bool {
+        self.remainder.is_empty()
+    }
+
+    pub(crate) fn advance(&mut self, len: usize) {
+        self.remainder = &self.remainder[len..];
+        self.pos += len;
+    }
+
+    pub fn peek_char(&mut self) -> Option<char> {
+        self.remainder.chars().next()
+    }
+
+    pub fn next_char(&mut self) -> Option<char> {
+        let ch = self.peek_char()?;
+        let len = ch.len_utf8();
+
+        self.advance(len);
+
+        match ch {
+            '\n' => {
+                self.line += 1;
+                self.col = 1;
+            }
+            _ => {
+                self.col += 1;
+            }
+        }
+
+        Some(ch)
+    }
+
+    pub fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.peek_char() {
+            if !ch.is_whitespace() {
+                break;
+            }
+
+            self.next_char();
         }
     }
 
     pub fn peek_line(&mut self) -> Option<&'a str> {
-        if self.peeked.is_none() {
-            self.peeked = self.read_next_nonempty();
+        if self.peeked.is_some() {
+            return self.peeked;
         }
+
+        let newline = self.remainder.find('\n')?;
+        let line = &self.remainder[..newline].trim();
+
+        if line.is_empty() {
+            self.advance(newline);
+
+            return self.peek_line();
+        }
+
+        self.peeked = Some(line);
         self.peeked
     }
 
     pub fn next_line(&mut self) -> Option<&'a str> {
-        let line = self.peeked.take().or_else(|| self.read_next_nonempty())?;
+        let line = match self.peeked.take() {
+            Some(line) => {
+                self.line += 1;
+                self.col = 1;
 
-        // update position tracking if needed
-        if let Some(len) = self.len {
-            self.pos += len;
+                line
+            }
+            None => match self.remainder.find('\n') {
+                Some(newline) => {
+                    let line = &self.remainder[..newline];
+                    self.line += 1;
+                    self.col = 1;
+
+                    line
+                }
+                None => {
+                    let line = self.remainder;
+                    self.remainder = "";
+                    self.col += line.len();
+
+                    line
+                }
+            },
+        };
+
+        self.advance(line.len());
+
+        let line = line.trim();
+        if line.is_empty() {
+            return self.next_line();
         }
-
-        self.len = Some(line.len());
 
         Some(line)
     }
 
     pub fn next_prefixed(&mut self, prefix: &str) -> Option<&'a str> {
-        let line = self.peek_line()?;
-        if !line.starts_with(prefix) {
-            return None;
-        }
+        self.peek_line()?.strip_prefix(prefix)?;
 
-        let line = self.next_line().expect("Already peeked line");
-        line.strip_prefix(prefix)
+        self.next_line()?.strip_prefix(prefix)
     }
 
-    fn read_next_nonempty(&mut self) -> Option<&'a str> {
-        for raw in self.lines.by_ref() {
-            let trimmed = raw.trim();
+    pub fn next_delimited(&mut self, prefix: &str, suffix: &str) -> Option<&'a str> {
+        self.peek_line()?
+            .strip_prefix(prefix)?
+            .strip_suffix(suffix)?;
 
-            if !trimmed.is_empty() {
-                return Some(trimmed);
-            }
-        }
-        None
+        self.next_line()?.strip_prefix(prefix)?.strip_suffix(suffix)
     }
 
     pub fn read_string(&self, text: &str) -> read::Result<String> {

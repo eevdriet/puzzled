@@ -2,14 +2,18 @@ use puzzled_core::{Cell, Entry, Grid, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, Squ
 
 use crate::{
     Context,
-    puz::{Extras, Grids, read, windows_1252_to_char},
+    puz::{
+        Extras, Grids,
+        read::{self, CellEntries, SquareEntries},
+        windows_1252_to_char,
+    },
 };
 
 pub fn read_cell_entries<T, F>(
     grids: &Grids,
     extras: &Extras,
     mut cell_fn: F,
-) -> read::Result<(Grid<Cell<T>>, Grid<Entry<T>>)>
+) -> read::Result<CellEntries<T>>
 where
     F: FnMut(char) -> read::Result<T>,
 {
@@ -45,7 +49,7 @@ pub fn read_square_entries<T, F>(
     grids: &Grids,
     extras: &Extras,
     mut cell_fn: F,
-) -> read::Result<(Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>)>
+) -> read::Result<SquareEntries<T>>
 where
     F: FnMut(char) -> read::Result<T>,
 {

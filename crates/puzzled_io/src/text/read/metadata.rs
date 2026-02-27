@@ -1,11 +1,17 @@
-use puzzled_core::{Metadata, Version};
+use std::str::FromStr;
+
+use puzzled_core::{Metadata, Timer, Version};
 
 use crate::format;
 use crate::text::read::{self, TxtState};
 
 impl<'a> TxtState<'a> {
-    pub fn read_metadata(&mut self, separator: Option<&str>) -> read::Result<Metadata> {
+    pub fn read_metadata(
+        &mut self,
+        separator: Option<&str>,
+    ) -> read::Result<(Metadata, Option<Timer>)> {
         let mut metadata = Metadata::default();
+        let mut timer = None;
 
         while let Some(line) = self.next_line() {
             let line = line.trim();
@@ -53,6 +59,12 @@ impl<'a> TxtState<'a> {
                         return Err(format::Error::Version(reason).into());
                     }
                 },
+                "timer" => match Timer::from_str(&text) {
+                    Ok(t) => {
+                        timer = Some(t);
+                    }
+                    Err(err) => return Err(format::Error::Timer(err).into()),
+                },
                 _ => {
                     return Err(read::Error::InvalidMetaProperty {
                         found: prop.to_string(),
@@ -62,6 +74,6 @@ impl<'a> TxtState<'a> {
             }
         }
 
-        Ok(metadata)
+        Ok((metadata, timer))
     }
 }

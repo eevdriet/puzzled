@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 /// Solution to a [square](crate::Square) that can be used to verify its correctness
 ///
@@ -75,6 +75,14 @@ impl From<String> for Solution {
             }
             _ => Solution::Rebus(value),
         }
+    }
+}
+
+impl FromStr for Solution {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::from(s))
     }
 }
 

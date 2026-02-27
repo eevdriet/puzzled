@@ -2,7 +2,10 @@ mod mask;
 
 pub use mask::*;
 
-use std::fmt::Debug;
+use std::{
+    fmt::{self, Debug},
+    str::FromStr,
+};
 
 use crate::ColorId;
 
@@ -135,6 +138,20 @@ impl Fill {
     }
 }
 
+impl fmt::Display for Fill {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Fill::Blank => '.',
+                Fill::Cross => 'x',
+                Fill::Color(id) => char::from_u32(*id).ok_or(fmt::Error)?,
+            }
+        )
+    }
+}
+
 impl TryFrom<char> for Fill {
     type Error = FillError;
 
@@ -162,10 +179,10 @@ impl TryFrom<Fill> for char {
     }
 }
 
-impl TryFrom<&str> for Fill {
-    type Error = FillError;
+impl FromStr for Fill {
+    type Err = FillError;
 
-    fn try_from(fill_str: &str) -> Result<Self, Self::Error> {
+    fn from_str(fill_str: &str) -> Result<Self, Self::Err> {
         Self::decode_str(fill_str)
     }
 }

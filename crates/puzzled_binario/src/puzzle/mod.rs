@@ -56,7 +56,7 @@ mod tests {
     use puzzled_core::{CellStyle, Position};
 
     #[cfg(feature = "image")]
-    use puzzled_io::{BinaryPuzzle, ImagePuzzle, TxtPuzzle};
+    use puzzled_io::TxtPuzzle;
 
     use crate::binario;
 

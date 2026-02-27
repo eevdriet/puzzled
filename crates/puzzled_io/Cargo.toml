@@ -11,6 +11,7 @@ image = {workspace = true, optional = true}
 
 [dev-dependencies]
 puzzled = {path = "../puzzled", features = ["puz", "crossword"]}
+rstest = {workspace = true}
 
 [features]
 default = ["text"]

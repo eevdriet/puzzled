@@ -1,10 +1,24 @@
-use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Grid, Solve, Square, SquareGridState, impl_solve_for_square_grid_state};
+use puzzled_core::{
+    Entry, Grid, Solve, Square, SquareGridState, Timer, impl_solve_for_square_grid_state,
+};
 
 use crate::{ClueId, Crossword, Solution};
 
-#[derive(Debug, Deref, DerefMut)]
-pub struct CrosswordState(pub(crate) SquareGridState<Solution>);
+#[derive(Debug)]
+pub struct CrosswordState {
+    pub state: SquareGridState<Solution>,
+    pub timer: Timer,
+}
+
+impl CrosswordState {
+    pub fn solutions(&self) -> &Grid<Square<Option<Solution>>> {
+        &self.state.solutions
+    }
+
+    pub fn entries(&self) -> &Grid<Square<Entry<Solution>>> {
+        &self.state.entries
+    }
+}
 
 impl_solve_for_square_grid_state!(Crossword, Solution);
 
@@ -13,9 +27,12 @@ impl CrosswordState {
     pub fn new(
         solutions: Grid<Square<Option<Solution>>>,
         entries: Grid<Square<Entry<Solution>>>,
+        timer: Timer,
     ) -> Self {
-        let state = SquareGridState { solutions, entries };
-        Self(state)
+        Self {
+            state: SquareGridState { solutions, entries },
+            timer,
+        }
     }
 
     /// Try to reveal a [clue](crate::Clue) from a given [identifier](ClueId).
@@ -29,7 +46,7 @@ impl CrosswordState {
         };
 
         // Try reveal all squares that the is positioned in
-        clue.positions().all(|pos| self.reveal(&pos))
+        clue.positions().all(|pos| self.state.reveal(&pos))
     }
 }
 
@@ -52,6 +69,8 @@ impl From<&Crossword> for CrosswordState {
             })
         });
 
-        CrosswordState::new(solutions, entries)
+        let timer = Timer::default();
+
+        CrosswordState::new(solutions, entries, timer)
     }
 }

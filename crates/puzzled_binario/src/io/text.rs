@@ -3,7 +3,7 @@ use puzzled_io::{TxtPuzzle, text::read};
 use crate::{Binario, BinarioState};
 
 impl TxtPuzzle<BinarioState> for Binario {
-    fn read_text(_reader: &mut read::TxtState) -> read::Result<Self> {
+    fn read_text(_reader: &mut read::TxtState) -> read::Result<(Binario, BinarioState)> {
         Err(read::Error::Io(std::io::Error::other("err")))
     }
 }

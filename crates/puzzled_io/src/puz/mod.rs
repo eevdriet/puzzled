@@ -169,7 +169,7 @@ pub use grids::*;
 pub use header::*;
 pub use strings::*;
 
-use crate::{Context, format, image, puz, puzzle_dir};
+use crate::{Context, format, puz, puzzle_dir};
 
 pub trait BinaryPuzzle<S>: Puzzle {
     // Read the puzzle from *.puz data
@@ -223,7 +223,7 @@ pub trait BinaryPuzzle<S>: Puzzle {
         let path = dir.join(name).with_extension("puz");
         let mut file = File::create(path).context("Puzzle file")?;
 
-        writer.write(&mut file, self, &state)
+        writer.write(&mut file, self, state)
     }
 }
 

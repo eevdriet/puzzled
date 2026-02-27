@@ -73,7 +73,7 @@ impl<E> Entry<E> {
         }
     }
 
-    pub fn new<T>(entry: Option<E>) -> Self {
+    pub fn new(entry: Option<E>) -> Self {
         Self {
             entry,
             ..Default::default()

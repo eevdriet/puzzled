@@ -1,8 +1,6 @@
 pub mod read;
 pub mod write;
 
-use std::{io, path::PathBuf};
-
 use puzzled_core::Puzzle;
 pub use read::ImageReader;
 pub use write::{ImageWriter, check_image_size};
@@ -43,6 +41,6 @@ pub trait ImagePuzzle<S>: Puzzle {
         S: for<'a> From<&'a Self>,
     {
         let writer = crate::ImageWriter;
-        writer.write_to_file(self, &state, name)
+        writer.write_to_file(self, state, name)
     }
 }

@@ -1,4 +1,6 @@
-use puzzled_core::{Cell, Color};
+use std::str::FromStr;
+
+use puzzled_core::Color;
 use puzzled_io::{
     format,
     text::{
@@ -7,7 +9,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{Colors, Fill, Nonogram};
+use crate::{Colors, Fill, Nonogram, NonogramState};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -15,29 +17,22 @@ enum Error {
     InvalidColorSpec,
 }
 
-impl TxtPuzzle for Nonogram {
-    fn read_text(reader: &mut TxtState) -> read::Result<Self> {
-        // Read in the fills and corresponding rules
-        let mut read_fill = |line: &str| {
-            line.split_whitespace()
-                .map(|token| {
-                    let fill = match token {
-                        "." => Fill::Blank,
-                        _ => Fill::Cross,
-                    };
-
-                    Cell::new(Some(fill))
-                })
-                .collect()
-        };
-
-        let fills = reader.read_grid(&mut read_fill)?;
+impl TxtPuzzle<NonogramState> for Nonogram {
+    fn read_text(reader: &mut TxtState) -> read::Result<(Nonogram, NonogramState)> {
+        let (fills, entries) = reader.read_cells_and_entries()?;
 
         // Read the colors and metadata
         let colors = read_colors(reader)?;
-        let metadata = reader.read_metadata(None)?;
+        let (metadata, timer) = reader.read_metadata(None)?;
 
-        Ok(Nonogram::new(fills, colors, metadata))
+        // Create the puzzle and state
+        let solutions = fills.map_ref(|cell| cell.solution);
+        let timer = timer.unwrap_or_default();
+        let state = NonogramState::new(solutions, entries, timer);
+
+        let nonogram = Nonogram::new(fills, colors, metadata);
+
+        Ok((nonogram, state))
     }
 }
 
@@ -56,7 +51,7 @@ fn read_colors(reader: &mut TxtState) -> read::Result<Colors> {
             .split_once(':')
             .ok_or(wrap_err(Error::InvalidColorSpec))?;
 
-        let fill = Fill::try_from(fill_str).map_err(wrap_err)?;
+        let fill = Fill::from_str(fill_str).map_err(wrap_err)?;
 
         let color = Color::hex(color_str).map_err(format::Error::Color)?;
         colors.insert(fill, color);

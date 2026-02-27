@@ -9,7 +9,7 @@ pub use read::{TxtReader, TxtState};
 use crate::puzzle_dir;
 
 pub trait TxtPuzzle<S>: Puzzle + Display {
-    fn read_text(reader: &mut read::TxtState) -> read::Result<Self>;
+    fn read_text(reader: &mut read::TxtState) -> read::Result<(Self, S)>;
 
     fn save_text(&self, name: &str) -> io::Result<()>
     where

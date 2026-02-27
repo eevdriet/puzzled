@@ -5,6 +5,8 @@ mod find;
 mod rule;
 mod run;
 
+use std::fmt;
+
 use derive_more::{Index, IndexMut};
 use puzzled_core::{Cell, Grid, Metadata, Puzzle};
 
@@ -31,6 +33,14 @@ impl Puzzle for Nonogram {
     const NAME: &'static str = "Nonogram";
 
     type Solution = Grid<Fill>;
+}
+
+impl fmt::Display for Nonogram {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}", self.fills())?;
+
+        Ok(())
+    }
 }
 
 impl Nonogram {

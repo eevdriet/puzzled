@@ -1,4 +1,3 @@
-use puzzled_core::{Cell, NON_PLAYABLE_CHAR};
 use puzzled_io::{
     format,
     text::{
@@ -7,7 +6,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{ClueDirection, ClueSpec, Crossword, CrosswordState, Solution, Square};
+use crate::{ClueDirection, ClueSpec, Crossword, CrosswordState};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -16,37 +15,24 @@ enum Error {
 }
 
 impl TxtPuzzle<CrosswordState> for Crossword {
-    fn read_text(reader: &mut TxtState) -> read::Result<Self> {
-        // Read in the squares grid
-        let mut read_row = |line: &str| {
-            line.split_whitespace()
-                .map(|token| {
-                    if token.len() == 1
-                        && token.chars().next().expect("Verified non-zero length")
-                            == NON_PLAYABLE_CHAR
-                    {
-                        Square::new_empty()
-                    } else {
-                        let solution = Solution::from(token);
-                        let cell = Cell::new(Some(solution));
-
-                        Square::new(cell)
-                    }
-                })
-                .collect()
-        };
-
-        let squares = reader.read_grid(&mut read_row)?;
+    fn read_text(reader: &mut TxtState) -> read::Result<(Self, CrosswordState)> {
+        let (squares, entries) = reader.read_squares_and_entries()?;
 
         // Read the clues and metadata
         let clues = read_clues(reader)?;
-        let metadata = reader.read_metadata(None)?;
+        let (metadata, timer) = reader.read_metadata(None)?;
+
+        // Create the state
+        let solutions = squares.map_ref(|square| square.map_ref(|sq| Some(sq.solution.clone())));
+
+        let timer = timer.unwrap_or_default();
+        let state = CrosswordState::new(solutions, entries, timer);
 
         // Create the puzzle
         let mut puzzle = Crossword::from_squares(squares, metadata);
         puzzle.insert_clues(clues);
 
-        Ok(puzzle)
+        Ok((puzzle, state))
     }
 }
 

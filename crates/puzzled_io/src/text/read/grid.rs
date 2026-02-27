@@ -1,42 +1,52 @@
+use std::str::FromStr;
+
 use puzzled_core::{Grid, GridError};
 
 use crate::{
     format,
+    puz::read::{CellEntries, SquareEntries},
     text::read::{self, TxtState},
 };
 
 impl<'a> TxtState<'a> {
-    pub fn read_grid<T, F>(&mut self, row_fn: &mut F) -> read::Result<Grid<T>>
+    pub fn read_cells_and_entries<T>(&mut self) -> read::Result<CellEntries<T>>
     where
-        F: FnMut(&'a str) -> Vec<T>,
+        T: FromStr,
     {
-        let mut grid = Vec::new();
+        self.read_grids2_with(|row| row.parse_cell_entry::<T>())
+    }
 
+    pub fn read_squares_and_entries<T>(&mut self) -> read::Result<SquareEntries<T>>
+    where
+        T: FromStr,
+    {
+        self.read_grids2_with(|row| row.parse_square_entry::<T>())
+    }
+
+    fn read_grids2_with<A, B, F>(&mut self, mut parse_entry: F) -> read::Result<(Grid<A>, Grid<B>)>
+    where
+        F: FnMut(&mut TxtState<'_>) -> Option<(A, B)>,
+    {
         let err = |err: GridError| format::Error::Grid(err);
+
+        let mut cells = Vec::new();
+        let mut entries = Vec::new();
 
         let mut cols = None;
         let mut rows = 0;
 
-        while let Some(line) = self.peek_line() {
-            let line = line.trim();
-
-            // Skip empty lines and stop parsing grid at separator
-            if line.is_empty() {
-                self.next_line();
-                continue;
-            }
-
-            if !line.starts_with("[") {
-                break;
-            }
-
-            let line = self.next_line().expect("Already peeked").trim();
+        while let Some(line) = self.next_delimited("[", "]") {
             rows += 1;
 
-            // Parse the next row and verify its width
-            let row = read_grid_row(rows, line, row_fn)?;
-            let row_width = row.len() as u8;
-            grid.extend(row);
+            let mut row_width = 0;
+            let mut row_parser = TxtState::new(line, self.strict);
+
+            while let Some((cell, entry)) = parse_entry(&mut row_parser) {
+                row_width += 1;
+
+                cells.push(cell);
+                entries.push(entry);
+            }
 
             if let Some(width) = cols
                 && width != row_width
@@ -52,28 +62,14 @@ impl<'a> TxtState<'a> {
             }
         }
 
-        let cols = cols.ok_or(err(GridError::InvalidDimensions { rows, cols: 0 }))?;
-        let grid = Grid::from_vec(grid, cols as usize).map_err(err)?;
+        let cols = cols.ok_or(format::Error::Grid(GridError::InvalidDimensions {
+            rows,
+            cols: 0,
+        }))?;
 
-        Ok(grid)
+        let cells = Grid::from_vec(cells, cols as usize).expect("Read cell grid correctly");
+        let entries = Grid::from_vec(entries, cols as usize).expect("Read entries grid correctly");
+
+        Ok((cells, entries))
     }
-}
-
-fn read_grid_row<'a, T, F>(row: u8, line: &'a str, row_fn: &mut F) -> format::Result<Vec<T>>
-where
-    F: FnMut(&'a str) -> Vec<T>,
-{
-    if !line.starts_with('[') || !line.ends_with(']') {
-        let err = GridError::InvalidRow {
-            row,
-            reason: "Should be delimited by [...]".to_string(),
-        };
-
-        return Err(format::Error::Grid(err));
-    }
-
-    let line = &line[1..line.len() - 1];
-
-    let cells = row_fn(line);
-    Ok(cells)
 }
