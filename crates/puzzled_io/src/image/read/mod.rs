@@ -33,12 +33,20 @@ impl ImageReader {
 
     pub fn read_grid<T, F>(&self, image: &DynamicImage, pixel_fn: &mut F) -> read::Result<Grid<T>>
     where
-        F: FnMut(Rgba<u8>) -> T,
+        F: FnMut(Rgba<u8>) -> read::Result<T>,
     {
-        let data: Vec<_> = image.pixels().map(|(_, _, rgba)| pixel_fn(rgba)).collect();
+        let width = image.width() as usize;
+        let height = image.height() as usize;
+        let size = width.checked_mul(height).unwrap();
 
-        let cols = image.width() as usize;
-        let grid = Grid::from_vec(data, cols).expect("Image represents valid grid");
+        let mut values = Vec::with_capacity(size);
+
+        for (_, _, pixel) in image.pixels() {
+            let value = pixel_fn(pixel)?;
+            values.push(value);
+        }
+
+        let grid = Grid::from_vec(values, width).expect("Image represents valid grid");
 
         Ok(grid)
     }

@@ -7,7 +7,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{Colors, Fill, Fills, Nonogram};
+use crate::{Colors, Fill, Nonogram};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -26,13 +26,12 @@ impl TxtPuzzle for Nonogram {
                         _ => Fill::Cross,
                     };
 
-                    Cell::new(fill)
+                    Cell::new(Some(fill))
                 })
                 .collect()
         };
 
         let fills = reader.read_grid(&mut read_fill)?;
-        let fills = Fills::new(fills);
 
         // Read the colors and metadata
         let colors = read_colors(reader)?;

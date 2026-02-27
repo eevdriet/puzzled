@@ -148,7 +148,7 @@ fn read_state(grids: &Grids, extras: &Extras) -> read::Result<(Squares, Crosswor
                                 None => Solution::Letter(letter),
                             };
 
-                            Cell::new_with_style(solution, style)
+                            Cell::new_with_style(Some(solution), style)
                         }
                     };
 

@@ -11,9 +11,12 @@
 mod error;
 mod metadata;
 mod state;
+mod util;
 
 pub use error::*;
 pub use metadata::*;
+pub use util::*;
+
 pub(crate) use state::*;
 
 use crate::puz::{BinaryPuzzle, ByteStr, Extras, Grids, Header, Strings};

@@ -6,7 +6,7 @@ mod rule;
 mod run;
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Grid, Metadata, Puzzle};
+use puzzled_core::{Cell, Grid, Metadata, Puzzle};
 
 pub use cell::*;
 pub use colors::*;
@@ -19,7 +19,7 @@ pub use run::*;
 pub struct Nonogram {
     #[index]
     #[index_mut]
-    fills: Fills,
+    fills: Grid<Cell<Fill>>,
 
     rules: Rules,
     colors: Colors,
@@ -32,7 +32,7 @@ impl Puzzle for Nonogram {
 }
 
 impl Nonogram {
-    pub fn new(fills: Fills, colors: Colors, meta: Metadata) -> Self {
+    pub fn new(fills: Grid<Cell<Fill>>, colors: Colors, meta: Metadata) -> Self {
         let rules = Rules::from_fills(&fills);
 
         Self {
@@ -43,11 +43,11 @@ impl Nonogram {
         }
     }
 
-    pub fn fills(&self) -> &Fills {
+    pub fn fills(&self) -> &Grid<Cell<Fill>> {
         &self.fills
     }
 
-    pub fn fills_mut(&mut self) -> &mut Fills {
+    pub fn fills_mut(&mut self) -> &mut Grid<Cell<Fill>> {
         &mut self.fills
     }
 
@@ -84,17 +84,17 @@ impl Nonogram {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use puzzled_core::Metadata;
+    use puzzled_core::{Cell, Grid, Metadata};
     use serde::{Deserialize, Serialize};
 
-    use crate::{Colors, Fills, Nonogram, Rules, SerdeRules};
+    use crate::{Colors, Fill, Nonogram, Rules, SerdeRules};
 
     #[derive(Serialize, Deserialize)]
     struct SerdeNonogram {
         rows: usize,
         cols: usize,
 
-        fills: Fills,
+        fills: Grid<Cell<Fill>>,
         rules: SerdeRules,
         colors: Colors,
         meta: Metadata,

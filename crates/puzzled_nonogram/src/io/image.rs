@@ -1,14 +1,14 @@
-use image::{DynamicImage, Pixel, Rgba, RgbaImage};
+use image::{DynamicImage, Pixel, Rgba};
 use puzzled_core::{Cell, Color, Metadata};
 use puzzled_io::{
-    ImagePuzzle, ImageReader, format,
+    Context, ImagePuzzle, ImageReader, format,
     image::{
         read,
-        write::{self, ImageSizeCheck},
+        write::{self, write_grid_image},
     },
 };
 
-use crate::{Colors, Fill, Fills, Nonogram, NonogramState};
+use crate::{Colors, Fill, Nonogram, NonogramState};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -17,6 +17,14 @@ pub enum Error {
 }
 
 impl ImagePuzzle<NonogramState> for Nonogram {
+    fn width(&self) -> usize {
+        self.fills().cols()
+    }
+
+    fn height(&self) -> usize {
+        self.fills().rows()
+    }
+
     fn read_image(
         image: &DynamicImage,
         reader: &ImageReader,
@@ -43,11 +51,10 @@ impl ImagePuzzle<NonogramState> for Nonogram {
                 }
             };
 
-            Cell::new(fill)
+            Ok(Cell::new(Some(fill)))
         };
 
         let fills = reader.read_grid(image, &mut read_pixel)?;
-        let fills = Fills::new(fills);
         let metadata = Metadata::default();
 
         let nonogram = Nonogram::new(fills, colors, metadata);
@@ -55,30 +62,24 @@ impl ImagePuzzle<NonogramState> for Nonogram {
         Ok((nonogram, state))
     }
 
-    fn write_image(&self, _state: &NonogramState) -> write::Result<image::RgbaImage> {
-        let fills = self.fills();
-        fills.check_image_size()?;
-        let rows = fills.rows() as u32;
-        let cols = fills.cols() as u32;
-
-        let mut img = RgbaImage::new(cols, rows);
+    fn write_image(&self, state: &NonogramState) -> write::Result<image::RgbaImage> {
         let colors = self.colors();
 
-        for (pos, cell) in fills.iter_indexed() {
-            let fill = cell.solution.unwrap_or_default();
-            let color = colors.get(&fill).ok_or_else(|| {
-                let err = Error::MissingFillColor { fill };
+        let mut write_fill = |fill: &Option<Fill>| {
+            let Some(fill) = fill else {
+                return Ok(Rgba([0, 0, 0, 0]));
+            };
 
-                format::Error::PuzzleSpecific(Box::new(err))
-            })?;
+            match colors.get(fill) {
+                Some(color) => Ok(Rgba([color.red, color.green, color.blue, color.alpha])),
+                None => {
+                    let err = Error::MissingFillColor { fill: *fill };
 
-            let pixel = Rgba([color.red, color.green, color.blue, color.alpha]);
-            let x = pos.col as u32;
-            let y = pos.row as u32;
+                    Err(format::Error::PuzzleSpecific(Box::new(err))).context("Writing fill")
+                }
+            }
+        };
 
-            img.put_pixel(x, y, pixel);
-        }
-
-        Ok(img)
+        write_grid_image(state.solutions(), &mut write_fill)
     }
 }

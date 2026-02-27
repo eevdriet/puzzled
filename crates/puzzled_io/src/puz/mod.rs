@@ -169,7 +169,7 @@ pub use strings::*;
 
 use crate::{Context, format};
 
-pub trait BinaryPuzzle<S>: Puzzle + PuzSizeCheck {
+pub trait BinaryPuzzle<S>: Puzzle {
     // Read the puzzle from *.puz data
     fn read_puz(
         header: Header,

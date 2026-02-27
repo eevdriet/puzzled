@@ -1,6 +1,8 @@
 use std::ops::RangeInclusive;
 
-use crate::{Fill, Fills, Line, LinePosition, NonogramCell};
+use puzzled_core::{Grid, Value};
+
+use crate::{Fill, Line, LinePosition};
 
 #[derive(Debug, Clone, Copy)]
 pub enum FindDirection {
@@ -8,22 +10,62 @@ pub enum FindDirection {
     Backwards,
 }
 
-fn none_or_fill(cell: &NonogramCell, fill: Fill) -> bool {
-    cell.solution.is_none_or(|f| f == fill)
+fn none_or_fill(fill: Option<&Fill>, target: Fill) -> bool {
+    fill.is_none_or(|f| *f == target)
 }
-fn some_and_fill(cell: &NonogramCell, fill: Fill) -> bool {
-    cell.solution.is_some_and(|f| f == fill)
+fn some_and_fill(cell: Option<&Fill>, fill: Fill) -> bool {
+    cell.is_some_and(|f| *f == fill)
 }
 
-impl Fills {
-    pub fn find_run_start(&self, line_pos: LinePosition) -> Option<LinePosition> {
+pub trait FillsFind {
+    fn find_run_start(&self, line_pos: LinePosition) -> Option<LinePosition>;
+    fn find_run_end(&self, line_pos: LinePosition) -> Option<LinePosition>;
+
+    fn find_directed_run_start(
+        &self,
+        pos: LinePosition,
+        direction: FindDirection,
+    ) -> Option<LinePosition>;
+
+    fn find_directed_run_end(
+        &self,
+        pos: LinePosition,
+        direction: FindDirection,
+    ) -> Option<LinePosition>;
+
+    fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
+        let start = self.find_run_start(pos)?;
+        let end = self.find_run_end(pos)?;
+
+        Some(start..=end)
+    }
+
+    fn find_fill(
+        &self,
+        pos: LinePosition,
+        fill: Fill,
+        direction: FindDirection,
+    ) -> Option<LinePosition>;
+
+    fn find_first_non_blank_fill(
+        &self,
+        line: Line,
+        direction: FindDirection,
+    ) -> Option<LinePosition>;
+}
+
+impl<T> FillsFind for Grid<T>
+where
+    T: Value<Fill>,
+{
+    fn find_run_start(&self, line_pos: LinePosition) -> Option<LinePosition> {
         let LinePosition { line, pos } = line_pos;
 
         if pos >= self.line_len(line) {
             return None;
         }
 
-        let Some(fill) = &self[line_pos].solution else {
+        let Some(fill) = &self[line_pos].value() else {
             return None;
         };
 
@@ -32,7 +74,7 @@ impl Fills {
             .enumerate()
             .take(pos + 1)
             .rev()
-            .take_while(|(_, cell)| some_and_fill(cell, *fill))
+            .take_while(|(_, cell)| some_and_fill(cell.value(), **fill))
             .map(|(i, _)| i)
             .last()
             .map(|start| LinePosition::new(line, start));
@@ -41,34 +83,34 @@ impl Fills {
         start
     }
 
-    pub fn find_run_end(&self, line_pos: LinePosition) -> Option<LinePosition> {
+    fn find_run_end(&self, line_pos: LinePosition) -> Option<LinePosition> {
         let LinePosition { line, pos } = line_pos;
 
         if pos >= self.line_len(line) {
             return None;
         }
 
-        let Some(fill) = &self[line_pos].solution else {
+        let Some(fill) = &self[line_pos].value() else {
             return None;
         };
 
         self.iter_line(line)
             .enumerate()
             .skip(pos)
-            .take_while(|(_, cell)| none_or_fill(cell, *fill))
+            .take_while(|(_, cell)| none_or_fill(cell.value(), **fill))
             .map(|(i, _)| i)
             .last()
             .map(|end| LinePosition::new(line, end))
     }
 
-    pub fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
+    fn find_run_range(&self, pos: LinePosition) -> Option<RangeInclusive<LinePosition>> {
         let start = self.find_run_start(pos)?;
         let end = self.find_run_end(pos)?;
 
         Some(start..=end)
     }
 
-    pub fn find_directed_run_start(
+    fn find_directed_run_start(
         &self,
         pos: LinePosition,
         direction: FindDirection,
@@ -94,7 +136,7 @@ impl Fills {
         }
     }
 
-    pub fn find_directed_run_end(
+    fn find_directed_run_end(
         &self,
         pos: LinePosition,
         direction: FindDirection,
@@ -120,7 +162,7 @@ impl Fills {
     }
 
     /// Find the first ocurrence of a fill in the current line
-    pub fn find_fill(
+    fn find_fill(
         &self,
         pos: LinePosition,
         fill: Fill,
@@ -133,31 +175,28 @@ impl Fills {
         let found = match direction {
             FindDirection::Forwards => iter
                 .skip(offset)
-                .find(|(_, cell)| some_and_fill(cell, fill)),
+                .find(|(_, cell)| some_and_fill(cell.value(), fill)),
 
             FindDirection::Backwards => iter
                 .take(offset.saturating_sub(1))
                 .rev()
-                .find(|(_, cell)| some_and_fill(cell, fill)),
+                .find(|(_, cell)| some_and_fill(cell.value(), fill)),
         };
 
         found.map(|(idx, _)| LinePosition::new(line, idx))
     }
 
-    pub fn find_first_non_blank_fill(
+    fn find_first_non_blank_fill(
         &self,
         line: Line,
         direction: FindDirection,
     ) -> Option<LinePosition> {
         let mut iter = self.iter_line(line).enumerate();
-        let non_blank = |cell: &NonogramCell| {
-            cell.solution
-                .is_some_and(|fill| !matches!(fill, Fill::Blank))
-        };
+        let non_blank = |cell: Option<&Fill>| cell.is_some_and(|fill| !matches!(fill, Fill::Blank));
 
         match direction {
-            FindDirection::Forwards => iter.find(|(_, cell)| non_blank(cell)),
-            FindDirection::Backwards => iter.rev().find(|(_, cell)| non_blank(cell)),
+            FindDirection::Forwards => iter.find(|(_, cell)| non_blank(cell.value())),
+            FindDirection::Backwards => iter.rev().find(|(_, cell)| non_blank(cell.value())),
         }
         .map(|(idx, _)| LinePosition::new(line, idx))
     }

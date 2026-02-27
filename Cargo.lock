@@ -564,6 +564,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "delegate"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "780eb241654bf097afb00fc5f054a09b687dad862e485fdcf8399bb056565370"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.116",
+]
+
+[[package]]
 name = "deltae"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1721,10 +1732,27 @@ name = "puzzled"
 version = "0.1.0"
 dependencies = [
  "document-features",
+ "puzzled_binario",
  "puzzled_core",
  "puzzled_crossword",
  "puzzled_io",
  "puzzled_nonogram",
+]
+
+[[package]]
+name = "puzzled_binario"
+version = "0.1.0"
+dependencies = [
+ "delegate",
+ "derive_more",
+ "document-features",
+ "image",
+ "puzzled",
+ "puzzled_core",
+ "puzzled_io",
+ "rstest",
+ "serde",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1770,6 +1798,7 @@ name = "puzzled_nonogram"
 version = "0.1.0"
 dependencies = [
  "bitvec",
+ "delegate",
  "derive_more",
  "document-features",
  "image",

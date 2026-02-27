@@ -21,7 +21,10 @@ use puzzled_core::Metadata;
 
 use std::io::{self, Write};
 
-use crate::puz::{BinaryPuzzle, ByteStr, Grids, Header, Strings, write};
+use crate::{
+    Context,
+    puz::{BinaryPuzzle, ByteStr, Grids, Header, Strings, write},
+};
 
 #[derive(Debug, Default)]
 pub struct PuzWriter;
@@ -124,13 +127,15 @@ impl PuzWriter {
         P: BinaryPuzzle<S>,
     {
         let (solution, state) = puzzle.grids(state)?;
-
-        Ok(Grids {
+        let grids = Grids {
             solution,
             state,
             width: puzzle.width() as u8,
             height: puzzle.height() as u8,
-        })
+        };
+
+        grids.validate().context("Building grids")?;
+        Ok(grids)
     }
 
     pub fn build_strings(&self, clues: Vec<ByteStr>, metadata: &Option<&Metadata>) -> Strings {

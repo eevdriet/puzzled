@@ -29,7 +29,7 @@ impl TxtPuzzle for Crossword {
                         Square::new_empty()
                     } else {
                         let solution = Solution::from(token);
-                        let cell = Cell::new(solution);
+                        let cell = Cell::new(Some(solution));
 
                         Square::new(cell)
                     }

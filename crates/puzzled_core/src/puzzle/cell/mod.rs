@@ -2,6 +2,8 @@ mod style;
 
 pub use style::CellStyle;
 
+use crate::Value;
+
 #[derive(Debug)]
 pub struct Cell<T> {
     pub solution: Option<T>,
@@ -9,16 +11,13 @@ pub struct Cell<T> {
 }
 
 impl<T> Cell<T> {
-    pub fn new(value: T) -> Self {
+    pub fn new(value: Option<T>) -> Self {
         let style = CellStyle::default();
         Self::new_with_style(value, style)
     }
 
-    pub fn new_with_style(solution: T, style: CellStyle) -> Self {
-        Self {
-            solution: Some(solution),
-            style,
-        }
+    pub fn new_with_style(solution: Option<T>, style: CellStyle) -> Self {
+        Self { solution, style }
     }
 
     pub fn default_with_style(style: CellStyle) -> Self {
@@ -26,6 +25,16 @@ impl<T> Cell<T> {
             solution: None,
             style,
         }
+    }
+}
+
+impl<T> Value<T> for Cell<T> {
+    fn value(&self) -> Option<&T> {
+        self.solution.as_ref()
+    }
+
+    fn value_mut(&mut self) -> Option<&mut T> {
+        self.solution.as_mut()
     }
 }
 

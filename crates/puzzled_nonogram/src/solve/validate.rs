@@ -1,4 +1,4 @@
-use crate::{Fill, Line, LinePosition, Nonogram, NonogramSolver, NonogramState, Rule};
+use crate::{Fill, Fills, Line, LinePosition, Nonogram, NonogramSolver, NonogramState, Rule};
 
 #[derive(Debug, Clone, Copy)]
 pub enum LineValidation {

@@ -1,6 +1,6 @@
-use crate::{Context, format, image::write};
+use crate::{Context, format};
 
-pub fn check_image_size<K>(kind: K, size: usize, max_size: usize) -> write::Result<()>
+pub fn check_size<K>(kind: K, size: usize, max_size: usize) -> write::Result<()>
 where
     K: Into<String>,
 {

@@ -10,6 +10,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 bitvec = { workspace = true}
 derive_more = {workspace = true}
+delegate = {workspace = true}
 document-features = {workspace = true}
 image = {workspace = true, optional = true}
 serde = {workspace = true, optional = true}

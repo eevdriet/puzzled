@@ -1,9 +1,9 @@
 use derive_more::Debug;
-use puzzled_core::Line;
+use puzzled_core::{Cell, Grid, Line};
 
 #[cfg(feature = "serde")]
 use crate::Run;
-use crate::{Fills, Rule};
+use crate::{Fill, Rule};
 
 #[derive(Debug, Default, Clone)]
 pub struct Rules {
@@ -16,7 +16,7 @@ impl Rules {
         Self { rows, cols }
     }
 
-    pub fn from_fills(fills: &Fills) -> Self {
+    pub fn from_fills(fills: &Grid<Cell<Fill>>) -> Self {
         let rows: Vec<_> = fills
             .iter_rows()
             .map(|row| {

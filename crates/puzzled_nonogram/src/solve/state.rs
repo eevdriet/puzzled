@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, VecDeque};
 
 use bitvec::{bitvec, vec::BitVec};
+use delegate::delegate;
 use puzzled_core::{
-    Entry, Grid, GridState, Line, LinePosition, Position, Solve, impl_solve_for_grid_state,
+    Entry, Grid, GridState, Line, LinePosition, Position, Solve, Timer, impl_solve_for_grid_state,
 };
 
 use crate::{Fill, LineConstraint, LineValidation, Nonogram};
@@ -12,7 +13,8 @@ pub(crate) type LineMask = BitVec;
 
 #[derive(Debug)]
 pub struct NonogramState {
-    pub inner: GridState<Fill>,
+    pub state: GridState<Fill>,
+    pub timer: Timer,
 
     pub(crate) frontier: VecDeque<Line>,
 
@@ -22,6 +24,26 @@ pub struct NonogramState {
 }
 
 impl_solve_for_grid_state!(Nonogram, Fill);
+
+impl NonogramState {
+    pub fn new(solutions: Grid<Option<Fill>>, entries: Grid<Entry<Fill>>, timer: Timer) -> Self {
+        Self {
+            state: GridState { solutions, entries },
+            timer,
+            frontier: VecDeque::default(),
+            validations: LineMap::default(),
+            constraints: LineMap::default(),
+            masks: LineMap::default(),
+        }
+    }
+
+    pub fn solutions(&self) -> &Grid<Option<Fill>> {
+        &self.state.solutions
+    }
+    pub fn entries(&self) -> &Grid<Entry<Fill>> {
+        &self.state.entries
+    }
+}
 
 // pub fn get(&self, line: Line) -> Option<&LineValidation> {
 //     self.validations.get(&line)
@@ -57,16 +79,6 @@ impl_solve_for_grid_state!(Nonogram, Fill);
 // }
 
 impl NonogramState {
-    pub fn new(solutions: Grid<Option<Fill>>, entries: Grid<Entry<Fill>>) -> Self {
-        Self {
-            inner: GridState { solutions, entries },
-            frontier: VecDeque::default(),
-            validations: LineMap::default(),
-            constraints: LineMap::default(),
-            masks: LineMap::default(),
-        }
-    }
-
     pub fn clear(&mut self) {
         self.frontier.clear();
         self.validations.clear();
@@ -144,17 +156,10 @@ impl From<&Nonogram> for NonogramState {
         let fills = nonogram.fills();
 
         let solutions = fills.map_ref(|cell| cell.solution);
-        let entries = fills.map_ref(|cell| {
-            let mut entry = Entry::default_with_style(cell.style);
+        let entries = fills.map_ref(|cell| Entry::new_with_style(cell.solution, cell.style));
+        let timer = Timer::default();
 
-            if let Some(ref solution) = cell.solution {
-                entry.enter(solution);
-            }
-
-            entry
-        });
-
-        NonogramState::new(solutions, entries)
+        NonogramState::new(solutions, entries, timer)
     }
 }
 
@@ -162,28 +167,23 @@ impl Solve<Nonogram> for NonogramState {
     type Value = Fill;
     type Position = Position;
 
-    fn solve(&mut self, pos: &Position, solution: Fill) -> bool {
-        let inner = &mut self.inner;
-        inner.solve(pos, solution)
-    }
+    delegate! {
+        to self.state {
+            fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
+            fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
+            fn reveal(&mut self, pos: &Self::Position) -> bool;
+            fn check(&mut self, pos: &Self::Position) -> Option<bool>;
 
-    fn reveal(&mut self, _pos: &Position) -> bool {
-        true
-    }
+            fn reveal_all(&mut self);
+            fn check_all(&mut self);
 
-    fn enter(&mut self, _pos: &Position, _entry: Fill) -> bool {
-        true
-    }
+            fn enter_checked(&mut self, pos: &Self::Position, entry: Self::Value) -> Option<bool>;
 
-    fn check(&mut self, _pos: &Position) -> Option<bool> {
-        None
-    }
+            fn guess(&mut self, pos: &Self::Position, guess: Self::Value) -> bool;
 
-    fn check_all(&mut self) {}
+            fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
 
-    fn reveal_all(&mut self) {}
-
-    fn try_finalize(&self) -> Result<Grid<Fill>, Box<dyn std::error::Error>> {
-        self.inner.try_finalize()
+            fn try_finalize(&self) -> Result<Grid<Fill>, Box<dyn std::error::Error>>;
+        }
     }
 }

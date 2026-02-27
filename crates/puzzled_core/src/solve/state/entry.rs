@@ -1,4 +1,4 @@
-use crate::CellStyle;
+use crate::{CellStyle, Value};
 use std::fmt::{self, Debug};
 
 /// Playable square that the user can enter their solution into
@@ -73,22 +73,16 @@ impl<E> Entry<E> {
         }
     }
 
-    pub fn new<T>(entry: T) -> Self
-    where
-        T: Into<E>,
-    {
+    pub fn new<T>(entry: Option<E>) -> Self {
         Self {
-            entry: Some(entry.into()),
+            entry,
             ..Default::default()
         }
     }
 
-    pub fn new_with_style<T>(entry: T, style: CellStyle) -> Self
-    where
-        T: Into<E>,
-    {
+    pub fn new_with_style(entry: Option<E>, style: CellStyle) -> Self {
         Self {
-            entry: Some(entry.into()),
+            entry,
             style,
             ..Default::default()
         }
@@ -148,6 +142,16 @@ impl<E> Entry<E> {
             // Therefore the style will never be incorrect when set to its initial state
             self.style -= CellStyle::INCORRECT;
         }
+    }
+}
+
+impl<T> Value<T> for Entry<T> {
+    fn value(&self) -> Option<&T> {
+        self.entry.as_ref()
+    }
+
+    fn value_mut(&mut self) -> Option<&mut T> {
+        self.entry.as_mut()
     }
 }
 

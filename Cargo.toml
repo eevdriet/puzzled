@@ -1,21 +1,19 @@
 [workspace]
 members = [
     "crates/puzzled",
+    "crates/puzzled_binario",
     "crates/puzzled_core",
     "crates/puzzled_crossword",
     "crates/puzzled_io",
     "crates/puzzled_nonogram",
     "crates/puzzled_nonogram_tui",
     "crates/puzzled_skyscrapers",
-    "puzzled_Binario",
-    "puzzled_binario",
-    "puzzled_slither",
-    "puzzled_slithre",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 bitvec = "1.0.1"
+delegate = "0.13.5"
 directories = "6.0.0"
 image = "0.25.9"
 rstest = "0.26.1"

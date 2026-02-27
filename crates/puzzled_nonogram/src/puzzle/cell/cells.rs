@@ -1,41 +1,39 @@
-use derive_more::{Deref, DerefMut, Index, IndexMut};
-use puzzled_core::{ColorId, Grid, Line};
+use puzzled_core::{ColorId, Grid, Line, Value};
 
-use crate::{Fill, NonogramCell, Runs};
+use crate::{Fill, Runs};
 
-#[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone, Index, IndexMut)]
-pub struct Fills(pub(crate) Grid<NonogramCell>);
+pub trait Fills {
+    fn iter_line_runs<'a>(&'a self, line: Line) -> Runs<impl Iterator<Item = Fill> + 'a + Clone>;
 
-impl Fills {
-    pub fn new(fills: Grid<NonogramCell>) -> Self {
-        Self(fills)
-    }
+    fn iter_colors(&self) -> impl Iterator<Item = &Fill>;
 
-    pub fn iter_line_runs<'a>(
-        &'a self,
-        line: Line,
-    ) -> Runs<impl Iterator<Item = Fill> + 'a + Clone> {
+    fn colors_ids(&self) -> Vec<ColorId>;
+}
+
+impl<T> Fills for Grid<T>
+where
+    T: Clone + Value<Fill>,
+{
+    fn iter_line_runs<'a>(&'a self, line: Line) -> Runs<impl Iterator<Item = Fill> + 'a + Clone> {
         let fills = self
             .iter_line(line)
-            .filter_map(|cell| cell.solution.to_owned());
+            .filter_map(|cell| cell.value().cloned());
 
         Runs::new(fills, true)
     }
 
-    pub fn iter_colors(&self) -> impl Iterator<Item = &Fill> {
-        self.0
-            .iter()
-            .filter_map(|cell| match cell.solution.as_ref() {
-                color @ Some(Fill::Color(_)) => color,
-                _ => None,
-            })
+    fn iter_colors(&self) -> impl Iterator<Item = &Fill> {
+        self.iter().filter_map(|cell| match cell.value() {
+            color @ Some(Fill::Color(_)) => color,
+            _ => None,
+        })
     }
 
-    pub fn colors_ids(&self) -> Vec<ColorId> {
+    fn colors_ids(&self) -> Vec<ColorId> {
         let mut ids: Vec<_> = self
             .iter()
-            .filter_map(|cell| match cell.solution {
-                Some(Fill::Color(id)) => Some(id),
+            .filter_map(|cell| match cell.value() {
+                Some(Fill::Color(id)) => Some(*id),
                 _ => None,
             })
             .collect();
@@ -44,36 +42,5 @@ impl Fills {
         ids.sort();
 
         ids
-    }
-}
-
-#[cfg(feature = "serde")]
-mod serde_impl {
-    use puzzled_core::Grid;
-    use serde::{Deserialize, Serialize};
-
-    use crate::{Fills, NonogramCell};
-
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-    impl Serialize for Fills {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
-        {
-            self.0.serialize(serializer)
-        }
-    }
-
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-    impl<'de> Deserialize<'de> for Fills {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
-        {
-            let grid = Grid::<NonogramCell>::deserialize(deserializer)?;
-            let fills = Fills::new(grid);
-
-            Ok(fills)
-        }
     }
 }

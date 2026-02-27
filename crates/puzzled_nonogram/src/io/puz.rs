@@ -1,12 +1,11 @@
-use puzzled_core::{Cell, Color, Entry, Grid, Metadata};
+use puzzled_core::{Color, Grid, Metadata};
 use puzzled_io::{
     Context,
     format::{self, StringError},
     puz::{
-        BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, PuzSizeCheck, Strings,
-        WriteStyleGrid, check_puz_size,
-        read::{self, read_metadata},
-        windows_1252_to_char,
+        BinaryPuzzle, ByteStr, Extras, Grids, Header, PuzSizeCheck, Strings, WriteStyleGrid,
+        check_puz_size,
+        read::{self, read_cell_entries, read_metadata},
         write::{self, WriteStateGrid},
     },
 };
@@ -61,12 +60,12 @@ impl BinaryPuzzle<NonogramState> for Nonogram {
     }
 
     fn grids(&self, state: &NonogramState) -> write::Result<(Grid<u8>, Grid<u8>)> {
-        let solution = state.inner.solutions.write_state_grid(|fill| {
+        let solution = state.state.solutions.write_state_grid(|fill| {
             char::try_from(*fill).expect("Solution fill to be valid") as u8
         });
 
         let state = state
-            .inner
+            .state
             .entries
             .write_state_grid(|fill| char::try_from(*fill).expect("State fill to be valid") as u8);
 
@@ -85,7 +84,7 @@ impl BinaryPuzzle<NonogramState> for Nonogram {
 
         // GEXT
         let fills = self.fills();
-        let entries = &state.inner.entries;
+        let entries = &state.state.entries;
 
         let gext = fills.write_combined_style(entries);
         extras.gext = Some(gext);
@@ -99,64 +98,31 @@ impl BinaryPuzzle<NonogramState> for Nonogram {
         strings: Strings,
         extras: Extras,
     ) -> read::Result<(Self, NonogramState)> {
-        let (fills, state) = read_state(&grids, &extras)?;
-        let colors = read_colors(&fills, &strings)?;
+        let mut read_fill = |char: char| {
+            Fill::decode_char(char)
+                .map_err(|err| {
+                    let boxed_err = Box::new(err);
+                    format::Error::PuzzleSpecific(boxed_err)
+                })
+                .context("Reading fill")
+        };
+
+        let (cells, entries) = read_cell_entries(&grids, &extras, &mut read_fill)?;
+        let solutions = cells.map_ref(|cell| cell.solution);
+
+        let colors = read_colors(&cells, &strings)?;
         let meta = read_metadata(&header, &strings);
 
-        let nonogram = Nonogram::new(fills, colors, meta);
+        let nonogram = Nonogram::new(cells, colors, meta);
+
+        let timer = extras.ltim.unwrap_or_default();
+        let state = NonogramState::new(solutions, entries, timer);
+
         Ok((nonogram, state))
     }
 }
 
-fn read_state(grids: &Grids, extras: &Extras) -> read::Result<(Fills, NonogramState)> {
-    grids.validate().context("Fills grids")?;
-    let cols = grids.width as usize;
-
-    let mut cells = Vec::with_capacity(cols);
-    let mut entries = Vec::with_capacity(cols);
-
-    let byte_fill = |ch: char| -> format::Result<Fill> {
-        Fill::decode_char(ch).map_err(|err| {
-            let boxed_err = Box::new(err);
-            format::Error::PuzzleSpecific(boxed_err)
-        })
-    };
-
-    for ((pos, &solution), &state) in grids.solution.iter_indexed().zip(grids.state.iter()) {
-        let style = extras.get_style(pos);
-
-        let cell = match windows_1252_to_char(solution) {
-            MISSING_ENTRY_CHAR => Cell::default_with_style(style),
-            char => {
-                let fill = byte_fill(char).context("Solution fill")?;
-                Cell::new_with_style(fill, style)
-            }
-        };
-        cells.push(cell);
-
-        let entry = match windows_1252_to_char(state) {
-            MISSING_ENTRY_CHAR => Entry::default_with_style(style),
-            char => {
-                let fill = byte_fill(char).context("State fill")?;
-                Entry::new_with_style(fill, style)
-            }
-        };
-        entries.push(entry);
-    }
-
-    let cells = Grid::from_vec(cells, grids.width as usize).expect("Valid grids");
-    let solutions = cells.map_ref(|cell| cell.solution);
-    let fills = Fills::new(cells);
-
-    let entries = Grid::from_vec(entries, cols).expect("Read correct length state grid");
-
-    // TODO: add back timer let timer = extras.ltim.unwrap_or_default();
-    let state = NonogramState::new(solutions, entries);
-
-    Ok((fills, state))
-}
-
-fn read_colors(fills: &Fills, strings: &Strings) -> read::Result<Colors> {
+fn read_colors(fills: &impl Fills, strings: &Strings) -> read::Result<Colors> {
     // Make sure enough colors are defined to color the fills grid
     let ids = fills.colors_ids();
     let clues = &strings.clues;

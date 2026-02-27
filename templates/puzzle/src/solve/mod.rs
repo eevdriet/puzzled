@@ -1,3 +1,7 @@
+mod state;
+
+pub use state::*;
+
 use puzzled_core::{Grid, Solve, Solver};
 
 use crate::{ {{ puzzle | pascal_case }} };
