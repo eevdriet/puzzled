@@ -184,31 +184,35 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let size = self.size();
+        let cols = self.cols();
 
-        let mut max_width = 0;
+        let mut max_width = vec![0; cols];
         let mut displays = Vec::with_capacity(size);
 
-        for cell in self.iter() {
+        for (idx, cell) in self.iter().enumerate() {
+            let col = idx % cols;
             let display = cell.to_string();
-            max_width = max_width.max(display.len());
+
+            max_width[col] = max_width[col].max(display.len());
 
             displays.push(display);
         }
 
-        let cols = self.cols();
-
         for (idx, display) in displays.into_iter().enumerate() {
-            if idx.is_multiple_of(cols) {
-                write!(f, "[ ")?;
+            let col = idx % cols;
+
+            if col == 0 {
+                write!(f, "[")?;
             }
 
-            write!(f, "{:>width$}", display, width = max_width)?;
+            write!(f, " {:<width$}", display, width = max_width[col])?;
 
             if (idx + 1).is_multiple_of(cols) {
                 write!(f, " ]")?;
-            }
-            if idx + 1 < size - 1 {
-                writeln!(f)?;
+
+                if idx + 1 < size - 1 {
+                    writeln!(f)?;
+                }
             }
         }
 

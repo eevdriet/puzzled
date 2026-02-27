@@ -16,10 +16,6 @@ impl<T> Square<T> {
         Self(None)
     }
 
-    pub fn inner(&self) -> &Option<T> {
-        &self.0
-    }
-
     pub fn map_ref<U, F>(&self, f: F) -> Square<U>
     where
         F: FnOnce(&T) -> Option<U>,
@@ -41,7 +37,7 @@ where
         write!(
             f,
             "{}",
-            match self.inner().as_ref() {
+            match self.as_ref() {
                 None => NON_PLAYABLE_CHAR.to_string(),
                 Some(sol) => sol.to_string(),
             }

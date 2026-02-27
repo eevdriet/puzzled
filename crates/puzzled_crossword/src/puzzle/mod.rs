@@ -6,11 +6,10 @@ mod square;
 mod state;
 
 pub use clue::*;
-use puzzled_core::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
 pub use square::*;
 pub use state::*;
 
-use puzzled_core::{Grid, Metadata, Puzzle, Square};
+use puzzled_core::{Cell, Grid, Metadata, Puzzle, Square};
 use std::fmt;
 
 /// A [crossword](https://en.wikipedia.org/wiki/Crossword) puzzle
@@ -47,10 +46,10 @@ use std::fmt;
 ///
 /// [PUZ spec]: https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5
 /// [PUZ google spec]: https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Crossword {
     // State
-    squares: Squares,
+    squares: Grid<Square<Cell<Solution>>>,
     clues: Clues,
 
     // Metadata
@@ -64,7 +63,7 @@ impl Puzzle for Crossword {
 /// # Constructors
 impl Crossword {
     /// Constructs a new puzzle from its [squares](Square) and [clues](Clue)
-    pub fn new(squares: Squares, clues: Clues, meta: Metadata) -> Self {
+    pub fn new(squares: Grid<Square<Cell<Solution>>>, clues: Clues, meta: Metadata) -> Self {
         Self {
             squares,
             clues,
@@ -74,17 +73,17 @@ impl Crossword {
 
     /// Constructs a new puzzle from just its [squares](Square)
     /// Use [`Crossword::insert_clues`] to add [clues](Clue) from their [specification](ClueSpec)
-    pub fn from_squares(squares: Squares, meta: Metadata) -> Self {
+    pub fn from_squares(squares: Grid<Square<Cell<Solution>>>, meta: Metadata) -> Self {
         let clues = Clues::default();
 
         Self::new(squares, clues, meta)
     }
 
-    pub fn squares(&self) -> &Squares {
+    pub fn squares(&self) -> &Grid<Square<Cell<Solution>>> {
         &self.squares
     }
 
-    pub fn squares_mut(&mut self) -> &mut Squares {
+    pub fn squares_mut(&mut self) -> &mut Grid<Square<Cell<Solution>>> {
         &mut self.squares
     }
 
@@ -135,45 +134,11 @@ impl Crossword {
     }
 }
 
-impl PartialEq for Crossword {
-    fn eq(&self, other: &Self) -> bool {
-        self.squares == other.squares && self.clues == other.clues && self.meta == other.meta
-    }
-}
-
-impl Eq for Crossword {}
-
 impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let cols = self.squares.cols();
-
-        for (pos, square) in self.squares.iter_indexed() {
-            match square.inner() {
-                None => write!(f, "{NON_PLAYABLE_CHAR}"),
-                Some(cell) => match cell.solution {
-                    Some(ref solution) => write!(f, "{solution}"),
-                    None => write!(f, "{MISSING_ENTRY_CHAR}"),
-                },
-            }?;
-
-            if pos.col == cols - 1 {
-                writeln!(f)?
-            } else {
-                write!(f, " ")?
-            }
-        }
-
-        writeln!(f)?;
-
-        for entry in self.clues().iter_across() {
-            writeln!(f, "{entry}")?
-        }
-
-        writeln!(f)?;
-
-        for entry in self.clues().iter_down() {
-            writeln!(f, "{entry}")?
-        }
+        writeln!(f, "{}", self.squares)?;
+        writeln!(f, "{}", self.clues)?;
+        writeln!(f, "{}", self.meta)?;
 
         Ok(())
     }

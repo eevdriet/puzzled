@@ -12,7 +12,10 @@ use puzzled_io::{
     },
 };
 
-use crate::{Clue, ClueDirection, Clues, Crossword, CrosswordState, Entry, Solution, Squares};
+use crate::{
+    Clue, ClueDirection, Clues, Crossword, CrosswordSquares, CrosswordState, Entry, Solution,
+    Squares,
+};
 
 impl PuzSizeCheck for Crossword {
     fn check_puz_size(&self) -> write::Result<()> {
@@ -80,11 +83,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
             let mut num = 0;
 
             let grbs = squares.map_ref(|square| {
-                match square
-                    .inner()
-                    .as_ref()
-                    .and_then(|cell| cell.solution.as_ref())
-                {
+                match square.as_ref().and_then(|cell| cell.solution.as_ref()) {
                     Some(solution) if solution.is_rebus() => {
                         num += 1;
                         rebuses.insert(num, solution.to_string());
@@ -176,7 +175,6 @@ fn read_state(grids: &Grids, extras: &Extras) -> read::Result<(Squares, Crosswor
 
     let squares = Grid::from_vec(squares, cols).expect("Read correct length squares");
     let solutions = squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
-    let squares = Squares::new(squares);
 
     let entries = Grid::from_vec(entries, cols).expect("Read correct lenght entries");
 
@@ -206,7 +204,7 @@ fn read_clues(squares: &Squares, strings: &Strings) -> read::Result<Clues> {
         let len = squares.find_clue_len(start, direction);
 
         let entry = Clue::new(num, direction, text, start, len);
-        entries.insert((num, direction), entry);
+        entries.insert((num, direction).into(), entry);
 
         true
     };

@@ -36,7 +36,7 @@ impl<T> WriteStateGrid<T> for Grid<Square<Option<T>>> {
     where
         F: FnMut(&T) -> u8,
     {
-        self.map_ref(|square| match square.inner() {
+        self.map_ref(|square| match square.as_ref() {
             None => NON_PLAYABLE_CHAR as u8,
             Some(solution) => solution
                 .as_ref()
@@ -51,7 +51,7 @@ impl<T> WriteStateGrid<T> for Grid<Square<Entry<T>>> {
     where
         F: FnMut(&T) -> u8,
     {
-        self.map_ref(|square| match square.inner() {
+        self.map_ref(|square| match square.as_ref() {
             None => NON_PLAYABLE_CHAR as u8,
             Some(entry) => match entry.entry() {
                 Some(solution) => f(solution),
@@ -86,13 +86,11 @@ impl<T> WriteStyleGrid<Square<Cell<T>>, Square<Entry<T>>> for Grid<Square<Cell<T
             .zip(entries.iter())
             .map(|(puzzle_square, entry_square)| {
                 let puzzle_style = puzzle_square
-                    .inner()
                     .as_ref()
                     .map(|sq| sq.style)
                     .unwrap_or_default();
 
                 let user_style = entry_square
-                    .inner()
                     .as_ref()
                     .map(|sq| sq.style())
                     .unwrap_or_default();

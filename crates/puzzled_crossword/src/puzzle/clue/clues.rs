@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt};
 
 use derive_more::{Deref, DerefMut};
 
@@ -134,6 +134,16 @@ impl Clues {
     }
 }
 
+impl fmt::Display for Clues {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (id, clue) in self.iter() {
+            writeln!(f, "{id}: {}", clue.text())?;
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(feature = "serde")]
 impl Clues {
     pub(crate) fn from_serde(data: SerdeClues) -> Result<Self, String> {
@@ -152,7 +162,7 @@ impl Clues {
             let direction = ClueDirection::from_str(dir_str)?;
 
             // Then construct the clue and insert it into the clues
-            let id: ClueId = (num, direction);
+            let id: ClueId = (num, direction).into();
             let clue = Clue {
                 num,
                 direction,
@@ -169,15 +179,14 @@ impl Clues {
 
     pub(crate) fn to_serde(&self) -> SerdeClues {
         self.iter()
-            .map(|((num, dir), clue)| {
-                let key = format!("{num}-{dir}");
+            .map(|(id, clue)| {
                 let val = SerdeClue {
                     text: clue.text().clone(),
                     start: clue.start,
                     len: clue.len,
                 };
 
-                (key, val)
+                (id.to_string(), val)
             })
             .collect()
     }

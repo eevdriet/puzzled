@@ -11,7 +11,7 @@ pub use specification::*;
 use puzzled_core::Position;
 use std::{cmp::Ordering, fmt};
 
-use crate::Crossword;
+use crate::{Crossword, CrosswordSquares};
 
 /// Clue
 ///
@@ -97,7 +97,7 @@ impl Clue {
 
     /// Clue [identifier](ClueId)
     pub fn id(&self) -> ClueId {
-        (self.num, self.direction)
+        (self.num, self.direction).into()
     }
 
     /// Verify whether the clue occupies any [cells](crate::Cell) within a [puzzle](Crossword)
@@ -131,7 +131,7 @@ impl Crossword {
         let (positioned, unpositioned) = self.place_clues(clues);
 
         for clue in positioned {
-            let id = (clue.num, clue.direction);
+            let id = (clue.num, clue.direction).into();
             self.clues.insert(id, clue);
         }
 

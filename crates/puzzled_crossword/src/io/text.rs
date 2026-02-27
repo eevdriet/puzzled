@@ -7,7 +7,7 @@ use puzzled_io::{
     },
 };
 
-use crate::{ClueDirection, ClueSpec, Crossword, Solution, Square, Squares};
+use crate::{ClueDirection, ClueSpec, Crossword, Solution, Square};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -37,7 +37,6 @@ impl TxtPuzzle for Crossword {
         };
 
         let squares = reader.read_grid(&mut read_row)?;
-        let squares = Squares::new(squares);
 
         // Read the clues and metadata
         let clues = read_clues(reader)?;

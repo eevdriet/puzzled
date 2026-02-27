@@ -1,6 +1,8 @@
 mod timer;
 mod version;
 
+use std::fmt;
+
 pub use timer::{Error as TimerError, Timer, TimerState};
 pub use version::{Error as VersionError, Version};
 
@@ -76,6 +78,28 @@ impl Metadata {
     pub fn with_version(mut self, version: Version) -> Self {
         self.version = Some(version);
         self
+    }
+}
+
+impl fmt::Display for Metadata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(title) = self.title() {
+            writeln!(f, "title: {title}")?;
+        }
+        if let Some(author) = self.author() {
+            writeln!(f, "author: {author}")?;
+        }
+        if let Some(version) = self.version() {
+            writeln!(f, "version: {version}")?;
+        }
+        if let Some(notes) = self.notes() {
+            writeln!(f, "notes: {notes}")?;
+        }
+        if let Some(copyright) = self.copyright() {
+            writeln!(f, "copyright: {copyright}")?;
+        }
+
+        Ok(())
     }
 }
 

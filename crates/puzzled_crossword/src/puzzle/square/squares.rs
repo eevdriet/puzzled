@@ -1,20 +1,19 @@
 use std::ops;
 
-use derive_more::{Deref, DerefMut};
-use puzzled_core::{Grid, Offset, Position};
+use puzzled_core::{Grid, Offset, Position, Square};
 
 use crate::{ClueDirection, Crossword, CrosswordSquare};
 
-#[derive(Debug, PartialEq, Eq, Deref, DerefMut, Clone)]
-pub struct Squares(pub(crate) Grid<CrosswordSquare>);
+pub type Squares = Grid<CrosswordSquare>;
 
-impl Squares {
-    pub fn new(squares: Grid<CrosswordSquare>) -> Self {
-        Self(squares)
-    }
+pub trait CrosswordSquares {
+    fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool;
+    fn find_clue_len(&self, pos: Position, dir: ClueDirection) -> u8;
+}
 
-    pub fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool {
-        let is_blank = |pos: Position| self[pos].is_none();
+impl<T> CrosswordSquares for Grid<Square<T>> {
+    fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool {
+        let is_blank = |pos: Position| self[pos].as_ref().is_none();
 
         if is_blank(pos) {
             return false;
@@ -26,7 +25,7 @@ impl Squares {
         }
     }
 
-    pub fn find_clue_len(&self, pos: Position, dir: ClueDirection) -> u8 {
+    fn find_clue_len(&self, pos: Position, dir: ClueDirection) -> u8 {
         let offset = match dir {
             ClueDirection::Across => Offset::RIGHT,
             ClueDirection::Down => Offset::DOWN,
@@ -114,36 +113,5 @@ impl ops::IndexMut<Position> for Crossword {
     /// ```
     fn index_mut(&mut self, pos: Position) -> &mut Self::Output {
         &mut self.squares[pos]
-    }
-}
-
-#[cfg(feature = "serde")]
-mod serde_impl {
-    use puzzled_core::Grid;
-    use serde::{Deserialize, Serialize};
-
-    use crate::{CrosswordSquare, Squares};
-
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-    impl Serialize for Squares {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
-        {
-            self.0.serialize(serializer)
-        }
-    }
-
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-    impl<'de> Deserialize<'de> for Squares {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
-        {
-            let squares = Grid::<CrosswordSquare>::deserialize(deserializer)?;
-            let squares = Squares::new(squares);
-
-            Ok(squares)
-        }
     }
 }

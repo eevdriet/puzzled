@@ -60,11 +60,10 @@ macro_rules! crossword {
         $( $meta_key:ident : $meta_value:literal )*
     ) => {{
         // Add squares
-        let grid = $crate::grid![
+        let squares = $crate::grid![
             [$( $crate::square!($x0) ),+]
             $(, [$( $crate::square!($x) ),+] )*
         ];
-        let squares = $crate::Squares::new(grid);
 
         // Add clues
         let clues = vec![$($crate::clue_spec!($dir : $clue)),*];

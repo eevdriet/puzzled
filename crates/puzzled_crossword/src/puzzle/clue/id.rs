@@ -1,4 +1,4 @@
-use std::ops;
+use std::{fmt, ops};
 
 use crate::{Clue, ClueDirection, Crossword};
 
@@ -6,7 +6,23 @@ use crate::{Clue, ClueDirection, Crossword};
 ///
 /// The identifier mimics the way clues are commonly identified in real crosswords.
 /// For example, "4 across" can be specified as `(4, Direction::Across)`.
-pub type ClueId = (u8, ClueDirection);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ClueId {
+    pub num: u8,
+    pub direction: ClueDirection,
+}
+
+impl fmt::Display for ClueId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}-{}", self.num, self.direction)
+    }
+}
+
+impl From<(u8, ClueDirection)> for ClueId {
+    fn from((num, direction): (u8, ClueDirection)) -> Self {
+        Self { num, direction }
+    }
+}
 
 impl ops::Index<ClueId> for Crossword {
     type Output = Clue;

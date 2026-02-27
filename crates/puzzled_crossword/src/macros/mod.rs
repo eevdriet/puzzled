@@ -66,7 +66,7 @@ mod tests {
         #[case] solution: Solution,
         #[case] style: CellStyle,
     ) {
-        match square.inner() {
+        match square.as_ref() {
             Some(cell) => {
                 assert_eq!(cell.solution.clone().unwrap(), solution);
                 assert_eq!(cell.style, style);
