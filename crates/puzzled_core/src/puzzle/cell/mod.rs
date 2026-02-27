@@ -1,8 +1,12 @@
 mod style;
 
+use std::fmt;
+
 pub use style::CellStyle;
 
 use crate::Value;
+
+pub const MISSING_ENTRY_CHAR: char = '-';
 
 #[derive(Debug)]
 pub struct Cell<T> {
@@ -25,6 +29,23 @@ impl<T> Cell<T> {
             solution: None,
             style,
         }
+    }
+}
+
+impl<T> fmt::Display for Cell<T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            match self.solution {
+                None => MISSING_ENTRY_CHAR.to_string(),
+                Some(ref sol) => sol.to_string(),
+            },
+            self.style
+        )
     }
 }
 

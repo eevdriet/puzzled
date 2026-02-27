@@ -1,5 +1,7 @@
 mod bits;
 
+use std::{fmt, ops::Neg};
+
 pub use bits::*;
 use puzzled_core::Color;
 
@@ -26,6 +28,19 @@ impl Bit {
     }
     pub fn is_one(&self) -> bool {
         matches!(self, Bit::One)
+    }
+}
+
+impl fmt::Display for Bit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Bit::Zero => 0,
+                Bit::One => 1,
+            },
+        )
     }
 }
 
@@ -64,6 +79,17 @@ impl TryFrom<u8> for Bit {
             0 => Ok(Bit::Zero),
             1 => Ok(Bit::Zero),
             bit => Err(BitError::Overflow(bit)),
+        }
+    }
+}
+
+impl Neg for Bit {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Bit::Zero => Bit::One,
+            Bit::One => Bit::Zero,
         }
     }
 }

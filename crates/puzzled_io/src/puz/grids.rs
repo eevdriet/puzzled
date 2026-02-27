@@ -1,8 +1,5 @@
 use crate::puz::{Context, PuzRead, PuzWrite, format, read, windows_1252_to_char, write};
-use puzzled_core::{Grid, GridError};
-
-pub const NON_PLAYABLE_CHAR: char = '.';
-pub const MISSING_ENTRY_CHAR: char = '-';
+use puzzled_core::{Grid, GridError, NON_PLAYABLE_CHAR};
 
 /// [Grids]((https://gist.github.com/sliminality/dab21fa834eae0a70193c7cd69c356d5#puzzle-layout-and-state)) section
 ///

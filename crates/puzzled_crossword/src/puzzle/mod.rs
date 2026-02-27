@@ -6,7 +6,7 @@ mod square;
 mod state;
 
 pub use clue::*;
-use puzzled_io::puz::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
+use puzzled_core::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
 pub use square::*;
 pub use state::*;
 

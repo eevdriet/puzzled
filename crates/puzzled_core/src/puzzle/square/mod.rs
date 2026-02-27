@@ -1,4 +1,8 @@
+use std::fmt;
+
 use derive_more::{Deref, DerefMut};
+
+pub const NON_PLAYABLE_CHAR: char = '.';
 
 #[derive(Debug, Deref, DerefMut, PartialEq, Eq)]
 pub struct Square<T>(pub(crate) Option<T>);
@@ -29,20 +33,21 @@ impl<T> Square<T> {
     }
 }
 
-// impl<T> PartialEq for Square<T>
-// where
-//     T: PartialEq,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (Square::Black, Square::Black) => true,
-//             (Square::White(lhs), Square::White(rhs)) => lhs == rhs,
-//             _ => false,
-//         }
-//     }
-// }
-//
-// impl<T> Eq for Square<T> where T: Eq {}
+impl<T> fmt::Display for Square<T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.inner().as_ref() {
+                None => NON_PLAYABLE_CHAR.to_string(),
+                Some(sol) => sol.to_string(),
+            }
+        )
+    }
+}
 
 impl<T> Default for Square<T> {
     fn default() -> Self {

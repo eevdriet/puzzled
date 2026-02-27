@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 
-use puzzled_core::{Cell, Grid, Metadata, Position, Square};
+use puzzled_core::{Cell, Grid, MISSING_ENTRY_CHAR, Metadata, NON_PLAYABLE_CHAR, Position, Square};
 use puzzled_io::{
     Context,
     puz::{
-        BinaryPuzzle, ByteStr, Extras, Grids, Header, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR,
-        PuzSizeCheck, Span, Strings, WriteStateGrid, check_puz_size,
+        BinaryPuzzle, ByteStr, Extras, Grids, Header, PuzSizeCheck, Span, Strings, WriteStateGrid,
+        check_puz_size,
         read::{self, read_metadata},
         windows_1252_to_char,
         write::{self, WriteStyleGrid},

@@ -1,7 +1,6 @@
-use puzzled_core::Cell;
+use puzzled_core::{Cell, NON_PLAYABLE_CHAR};
 use puzzled_io::{
     format,
-    puz::NON_PLAYABLE_CHAR,
     text::{
         TxtPuzzle,
         read::{self, TxtState},

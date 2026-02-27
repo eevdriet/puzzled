@@ -1,6 +1,4 @@
-use puzzled_core::{Cell, CellStyle, Entry, Grid, Square};
-
-use crate::puz::{MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR};
+use puzzled_core::{Cell, CellStyle, Entry, Grid, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, Square};
 
 // State
 pub trait WriteStateGrid<T> {

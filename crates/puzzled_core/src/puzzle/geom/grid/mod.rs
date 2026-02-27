@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{Line, Position};
 
 mod error;
@@ -173,6 +175,44 @@ impl<T> Grid<T> {
             Line::Row(_) => self.cols,
             Line::Col(_) => self.rows,
         }
+    }
+}
+
+impl<T> fmt::Display for Grid<T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let size = self.size();
+
+        let mut max_width = 0;
+        let mut displays = Vec::with_capacity(size);
+
+        for cell in self.iter() {
+            let display = cell.to_string();
+            max_width = max_width.max(display.len());
+
+            displays.push(display);
+        }
+
+        let cols = self.cols();
+
+        for (idx, display) in displays.into_iter().enumerate() {
+            if idx.is_multiple_of(cols) {
+                write!(f, "[ ")?;
+            }
+
+            write!(f, "{:>width$}", display, width = max_width)?;
+
+            if (idx + 1).is_multiple_of(cols) {
+                write!(f, " ]")?;
+            }
+            if idx + 1 < size - 1 {
+                writeln!(f)?;
+            }
+        }
+
+        Ok(())
     }
 }
 

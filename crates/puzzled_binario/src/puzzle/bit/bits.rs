@@ -1,5 +1,3 @@
-use std::mem::zeroed;
-
 use puzzled_core::{Direction, Grid, Line, Position, Value};
 
 use crate::Bit;

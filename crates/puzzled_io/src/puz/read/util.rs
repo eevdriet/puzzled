@@ -1,8 +1,8 @@
-use puzzled_core::{Cell, Entry, Grid, Square};
+use puzzled_core::{Cell, Entry, Grid, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, Square};
 
 use crate::{
     Context,
-    puz::{Extras, Grids, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, read, windows_1252_to_char},
+    puz::{Extras, Grids, read, windows_1252_to_char},
 };
 
 pub fn read_cell_entries<T, F>(
