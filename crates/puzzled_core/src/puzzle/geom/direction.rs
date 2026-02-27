@@ -51,15 +51,15 @@ impl ops::Add<Direction> for Position {
     }
 }
 
-impl ops::Mul<isize> for Direction {
+impl ops::Mul<Direction> for isize {
     type Output = Offset;
 
-    fn mul(self, coef: isize) -> Self::Output {
-        match self {
-            Direction::Up => coef * Offset::UP,
-            Direction::Right => coef * Offset::RIGHT,
-            Direction::Down => coef * Offset::DOWN,
-            Direction::Left => coef * Offset::LEFT,
+    fn mul(self, dir: Direction) -> Self::Output {
+        match dir {
+            Direction::Up => self * Offset::UP,
+            Direction::Right => self * Offset::RIGHT,
+            Direction::Down => self * Offset::DOWN,
+            Direction::Left => self * Offset::LEFT,
         }
     }
 }

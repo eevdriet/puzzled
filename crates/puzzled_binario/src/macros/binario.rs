@@ -30,10 +30,18 @@ macro_rules! binario {
 
 #[cfg(test)]
 mod tests {
+    use puzzled_core::Puzzle;
+
+    use crate::BinarioSolver;
+
+    #[test]
     fn binario() {
         let puzzle = binario!(
-            [0 0 0]
-            [1 1 1]
+            [0 _ 0]
+            [1 _ 1]
         );
+
+        let mut solver = BinarioSolver {};
+        let _ = puzzle.solve_with(&mut solver);
     }
 }

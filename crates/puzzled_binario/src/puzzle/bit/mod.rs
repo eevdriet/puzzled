@@ -20,6 +20,15 @@ pub enum Bit {
     One,
 }
 
+impl Bit {
+    pub fn is_zero(&self) -> bool {
+        matches!(self, Bit::Zero)
+    }
+    pub fn is_one(&self) -> bool {
+        matches!(self, Bit::One)
+    }
+}
+
 impl From<bool> for Bit {
     fn from(value: bool) -> Self {
         match value {

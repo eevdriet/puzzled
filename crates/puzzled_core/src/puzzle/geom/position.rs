@@ -51,9 +51,12 @@ impl Position {
         Self { col, row }
     }
 
+    pub fn lines(&self) -> (Line, Line) {
+        (Line::Row(self.row), Line::Col(self.col))
+    }
+
     pub fn relative(&self) -> (LinePosition, LinePosition) {
-        let row = Line::Row(self.row);
-        let col = Line::Col(self.col);
+        let (row, col) = self.lines();
 
         (
             LinePosition::new(row, self.col),

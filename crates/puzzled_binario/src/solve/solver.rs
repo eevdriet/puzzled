@@ -1,4 +1,4 @@
-use puzzled_core::{Direction, Grid, Solve, Solver};
+use puzzled_core::{Direction, Grid, GridError, Solve, Solver, SolverError};
 
 use crate::{Binario, BinarioState, Bit, Bits};
 
@@ -6,13 +6,17 @@ use crate::{Binario, BinarioState, Bit, Bits};
 pub struct BinarioSolver {}
 
 impl Solver<Binario, BinarioState> for BinarioSolver {
-    type Error = String;
+    type Error = SolverError<GridError>;
 
-    fn solve(&mut self, _puzzle: &Binario, state: &mut BinarioState) -> Result<Grid<Bit>, String> {
+    fn solve(
+        &mut self,
+        _puzzle: &Binario,
+        state: &mut BinarioState,
+    ) -> Result<Grid<Bit>, Self::Error> {
         self.init(state);
         self.propagate(state);
 
-        state.try_finalize().map_err(|_| "Nope".to_string())
+        state.try_finalize().map_err(SolverError::CannotFinalize)
     }
 }
 
