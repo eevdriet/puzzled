@@ -1,109 +1,82 @@
-/*
-    [+ - - 3 - - +]
-    [2 . . . . . 2]
-    [3 . . . . . |]
-    [| . . . . . |]
-    [| . . . . . 1]
-    [| . . . . . 2]
-    [+ 2 - - - - +]
-*/
-
-// (
-//     // Grid definition
-//     [$($x0:tt)+] $( [$($x:tt)+])*
-//
-//     // Clue definitions
-//     $(- $dir:ident : $clue:literal )*
-//
-//     // Metadata
-//     $( $meta_key:ident : $meta_value:literal )*
-// ) => {{
-//     // Add squares
-//     let grid = $crate::grid![
-//         [$( $crate::square!($x0) ),+]
-//         $(, [$( $crate::square!($x) ),+] )*
-//     ];
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 #[macro_export]
 macro_rules! skycrapers {
     (
-        [+ $($top:tt)* +]
+        // Grid
+        ($($top_clues:tt)+)
+            $(
+                | $left_clues:tt [$($skyscrapers:tt)+] $right_clues:tt |
+            )+
+        ($($bottom_clues:tt)+)
+
+        // Metadata
+        $( $meta_key:ident : $meta_value:literal )*
+    ) => {{
+        // Verify each row has the same width
+        let mut _assert_width = [(); $crate::__count!($($top_clues)+)];
+        let cols = $crate::__count!($($top_clues)+);
+        let rows = 0usize;
 
         $(
-            [| $($row:tt)+ |]
+            let _assert_width_row = [(); $crate::__count!($($skyscrapers)+)];
+            _assert_width = _assert_width_row;
+            let rows = rows + 1usize;
         )+
 
-        [+ $($bottom:tt)+ +]
-    ) => {{
+        let _assert_width_bottom = [(); $crate::__count!($($bottom_clues)+)];
+        _assert_width = _assert_width_bottom;
 
-        const COLS: usize = $crate::__count!($($top)+);
+        // Construct the skyscrapers
+        let skyscrapers = $crate::grid![
+            $([$( $crate::skyscraper!($skyscrapers) ),+]),+
+        ];
 
-        const ROWS: usize = $crate::__count!(
-            $( [$($row)+] )+
-        );
+        let skyscrapers = skyscrapers.map(|s| $crate::Cell::new(s));
 
-        const _: [(); COLS] = [(); ROWS];
+        // Construct the clues
+        let mut clues = std::collections::BTreeMap::default();
 
-        $crate::Grid::from([
-            $(
-                $crate::skycrapers!(@row COLS; $($row)+)
-            ),+
-        ])
+        let top = [$($crate::__clue_value!($top_clues)),+];
+        let left = [$($crate::__clue_value!($left_clues)),+];
+        let right = [$($crate::__clue_value!($right_clues)),+];
+        let bottom = [$($crate::__clue_value!($bottom_clues)),+];
 
+        $crate::__insert_clues!(clues, top, $crate::Direction::Down, Col);
+        $crate::__insert_clues!(clues, left, $crate::Direction::Right, Row);
+        $crate::__insert_clues!(clues, right, $crate::Direction::Left, Row);
+        $crate::__insert_clues!(clues, bottom, $crate::Direction::Up, Col);
+
+        // Add metadata
+        let meta = $crate::metadata!($( $meta_key : $meta_value),*);
+
+        // Create puzzle
+        $crate::Skyscrapers::new(skyscrapers, $crate::Clues::new(clues, rows, cols), meta)
     }};
 }
 
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-#[macro_export]
-macro_rules! __skycrapers_impl {
-    (
-        [+; $($row0:tt),+ ;+]
-        $(; [$($row:tt),+])*
-        [+; $($row1:tt),+ ;+]
-    ) => {{
-        // Count columns and rows and make sure the puzzle is square
-        let mut _assert_width0 = [(); $crate::__count!($($row0)+)];
-        const COLS: usize = $crate::__count!($($row0)+);
-        const ROWS: usize = 2 + $crate::__count!($([$($row),+])*);
+#[cfg(test)]
+mod tests {
+    use puzzled_io::TxtPuzzle;
 
-        $(
-            _assert_width0 = [(); $crate::__count!($($row)+)];
-        )*
+    use crate::Skyscrapers;
 
-        _assert_width0 = [(); $crate::__count!($($row1)+)];
-        let _: [(); COLS] = [(); ROWS];
+    #[test]
+    fn write() {
+        let puzzle = skycrapers!(
+            (     1 2 3       )
+            | 4 [ - - - ] .   |
+            | 5 [ - - - ] .   |
+            | 6 [ - - - ] .   |
+            (     7 8 9       )
+            version: "1.0"
+        );
 
-        // // Construct cell grid
-        // let grid = $crate::grid![
-        //     $([$($crate::cell!($rows)),+]),*
-        // ];
-        // let cells = $crate::Cells::new(grid);
-        //
-        // // Add clues from the first and last lines
-        // let mut clues = $crate::Clues::default();
-        // let meta = $crate::Metadata::default();
-        //
-        // $crate::Skyscrapers::new(cells, clues, meta)
-        0
-    }};
+        let _ = puzzle.save_text("test");
+        assert!(false);
+    }
 
-    // Columns
-    (@cols $clues:ident; $col:expr; $num:tt $(, $nums:tt)*) => {
-        $crate::skyscrapers!(@cell $clues; $crate::Line::Col($col); $num);
-        $crate::skyscrapers!(@cols $clues; (1usize + $col); $($nums,)*);
-    };
-    (@cols $clues:ident; $col:expr;) => {};
-
-    // Rows
-    (@rows $clues:ident; $row:expr; $first:tt $(, $nums:tt)*, $last:tt) => {
-
-    };
-
-    // Cell
-    (@cell $clues:ident; $line:expr; $dir:expr; -) => {};
-    (@cell $clues:ident; $line:expr; $dir:expr; |) => {};
-
-    (@cell $clues:ident; $line:expr; $dir:expr; $num:expr) => {
-        $clues.insert($crate::ClueId::new($line, $dir), $num);
-    };
+    #[test]
+    fn read() {
+        let puzzle = Skyscrapers::load_text("read").expect("Should read correctly");
+    }
 }

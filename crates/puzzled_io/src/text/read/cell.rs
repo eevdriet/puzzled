@@ -7,6 +7,13 @@ use crate::text::{TxtState, read::CellText};
 type CellEntry<T> = (Square<Cell<T>>, Square<Entry<T>>);
 
 impl<'a> TxtState<'a> {
+    pub fn parse_value<T>(&mut self) -> Option<T>
+    where
+        T: FromStr,
+    {
+        self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), false)
+    }
+
     pub fn parse_cell_entry<T>(&mut self) -> Option<(Cell<T>, Entry<T>)>
     where
         T: FromStr,
@@ -59,7 +66,6 @@ impl<'a> TxtState<'a> {
         let ch = self.peek_char()?;
 
         if delimited {
-            println!("Delimter 1: {ch}");
             if ch != '(' {
                 return None;
             }
@@ -79,7 +85,6 @@ impl<'a> TxtState<'a> {
         }
 
         if end == 0 {
-            println!("End == 0");
             return None;
         }
 

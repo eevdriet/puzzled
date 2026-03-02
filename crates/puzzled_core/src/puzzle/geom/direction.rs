@@ -2,12 +2,12 @@ use std::{fmt, ops};
 
 use crate::{Offset, Position};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Direction {
     Up,
+    Right,
     Down,
     Left,
-    Right,
 }
 
 impl Direction {

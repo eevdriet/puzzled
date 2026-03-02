@@ -1,18 +1,7 @@
 mod clues;
+mod id;
 
 pub use clues::*;
-use puzzled_core::Line;
+pub use id::*;
 
-use crate::Direction;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct ClueId {
-    line: Line,
-    direction: Direction,
-}
-
-impl ClueId {
-    pub fn new(line: Line, direction: Direction) -> Self {
-        Self { line, direction }
-    }
-}
+pub type Clue = usize;

@@ -167,7 +167,7 @@ impl From<&Nonogram> for NonogramState {
 impl Solve<Nonogram> for NonogramState {
     type Value = Fill;
     type Position = Position;
-    type Error = GridError;
+    type Error = String;
 
     delegate! {
         to self.state {

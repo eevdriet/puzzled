@@ -38,6 +38,10 @@ impl<T> Grid<T> {
         (0..self.data.len()).map(move |idx| self.position(idx).expect("Position should be valid"))
     }
 
+    pub fn into_iter(self) -> impl Iterator<Item = T> {
+        self.data.into_iter()
+    }
+
     /// Creates an iterator over the grid
     ///
     /// The entries are traversed in [row-major](crate::Order::Rows) order.

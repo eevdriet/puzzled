@@ -54,8 +54,6 @@ pub struct Entry<E> {
     style: CellStyle,
 }
 
-pub type CellGrid<T> = Grid<Entry<T>>;
-
 impl<E> Entry<E> {
     // Current styles
     check_style!(CellStyle::REVEALED, style, is_revealed());

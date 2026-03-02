@@ -1,6 +1,10 @@
 mod bits;
 
-use std::{fmt, ops::Neg};
+use std::{
+    fmt,
+    ops::{Neg, Not},
+    str::FromStr,
+};
 
 pub use bits::*;
 use puzzled_core::Color;
@@ -12,9 +16,12 @@ pub enum BitError {
 
     #[error("Cannot construct bit from {0:?}, only #000 (zero) or #FFF (one) allowed")]
     InvalidColor(Color),
+
+    #[error("Cannot construct bit from {0:?}, only 0, 1, t, f, true and false allowed")]
+    InvalidText(String),
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Bit {
     #[default]
     Zero,
@@ -83,10 +90,22 @@ impl TryFrom<u8> for Bit {
     }
 }
 
-impl Neg for Bit {
+impl FromStr for Bit {
+    type Err = BitError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.to_lowercase().as_str() {
+            "0" | "f" | "false" => Ok(Bit::Zero),
+            "1" | "t" | "true" => Ok(Bit::One),
+            other => Err(BitError::InvalidText(other.to_string())),
+        }
+    }
+}
+
+impl Not for Bit {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
+    fn not(self) -> Self::Output {
         match self {
             Bit::Zero => Bit::One,
             Bit::One => Bit::Zero,

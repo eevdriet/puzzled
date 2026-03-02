@@ -1,14 +1,16 @@
-use std::fmt;
-
-use crate::{Line, Position};
-
 mod error;
 mod index;
 mod iter;
+mod sided;
 mod square;
+
+pub use sided::*;
 
 pub use error::Error as GridError;
 pub(crate) use iter::*;
+
+use crate::{Line, Position};
+use std::fmt::{self, Debug};
 
 #[derive(Debug, Default)]
 pub struct Grid<T> {
@@ -186,14 +188,14 @@ where
         let size = self.size();
         let cols = self.cols();
 
-        let mut max_width = vec![0; cols];
+        let mut max_widths = vec![0; cols];
         let mut displays = Vec::with_capacity(size);
 
         for (idx, cell) in self.iter().enumerate() {
             let col = idx % cols;
             let display = cell.to_string();
 
-            max_width[col] = max_width[col].max(display.len());
+            max_widths[col] = max_widths[col].max(display.len());
 
             displays.push(display);
         }
@@ -205,7 +207,7 @@ where
                 write!(f, "[")?;
             }
 
-            write!(f, " {:<width$}", display, width = max_width[col])?;
+            write!(f, " {:<width$}", display, width = max_widths[col])?;
 
             if (idx + 1).is_multiple_of(cols) {
                 write!(f, " ]")?;

@@ -37,6 +37,10 @@ impl<T> Grid<T> {
 
         Some(Position::new(row, col))
     }
+
+    pub fn is_in_bounds(&self, pos: Position) -> bool {
+        pos.row < self.rows() && pos.col < self.cols()
+    }
 }
 
 impl<T> Grid<T> {

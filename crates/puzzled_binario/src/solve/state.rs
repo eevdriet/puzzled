@@ -1,18 +1,14 @@
-use std::collections::VecDeque;
-
 use delegate::delegate;
 use puzzled_core::{
-    Entry, Grid, GridError, GridState, Position, Solve, Timer, impl_solve_for_grid_state,
+    Entry, Grid, GridError, GridState, Line, Position, Solve, Timer, impl_solve_for_grid_state,
 };
 
-use crate::{Binario, Bit};
+use crate::{Binario, Bit, Bits};
 
 #[derive(Debug)]
 pub struct BinarioState {
     pub state: GridState<Bit>,
     pub timer: Timer,
-
-    pub frontier: VecDeque<(Position, Bit)>,
 }
 
 impl_solve_for_grid_state!(Binario, Bit);
@@ -22,7 +18,6 @@ impl BinarioState {
         Self {
             timer,
             state: GridState { solutions, entries },
-            frontier: VecDeque::default(),
         }
     }
 
@@ -31,6 +26,31 @@ impl BinarioState {
     }
     pub fn entries(&self) -> &Grid<Entry<Bit>> {
         &self.state.entries
+    }
+
+    pub fn check_dir(&self, pos: Position) -> Option<Bit> {
+        let [up, right, down, left] = self
+            .solutions()
+            .adjacent4(pos)
+            .map(|adj| adj.cloned().expect("At least one layer of indirection"));
+
+        if up.is_some() && down.is_some() && up == down {
+            return up;
+        }
+
+        if left.is_some() && right.is_some() && left == right {
+            return left;
+        }
+
+        None
+    }
+
+    pub fn check_dir2(&self, pos: Position) -> Option<(Bit, Vec<Position>)> {
+        None
+    }
+
+    pub fn check_line(&self, pos: Position) -> Option<(Bit, Vec<Position>)> {
+        None
     }
 }
 
@@ -49,7 +69,7 @@ impl From<&Binario> for BinarioState {
 impl Solve<Binario> for BinarioState {
     type Value = Bit;
     type Position = Position;
-    type Error = GridError;
+    type Error = String;
 
     delegate! {
         to self.state {
@@ -68,6 +88,16 @@ impl Solve<Binario> for BinarioState {
             fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
 
             fn try_finalize(&self) -> Result<Grid<Bit>, Self::Error>;
+        }
+    }
+}
+
+impl Bits for BinarioState {
+    delegate! {
+        to self.state.solutions {
+            fn middle_bit(&self, pos: Position) -> Option<Bit>;
+            fn outer_bits(&self, pos: Position) -> Vec<(Position, Bit)>;
+            fn remaining_line_bit(&self, line: Line) -> Option<(Position, Bit)>;
         }
     }
 }

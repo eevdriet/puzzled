@@ -10,6 +10,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 bitflags = {workspace = true}
 serde = {workspace = true, optional = true}
+chumsky = {workspace = true, optional = true}
 derive_more = {workspace = true}
 thiserror = {workspace = true}
 
@@ -21,3 +22,4 @@ rstest = {workspace = true}
 default = ["macros"]
 macros = []
 serde = ["dep:serde"]
+text = ["dep:chumsky"]

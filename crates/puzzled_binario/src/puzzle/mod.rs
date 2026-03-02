@@ -50,35 +50,3 @@ impl Puzzle for Binario {
 
     type Solution = Grid<Bit>;
 }
-
-#[cfg(test)]
-mod tests {
-    use puzzled_core::{CellStyle, Position};
-
-    #[cfg(feature = "text")]
-    use puzzled_io::TxtPuzzle;
-
-    use crate::binario;
-
-    #[test]
-    fn binario() {
-        let mut puzzle = binario!(
-            [ 0 - 1 ]
-            [ 0 1 0 ]
-            [ - 1 1 ]
-
-            version: "1.0"
-            author: "Eertze"
-            copyright: " Yeet"
-            title : "My first puzzle"
-        );
-        puzzle[Position::new(0, 0)].style |= CellStyle::INCORRECT | CellStyle::REVEALED;
-
-        print!("{puzzle}");
-
-        #[cfg(feature = "image")]
-        puzzle.save_text("yeet").unwrap();
-
-        assert_eq!(puzzle.to_string(), "".to_string());
-    }
-}

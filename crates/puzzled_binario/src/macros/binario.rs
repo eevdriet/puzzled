@@ -27,18 +27,3 @@ macro_rules! binario {
         $crate::__error($($invalid)*, "binario!")
     }};
 }
-
-#[cfg(test)]
-mod tests {
-    use puzzled_core::Puzzle;
-
-    use crate::BinarioSolver;
-
-    #[test]
-    fn binario() {
-        let puzzle = binario!([0 - 0][1 - 1]);
-
-        let mut solver = BinarioSolver {};
-        let _ = puzzle.solve_with(&mut solver);
-    }
-}

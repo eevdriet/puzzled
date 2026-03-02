@@ -1,11 +1,12 @@
 mod io;
 mod puzzle;
+mod solve;
 
 #[doc(hidden)]
 pub use puzzled_core::*;
 
 #[doc(inline)]
-pub use puzzle::*;
+pub use {io::*, puzzle::*, solve::*};
 
 #[cfg(feature = "macros")]
 mod macros;

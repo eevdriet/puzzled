@@ -3,6 +3,8 @@
 // Puzzle
 mod puzzle;
 
+use std::fmt::{self, Display};
+
 #[doc(inline)]
 pub use puzzle::*;
 
@@ -28,5 +30,17 @@ impl<T> Value<T> for Option<T> {
 
     fn value_mut(&mut self) -> Option<&mut T> {
         self.as_mut()
+    }
+}
+
+impl<T> fmt::Display for dyn Value<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.value() {
+            None => write!(f, "{MISSING_ENTRY_CHAR}"),
+            Some(val) => write!(f, "{val}"),
+        }
     }
 }

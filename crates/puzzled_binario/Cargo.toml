@@ -12,11 +12,12 @@ derive_more = {workspace = true}
 delegate = {workspace = true}
 document-features = {workspace = true}
 serde = {workspace = true, optional = true}
-
+nom = {workspace = true, optional = true}
 image = {workspace = true, optional = true}
 thiserror = {workspace = true}
 puzzled_core = { path = "../puzzled_core"}
 puzzled_io = { path = "../puzzled_io/" }
+chumsky = "0.12.0"
 
 [dev-dependencies]
 puzzled = {path = "../puzzled", features = ["binario"]}
@@ -30,7 +31,7 @@ default = ["macros", "text"]
 ## Enables support for creating binario puzzles and related types inline through declarative macros
 macros = []
 ## Enables reading and writing binario puzzles from plain text
-text = ["puzzled_io/text"]
+text = ["dep:nom", "puzzled_io/text"]
 ## Enables serializing and deserializing binario puzzles using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = ["dep:serde", "puzzled_core/serde"]
 

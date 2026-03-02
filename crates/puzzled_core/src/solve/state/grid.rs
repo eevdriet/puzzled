@@ -15,10 +15,10 @@ impl<T> GridState<T> {
 #[macro_export]
 macro_rules! impl_solve_for_grid_state {
     ($puzzle:ty, $val:ty) => {
-        impl Solve<$puzzle> for GridState<$val> {
+        impl $crate::Solve<$puzzle> for GridState<$val> {
             type Value = $val;
             type Position = $crate::Position;
-            type Error = $crate::GridError;
+            type Error = String;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
                 let Some(solution) = self.solutions.get_mut(*pos) else {
@@ -89,15 +89,27 @@ macro_rules! impl_solve_for_grid_state {
                 }
             }
 
-            fn try_finalize(&self) -> Result<Grid<$val>, Self::Error> {
-                let values: Vec<_> = self
-                    .solutions
+            fn try_finalize(&self) -> Result<$crate::Grid<$val>, Self::Error> {
+                let solutions = &self.solutions;
+
+                if solutions.iter().any(|bit| bit.is_none()) {
+                    return Err("Expected all values to be set in the solution".to_string());
+                }
+
+                let values: Vec<_> = solutions
                     .iter()
                     .filter_map(|s| s.as_ref())
                     .cloned()
                     .collect();
 
-                Grid::from_vec(values, self.solutions.cols())
+                println!(
+                    "Values: {} | Solutions: {} ({} cols)",
+                    values.len(),
+                    solutions.size(),
+                    solutions.cols()
+                );
+
+                Ok($crate::Grid::from_vec(values, solutions.cols()).expect("Grid should be valid"))
             }
         }
     };

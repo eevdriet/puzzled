@@ -1,28 +1,28 @@
-use puzzled_core::{Grid, Position};
+use puzzled_core::{Grid, Position, Value};
 
-use crate::{Direction, puzzle::cell::SkyscraperCell};
+use crate::{Direction, Skyscraper};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Cells(pub(crate) Grid<SkyscraperCell>);
+pub trait Cells {
+    fn count_visible(&self, pos: Position, dir: Direction) -> usize;
+}
 
-impl Cells {
-    pub fn new(cells: Grid<SkyscraperCell>) -> Self {
-        Self(cells)
-    }
-
-    pub fn count_visible(&self, pos: Position, dir: Direction) -> usize {
+impl<T> Cells for Grid<T>
+where
+    T: Value<Skyscraper>,
+{
+    fn count_visible(&self, pos: Position, dir: Direction) -> usize {
         // Iterate over all remaining positions (including the current) in the direction
         let segment = pos.as_segment(dir);
-        let iter = self.0.iter_segment(&segment);
+        let iter = self.iter_segment(&segment);
 
         let mut max_height = 0;
         let mut count = 0;
 
         for cell in iter {
-            if let Some(height) = cell.solution
-                && height > max_height
+            if let Some(skyscraper) = cell.value()
+                && skyscraper.height() > max_height
             {
-                max_height = height;
+                max_height = skyscraper.height();
                 count += 1;
             }
         }

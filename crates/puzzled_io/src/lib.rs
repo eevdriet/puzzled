@@ -2,7 +2,18 @@
 #[cfg(feature = "text")]
 pub mod text;
 
+#[cfg(feature = "text")]
+pub mod nom;
+
+#[cfg(feature = "text")]
+pub mod chumsky;
+
+#[cfg(feature = "text")]
+#[doc(inline)]
+pub use chumsky::{TxtPuzzle as ChumskyPuzzle, TxtReader as ChumskyReader};
+
 use puzzled_core::{Cell, Entry, Grid, Square};
+
 #[cfg(feature = "text")]
 #[doc(inline)]
 pub use text::{TxtPuzzle, TxtReader};

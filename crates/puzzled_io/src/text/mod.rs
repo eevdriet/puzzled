@@ -11,6 +11,15 @@ use crate::puzzle_dir;
 pub trait TxtPuzzle<S>: Puzzle + Display {
     fn read_text(reader: &mut read::TxtState) -> read::Result<(Self, S)>;
 
+    fn load_text(name: &str) -> read::Result<(Self, S)> {
+        let reader = TxtReader::new(false);
+
+        let dir = puzzle_dir::<Self>()?;
+        let path = dir.join(name).with_extension("txt");
+
+        reader.read_from_path(path)
+    }
+
     fn save_text(&self, name: &str) -> io::Result<()>
     where
         S: for<'a> From<&'a Self>,
