@@ -1790,6 +1790,21 @@ dependencies = [
  "rstest",
  "serde",
  "thiserror 2.0.18",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
+]
+
+[[package]]
+name = "puzzled_binario_tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "derive_more",
+ "puzzled_binario",
+ "puzzled_core",
+ "puzzled_tui",
+ "ratatui",
 ]
 
 [[package]]
@@ -1887,6 +1902,18 @@ dependencies = [
  "rstest",
  "serde",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "puzzled_tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "derive_more",
+ "puzzled_core",
+ "ratatui",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

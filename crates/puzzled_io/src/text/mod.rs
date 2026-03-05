@@ -4,12 +4,13 @@ pub mod write;
 use std::{fmt::Display, fs, io};
 
 use puzzled_core::Puzzle;
-pub use read::{TxtReader, TxtState};
+pub use read::TxtReader;
 
 use crate::puzzle_dir;
 
 pub trait TxtPuzzle<S>: Puzzle + Display {
-    fn read_text(reader: &mut read::TxtState) -> read::Result<(Self, S)>;
+    fn read_text(input: &str) -> read::Result<(Self, S)>;
+    fn write_text(&self, state: &S) -> String;
 
     fn load_text(name: &str) -> read::Result<(Self, S)> {
         let reader = TxtReader::new(false);
@@ -28,13 +29,11 @@ pub trait TxtPuzzle<S>: Puzzle + Display {
         self.save_text_with_state(name, &state)
     }
 
-    fn save_text_with_state(&self, name: &str, _state: &S) -> io::Result<()>
-    where
-        S: for<'a> From<&'a Self>,
-    {
+    fn save_text_with_state(&self, name: &str, state: &S) -> io::Result<()> {
         let dir = puzzle_dir::<Self>()?;
         let path = dir.join(name).with_extension("txt");
+        let text = self.write_text(state);
 
-        fs::write(path, self.to_string())
+        fs::write(path, text)
     }
 }

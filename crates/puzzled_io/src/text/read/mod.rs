@@ -2,13 +2,16 @@ mod cell;
 mod error;
 mod grid;
 mod metadata;
-mod state;
+mod square;
 mod util;
 
 use std::{fs, path::Path};
 
+pub use cell::*;
 pub use error::*;
-pub use state::*;
+pub use grid::*;
+pub use metadata::*;
+pub use square::*;
 pub use util::*;
 
 use crate::text::TxtPuzzle;
@@ -27,9 +30,7 @@ impl TxtReader {
     where
         P: TxtPuzzle<S>,
     {
-        let mut state = TxtState::new(input, self.strict);
-
-        P::read_text(&mut state)
+        P::read_text(input)
     }
 
     pub fn read_from_path<R, P, S>(&self, path: R) -> Result<(P, S)>

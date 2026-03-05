@@ -198,8 +198,8 @@ mod tests {
         print!("{puzzle}");
         print!("{puzzle:?}");
 
-        #[cfg(feature = "text")]
-        puzzle.save_text("yeet").unwrap();
+        // #[cfg(feature = "text")]
+        // puzzle.save_text("yeet").unwrap();
 
         panic!("Auto fail")
     }

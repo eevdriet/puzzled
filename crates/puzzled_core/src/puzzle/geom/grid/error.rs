@@ -19,4 +19,11 @@ pub enum Error {
 
     #[error("Size overflow from trying to construct grid with {rows} rows and {cols} cols")]
     SizeOverflow { rows: usize, cols: usize },
+
+    #[error("The {side} side has length {found}, expected {expected}")]
+    InvalidSide {
+        side: String,
+        found: usize,
+        expected: usize,
+    },
 }

@@ -1,10 +1,6 @@
 mod bits;
 
-use std::{
-    fmt,
-    ops::{Neg, Not},
-    str::FromStr,
-};
+use std::{fmt, ops::Not, str::FromStr};
 
 pub use bits::*;
 use puzzled_core::Color;

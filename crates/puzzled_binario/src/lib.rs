@@ -22,6 +22,9 @@ mod solve;
 #[doc(hidden)]
 pub use puzzled_core::*;
 
+#[doc(hidden)]
+pub use puzzled_io::*;
+
 #[doc(inline)]
 pub use {puzzle::*, solve::*};
 

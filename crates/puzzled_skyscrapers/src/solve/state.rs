@@ -24,7 +24,11 @@ impl SkyscraperState {
         timer: Timer,
     ) -> Self {
         Self {
-            state: GridState { solutions, entries },
+            state: GridState {
+                solutions,
+                entries,
+                timer,
+            },
             timer,
             frontier: VecDeque::default(),
         }

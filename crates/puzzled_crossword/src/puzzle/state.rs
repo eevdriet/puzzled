@@ -1,56 +1,32 @@
-use puzzled_core::{
-    Entry, Grid, Solve, Square, SquareGridState, Timer, impl_solve_for_square_grid_state,
-};
+use puzzled_core::{Entry, Solve, SquareGridState, Timer, impl_solve_for_square_grid_state};
 
 use crate::{ClueId, Crossword, Solution};
 
-#[derive(Debug)]
-pub struct CrosswordState {
-    pub state: SquareGridState<Solution>,
-    pub timer: Timer,
-}
-
-impl CrosswordState {
-    pub fn solutions(&self) -> &Grid<Square<Option<Solution>>> {
-        &self.state.solutions
-    }
-
-    pub fn entries(&self) -> &Grid<Square<Entry<Solution>>> {
-        &self.state.entries
-    }
-}
-
 impl_solve_for_square_grid_state!(Crossword, Solution);
 
-/// # Mutation and solving
-impl CrosswordState {
-    pub fn new(
-        solutions: Grid<Square<Option<Solution>>>,
-        entries: Grid<Square<Entry<Solution>>>,
-        timer: Timer,
-    ) -> Self {
-        Self {
-            state: SquareGridState { solutions, entries },
-            timer,
-        }
-    }
+pub type CrosswordState = SquareGridState<Solution>;
 
+pub trait CrosswordSolve {
     /// Try to reveal a [clue](crate::Clue) from a given [identifier](ClueId).
     /// Returns whether the clue exists in the puzzle and all its [positions](Position) could be revealed
     /// ```
     /// ```
-    pub fn reveal_clue(&mut self, crossword: &Crossword, id: ClueId) -> bool {
+    fn reveal_clue(&mut self, crossword: &Crossword, id: ClueId) -> bool;
+}
+
+impl CrosswordSolve for CrosswordState {
+    fn reveal_clue(&mut self, crossword: &Crossword, id: ClueId) -> bool {
         // Try to get the clue to reveal squares for
         let Some(clue) = crossword.clues().get(&id) else {
             return false;
         };
 
         // Try reveal all squares that the is positioned in
-        clue.positions().all(|pos| self.state.reveal(&pos))
+        clue.positions().all(|pos| self.reveal(&pos))
     }
 }
 
-impl From<&Crossword> for CrosswordState {
+impl From<&Crossword> for SquareGridState<Solution> {
     fn from(crossword: &Crossword) -> Self {
         let squares = crossword.squares();
 

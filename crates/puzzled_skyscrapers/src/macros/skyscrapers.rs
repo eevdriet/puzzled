@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn write() {
-        let puzzle = skycrapers!(
+        let _puzzle = skycrapers!(
             (     1 2 3       )
             | 4 [ - - - ] .   |
             | 5 [ - - - ] .   |
@@ -71,12 +71,13 @@ mod tests {
             version: "1.0"
         );
 
-        let _ = puzzle.save_text("test");
-        assert!(false);
+        // let _ = puzzle.save_text("test");
+        panic!("No write at the moment");
     }
 
     #[test]
     fn read() {
-        let puzzle = Skyscrapers::load_text("read").expect("Should read correctly");
+        // let puzzle = Skyscrapers::load_text("read").expect("Should read correctly");
+        panic!("No read at the moment")
     }
 }

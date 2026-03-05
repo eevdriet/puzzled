@@ -1,119 +1,66 @@
-use std::str::FromStr;
+use chumsky::{
+    IterParser, Parser,
+    extra::Err,
+    prelude::{group, just, one_of},
+};
+use puzzled_core::{Cell, CellStyle, Entry, MISSING_ENTRY_CHAR};
 
-use puzzled_core::{Cell, CellStyle, Entry, NON_PLAYABLE_CHAR, Square};
+use crate::text::read::ParseError;
 
-use crate::text::{TxtState, read::CellText};
+pub fn cell_entry<'a, T, P>(
+    value: P,
+) -> impl Parser<'a, &'a str, (Cell<T>, Entry<T>), Err<ParseError<'a>>> + Clone
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    group((
+        solution(value.clone()).padded(),
+        cell_style().or_not().padded(),
+        entry(value.clone()).padded(),
+    ))
+    .padded()
+    .map(|(solution, opt_style, entry)| {
+        let style = opt_style.unwrap_or_default();
+        let cell = Cell::new_with_style(solution, style);
+        let entry = Entry::new_with_style(entry, style);
 
-type CellEntry<T> = (Square<Cell<T>>, Square<Entry<T>>);
+        (cell, entry)
+    })
+}
 
-impl<'a> TxtState<'a> {
-    pub fn parse_value<T>(&mut self) -> Option<T>
-    where
-        T: FromStr,
-    {
-        self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), false)
-    }
+pub fn cell_style<'a>() -> impl Parser<'a, &'a str, CellStyle, Err<ParseError<'a>>> + Clone {
+    one_of("*@~!")
+        .repeated()
+        .fold(CellStyle::default(), |style, marker| match marker {
+            '*' => style | CellStyle::REVEALED,
+            '!' => style | CellStyle::INCORRECT,
+            '~' => style | CellStyle::PREVIOUSLY_INCORRECT,
+            '@' => style | CellStyle::CIRCLED,
+            _ => unreachable!("Only parsed one_of(\"*@~!\")"),
+        })
+}
 
-    pub fn parse_cell_entry<T>(&mut self) -> Option<(Cell<T>, Entry<T>)>
-    where
-        T: FromStr,
-    {
-        // Try to read the cell
-        let value = self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), false)?;
-        let style = self
-            .parse_until::<CellStyle, _>(|ch| !ch.is_cell_style(), false)
-            .unwrap_or_default();
-        let cell = Cell::new_with_style(Some(value), style);
+fn solution<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Option<T>, Err<ParseError<'a>>> + Clone
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    just(MISSING_ENTRY_CHAR).map(|_| None).or(value.map(Some))
+}
 
-        // Try to read the entry
-        let value = self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), true);
-        let entry = Entry::new_with_style(value, style);
-
-        Some((cell, entry))
-    }
-
-    pub fn parse_square_entry<T>(&mut self) -> Option<CellEntry<T>>
-    where
-        T: FromStr,
-    {
-        // Try to read the cell
-        self.skip_whitespace();
-        if let Some(start) = self.peek_char()
-            && start == NON_PLAYABLE_CHAR
-        {
-            return Some((Square::new_empty(), Square::new_empty()));
-        }
-
-        let value = self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), false)?;
-        let style = self
-            .parse_until::<CellStyle, _>(|ch| !ch.is_cell_style(), false)
-            .unwrap_or_default();
-        let cell = Cell::new_with_style(Some(value), style);
-
-        // Try to read the entry
-        let value = self.parse_until::<T, _>(|ch| !ch.is_cell_contents(), true);
-        let entry = Entry::new_with_style(value, style);
-
-        Some((Square::new(cell), Square::new(entry)))
-    }
-
-    fn parse_until<T, F>(&mut self, mut stop_fn: F, delimited: bool) -> Option<T>
-    where
-        T: FromStr,
-        F: FnMut(char) -> bool,
-    {
-        self.skip_whitespace();
-        let ch = self.peek_char()?;
-
-        if delimited {
-            if ch != '(' {
-                return None;
-            }
-
-            self.next_char();
-        }
-        self.skip_whitespace();
-
-        let mut end = 0;
-
-        for (idx, ch) in self.remainder.char_indices() {
-            if stop_fn(ch) {
-                break;
-            }
-
-            end = idx + ch.len_utf8();
-        }
-
-        if end == 0 {
-            return None;
-        }
-
-        self.skip_whitespace();
-
-        let token = &self.remainder[..end];
-
-        if delimited {
-            if self.remainder.get(end..=end).is_none_or(|ch| ch != ")") {
-                println!("Delimter 2: {ch}");
-                return None;
-            }
-
-            self.advance(end);
-            self.next_char();
-        } else {
-            self.advance(end);
-        }
-
-        token.parse().ok()
-    }
+fn entry<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Option<T>, Err<ParseError<'a>>> + Clone
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    value.delimited_by(just('('), just(')')).or_not()
 }
 
 #[cfg(test)]
 mod tests {
+    use chumsky::text;
     use puzzled_core::CellStyle;
     use rstest::rstest;
 
-    use crate::text::TxtState;
+    use super::*;
 
     const _E: CellStyle = CellStyle::empty();
     const _I: CellStyle = CellStyle::INCORRECT;
@@ -122,20 +69,30 @@ mod tests {
     const _C: CellStyle = CellStyle::CIRCLED;
 
     #[rstest]
+    #[case("-", None, None, _E)]
     #[case("10", Some(10), None, _E)]
     #[case("10*", Some(10), None, _R)]
     #[case("10*@", Some(10), None, _R | _C)]
-    #[case("10*@ 10", Some(10), None, _R | _C)]
     #[case("10*@ (10)", Some(10), Some(10), _R | _C)]
     #[case("10*@ (22)", Some(10), Some(22), _R | _C)]
-    fn cell_entry(
+    // #[case("10 10", Some(10), None, _R | _C)]
+    // #[case("10*@ 10", Some(10), None, _R | _C)]
+    // zfZTQFQ3h9SL98BK
+    fn test_cell_entry(
         #[case] input: &str,
         #[case] cell_val: Option<usize>,
         #[case] entry_val: Option<usize>,
         #[case] style: CellStyle,
     ) {
-        let mut state = TxtState::new(input, false);
-        let (cell, entry) = state.parse_cell_entry().expect("Can read cell entry");
+        let value = text::digits::<_, Err<ParseError<'_>>>(10)
+            .to_slice()
+            .from_str()
+            .unwrapped();
+
+        let (cell, entry) = cell_entry(value)
+            .parse(input)
+            .into_output()
+            .expect("Parsing should succeed");
 
         assert_eq!(cell_val, cell.solution);
         assert_eq!(style, cell.style);

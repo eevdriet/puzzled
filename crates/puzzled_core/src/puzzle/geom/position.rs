@@ -7,7 +7,6 @@ use crate::LinePosition;
 use crate::LineSegment;
 use crate::Offset;
 use crate::Order;
-use crate::clamped_add;
 
 /// 2-dimensional coordinate to be used within a [grid](crate::Grid)
 ///
@@ -44,11 +43,18 @@ impl Position {
         }
     }
 
-    pub fn offset(&self, offset: Offset) -> Self {
-        let row = clamped_add(self.row, offset.rows);
-        let col = clamped_add(self.col, offset.cols);
+    pub fn offset(&self, offset: Offset) -> Option<Self> {
+        let row = (self.row as isize).checked_add(offset.rows)?;
+        let col = (self.col as isize).checked_add(offset.cols)?;
 
-        Self { col, row }
+        if row < 0 || col < 0 {
+            return None;
+        }
+
+        Some(Self {
+            row: row as usize,
+            col: col as usize,
+        })
     }
 
     pub fn lines(&self) -> (Line, Line) {
@@ -101,28 +107,28 @@ impl From<Position> for (usize, usize) {
 
 impl fmt::Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "R{}, C{}", self.row, self.col)
+        write!(f, "{},{}", self.row + 1, self.col + 1)
     }
 }
 
 impl ops::Add<Offset> for Position {
-    type Output = Self;
+    type Output = Option<Self>;
 
     /// Moves the position by the given offset.
     ///
     /// Values that would move the position outside the `u8` range are clamped
-    fn add(self, offset: Offset) -> Self {
+    fn add(self, offset: Offset) -> Option<Self> {
         self.offset(offset)
     }
 }
 
 impl ops::Sub<Offset> for Position {
-    type Output = Self;
+    type Output = Option<Self>;
 
     /// Moves the position by the inverse of the given offset.
     ///
     /// Values that would move the position outside the `u8` range are clamped
-    fn sub(self, offset: Offset) -> Self {
+    fn sub(self, offset: Offset) -> Option<Self> {
         self.offset(-offset)
     }
 }
@@ -132,7 +138,9 @@ impl ops::AddAssign<Offset> for Position {
     ///
     /// Values that would move the position outside the `u8` range are clamped
     fn add_assign(&mut self, offset: Offset) {
-        *self = *self + offset;
+        if let Some(pos) = *self + offset {
+            *self = pos;
+        }
     }
 }
 
@@ -141,7 +149,9 @@ impl ops::SubAssign<Offset> for Position {
     ///
     /// Values that would move the position outside the `u8` range are clamped
     fn sub_assign(&mut self, offset: Offset) {
-        *self = *self - offset;
+        if let Some(pos) = *self - offset {
+            *self = pos;
+        }
     }
 }
 

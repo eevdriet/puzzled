@@ -1,20 +1,27 @@
-pub trait CellText {
-    fn is_cell_style(&self) -> bool;
-    fn is_cell_contents(&self) -> bool;
+use chumsky::{
+    Parser,
+    error::Rich,
+    extra::Err,
+    label::LabelError,
+    prelude::{just, none_of},
+    text::{TextExpected, ident},
+};
+
+use crate::text::read::ParseError;
+
+pub fn quoted_string<'a>() -> impl Parser<'a, &'a str, &'a str> {
+    just('"')
+        .ignore_then(none_of('"').repeated().to_slice())
+        .then_ignore(just('"'))
 }
 
-const CELL_STYLE_CHARS: &str = "~!@*";
-const CELL_CONTENT_CHARS: &str = "abcdefghijklmnopqrstuvwxyz\
-ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-0123456789\
-`#$%^&_=+[]\\{}|;:'\"<>/? "; // ~!@* () -.,
-
-impl CellText for char {
-    fn is_cell_style(&self) -> bool {
-        CELL_STYLE_CHARS.contains(*self)
-    }
-
-    fn is_cell_contents(&self) -> bool {
-        CELL_CONTENT_CHARS.contains(*self)
-    }
+/// A case-insensitive variant of chumsky::text::keyword
+pub fn ignore_case_keyword<'a>(
+    keyword: &'static str,
+) -> impl Parser<'a, &'a str, (), Err<ParseError<'a>>> + Clone {
+    ident().try_map(|s: &str, span| {
+        s.eq_ignore_ascii_case(keyword)
+            .then_some(())
+            .ok_or_else(|| Rich::custom(span, "Invalid keyword"))
+    })
 }

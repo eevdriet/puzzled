@@ -1,0 +1,13 @@
+[package]
+name = "puzzled_binario_tui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ratatui = {workspace = true}
+derive_more = {workspace = true}
+crossterm = {workspace = true}
+
+puzzled_tui = {path = "../puzzled_tui/"}
+puzzled_binario = {path = "../puzzled_binario/"}
+puzzled_core = {path = "../puzzled_core/"}

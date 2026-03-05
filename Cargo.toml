@@ -2,12 +2,14 @@
 members = [
     "crates/puzzled",
     "crates/puzzled_binario",
+    "crates/puzzled_binario_tui",
     "crates/puzzled_core",
     "crates/puzzled_crossword",
     "crates/puzzled_io",
     "crates/puzzled_nonogram",
     "crates/puzzled_nonogram_tui",
     "crates/puzzled_skyscrapers",
+    "crates/puzzled_tui",
 ]
 resolver = "2"
 

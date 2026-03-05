@@ -29,7 +29,11 @@ impl_solve_for_grid_state!(Nonogram, Fill);
 impl NonogramState {
     pub fn new(solutions: Grid<Option<Fill>>, entries: Grid<Entry<Fill>>, timer: Timer) -> Self {
         Self {
-            state: GridState { solutions, entries },
+            state: GridState {
+                solutions,
+                entries,
+                timer,
+            },
             timer,
             frontier: VecDeque::default(),
             validations: LineMap::default(),

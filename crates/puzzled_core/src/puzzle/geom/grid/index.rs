@@ -46,23 +46,23 @@ impl<T> Grid<T> {
 impl<T> Grid<T> {
     pub fn adjacent4(&self, pos: Position) -> [Option<&T>; 4] {
         [
-            self.get(pos + Offset::UP),
-            self.get(pos + Offset::RIGHT),
-            self.get(pos + Offset::DOWN),
-            self.get(pos + Offset::LEFT),
+            (pos + Offset::UP).and_then(|p| self.get(p)),
+            (pos + Offset::RIGHT).and_then(|p| self.get(p)),
+            (pos + Offset::DOWN).and_then(|p| self.get(p)),
+            (pos + Offset::LEFT).and_then(|p| self.get(p)),
         ]
     }
 
     pub fn adjacent8(&self, pos: Position) -> [Option<&T>; 8] {
         [
-            self.get(pos + Offset::UP),
-            self.get(pos + Offset::UP + Offset::RIGHT),
-            self.get(pos + Offset::RIGHT),
-            self.get(pos + Offset::DOWN + Offset::RIGHT),
-            self.get(pos + Offset::DOWN),
-            self.get(pos + Offset::DOWN + Offset::LEFT),
-            self.get(pos + Offset::LEFT),
-            self.get(pos + Offset::LEFT + Offset::UP),
+            (pos + Offset::UP).and_then(|p| self.get(p)),
+            (pos + (Offset::UP + Offset::RIGHT)).and_then(|p| self.get(p)),
+            (pos + Offset::RIGHT).and_then(|p| self.get(p)),
+            (pos + (Offset::DOWN + Offset::RIGHT)).and_then(|p| self.get(p)),
+            (pos + Offset::DOWN).and_then(|p| self.get(p)),
+            (pos + (Offset::DOWN + Offset::LEFT)).and_then(|p| self.get(p)),
+            (pos + Offset::LEFT).and_then(|p| self.get(p)),
+            (pos + (Offset::UP + Offset::LEFT)).and_then(|p| self.get(p)),
         ]
     }
 }

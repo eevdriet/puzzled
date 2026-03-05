@@ -1,0 +1,13 @@
+[package]
+name = "puzzled_tui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ratatui = {workspace = true}
+crossterm = {workspace = true}
+tracing-subscriber = {workspace = true}
+derive_more = {workspace = true}
+tracing = {workspace = true}
+
+puzzled_core = {path = "../puzzled_core/"}

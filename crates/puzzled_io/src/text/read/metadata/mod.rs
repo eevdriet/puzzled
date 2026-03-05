@@ -1,13 +1,5 @@
-use chumsky::{
-    Parser,
-    error::EmptyErr,
-    extra::Err,
-    prelude::{choice, empty, just},
-    text,
-};
+use chumsky::{Parser, error::EmptyErr, extra::Err, prelude::empty};
 use puzzled_core::{Metadata, Timer, Version};
-
-use crate::chumsky::read::quoted_string;
 
 mod timer;
 mod version;

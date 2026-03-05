@@ -1,76 +1,75 @@
 use chumsky::{
-    IterParser, Parser,
+    Parser,
     extra::Err,
-    prelude::{EmptyErr, any},
+    prelude::{choice, just},
 };
 use puzzled_core::{Grid, Metadata, Timer};
-use puzzled_io::chumsky::{
+use puzzled_io::text::{
     TxtPuzzle,
-    read::{cell_entry, grid},
+    read::{self, ParseError, cell_entry, grid, ignore_case_keyword},
 };
 
 use crate::{Binario, BinarioState, Bit};
 
-pub fn bit<'a>() -> impl Parser<'a, &'a str, Bit, Err<EmptyErr>> + Clone {
-    any::<&str, Err<EmptyErr>>()
-        .repeated()
-        .at_least(1)
-        .collect::<String>()
-        .try_map(|str, _span| {
-            let bit = match str.as_str() {
-                // Zero
-                "0" => Bit::Zero,
-                x if x.eq_ignore_ascii_case("false") => Bit::Zero,
-                x if x.eq_ignore_ascii_case("f") => Bit::Zero,
-
-                // One
-                "1" => Bit::One,
-                x if x.eq_ignore_ascii_case("true") => Bit::One,
-                x if x.eq_ignore_ascii_case("t") => Bit::One,
-
-                // Error
-                _ => return Err(EmptyErr::default()),
-            };
-
-            Ok(bit)
-        })
+pub fn bit<'a>() -> impl Parser<'a, &'a str, Bit, Err<ParseError<'a>>> + Clone {
+    choice((
+        // Zeroes
+        just("0").to(Bit::Zero),
+        ignore_case_keyword("false").to(Bit::Zero),
+        ignore_case_keyword("f").to(Bit::Zero),
+        // Ones
+        just("1").to(Bit::One),
+        ignore_case_keyword("true").to(Bit::One),
+        ignore_case_keyword("t").to(Bit::One),
+    ))
 }
 
 impl TxtPuzzle<BinarioState> for Binario {
-    fn read_text<'a>() -> impl Parser<'a, &'a str, (Self, BinarioState), Err<EmptyErr>> {
-        grid(cell_entry(bit())).map(|cell_entries| {
-            let cols = cell_entries.cols();
-            eprintln!("Cols: {cols}");
+    fn read_text<'a>(input: &str) -> read::Result<(Self, BinarioState)> {
+        let cell_entries = grid(cell_entry(bit()))
+            .parse(input)
+            .into_result()
+            .map_err(|errs| {
+                read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
+            })?;
 
-            let (cells, solutions, entries) = cell_entries.into_iter().fold(
-                (vec![], vec![], vec![]),
-                |(mut cells, mut solutions, mut entries), (cell, entry)| {
-                    solutions.push(cell.solution);
-                    cells.push(cell);
-                    entries.push(entry);
+        let cols = cell_entries.cols();
+        eprintln!("Cols: {cols}");
 
-                    (cells, solutions, entries)
-                },
-            );
+        let (cells, solutions, entries) = cell_entries.into_iter().fold(
+            (vec![], vec![], vec![]),
+            |(mut cells, mut solutions, mut entries), (cell, entry)| {
+                solutions.push(cell.solution);
+                cells.push(cell);
+                entries.push(entry);
 
-            let cells = Grid::from_vec(cells, cols).expect("Read cells from grid");
-            let solutions = Grid::from_vec(solutions, cols).expect("Read solutions from grid");
-            let entries = Grid::from_vec(entries, cols).expect("Read entries from grid");
+                (cells, solutions, entries)
+            },
+        );
 
-            let timer = Timer::default();
-            let meta = Metadata::default();
+        let cells = Grid::from_vec(cells, cols).expect("Read cells from grid");
+        let solutions = Grid::from_vec(solutions, cols).expect("Read solutions from grid");
+        let entries = Grid::from_vec(entries, cols).expect("Read entries from grid");
 
-            let puzzle = Binario::new(cells, meta);
-            let state = BinarioState::new(solutions, entries, timer);
+        let timer = Timer::default();
+        let meta = Metadata::default();
 
-            (puzzle, state)
-        })
+        let puzzle = Binario::new(cells, meta);
+        let state = BinarioState::new(solutions, entries, timer);
+
+        Ok((puzzle, state))
+    }
+
+    fn write_text(&self, state: &BinarioState) -> String {
+        format!("{state}\n{}", self.meta())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use puzzled_io::{ChumskyPuzzle, chumsky::read::grid_row};
+    use std::path::PathBuf;
+
+    use puzzled_io::{TxtPuzzle, TxtReader, text::read::grid_row};
     use rstest::rstest;
 
     use super::*;
@@ -80,35 +79,17 @@ mod tests {
     const F: Bit = Bit::Zero;
 
     #[rstest]
-    #[case("0", Some(F))]
-    #[case("1", Some(T))]
-    #[case("f", Some(F))]
-    #[case("F", Some(F))]
-    #[case("t", Some(T))]
-    #[case("T", Some(T))]
-    #[case("false", Some(F))]
-    #[case("FAlse", Some(F))]
-    fn parse_bit(#[case] input: &str, #[case] expected: Option<Bit>) {
-        let bit = bit().parse(input).into_output();
-
-        assert_eq!(expected, bit);
-    }
-
-    #[rstest]
-    #[case(" 0 ", vec![Some(F)])]
-    #[case("[ - ]", vec![None])]
-    #[case("[ - - - ]", vec![None, None, None])]
-    #[case("[ - 0 ]", vec![None, Some(F)])]
-    fn test_row(#[case] input: &str, #[case] expected: Vec<Option<Bit>>) {
-        let solutions: Vec<_> = grid_row(cell_entry(bit()))
-            .parse(input)
-            .into_output()
-            .expect("Parsing should succeed")
-            .into_iter()
-            .map(|(cell, _entry)| cell.solution)
-            .collect();
-
-        assert_eq!(solutions, expected);
+    #[case("0", F)]
+    #[case("1", T)]
+    #[case("f", F)]
+    #[case("F", F)]
+    #[case("t", T)]
+    #[case("T", T)]
+    #[case("false", F)]
+    #[case("FAlse", F)]
+    fn parse_bit(#[case] input: &str, #[case] expected: Bit) {
+        let bit = bit().parse(input).unwrap();
+        assert_eq!(bit, expected);
     }
 
     #[rstest]
@@ -126,6 +107,13 @@ mod tests {
             .collect();
 
         assert_eq!(solutions, expected);
+    }
+
+    #[rstest]
+    fn read(#[files("puzzles/ok/*.txt")] path: PathBuf) {
+        let reader = TxtReader::new(false);
+        let (_puzzle, _state): (Binario, BinarioState) =
+            reader.read_from_path(path).expect("Puzzle is valid");
     }
 
     #[test]

@@ -5,7 +5,7 @@ use crate::Bit;
 pub trait Bits {
     fn middle_bit(&self, pos: Position) -> Option<Bit>;
     fn outer_bits(&self, pos: Position) -> Vec<(Position, Bit)>;
-    fn remaining_line_bit(&self, line: Line) -> Option<(Position, Bit)>;
+    fn remaining_line_bits(&self, line: Line) -> Vec<(Position, Bit)>;
 }
 
 impl<T> Bits for Grid<T>
@@ -17,25 +17,29 @@ where
         let [up, right, down, left] = self.adjacent4(pos).map(|adj| adj.and_then(|b| b.value()));
 
         if up.is_some() && down.is_some() && up == down {
-            return up.cloned();
+            let bit = up.cloned().unwrap();
+            return Some(!bit);
         }
 
         if left.is_some() && right.is_some() && left == right {
-            return left.cloned();
+            let bit = left.cloned().unwrap();
+            return Some(!bit);
         }
 
         None
     }
 
     fn outer_bits(&self, pos: Position) -> Vec<(Position, Bit)> {
+        // tracing::debug!("Outer bits");
         let mut bits = Vec::with_capacity(1 + 4);
         let mut center = None;
 
         // Candidate if D/D2 are the same bit for any direction D
-        let dir_n = |direction: Direction, n: isize| {
-            let pos_n = pos + n * direction;
-
-            self.get(pos_n).and_then(|b| b.value())
+        let dir_n = |direction: Direction, n: isize| -> Option<&Bit> {
+            match pos + n * direction {
+                Some(pos_n) => self.get(pos_n).and_then(|p| p.value()),
+                _ => None,
+            }
         };
 
         for direction in Direction::ALL {
@@ -47,8 +51,11 @@ where
                 && adj == adj2
             {
                 let bit = !*neg_bit;
-                bits.push((pos + 3 * direction, bit));
                 center = Some(bit);
+
+                if let Some(adj3) = pos + 3 * direction {
+                    bits.push((adj3, bit));
+                }
             }
         }
 
@@ -56,47 +63,49 @@ where
             bits.push((pos, bit));
         }
 
-        eprintln!("Dir2 bits: {bits:?}");
         bits
     }
 
-    fn remaining_line_bit(&self, line: Line) -> Option<(Position, Bit)> {
+    fn remaining_line_bits(&self, line: Line) -> Vec<(Position, Bit)> {
         let mut zero_count = 0;
-        let mut remaining_pos = None;
+        let mut one_count = 0;
+        let mut remaining = vec![];
 
         for (pos, bit) in self.iter_indexed_line(line) {
             match bit.value() {
                 // Only check for one remaining position, otherwise terminate search
-                None if remaining_pos.is_some() => return None,
-                None => remaining_pos = Some(pos),
+                None => remaining.push(pos),
 
                 // Keep check of how many zero bits are set
-                Some(bit) if bit.is_zero() => zero_count += 1,
-                _ => {}
+                Some(bit) => {
+                    if bit.is_zero() {
+                        zero_count += 1
+                    } else {
+                        one_count += 1
+                    }
+                }
             }
         }
 
-        match remaining_pos {
-            None => None,
+        // Determine which bit to give the remaining positions if any
+        let half_count = self.line_len(line) / 2;
 
-            // For one remaining position, derive the corresponding remaining bit
-            Some(remaining_pos) => {
-                let remaining_bit = if zero_count < self.line_len(line) / 2 {
-                    Bit::Zero
-                } else {
-                    Bit::One
-                };
+        let bit = if zero_count == half_count {
+            Bit::One
+        } else if one_count == half_count {
+            Bit::Zero
+        } else {
+            return vec![];
+        };
 
-                Some((remaining_pos, remaining_bit))
-            }
-        }
+        remaining.into_iter().map(|pos| (pos, bit)).collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use puzzled_core::{Grid, Position};
-    use rstest::{fixture, rstest};
+    use puzzled_core::Grid;
+    use rstest::fixture;
 
     use crate::{Bit, binario};
 

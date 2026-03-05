@@ -13,9 +13,9 @@ pub trait CrosswordSquares {
 
 impl<T> CrosswordSquares for Grid<Square<T>> {
     fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool {
-        let is_blank = |pos: Position| self[pos].as_ref().is_none();
+        let is_blank = |pos: Option<Position>| pos.is_some_and(|p| self[p].as_ref().is_none());
 
-        if is_blank(pos) {
+        if is_blank(Some(pos)) {
             return false;
         }
 

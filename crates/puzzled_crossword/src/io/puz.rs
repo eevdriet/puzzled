@@ -13,8 +13,8 @@ use puzzled_io::{
 };
 
 use crate::{
-    Clue, ClueDirection, Clues, Crossword, CrosswordSquares, CrosswordState, Entry, Solution,
-    Squares,
+    Clue, ClueDirection, Clues, Crossword, CrosswordSolve, CrosswordSquares, CrosswordState, Entry,
+    Solution, Squares,
 };
 
 impl PuzSizeCheck for Crossword {
@@ -53,10 +53,10 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
 
     fn grids(&self, state: &CrosswordState) -> write::Result<(Grid<u8>, Grid<u8>)> {
         let solution = state
-            .solutions()
+            .solutions
             .write_state_grid(|sol| sol.first_letter() as u8);
         let state = state
-            .entries()
+            .entries
             .write_state_grid(|sol| sol.first_letter() as u8);
 
         Ok((solution, state))
@@ -70,7 +70,7 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
         let squares = self.squares();
         squares.check_puz_size()?;
 
-        let entries = &state.entries();
+        let entries = &state.entries;
 
         let mut extras = Extras::default();
 

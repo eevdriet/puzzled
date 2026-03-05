@@ -102,7 +102,7 @@ impl App {
                 let app_event = AppEvent::new(event);
 
                 // See whether the application handles it and whether it needs action
-                if let Some(input) = self.events.push(app_event.clone()) {
+                if let Some(input) = self.events.push(app_event) {
                     let status = self.handle_with_engine(input)?;
 
                     if matches!(status, ActionOutcome::Exit) {

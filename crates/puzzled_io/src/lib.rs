@@ -3,18 +3,6 @@
 pub mod text;
 
 #[cfg(feature = "text")]
-pub mod nom;
-
-#[cfg(feature = "text")]
-pub mod chumsky;
-
-#[cfg(feature = "text")]
-#[doc(inline)]
-pub use chumsky::{TxtPuzzle as ChumskyPuzzle, TxtReader as ChumskyReader};
-
-use puzzled_core::{Cell, Entry, Grid, Square};
-
-#[cfg(feature = "text")]
 #[doc(inline)]
 pub use text::{TxtPuzzle, TxtReader};
 
@@ -42,6 +30,8 @@ pub use error::*;
 pub use util::*;
 
 pub mod format;
+
+use puzzled_core::{Cell, Entry, Grid, Square};
 
 pub(crate) type CellEntries<T> = (Grid<Cell<T>>, Grid<Entry<T>>);
 pub(crate) type SquareEntries<T> = (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>);

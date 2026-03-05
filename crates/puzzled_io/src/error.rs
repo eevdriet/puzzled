@@ -3,13 +3,12 @@ use crate::puz;
 
 #[cfg(feature = "image")]
 use crate::image;
+
+#[cfg(feature = "text")]
 use crate::text;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReadError {
-    #[error("Text error: {0}")]
-    Text(#[from] text::read::Error),
-
     #[cfg(feature = "puz")]
     #[error("Puz error: {0}")]
     Puz(#[from] puz::read::Error),
@@ -23,17 +22,18 @@ pub enum ReadError {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum WritError {
+pub enum WriteError {
+    #[cfg(feature = "text")]
     #[error("Text error: {0}")]
-    Text(#[from] text::read::Error),
+    Text(#[from] text::write::Error),
 
     #[cfg(feature = "puz")]
     #[error("Puz error: {0}")]
-    Puz(#[from] puz::read::Error),
+    Puz(#[from] puz::write::Error),
 
     #[cfg(feature = "image")]
     #[error("Image error: {0}")]
-    Image(#[from] image::read::Error),
+    Image(#[from] image::write::Error),
 
     #[error("Cannot write puzzle with unsupported format '{format}'")]
     UnsupportedFormat { format: String },
