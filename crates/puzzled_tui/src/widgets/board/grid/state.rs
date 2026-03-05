@@ -21,14 +21,14 @@ impl GridState {
         let opts = &self.options;
 
         // Ignore positions outside of the viewport
-        if vp.area.contains(app_pos) {
+        if !vp.area.contains(app_pos) {
             tracing::debug!("\t Viewport {} does not contain", vp.area);
             return None;
         }
 
         // Normalize position from the viewport start
-        let mut x = app_pos.x - vp.area.x;
-        let mut y = app_pos.y - vp.area.y;
+        let mut x = app_pos.x.checked_sub(vp.area.x)?;
+        let mut y = app_pos.y.checked_sub(vp.area.y)?;
 
         // Remove inner cell borders if set
         let cell_w = opts.cell_width;

@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 ratatui = {workspace = true}
+tokio = {workspace = true}
+serde = {workspace = true}
 derive_more = {workspace = true}
 crossterm = {workspace = true}
 
