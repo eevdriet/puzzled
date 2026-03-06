@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use crate::{Entry, Grid, MISSING_ENTRY_CHAR, NON_PLAYABLE_CHAR, Square, Timer};
+use crate::{Entry, Grid, NON_PLAYABLE_CHAR, SolutionEntry, Square, Timer};
 
 #[derive(Debug)]
 pub struct GridState<T> {
@@ -17,20 +17,17 @@ impl<T> GridState<T> {
             timer,
         }
     }
-}
 
-fn display_solution_entry<T>(solution: Option<&T>, entry: &Entry<T>) -> String
-where
-    T: Display,
-{
-    let style = entry.style();
+    pub fn to_merged(&self) -> Grid<SolutionEntry<'_, T>> {
+        let data: Vec<_> = self
+            .solutions
+            .iter()
+            .zip(self.entries.iter())
+            .map(|(solution, entry)| SolutionEntry { solution, entry })
+            .collect();
 
-    match (solution, entry.entry()) {
-        (None, None) => MISSING_ENTRY_CHAR.to_string(),
-
-        (Some(s), None) => format!("{s}{style}"),
-        (None, Some(e)) => format!("({e}{style})"),
-        (Some(s), Some(e)) => format!("{s}{style} ({e})"),
+        Grid::from_vec(data, self.solutions.cols())
+            .expect("Solutions and entries have the same size")
     }
 }
 
@@ -39,16 +36,7 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let merged: Vec<_> = self
-            .solutions
-            .iter()
-            .zip(self.entries.iter())
-            .map(|(solution, entry)| display_solution_entry(solution.as_ref(), entry))
-            .collect();
-
-        let grid = Grid::from_vec(merged, self.entries.cols())
-            .expect("Merged solutions and entries grids of same dimensions");
-        write!(f, "{grid}")
+        write!(f, "{}", self.to_merged())
     }
 }
 
@@ -153,20 +141,7 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let merged: Vec<_> = self
-            .solutions
-            .iter()
-            .zip(self.entries.iter())
-            .map(|(solution, entry)| match (&solution.0, &entry.0) {
-                (None, None) => NON_PLAYABLE_CHAR.to_string(),
-                (Some(s), Some(e)) => display_solution_entry(s.as_ref(), e),
-                _ => unreachable!("Solution and entry should always be same type of square"),
-            })
-            .collect();
-
-        let grid = Grid::from_vec(merged, self.entries.cols())
-            .expect("Merged solutions and entries grids of same dimensions");
-        write!(f, "{grid}")
+        write!(f, "{}", self.to_merged())
     }
 }
 
@@ -188,6 +163,23 @@ impl<T> SquareGridState<T> {
             entries,
             timer,
         }
+    }
+
+    pub fn to_merged(&self) -> Grid<Square<SolutionEntry<'_, T>>> {
+        let data: Vec<_> = self
+            .solutions
+            .iter()
+            .zip(self.entries.iter())
+            .map(
+                |(solution, entry)| match (solution.0.as_ref(), entry.0.as_ref()) {
+                    (Some(solution), Some(entry)) => Square::new(SolutionEntry { solution, entry }),
+                    _ => Square::new_empty(),
+                },
+            )
+            .collect();
+
+        Grid::from_vec(data, self.solutions.cols())
+            .expect("Solutions and entries have the same size")
     }
 }
 

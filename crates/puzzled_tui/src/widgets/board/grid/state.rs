@@ -3,7 +3,7 @@ use ratatui::layout::Position as AppPosition;
 
 use crate::{GridOptions, Viewport};
 
-pub struct GridState {
+pub struct GridRenderState {
     pub options: GridOptions,
 
     /// Visible area of the grid
@@ -13,7 +13,7 @@ pub struct GridState {
     pub cursor: Position,
 }
 
-impl GridState {
+impl GridRenderState {
     pub fn to_grid(&self, app_pos: AppPosition) -> Option<Position> {
         tracing::info!("App {app_pos} to grid");
 

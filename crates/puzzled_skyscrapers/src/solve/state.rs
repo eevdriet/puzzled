@@ -1,9 +1,7 @@
 use std::collections::VecDeque;
 
 use delegate::delegate;
-use puzzled_core::{
-    Entry, Grid, GridError, GridState, Position, Solve, Timer, impl_solve_for_grid_state,
-};
+use puzzled_core::{Entry, Grid, GridState, Position, Solve, Timer, impl_solve_for_grid_state};
 
 use crate::{Skyscraper, Skyscrapers};
 

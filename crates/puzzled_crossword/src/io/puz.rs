@@ -13,8 +13,8 @@ use puzzled_io::{
 };
 
 use crate::{
-    Clue, ClueDirection, Clues, Crossword, CrosswordSolve, CrosswordSquares, CrosswordState, Entry,
-    Solution, Squares,
+    Clue, ClueDirection, Clues, Crossword, CrosswordSquares, CrosswordState, Entry, Solution,
+    Squares,
 };
 
 impl PuzSizeCheck for Crossword {

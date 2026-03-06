@@ -6,7 +6,7 @@ pub use actions::*;
 pub use events::*;
 pub use screens::*;
 
-use std::{collections::VecDeque, fmt::Debug, marker::PhantomData, time::Duration};
+use std::{collections::VecDeque, marker::PhantomData, time::Duration};
 
 use crossterm::{
     event::{self, EnableMouseCapture},

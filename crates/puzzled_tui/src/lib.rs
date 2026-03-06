@@ -5,7 +5,8 @@ mod util;
 mod widgets;
 
 pub use app::*;
-pub use config::*;
 pub use log::*;
 pub use util::*;
 pub use widgets::*;
+
+pub(crate) use config::*;

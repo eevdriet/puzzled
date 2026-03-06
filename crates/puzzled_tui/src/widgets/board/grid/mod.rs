@@ -27,7 +27,7 @@ impl<'a, T> Clone for GridWidget<'a, T> {
 impl<'a, T> Copy for GridWidget<'a, T> {}
 
 impl<'a, T> RenderSize for GridWidget<'a, T> {
-    type State = GridState;
+    type State = GridRenderState;
 
     fn render_size(&self, state: &Self::State) -> Size {
         let cols = state.viewport.cols().min(self.cols()) as u16;
@@ -41,7 +41,7 @@ impl<'a, T> RenderSize for GridWidget<'a, T> {
             height += (rows - 1) / inner.height;
         }
 
-        if state.options.draw_borders {
+        if state.options.draw_outer_borders {
             width += 2;
             height += 2;
         }
@@ -52,9 +52,9 @@ impl<'a, T> RenderSize for GridWidget<'a, T> {
 
 impl<'a, T> StatefulWidget for GridWidget<'a, T>
 where
-    T: CellRender<GridState>,
+    T: CellRender<GridRenderState>,
 {
-    type State = GridState;
+    type State = GridRenderState;
 
     fn render(self, parent: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Determine the actual area in which to render the grid
@@ -66,7 +66,7 @@ where
         );
 
         // Determine the grid area based on whether borders should be drawn
-        let area = if state.options.draw_borders {
+        let area = if state.options.draw_outer_borders {
             bordered_area.inner(Margin::new(1, 1))
         } else {
             bordered_area
@@ -82,9 +82,9 @@ where
 
 impl<'a, T> GridWidget<'a, T>
 where
-    T: CellRender<GridState>,
+    T: CellRender<GridRenderState>,
 {
-    pub fn render_grid(&self, area: Rect, buf: &mut Buffer, state: &GridState) {
+    pub fn render_grid(&self, area: Rect, buf: &mut Buffer, state: &GridRenderState) {
         // Render the grid itself
         let vp = &state.viewport;
         let opts = &state.options;
@@ -124,7 +124,7 @@ where
                 {
                     if draw_inner {
                         for div_y in y..y + cell_h {
-                            buf.set_stringn(x, div_y, "│", 1, state.options.border_style);
+                            buf.set_stringn(x, div_y, "│", 1, state.options.inner_border_style);
                         }
                     }
 
@@ -153,7 +153,7 @@ where
                             y,
                             text,
                             cell_w as usize,
-                            state.options.border_style,
+                            state.options.inner_border_style,
                         );
                     }
 
@@ -161,7 +161,7 @@ where
 
                     if (col + 1).is_multiple_of(size.width) {
                         if draw_inner {
-                            buf.set_stringn(div_x, y, "┼", 1, state.options.border_style);
+                            buf.set_stringn(div_x, y, "┼", 1, state.options.inner_border_style);
                         }
 
                         div_x += 1;

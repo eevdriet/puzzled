@@ -3,70 +3,33 @@ mod screens;
 mod state;
 
 pub use action::*;
+use ratatui::layout::Size;
 pub use screens::*;
 pub use state::*;
 
 use std::io;
 
-use derive_more::{Deref, DerefMut};
-use puzzled_binario::{Binario, Bit};
-use puzzled_core::{Position, grid};
-use puzzled_tui::{App, CellRender, EventTrie, GridOptions, GridState, Viewport, init_logging};
-use ratatui::{
-    layout::Size,
-    style::{Modifier, Style},
-    text::Text,
-};
-
-const T: Bit = Bit::One;
-const F: Bit = Bit::Zero;
-
-#[derive(Debug, Deref, DerefMut)]
-pub struct RenderBit(pub Bit);
-
-impl CellRender<GridState> for RenderBit {
-    fn render_cell(&self, pos: Position, state: &GridState) -> Text<'_> {
-        let symbol = match pos == state.cursor {
-            true => 'E'.to_string(),
-            false => self.to_string(),
-        };
-
-        let mut style = Style::default();
-        if pos == state.cursor {
-            style = style.add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK);
-        }
-
-        Text::from(symbol).style(style)
-    }
-}
+use puzzled_binario::Binario;
+use puzzled_core::Position;
+use puzzled_io::TxtPuzzle;
+use puzzled_tui::{App, EventTrie, GridOptions, GridRenderState, Viewport, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
     init_logging(true);
 
-    let grid = grid!(
-        [T, T, F, F, F, F],
-        [F, F, F, F, F, F],
-        [F, F, F, T, T, F],
-        [F, F, F, T, T, F],
-        [F, F, F, T, T, F],
-        [F, F, F, F, F, F],
-    )
-    .map(RenderBit);
-
-    let mut state = GridState {
+    let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
+    let mut render_state = GridRenderState {
         options: GridOptions::default(),
-        viewport: Viewport::from_grid(&grid),
+        viewport: Viewport::from_grid(puzzle.cells()),
         cursor: Position::default(),
     };
 
-    state.options.cell_width = 4;
-    state.options.cell_height = 2;
-    state.options.inner = Some(Size::new(1, 1));
-    // state.options.inner = None;
-    state.options.draw_inner_borders = true;
+    render_state.options.cell_width = 3;
+    render_state.options.cell_height = 1;
+    render_state.options.draw_inner_borders = false;
 
-    let screen = PuzzleScreen::new(grid, state);
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events = EventTrie::from_config::<Binario>()?;
 
     let state = AppState {};

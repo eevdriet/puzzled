@@ -11,11 +11,12 @@ pub struct GridOptions {
 
     pub inner: Option<Size>,
 
-    pub border_style: Style,
+    pub inner_border_style: Style,
+    pub outer_border_style: Style,
 
     pub draw_inner_borders: bool,
 
-    pub draw_borders: bool,
+    pub draw_outer_borders: bool,
 
     pub h_align: HorizontalAlignment,
     pub v_align: VerticalAlignment,
@@ -27,9 +28,10 @@ impl Default for GridOptions {
             cell_width: 2,
             cell_height: 1,
             inner: None,
-            border_style: Style::default().fg(Color::DarkGray).dim(),
+            inner_border_style: Style::default().fg(Color::DarkGray).dim(),
+            outer_border_style: Style::default().fg(Color::Yellow),
             draw_inner_borders: true,
-            draw_borders: true,
+            draw_outer_borders: true,
             h_align: HorizontalAlignment::Center,
             v_align: VerticalAlignment::Center,
         }

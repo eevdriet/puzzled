@@ -1,9 +1,9 @@
 use puzzled_core::Position;
 
-use crate::{Action, ActionResolver, GridState, GridWidget, HandleAction};
+use crate::{Action, ActionResolver, GridRenderState, GridWidget, HandleAction};
 
 impl<'a, A, S, T> HandleAction<A, S> for GridWidget<'a, T> {
-    type State = GridState;
+    type State = GridRenderState;
 
     fn on_action(
         &mut self,

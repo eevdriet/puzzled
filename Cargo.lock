@@ -1834,6 +1834,7 @@ dependencies = [
  "derive_more",
  "puzzled_binario",
  "puzzled_core",
+ "puzzled_io",
  "puzzled_tui",
  "ratatui",
  "serde",

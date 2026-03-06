@@ -21,8 +21,8 @@ pub trait LineRender<S> {
     fn render_col(&self, col: usize, state: &S) -> Text<'_>;
 }
 
-fn render_borders(area: Rect, buf: &mut Buffer, state: &GridState) {
-    let style = state.options.border_style;
+fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {
+    let style = state.options.inner_border_style;
 
     // Corners
     let x_start = area.x;

@@ -1,6 +1,6 @@
 use crate::{
-    CellRender, GridOptions, GridState, GridWidget, LineRender, RenderSize, Viewport, align_area,
-    align_vertically,
+    CellRender, GridOptions, GridRenderState, GridWidget, LineRender, RenderSize, Viewport,
+    align_area, align_vertically,
 };
 use derive_more::{Debug, Deref, DerefMut};
 use puzzled_core::{Position, SidedGrid};
@@ -28,7 +28,7 @@ pub struct SidedGridState {
     pub cursor: Position,
 }
 
-impl From<SidedGridState> for GridState {
+impl From<SidedGridState> for GridRenderState {
     fn from(state: SidedGridState) -> Self {
         Self {
             options: state.grid_options,
@@ -47,7 +47,7 @@ impl<'a, T, U> RenderSize for SidedGridWidget<'a, T, U> {
     fn render_size(&self, state: &SidedGridState) -> ratatui::prelude::Size {
         // First determine the size of the inner grid
         let grid = GridWidget(&self.grid);
-        let grid_state = GridState::from(*state);
+        let grid_state = GridRenderState::from(*state);
 
         let mut size = grid.render_size(&grid_state);
 
@@ -76,7 +76,7 @@ impl<'a, T, U> RenderSize for SidedGridWidget<'a, T, U> {
 
 impl<'a, T, U> StatefulWidget for SidedGridWidget<'a, T, U>
 where
-    T: CellRender<GridState>,
+    T: CellRender<GridRenderState>,
     U: LineRender<SidedGridState>,
 {
     type State = SidedGridState;
@@ -96,7 +96,7 @@ where
 
         // Render the grid
         let grid = GridWidget(&self.grid);
-        let mut grid_state = GridState::from(*state);
+        let mut grid_state = GridRenderState::from(*state);
 
         grid.render(grid_area, buf, &mut grid_state);
 
@@ -110,7 +110,7 @@ where
     U: LineRender<SidedGridState>,
 {
     pub fn render_sides(&self, area: Rect, buf: &mut Buffer, state: &SidedGridState) {
-        let border = state.grid_options.draw_borders as u16;
+        let border = state.grid_options.draw_outer_borders as u16;
         let opts = &state.side_options;
         let width = area.width - opts.left_width - opts.right_width - 2 * border;
         let height = area.height - opts.top_height - opts.bottom_height - 2 * border;

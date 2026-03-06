@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, io};
 
 use puzzled_core::Puzzle;
 use puzzled_io::puzzle_config_dir;
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::de::DeserializeOwned;
 
 use crate::{Action, AppEvent, RawActionKeys, app::events::parse_key, parse_action_events};
 
