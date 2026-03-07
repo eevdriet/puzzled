@@ -1,7 +1,9 @@
+mod cell;
 mod grid;
 mod sided;
 mod viewport;
 
+pub use cell::*;
 pub use grid::*;
 pub use sided::*;
 pub use viewport::*;
@@ -10,10 +12,11 @@ use puzzled_core::Position;
 use ratatui::{
     prelude::{Buffer, Rect},
     text::Text,
+    widgets::Widget,
 };
 
 pub trait CellRender<S> {
-    fn render_cell(&self, pos: Position, state: &S) -> Text<'_>;
+    fn render_cell(&self, pos: Position, state: &S) -> impl Widget;
 }
 pub trait LineRender<S> {
     fn render_row(&self, row: usize, state: &S) -> Text<'_>;
@@ -22,7 +25,7 @@ pub trait LineRender<S> {
 }
 
 fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {
-    let style = state.options.inner_border_style;
+    let style = state.options.outer_border_style;
 
     // Corners
     let x_start = area.x;
@@ -53,7 +56,7 @@ fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {
     buf.set_string(x_end, y_end, "┘", style);
 
     // Inner borders
-    if state.options.draw_inner_borders
+    if state.options.draw_outer_borders
         && let Some(size) = state.options.inner
     {
         let w = state.options.cell_width * size.width + 1;

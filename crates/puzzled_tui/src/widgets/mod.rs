@@ -1,6 +1,8 @@
 mod board;
+mod settings;
 
 pub use board::*;
+pub use settings::*;
 
 use ratatui::layout::Size;
 

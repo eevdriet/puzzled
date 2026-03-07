@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use crate::{Entry, Grid, NON_PLAYABLE_CHAR, SolutionEntry, Square, Timer};
+use crate::{Entry, Grid, SolutionEntry, Square, Timer};
 
 #[derive(Debug)]
 pub struct GridState<T> {

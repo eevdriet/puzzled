@@ -4,7 +4,9 @@ use puzzled_core::Puzzle;
 use puzzled_io::puzzle_config_dir;
 use serde::de::DeserializeOwned;
 
-use crate::{Action, AppEvent, RawActionKeys, app::events::parse_key, parse_action_events};
+use crate::{
+    Action, ActionBehavior, AppEvent, RawActionKeys, app::events::parse_key, parse_action_events,
+};
 
 #[derive(Debug, Clone)]
 pub struct EventTrieNode<A> {
@@ -158,5 +160,50 @@ where
                 }
             }
         }
+    }
+}
+
+impl<A> EventTrie<A>
+where
+    A: ActionBehavior + Eq + Hash + Clone,
+{
+    pub fn action_keys(&self) -> HashMap<Action<A>, Vec<String>> {
+        // Initialize keys for all action variants
+        let mut keys = HashMap::default();
+
+        for action in Action::<A>::variants() {
+            keys.entry(action).or_default();
+        }
+
+        // Perform a DFS to find all actions for which keys are defined
+        dfs(&self.root, &mut keys, vec![]);
+
+        keys
+    }
+}
+
+fn dfs<A>(
+    node: &EventTrieNode<A>,
+    result: &mut HashMap<Action<A>, Vec<String>>,
+    current_events: Vec<AppEvent>,
+) where
+    A: Eq + Hash + Clone,
+{
+    // If the node has an action, add the current path of events to the result
+    if let Some(action) = &node.action {
+        let keys = current_events
+            .clone()
+            .into_iter()
+            .map(|ev| ev.to_string())
+            .fold(String::new(), |acc, item| acc + &item);
+
+        result.entry(action.clone()).or_default().push(keys);
+    }
+
+    // Traverse children nodes, accumulating events
+    for (event, child) in &node.children {
+        let mut new_events = current_events.clone();
+        new_events.push(event.clone());
+        dfs(child, result, new_events);
     }
 }

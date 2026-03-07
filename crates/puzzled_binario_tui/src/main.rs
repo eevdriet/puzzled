@@ -3,7 +3,10 @@ mod screens;
 mod state;
 
 pub use action::*;
-use ratatui::layout::Size;
+use ratatui::{
+    layout::{HorizontalAlignment, Size, VerticalAlignment},
+    style::Style,
+};
 pub use screens::*;
 pub use state::*;
 
@@ -19,18 +22,29 @@ async fn main() -> io::Result<()> {
     init_logging(true);
 
     let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
-    let mut render_state = GridRenderState {
-        options: GridOptions::default(),
+
+    let render_state = GridRenderState {
+        options: GridOptions {
+            cell_width: 5,
+            cell_height: 3,
+            inner: None,
+            // inner: Some(Size::new(1, 1)),
+            inner_border_style: Style::default(),
+            outer_border_style: Style::default(),
+            draw_inner_borders: false,
+            draw_outer_borders: false,
+            h_align: HorizontalAlignment::Center,
+            v_align: VerticalAlignment::Top,
+        },
         viewport: Viewport::from_grid(puzzle.cells()),
         cursor: Position::default(),
     };
 
-    render_state.options.cell_width = 3;
-    render_state.options.cell_height = 1;
-    render_state.options.draw_inner_borders = false;
-
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    let events = EventTrie::from_config::<Binario>()?;
+    let events: EventTrie<BinarioAction> = EventTrie::from_config::<Binario>()?;
+
+    // let action_keys = events.action_keys();
+    // dbg!(action_keys);
 
     let state = AppState {};
     let mut app = App::new(state, events);

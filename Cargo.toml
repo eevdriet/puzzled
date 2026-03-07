@@ -15,6 +15,7 @@ resolver = "2"
 
 [workspace.dependencies]
 bitvec = "1.0.1"
+concat-idents = "1.1.5"
 nom = "8.0.0"
 delegate = "0.13.5"
 directories = "6.0.0"
@@ -47,8 +48,10 @@ features = ["derive-more"]
 version = "2.1.1"
 features = [
     "debug",
+    "eq",
     "deref",
     "deref_mut",
+    "display",
     "index",
     "index_mut",
 ]

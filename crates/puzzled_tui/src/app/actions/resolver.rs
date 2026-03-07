@@ -31,7 +31,7 @@ impl<A, T> ActionResolver<A, T> {
 
     pub fn exit(&self) {
         self.sender
-            .send(ActionOutcome::Exit)
+            .send(ActionOutcome::Quit)
             .expect("Should be able to resolve exit");
     }
 }

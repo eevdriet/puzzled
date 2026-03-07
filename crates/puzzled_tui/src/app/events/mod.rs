@@ -1,9 +1,11 @@
 mod engine;
+mod mode;
 mod trie;
 
-use std::{hash::Hash, ops::Deref};
+use std::{fmt, hash::Hash, ops::Deref};
 
 pub use engine::*;
+pub use mode::*;
 pub use trie::*;
 
 use crossterm::event::{
@@ -112,6 +114,45 @@ impl Hash for AppEvent {
                 event.hash(state);
             }
         }
+    }
+}
+
+impl fmt::Display for AppEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                Event::Key(key) => {
+                    match key.code {
+                        KeyCode::Left => "←".to_string(),
+                        KeyCode::Backspace => "← BS".to_string(),
+                        KeyCode::Right => "→".to_string(),
+                        KeyCode::Up => "↑".to_string(),
+                        KeyCode::Down => "↓".to_string(),
+                        KeyCode::Enter => "↵".to_string(),
+                        KeyCode::Tab => "↹".to_string(),
+                        code => code.to_string(),
+                    }
+                }
+                Event::Mouse(mouse) => {
+                    let button = match mouse.kind {
+                        MouseEventKind::Down(button)
+                        | MouseEventKind::Up(button)
+                        | MouseEventKind::Drag(button) => button,
+                        _ => return Err(fmt::Error),
+                    };
+
+                    match button {
+                        MouseButton::Left => "mouse1",
+                        MouseButton::Middle => "mouse2",
+                        MouseButton::Right => "mouse3",
+                    }
+                    .to_string()
+                }
+                _ => "".to_string(),
+            }
+        )
     }
 }
 

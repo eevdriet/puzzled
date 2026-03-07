@@ -9,7 +9,7 @@ pub enum ActionOutcome<A, T> {
     Command(Box<dyn Command<T>>),
 
     // Screen management
-    Exit,
+    Quit,
     PreviousScreen,
     NextScreen(Box<dyn StatefulScreen<A, T>>),
     ReplaceScreen(Box<dyn StatefulScreen<A, T>>),

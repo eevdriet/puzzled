@@ -5,7 +5,12 @@ use std::{
 
 use crossterm::event::{Event, KeyCode};
 
-use crate::{Action, ActionHydrate, AppEvent, EventSearchResult, EventTrie};
+use crate::{Action, ActionBehavior, AppEvent, EventMode, EventSearchResult, EventTrie};
+
+pub enum ActionOrEvent<A> {
+    Action(Action<A>),
+    Event(AppEvent),
+}
 
 #[derive(Debug)]
 pub struct EventEngine<A> {
@@ -17,6 +22,7 @@ pub struct EventEngine<A> {
 
     last_insert: Instant,
     timeout: Duration,
+    mode: EventMode,
 }
 
 impl<A> EventEngine<A> {
@@ -28,25 +34,33 @@ impl<A> EventEngine<A> {
             pending_operand: None,
             buffer: Vec::new(),
             last_insert: Instant::now(),
+            mode: EventMode::Normal,
         }
     }
 }
 
 impl<A> EventEngine<A>
 where
-    A: Clone + ActionHydrate,
+    A: Clone + ActionBehavior,
 {
-    pub fn push(&mut self, event: AppEvent) -> Option<Action<A>> {
+    pub fn push(&mut self, event: AppEvent) -> Option<ActionOrEvent<A>> {
+        match self.mode {
+            EventMode::Normal => self.push_action(event).map(ActionOrEvent::Action),
+            EventMode::Insert => Some(ActionOrEvent::Event(event)),
+        }
+    }
+
+    fn push_action(&mut self, event: AppEvent) -> Option<Action<A>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
         // If we are waiting for an operand, consume this event directly
         if let Some(action) = self.pending_operand.take() {
             let count = self.repeat.count().unwrap_or(1);
-            let action = action.hydrate(event, count);
+            let events = self.buffer.drain(..).collect();
+            self.reset();
 
-            self.reset(); // clear buffer + repeat
-            return Some(action);
+            return Some(action.hydrate(events, count));
         }
 
         // Intercept leading digits (note: 0 is not a command if following another digit)
@@ -73,9 +87,10 @@ where
             // Perform action for known sequence
             EventSearchResult::Exact(action) | EventSearchResult::ExactPrefix(action) => {
                 let count = self.repeat.count().unwrap_or(1);
+                let events = self.buffer.drain(..).collect();
                 self.reset();
 
-                Some(action.hydrate(event, count))
+                Some(action.hydrate(events, count))
             }
 
             // Clear previous keys for unknown sequence but keep repeat
@@ -101,8 +116,8 @@ where
         }
     }
 
-    pub fn tick(&mut self) -> Option<Action<A>> {
-        if self.buffer.is_empty() {
+    pub fn tick(&mut self) -> Option<ActionOrEvent<A>> {
+        if matches!(self.mode, EventMode::Insert) || self.buffer.is_empty() {
             return None;
         }
 
@@ -130,7 +145,7 @@ where
         }
 
         self.reset();
-        result
+        result.map(ActionOrEvent::Action)
     }
 
     fn reset(&mut self) {

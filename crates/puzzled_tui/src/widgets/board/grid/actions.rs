@@ -46,18 +46,18 @@ impl<'a, A, S, T> HandleAction<A, S> for GridWidget<'a, T> {
             // Column
             Action::MoveCol(col) => Position { col, ..start },
             Action::MoveColEnd => Position {
-                col: max_col,
+                row: max_row,
                 ..start
             },
-            Action::MoveColStart => Position { col: 0, ..start },
+            Action::MoveColStart => Position { row: 0, ..start },
 
             // Row
             Action::MoveRow(row) => Position { row, ..start },
             Action::MoveRowEnd => Position {
-                row: max_row,
+                col: max_col,
                 ..start
             },
-            Action::MoveRowStart => Position { row: 0, ..start },
+            Action::MoveRowStart => Position { col: 0, ..start },
 
             // Mouse
             Action::Click(mouse) | Action::Drag(mouse) => match state.to_grid(mouse) {

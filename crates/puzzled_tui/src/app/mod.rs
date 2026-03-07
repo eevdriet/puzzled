@@ -1,12 +1,12 @@
 mod actions;
+mod commands;
 mod events;
-mod screens;
 
 pub use actions::*;
+pub use commands::*;
 pub use events::*;
-pub use screens::*;
 
-use std::{collections::VecDeque, marker::PhantomData, time::Duration};
+use std::{collections::VecDeque, time::Duration};
 
 use crossterm::{
     event::{self, EnableMouseCapture},
@@ -15,20 +15,19 @@ use crossterm::{
 };
 use tokio::sync::mpsc::{self, unbounded_channel};
 
+use crate::StatefulScreen;
+
 const POLL_DURATION: Duration = Duration::from_millis(30);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<A, T> {
-    actions: mpsc::UnboundedReceiver<Action<A>>,
-    commands: CommandHistory<T>,
+    actions: mpsc::UnboundedReceiver<ActionOrEvent<A>>,
     state: T,
-
-    _action: PhantomData<A>,
 }
 
 impl<A, T> App<A, T>
 where
-    A: Clone + Send + ActionHydrate + 'static,
+    A: Clone + Send + ActionBehavior + 'static,
 {
     pub fn new(state: T, events: EventTrie<A>) -> Self {
         // Set up a channel to receive input events from the user
@@ -48,7 +47,7 @@ where
 
                     // See whether the application handles it and whether it needs action
                     if let Some(action) = events.push(app_event) {
-                        if matches!(action, Action::Quit) {
+                        if matches!(action, ActionOrEvent::Action(Action::Quit)) {
                             is_running = false;
                         }
 
@@ -60,7 +59,7 @@ where
 
                 // Expire old events
                 if let Some(action) = events.tick() {
-                    if matches!(action, Action::Quit) {
+                    if matches!(action, ActionOrEvent::Action(Action::Quit)) {
                         is_running = false;
                     }
 
@@ -73,9 +72,7 @@ where
 
         Self {
             state,
-            commands: CommandHistory::default(),
             actions: actions_rx,
-            _action: PhantomData,
         }
     }
 
@@ -110,18 +107,16 @@ where
                 // Handle incoming actions from the current screen
                 Some(action) = self.actions.recv() => {
                     match action {
-                        Action::Quit => break,
-                        Action::Undo => self.commands.undo(&mut self.state),
-                        Action::Redo => self.commands.redo(&mut self.state),
-
-                        action => screen.on_action(action, resolver.clone(), &mut self.state)
+                        ActionOrEvent::Action(Action::Quit) => break,
+                        ActionOrEvent::Action(action) => screen.on_action(action, resolver.clone(), &mut self.state),
+                        ActionOrEvent::Event(event) => screen.on_event(event, resolver.clone(), &mut self.state),
                     }
                 },
 
                 // Resolve the result of completed actions
                 Some(outcome) = actions_rx.recv() => match outcome {
                     // Completely exit the app
-                    ActionOutcome::Exit => {
+                    ActionOutcome::Quit => {
                         // Exit out of all screens in order
                         while let Some(mut screen) = screens.pop_back() {
                             screen.on_exit(&mut self.state);

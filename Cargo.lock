@@ -440,6 +440,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "concat-idents"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f76990911f2267d837d9d0ad060aa63aaad170af40904b29461734c339030d4d"
+dependencies = [
+ "quote",
+ "syn 2.0.116",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1942,6 +1952,7 @@ dependencies = [
 name = "puzzled_tui"
 version = "0.1.0"
 dependencies = [
+ "concat-idents",
  "crossterm 0.29.0",
  "derive_more",
  "puzzled_core",

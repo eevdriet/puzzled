@@ -10,10 +10,11 @@ use puzzled_core::{Grid, Position};
 use ratatui::{
     layout::{Margin, Rect, Size},
     prelude::Buffer,
-    widgets::{StatefulWidget, Widget},
+    style::{Color, Style},
+    widgets::{Block, Borders, StatefulWidget, Widget},
 };
 
-use crate::{CellRender, RenderSize, align_area, align_vertically, widgets::board::render_borders};
+use crate::{CellRender, RenderSize, align_area, widgets::board::render_borders};
 
 #[derive(Debug, Deref, DerefMut)]
 pub struct GridWidget<'a, T>(pub &'a Grid<T>);
@@ -76,7 +77,9 @@ where
         // Render
         self.render_grid(area, buf, state);
 
-        render_borders(bordered_area, buf, state);
+        if state.options.draw_outer_borders {
+            render_borders(bordered_area, buf, state);
+        }
     }
 }
 
@@ -103,16 +106,12 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self[pos];
-                let text = cell
-                    .render_cell(pos, state)
-                    .alignment(state.options.h_align);
+                let cell_area = Rect::new(x, y, cell_w, cell_h);
 
-                // Determine the area to render the value in
-                let (text_y, text_h) =
-                    align_vertically(text.height() as u16, y, y + cell_h, opts.v_align);
-                let text_area = Rect::new(x, text_y, cell_w, text_h);
+                let cell_widget = cell.render_cell(pos, state);
+                cell_widget.render(cell_area, buf);
 
-                text.render(text_area, buf);
+                // Draw a background for the whole cell
 
                 x += cell_w;
 
