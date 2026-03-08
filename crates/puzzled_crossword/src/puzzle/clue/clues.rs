@@ -183,6 +183,12 @@ impl Clues {
             .values_mut()
             .filter(|clue| matches!(clue.direction(), ClueDirection::Down))
     }
+
+    pub fn iter_direction(&self, dir: ClueDirection) -> impl Iterator<Item = &Clue> {
+        self.entries
+            .values()
+            .filter(move |clue| clue.direction() == dir)
+    }
 }
 
 impl fmt::Display for Clues {

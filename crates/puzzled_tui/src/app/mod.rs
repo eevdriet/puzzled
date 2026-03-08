@@ -5,7 +5,6 @@ mod events;
 pub use actions::*;
 pub use commands::*;
 pub use events::*;
-use ratatui::widgets::FrameExt;
 
 use std::{collections::VecDeque, time::Duration};
 
@@ -93,15 +92,21 @@ where
         let (actions_tx, mut actions_rx) = mpsc::unbounded_channel();
         let resolver = ActionResolver::<A, T>::new(actions_tx);
 
+        let mut render = true;
+
         loop {
-            // Get the current screen and render its contents
             let screen = screens
                 .back_mut()
                 .expect("Should have a screen on the screen stack");
 
-            terminal.draw(|frame| {
-                screen.render(frame.area(), frame.buffer_mut(), &mut self.state);
-            })?;
+            // Get the current screen and render its contents
+            if render {
+                terminal.draw(|frame| {
+                    screen.render(frame.area(), frame.buffer_mut(), &mut self.state);
+                })?;
+
+                render = false;
+            }
 
             // Then handle any actions or their results
             tokio::select! {
@@ -112,41 +117,49 @@ where
                         ActionOrEvent::Action(action) => screen.on_action(action, resolver.clone(), &mut self.state),
                         ActionOrEvent::Event(event) => screen.on_event(event, resolver.clone(), &mut self.state),
                     }
+
+                    // Re-render to communicate the state change
+                    render = true;
                 },
 
                 // Resolve the result of completed actions
-                Some(outcome) = actions_rx.recv() => match outcome {
-                    // Completely exit the app
-                    ActionOutcome::Quit => {
-                        // Exit out of all screens in order
-                        while let Some(mut screen) = screens.pop_back() {
-                            screen.on_exit(&mut self.state);
+                Some(outcome) = actions_rx.recv() => {
+                    match outcome {
+                        // Completely exit the app
+                        ActionOutcome::Quit => {
+                            // Exit out of all screens in order
+                            while let Some(mut screen) = screens.pop_back() {
+                                screen.on_exit(&mut self.state);
+                            }
+
+                            break;
                         }
 
-                        break;
-                    }
+                        // Go to the previous screen
+                        ActionOutcome::PreviousScreen => {
+                            if screens.len() > 1 {
+                                let mut old_screen = screens.pop_back().expect("Verified screens length");
+                                old_screen.on_exit(&mut self.state);
 
-                    // Go to the previous screen
-                    ActionOutcome::PreviousScreen => {
-                        if screens.len() > 1 {
-                            let mut old_screen = screens.pop_back().expect("Verified screens length");
-                            old_screen.on_exit(&mut self.state);
-
-                            let curr_screen = screens.back_mut().expect("Verified screen length");
-                            curr_screen.on_resume(&mut self.state);
+                                let curr_screen = screens.back_mut().expect("Verified screen length");
+                                curr_screen.on_resume(&mut self.state);
+                            }
                         }
+
+                        // Go to the next screen
+                        ActionOutcome::NextScreen(mut next_screen) => {
+                            // Pause the current screen
+                            screen.on_pause(&mut self.state);
+
+                            // Enter the next screen
+                            next_screen.on_enter(&mut self.state);
+                            screens.push_back(next_screen);
+                        }
+                        _ => {}
                     }
 
-                    // Go to the next screen
-                    ActionOutcome::NextScreen(mut next_screen) => {
-                        // Pause the current screen
-                        screen.on_pause(&mut self.state);
-
-                        // Enter the next screen
-                        next_screen.on_enter(&mut self.state);
-                        screens.push_back(next_screen);
-                    }
-                    _ => {}
+                    // Re-render to communicate the state change
+                    render = true;
                 }
             }
         }

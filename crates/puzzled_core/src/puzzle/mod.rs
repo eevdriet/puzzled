@@ -17,6 +17,15 @@ pub trait Puzzle: Sized {
 
     type Solution;
 
+    fn title(meta: &Metadata) -> String {
+        let title = meta.title().unwrap_or(Self::NAME);
+
+        match meta.author() {
+            Some(author) => format!("{title} (by {author})"),
+            None => title.to_string(),
+        }
+    }
+
     fn solve_with<'a, S, T>(&'a self, solver: &mut S) -> Result<Self::Solution, S::Error>
     where
         S: Solver<T, Puzzle = Self>,

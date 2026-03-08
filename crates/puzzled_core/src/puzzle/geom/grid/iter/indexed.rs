@@ -35,7 +35,7 @@ impl<'a, T> DoubleEndedIterator for IndexedIter<'a, T> {
             return None;
         }
 
-        let pos = self.inner.front;
+        let pos = self.inner.back;
         let item = self.inner.next_back()?;
 
         Some((pos, item))

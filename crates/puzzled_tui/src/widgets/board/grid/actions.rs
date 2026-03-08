@@ -1,4 +1,4 @@
-use puzzled_core::{Direction, Grid, Position, SquareGridRef, Value};
+use puzzled_core::{Direction, Grid, Position, SquareGridRef};
 
 use crate::{Action, ActionResolver, GridRenderState, HandleAction};
 
@@ -97,32 +97,111 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
             let curr_dir = state.direction;
 
             // If currently going in another direction, change the direction
-            if dir != curr_dir {
+            if ![dir, !dir].contains(&curr_dir) {
                 return (pos, dir);
             }
 
-            for _step_count in 1..=count {
-                // Verify the next square can be reached and it is playable
-                let Some(next) = pos + dir else {
-                    break;
-                };
+            // Continue moving in the direction until out of the grid or the correct number of moves
+            let mut move_count = 0;
 
-                if self.0.get_fill(next).is_none() {
-                    break;
+            while let Some(next) = pos + dir
+                && self.0.is_in_bounds(next)
+                && move_count < count
+            {
+                match self.0.get_fill(next) {
+                    // Move to next playable square
+                    Some(_) => {
+                        pos = next;
+                        move_count += 1;
+                    }
+                    // Move over directly adjacent non-playable squares
+                    None if move_count == 0 => {
+                        pos = next;
+                    }
+                    // Stop if a non-adjacent non-playable square is found
+                    None => break,
                 }
-
-                // If so, go there, otherwise stop at the last playable square
-                pos = next;
             }
 
-            (pos, dir)
+            let end = if move_count == 0 { state.cursor } else { pos };
+            (end, dir)
         };
 
+        let start = state.cursor;
+        let Position { col, row } = start;
+        let dir = state.direction;
+
         let (next, next_dir) = match action {
+            // Direct moves
             Action::MoveDown(count) => move_in_dir(Direction::Down, count),
             Action::MoveLeft(count) => move_in_dir(Direction::Left, count),
             Action::MoveRight(count) => move_in_dir(Direction::Right, count),
             Action::MoveUp(count) => move_in_dir(Direction::Up, count),
+
+            // Column
+            Action::MoveCol(col) => {
+                let next = self
+                    .0
+                    .iter_indexed_col(col)
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+
+                (next, dir)
+            }
+            Action::MoveColEnd => {
+                let next = self
+                    .0
+                    .iter_indexed_col(col)
+                    .rev()
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+                (next, dir)
+            }
+            Action::MoveColStart => {
+                let next = self
+                    .0
+                    .iter_indexed_col(col)
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+
+                (next, dir)
+            }
+
+            // Row
+            Action::MoveRow(row) => {
+                let next = self
+                    .0
+                    .iter_indexed_row(row)
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+
+                (next, dir)
+            }
+            Action::MoveRowEnd => {
+                let next = self
+                    .0
+                    .iter_indexed_row(row)
+                    .rev()
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+                (next, dir)
+            }
+            Action::MoveRowStart => {
+                let next = self
+                    .0
+                    .iter_indexed_row(row)
+                    .find(|&(_, square)| square.is_some())
+                    .map(|(pos, _)| pos)
+                    .unwrap_or(start);
+
+                (next, dir)
+            }
+
             _ => (state.cursor, state.direction),
         };
         state.cursor = next;

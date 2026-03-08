@@ -60,8 +60,8 @@ where
             Action::MoveRight(_) => Action::MoveRight(count),
             Action::MoveUp(_) => Action::MoveUp(count),
 
-            Action::MoveRow(_) => Action::MoveRow(count),
-            Action::MoveCol(_) => Action::MoveCol(count),
+            Action::MoveRow(_) => Action::MoveRow(count.saturating_sub(1)),
+            Action::MoveCol(_) => Action::MoveCol(count.saturating_sub(1)),
 
             // Mouse actions
             Action::Click(_) if mouse.is_some() => Action::Click(mouse.expect("Checked mouse")),

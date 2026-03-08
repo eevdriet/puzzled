@@ -5,6 +5,7 @@ pub use clues::*;
 pub use crossword::*;
 
 use ratatui::{
+    layout::{Constraint, Layout},
     prelude::{Buffer, Rect},
     widgets::StatefulWidgetRef,
 };
@@ -12,7 +13,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionResolver, AppEvent, CommandHistory, FocusManager,
-    GridRenderState, HandleAction, StatefulScreen,
+    GridRenderState, HandleAction, RenderSize, StatefulScreen, clamp_area,
 };
 
 use crate::{AppState, CrosswordAction};
@@ -34,7 +35,6 @@ pub struct PuzzleScreenState {
     render: GridRenderState,
 
     // UI state
-    direction: ClueDirection,
     focus: FocusManager<Focus>,
 }
 
@@ -66,7 +66,6 @@ impl PuzzleScreen {
                 puzzle,
                 solve: solve_state,
                 render: render_state,
-                direction: ClueDirection::Across,
                 focus: FocusManager::default(),
             },
 
@@ -81,12 +80,27 @@ impl PuzzleScreen {
 
 impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
     fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
-        // Compute layout
+        let gap = Constraint::Length(2);
+
+        // Crossword on the left
+        let [crossword, _, right] = Layout::horizontal(vec![
+            Constraint::Length(self.crossword.render_size(&self.state).width),
+            gap,
+            Constraint::Min(0),
+        ])
+        .areas(area);
 
         // Render widgets
-        self.crossword.render_ref(area, buf, &mut self.state);
-        self.across_clues.render_ref(area, buf, &mut self.state);
-        self.down_clues.render_ref(area, buf, &mut self.state);
+        let crossword = clamp_area(crossword, self.crossword.render_size(&self.state));
+        self.crossword.render_ref(crossword, buf, &mut self.state);
+
+        // Clues on the right
+        let [across_clues, _, down_clues] =
+            Layout::horizontal(vec![Constraint::Fill(1), gap, Constraint::Fill(1)]).areas(right);
+
+        self.across_clues
+            .render_ref(across_clues, buf, &mut self.state);
+        self.down_clues.render_ref(down_clues, buf, &mut self.state);
     }
 
     fn on_action(

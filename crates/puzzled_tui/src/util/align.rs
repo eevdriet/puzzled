@@ -1,5 +1,14 @@
 use ratatui::layout::{HorizontalAlignment, Rect, Size, VerticalAlignment};
 
+pub fn clamp_area(area: Rect, size: Size) -> Rect {
+    Rect {
+        x: area.x,
+        y: area.y,
+        width: area.width.min(size.width),
+        height: area.height.min(size.height),
+    }
+}
+
 pub fn align_area(
     size: Size,
     parent: Rect,

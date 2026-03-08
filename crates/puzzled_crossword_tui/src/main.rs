@@ -13,7 +13,7 @@ use puzzled_crossword::Crossword;
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{App, EventTrie, GridOptions, GridRenderState, Viewport, init_logging};
 use ratatui::{
-    layout::{HorizontalAlignment, Size, VerticalAlignment},
+    layout::{HorizontalAlignment, VerticalAlignment},
     style::Style,
 };
 

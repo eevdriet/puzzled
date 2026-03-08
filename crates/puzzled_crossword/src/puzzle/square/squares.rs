@@ -33,7 +33,7 @@ impl CrosswordSquares for Grid<CrosswordSquare> {
 
         (0..)
             .scan(pos, |acc, _| {
-                let square = self.get(*acc)?;
+                let square = self.get_fill(*acc)?;
                 *acc += offset;
 
                 Some(square)
