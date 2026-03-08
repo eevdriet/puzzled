@@ -2,12 +2,13 @@ use std::{fmt, ops};
 
 use crate::{Offset, Position};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Direction {
-    Up,
-    Right,
-    Down,
-    Left,
+    #[default]
+    Up = 0,
+    Right = 1,
+    Down = 2,
+    Left = 3,
 }
 
 impl Direction {
@@ -31,6 +32,21 @@ impl fmt::Display for Direction {
                 Direction::Right => 'R',
             }
         )
+    }
+}
+
+impl ops::Add<Direction> for Direction {
+    type Output = Direction;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        let idx = (self as usize + rhs as usize) & 3;
+        Self::ALL[idx]
+    }
+}
+
+impl ops::AddAssign<Direction> for Direction {
+    fn add_assign(&mut self, rhs: Direction) {
+        *self = *self + rhs;
     }
 }
 
@@ -60,6 +76,19 @@ impl ops::Mul<Direction> for isize {
             Direction::Right => self * Offset::RIGHT,
             Direction::Down => self * Offset::DOWN,
             Direction::Left => self * Offset::LEFT,
+        }
+    }
+}
+
+impl ops::Not for Direction {
+    type Output = Direction;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Right => Direction::Left,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
         }
     }
 }

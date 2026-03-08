@@ -1,13 +1,16 @@
-mod menu;
+mod focus;
+// mod menu;
 
-pub use menu::*;
+pub use focus::*;
+// pub use menu::*;
 
-use ratatui::Frame;
+use ratatui::{buffer::Buffer, layout::Rect};
 
 use crate::{Action, ActionResolver, AppEvent};
 
 pub trait StatefulScreen<A, S> {
-    fn render(&mut self, frame: &mut Frame, state: &S);
+    // Rendering
+    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut S);
 
     // Actions
     fn on_action(&mut self, _action: Action<A>, _resolver: ActionResolver<A, S>, _state: &mut S) {}

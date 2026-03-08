@@ -11,7 +11,6 @@ use crate::text::read::ParseError;
 
 pub fn grid<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Grid<T>, Err<ParseError<'a>>>
 where
-    T: fmt::Debug,
     P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
 {
     grid_row(value)
@@ -21,8 +20,6 @@ where
         .collect::<Vec<_>>()
         .try_map(|rows, span| {
             let col_count = rows.first().map(|r| r.len()).unwrap_or(0);
-            eprintln!("Rows: {rows:?}");
-            eprintln!("Col count: {col_count}");
             let flat = rows.into_iter().flatten().collect();
 
             Grid::from_vec(flat, col_count).map_err(|err| ParseError::custom(span, err.to_string()))
@@ -117,7 +114,6 @@ where
 
 pub fn grid_row<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Vec<T>, Err<ParseError<'a>>> + Clone
 where
-    T: fmt::Debug,
     P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
 {
     value

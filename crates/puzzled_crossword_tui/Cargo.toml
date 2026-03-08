@@ -1,0 +1,17 @@
+[package]
+name = "puzzled_crossword_tui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+puzzled_crossword = {path = "../puzzled_crossword/", features = ["text"]}
+
+puzzled_tui = {path = "../puzzled_tui/"}
+puzzled_io = {path = "../puzzled_io"}
+puzzled_core = {path = "../puzzled_core/"}
+
+ratatui = {workspace = true}
+tokio = {workspace = true}
+serde = {workspace = true}
+derive_more = {workspace = true}
+crossterm = {workspace = true}

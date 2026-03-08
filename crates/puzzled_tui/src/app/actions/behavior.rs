@@ -7,6 +7,10 @@ use crate::{Action, AppEvent};
 pub trait ActionBehavior: Display + Sized {
     fn is_mouse(&self) -> bool;
 
+    fn is_focus(&self) -> bool {
+        false
+    }
+
     fn hydrate(self, _events: Vec<AppEvent>, _count: usize) -> Self {
         self
     }
@@ -33,6 +37,13 @@ where
 
             _ => false,
         }
+    }
+
+    fn is_focus(&self) -> bool {
+        matches!(
+            self,
+            Action::FocusLeft | Action::FocusDown | Action::FocusRight | Action::FocusUp
+        )
     }
 
     fn hydrate(self, events: Vec<AppEvent>, count: usize) -> Self {

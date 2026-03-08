@@ -1,11 +1,20 @@
 use delegate::delegate;
-use puzzled_core::{Entry, GridState, Line, Position, Timer, impl_solve_for_grid_state};
+use derive_more::{Deref, DerefMut, Display};
+use puzzled_core::{Entry, Grid, GridState, Line, Position, Timer, impl_solve_for_grid_state};
 
 use crate::{Binario, Bit, Bits};
 
-pub type BinarioState = GridState<Bit>;
+#[derive(Deref, DerefMut, Display)]
+pub struct BinarioState(pub GridState<Bit>);
 
-impl_solve_for_grid_state!(Binario, Bit);
+impl BinarioState {
+    pub fn new(solutions: Grid<Option<Bit>>, entries: Grid<Entry<Bit>>, timer: Timer) -> Self {
+        let state = GridState::new(solutions, entries, timer);
+        Self(state)
+    }
+}
+
+impl_solve_for_grid_state!(BinarioState, 0, Binario, Bit);
 
 impl From<&Binario> for BinarioState {
     fn from(binario: &Binario) -> Self {

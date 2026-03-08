@@ -56,10 +56,6 @@ macro_rules! skycrapers {
 
 #[cfg(test)]
 mod tests {
-    use puzzled_io::TxtPuzzle;
-
-    use crate::Skyscrapers;
-
     #[test]
     fn write() {
         let _puzzle = skycrapers!(

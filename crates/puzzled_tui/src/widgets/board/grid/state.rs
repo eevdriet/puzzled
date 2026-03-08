@@ -1,4 +1,4 @@
-use puzzled_core::Position;
+use puzzled_core::{Direction, Position};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{GridOptions, Viewport};
@@ -11,6 +11,7 @@ pub struct GridRenderState {
 
     /// Offset of the grid with its top-left most cell
     pub cursor: Position,
+    pub direction: Direction,
 }
 
 impl GridRenderState {

@@ -5,29 +5,16 @@ mod state;
 pub use options::*;
 pub use state::*;
 
-use derive_more::{Debug, Deref, DerefMut};
 use puzzled_core::{Grid, Position};
 use ratatui::{
     layout::{Margin, Rect, Size},
     prelude::Buffer,
-    style::{Color, Style},
-    widgets::{Block, Borders, StatefulWidget, Widget},
+    widgets::Widget,
 };
 
-use crate::{CellRender, RenderSize, align_area, widgets::board::render_borders};
+use crate::{CellRender, RenderSize, widgets::board::render_borders};
 
-#[derive(Debug, Deref, DerefMut)]
-pub struct GridWidget<'a, T>(pub &'a Grid<T>);
-
-impl<'a, T> Clone for GridWidget<'a, T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<'a, T> Copy for GridWidget<'a, T> {}
-
-impl<'a, T> RenderSize for GridWidget<'a, T> {
+impl<T> RenderSize for Grid<T> {
     type State = GridRenderState;
 
     fn render_size(&self, state: &Self::State) -> Size {
@@ -51,43 +38,27 @@ impl<'a, T> RenderSize for GridWidget<'a, T> {
     }
 }
 
-impl<'a, T> StatefulWidget for GridWidget<'a, T>
+pub trait RenderGrid<S> {
+    fn render(&self, area: Rect, buf: &mut Buffer, render_state: &GridRenderState, cell_state: &S);
+}
+
+impl<T, S> RenderGrid<S> for Grid<T>
 where
-    T: CellRender<GridRenderState>,
+    T: CellRender<S>,
 {
-    type State = GridRenderState;
-
-    fn render(self, parent: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        // Determine the actual area in which to render the grid
-        let bordered_area = align_area(
-            self.render_size(state),
-            parent,
-            state.options.h_align,
-            state.options.v_align,
-        );
-
-        // Determine the grid area based on whether borders should be drawn
+    fn render(
+        &self,
+        bordered_area: Rect,
+        buf: &mut Buffer,
+        state: &GridRenderState,
+        cell_state: &S,
+    ) {
         let area = if state.options.draw_outer_borders {
             bordered_area.inner(Margin::new(1, 1))
         } else {
             bordered_area
         };
-        state.viewport.area = area;
 
-        // Render
-        self.render_grid(area, buf, state);
-
-        if state.options.draw_outer_borders {
-            render_borders(bordered_area, buf, state);
-        }
-    }
-}
-
-impl<'a, T> GridWidget<'a, T>
-where
-    T: CellRender<GridRenderState>,
-{
-    pub fn render_grid(&self, area: Rect, buf: &mut Buffer, state: &GridRenderState) {
         // Render the grid itself
         let vp = &state.viewport;
         let opts = &state.options;
@@ -108,7 +79,7 @@ where
                 let cell = &self[pos];
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
-                let cell_widget = cell.render_cell(pos, state);
+                let cell_widget = cell.render_cell(pos, cell_state);
                 cell_widget.render(cell_area, buf);
 
                 // Draw a background for the whole cell
@@ -169,6 +140,11 @@ where
 
                 y += 1;
             }
+        }
+
+        // Render borders
+        if state.options.draw_outer_borders {
+            render_borders(bordered_area, buf, state);
         }
     }
 }

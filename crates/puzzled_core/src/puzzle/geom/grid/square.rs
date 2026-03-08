@@ -1,9 +1,7 @@
-use derive_more::{Deref, DerefMut};
+use crate::{Grid, Position, Square};
 
-use crate::{Grid, IndexedIter, Position, Square};
-
-#[derive(Deref, DerefMut)]
-pub struct SquareGrid<T>(Grid<Square<T>>);
+pub struct SquareGridRef<'a, T>(pub &'a Grid<Square<T>>);
+pub struct SquareGridRefMut<'a, T>(pub &'a mut Grid<Square<T>>);
 
 impl<T> Grid<Square<T>> {
     /// Get a reference to the [filled square](Square::Filled) at the given position

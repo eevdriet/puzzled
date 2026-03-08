@@ -6,7 +6,7 @@ mod solve;
 pub use puzzled_core::*;
 
 #[doc(inline)]
-pub use {io::*, puzzle::*, solve::*};
+pub use {puzzle::*, solve::*};
 
 #[cfg(feature = "macros")]
 mod macros;

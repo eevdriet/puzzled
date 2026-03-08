@@ -1,6 +1,6 @@
 use std::ops;
 
-use puzzled_core::{Grid, Offset, Position, Square};
+use puzzled_core::{Grid, Offset, Position};
 
 use crate::{ClueDirection, Crossword, CrosswordSquare};
 
@@ -11,7 +11,7 @@ pub trait CrosswordSquares {
     fn find_clue_len(&self, pos: Position, dir: ClueDirection) -> u8;
 }
 
-impl<T> CrosswordSquares for Grid<Square<T>> {
+impl CrosswordSquares for Grid<CrosswordSquare> {
     fn can_clue_start_in_dir(&self, pos: Position, dir: ClueDirection) -> bool {
         let is_blank = |pos: Option<Position>| pos.is_some_and(|p| self[p].as_ref().is_none());
 

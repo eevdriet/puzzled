@@ -1,11 +1,13 @@
+use std::fmt::Debug;
+
 use chumsky::{
     IterParser, Parser,
     extra::Err,
     prelude::{group, just, one_of},
 };
-use puzzled_core::{Cell, CellStyle, Entry, MISSING_ENTRY_CHAR};
+use puzzled_core::{Cell, CellStyle, Entry, Grid, MISSING_ENTRY_CHAR};
 
-use crate::text::read::ParseError;
+use crate::text::read::{ParseError, grid};
 
 pub fn cell_entry<'a, T, P>(
     value: P,
@@ -38,6 +40,32 @@ pub fn cell_style<'a>() -> impl Parser<'a, &'a str, CellStyle, Err<ParseError<'a
             '@' => style | CellStyle::CIRCLED,
             _ => unreachable!("Only parsed one_of(\"*@~!\")"),
         })
+}
+
+pub fn cell_entry_grids<'a, T, P>(
+    value: P,
+) -> impl Parser<'a, &'a str, (Grid<Cell<T>>, Grid<Entry<T>>), Err<ParseError<'a>>>
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    grid(cell_entry(value)).map(|cell_entries| {
+        let cols = cell_entries.cols();
+
+        let (cells, entries) = cell_entries.into_iter().fold(
+            (vec![], vec![]),
+            |(mut cells, mut entries), (cell, entry)| {
+                cells.push(cell);
+                entries.push(entry);
+
+                (cells, entries)
+            },
+        );
+
+        let cells = Grid::from_vec(cells, cols).expect("Read cells from grid");
+        let entries = Grid::from_vec(entries, cols).expect("Read entries from grid");
+
+        (cells, entries)
+    })
 }
 
 fn solution<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Option<T>, Err<ParseError<'a>>> + Clone

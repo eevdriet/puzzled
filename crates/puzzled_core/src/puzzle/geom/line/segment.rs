@@ -2,7 +2,7 @@ use std::ops::{Bound, RangeBounds};
 
 use derive_more::Debug;
 
-use crate::Line;
+use crate::{Direction, Line, Position};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LineSegment {
@@ -31,6 +31,33 @@ impl LineSegment {
             line,
             start: self.start,
             end: self.end,
+        }
+    }
+}
+
+impl From<(Position, Direction)> for LineSegment {
+    fn from((pos, dir): (Position, Direction)) -> Self {
+        match dir {
+            Direction::Up => Self {
+                line: Line::Col(pos.col),
+                start: Bound::Unbounded,
+                end: Bound::Included(pos.row),
+            },
+            Direction::Down => Self {
+                line: Line::Col(pos.col),
+                start: Bound::Included(pos.row),
+                end: Bound::Unbounded,
+            },
+            Direction::Left => Self {
+                line: Line::Row(pos.row),
+                start: Bound::Unbounded,
+                end: Bound::Included(pos.col),
+            },
+            Direction::Right => Self {
+                line: Line::Row(pos.row),
+                start: Bound::Included(pos.col),
+                end: Bound::Unbounded,
+            },
         }
     }
 }

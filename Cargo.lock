@@ -1868,6 +1868,7 @@ dependencies = [
 name = "puzzled_crossword"
 version = "0.1.0"
 dependencies = [
+ "chumsky",
  "derive_more",
  "document-features",
  "miette",
@@ -1878,6 +1879,21 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "puzzled_crossword_tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm 0.29.0",
+ "derive_more",
+ "puzzled_core",
+ "puzzled_crossword",
+ "puzzled_io",
+ "puzzled_tui",
+ "ratatui",
+ "serde",
+ "tokio",
 ]
 
 [[package]]

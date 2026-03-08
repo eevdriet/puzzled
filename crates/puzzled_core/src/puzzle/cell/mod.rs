@@ -1,6 +1,6 @@
 mod style;
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 pub use style::CellStyle;
 
@@ -8,7 +8,6 @@ use crate::Value;
 
 pub const MISSING_ENTRY_CHAR: char = '-';
 
-#[derive(Debug)]
 pub struct Cell<T> {
     pub solution: Option<T>,
     pub style: CellStyle,
@@ -29,6 +28,19 @@ impl<T> Cell<T> {
             solution: None,
             style,
         }
+    }
+}
+
+impl<T> fmt::Debug for Cell<T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut cell = f.debug_struct("Cell");
+        cell.field("solution", &self.solution);
+        cell.field("style", &self.style);
+
+        cell.finish()
     }
 }
 

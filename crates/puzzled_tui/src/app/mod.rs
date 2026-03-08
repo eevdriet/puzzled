@@ -5,6 +5,7 @@ mod events;
 pub use actions::*;
 pub use commands::*;
 pub use events::*;
+use ratatui::widgets::FrameExt;
 
 use std::{collections::VecDeque, time::Duration};
 
@@ -99,7 +100,7 @@ where
                 .expect("Should have a screen on the screen stack");
 
             terminal.draw(|frame| {
-                screen.render(frame, &self.state);
+                screen.render(frame.area(), frame.buffer_mut(), &mut self.state);
             })?;
 
             // Then handle any actions or their results

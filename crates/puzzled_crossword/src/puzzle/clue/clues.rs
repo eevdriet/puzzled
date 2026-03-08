@@ -1,6 +1,7 @@
 use std::{collections::BTreeMap, fmt};
 
 use derive_more::{Deref, DerefMut};
+use puzzled_core::{Offset, Position};
 
 #[cfg(feature = "serde")]
 use crate::SerdeClue;
@@ -10,11 +11,61 @@ use crate::{Clue, ClueDirection, ClueId};
 ///
 /// By using [`BTreeMap`] with a [`ClueId`] as key type, clues are easily traversed in order by number, then [`ClueDirection`].
 #[derive(Debug, Default, PartialEq, Eq, Clone, Deref, DerefMut)]
-pub struct Clues(BTreeMap<ClueId, Clue>);
+pub struct Clues {
+    #[deref]
+    #[deref_mut]
+    entries: BTreeMap<ClueId, Clue>,
+
+    numbers: BTreeMap<Position, u8>,
+    across: BTreeMap<Position, ClueId>,
+    down: BTreeMap<Position, ClueId>,
+}
 
 impl Clues {
     pub fn new(entries: BTreeMap<ClueId, Clue>) -> Self {
-        Self(entries)
+        dbg!(&entries);
+        let mut clues = Clues::default();
+
+        for (id, clue) in entries {
+            clues.insert_clue_positions(&id, &clue);
+            clues.insert(id, clue);
+        }
+
+        clues
+    }
+
+    pub fn insert(&mut self, id: ClueId, clue: Clue) -> Option<Clue> {
+        self.insert_clue_positions(&id, &clue);
+        self.entries.insert(id, clue)
+    }
+
+    fn insert_clue_positions(&mut self, id: &ClueId, clue: &Clue) {
+        // Insert the clue number at its start
+        let mut pos = clue.start;
+        self.numbers.insert(pos, id.num);
+
+        // Determine which direction to insert the clue positions for
+        let (clues, offset) = match id.direction {
+            ClueDirection::Across => (&mut self.across, Offset::RIGHT),
+            ClueDirection::Down => (&mut self.down, Offset::DOWN),
+        };
+
+        // Insert the clue identifier for each position of the clue
+        for _ in 0..clue.len {
+            clues.insert(pos, *id);
+            pos += offset;
+        }
+    }
+
+    pub fn get_clues(&self, pos: Position) -> Option<(&Clue, &Clue)> {
+        let across = self.entries.get(self.across.get(&pos)?)?;
+        let down = self.entries.get(self.down.get(&pos)?)?;
+
+        Some((across, down))
+    }
+
+    pub fn get_num(&self, pos: Position) -> Option<u8> {
+        self.numbers.get(&pos).cloned()
     }
 
     /// Returns an iterator over just the across entries of the puzzle.
@@ -41,7 +92,7 @@ impl Clues {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_across(&self) -> impl Iterator<Item = &Clue> {
-        self.0
+        self.entries
             .values()
             .filter(|clue| matches!(clue.direction(), ClueDirection::Across))
     }
@@ -70,7 +121,7 @@ impl Clues {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_across_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
-        self.0
+        self.entries
             .values_mut()
             .filter(|clue| matches!(clue.direction(), ClueDirection::Across))
     }
@@ -99,7 +150,7 @@ impl Clues {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_down(&self) -> impl Iterator<Item = &Clue> {
-        self.0
+        self.entries
             .values()
             .filter(|clue| matches!(clue.direction(), ClueDirection::Down))
     }
@@ -128,7 +179,7 @@ impl Clues {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_down_mut(&mut self) -> impl Iterator<Item = &mut Clue> {
-        self.0
+        self.entries
             .values_mut()
             .filter(|clue| matches!(clue.direction(), ClueDirection::Down))
     }
@@ -174,7 +225,7 @@ impl Clues {
             clues.insert(id, clue);
         }
 
-        Ok(Self(clues))
+        Ok(Self::new(clues))
     }
 
     pub(crate) fn to_serde(&self) -> SerdeClues {

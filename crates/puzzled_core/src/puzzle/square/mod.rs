@@ -5,7 +5,7 @@ use derive_more::{Deref, DerefMut};
 pub const NON_PLAYABLE_CHAR: char = '.';
 
 #[derive(Debug, Deref, DerefMut, PartialEq, Eq)]
-pub struct Square<T>(pub(crate) Option<T>);
+pub struct Square<T>(pub Option<T>);
 
 impl<T> Square<T> {
     pub fn new(value: T) -> Self {

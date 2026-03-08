@@ -1,5 +1,7 @@
 use std::{fmt, str::FromStr};
 
+use puzzled_core::Direction;
+
 /// ClueDirection which a [clue](crate::Clue) can be placed in a [puzzle](crate::Crossword)
 ///
 /// Together with the *clue number*, the [`ClueDirection`] can [identify](crate::ClueId) where a clue should be placed.
@@ -32,8 +34,17 @@ impl FromStr for ClueDirection {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "A" => Ok(ClueDirection::Across),
-            "D" => Ok(ClueDirection::Across),
+            "D" => Ok(ClueDirection::Down),
             _ => Err(format!("Expected \"A\" or \"D\", found {s}")),
+        }
+    }
+}
+
+impl From<Direction> for ClueDirection {
+    fn from(dir: Direction) -> Self {
+        match dir {
+            Direction::Left | Direction::Right => ClueDirection::Across,
+            Direction::Up | Direction::Down => ClueDirection::Down,
         }
     }
 }

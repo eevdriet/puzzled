@@ -4,7 +4,8 @@ use puzzled_core::{Grid, GridError, Solver, SolverError};
 #[derive(Debug, Default)]
 pub struct NonogramSolver {}
 
-impl Solver<Nonogram, NonogramState> for NonogramSolver {
+impl Solver<NonogramState> for NonogramSolver {
+    type Puzzle = Nonogram;
     type Error = SolverError<GridError>;
 
     fn solve(

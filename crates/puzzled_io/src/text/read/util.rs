@@ -2,14 +2,13 @@ use chumsky::{
     Parser,
     error::Rich,
     extra::Err,
-    label::LabelError,
     prelude::{just, none_of},
-    text::{TextExpected, ident},
+    text::ident,
 };
 
 use crate::text::read::ParseError;
 
-pub fn quoted_string<'a>() -> impl Parser<'a, &'a str, &'a str> {
+pub fn quoted_string<'a>() -> impl Parser<'a, &'a str, &'a str, Err<ParseError<'a>>> + Clone {
     just('"')
         .ignore_then(none_of('"').repeated().to_slice())
         .then_ignore(just('"'))

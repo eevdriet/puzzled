@@ -42,14 +42,17 @@ where
 
 #[macro_export]
 macro_rules! impl_solve_for_grid_state {
-    ($puzzle:ty, $val:ty) => {
-        impl $crate::Solve<$puzzle> for GridState<$val> {
+    ($state:ty, $field:tt, $puzzle:ty, $val:ty) => {
+        impl $crate::Solve for $state {
+            type Puzzle = $puzzle;
             type Value = $val;
             type Position = $crate::Position;
             type Error = String;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let Some(solution) = self.solutions.get_mut(*pos) else {
+                let $crate::GridState { solutions, .. } = &mut self.$field;
+
+                let Some(solution) = solutions.get_mut(*pos) else {
                     return false;
                 };
 
@@ -58,7 +61,9 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let Some(entry) = self.entries.get_mut(*pos) else {
+                let $crate::GridState { entries, .. } = &mut self.$field;
+
+                let Some(entry) = entries.get_mut(*pos) else {
                     return false;
                 };
 
@@ -67,7 +72,11 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn reveal(&mut self, pos: &Self::Position) -> bool {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let $crate::GridState {
+                    solutions, entries, ..
+                } = &mut self.$field;
+
+                let solutions = &*solutions;
 
                 let Some(Some(solution)) = solutions.get(*pos) else {
                     return false;
@@ -82,7 +91,11 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn check(&mut self, pos: &Self::Position) -> Option<bool> {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let $crate::GridState {
+                    solutions, entries, ..
+                } = &mut self.$field;
+
+                let solutions = &*solutions;
 
                 let Some(Some(solution)) = solutions.get(*pos) else {
                     return None;
@@ -93,7 +106,11 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn reveal_all(&mut self) {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let $crate::GridState {
+                    solutions, entries, ..
+                } = &mut self.$field;
+
+                let solutions = &*solutions;
 
                 for (pos, solution) in solutions
                     .iter_indexed()
@@ -106,7 +123,9 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn check_all(&mut self) {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let $crate::GridState {
+                    solutions, entries, ..
+                } = &mut self.$field;
 
                 for pos in solutions.positions() {
                     if let (Some(Some(solution)), Some(entry)) =
@@ -118,7 +137,7 @@ macro_rules! impl_solve_for_grid_state {
             }
 
             fn try_finalize(&self) -> Result<$crate::Grid<$val>, Self::Error> {
-                let solutions = &self.solutions;
+                let $crate::GridState { solutions, .. } = &self.$field;
 
                 if solutions.iter().any(|bit| bit.is_none()) {
                     return Err("Expected all values to be set in the solution".to_string());
@@ -185,8 +204,9 @@ impl<T> SquareGridState<T> {
 
 #[macro_export]
 macro_rules! impl_solve_for_square_grid_state {
-    ($puzzle:ty, $ty:ty) => {
-        impl $crate::Solve<$puzzle> for SquareGridState<$ty> {
+    ($state:ty, $puzzle:ty, $ty:ty) => {
+        impl $crate::Solve for $state {
+            type Puzzle = $puzzle;
             type Value = $ty;
             type Position = $crate::Position;
             type Error = $crate::GridError;
@@ -210,7 +230,7 @@ macro_rules! impl_solve_for_square_grid_state {
             }
 
             fn reveal(&mut self, pos: &Self::Position) -> bool {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
 
                 let Some(Some(solution)) = solutions.get_fill(*pos) else {
                     return false;
@@ -225,7 +245,7 @@ macro_rules! impl_solve_for_square_grid_state {
             }
 
             fn check(&mut self, pos: &Self::Position) -> Option<bool> {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
 
                 let Some(Some(solution)) = solutions.get_fill(*pos) else {
                     return None;
@@ -236,7 +256,7 @@ macro_rules! impl_solve_for_square_grid_state {
             }
 
             fn reveal_all(&mut self) {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
 
                 for (pos, solution) in solutions
                     .iter_fills_indexed()
@@ -249,7 +269,7 @@ macro_rules! impl_solve_for_square_grid_state {
             }
 
             fn check_all(&mut self) {
-                let (solutions, entries) = (&self.solutions, &mut self.entries);
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
 
                 for pos in solutions.positions() {
                     if let (Some(Some(solution)), Some(entry)) =

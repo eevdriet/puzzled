@@ -1,67 +1,71 @@
-use puzzled_io::format;
+use std::str::FromStr;
 
-use crate::{ClueDirection, ClueSpec};
+use chumsky::{
+    IterParser, Parser,
+    extra::Err,
+    prelude::{end, group, just, one_of},
+    text,
+};
+use puzzled_core::{Metadata, Timer};
+use puzzled_io::{
+    TxtPuzzle,
+    text::read::{self, ParseError, quoted_string, square_entry_grids},
+};
 
-#[derive(Debug, thiserror::Error)]
-enum Error {
-    #[error("Invalid clue specification: {reason}")]
-    InvalidClueSpec { reason: String },
+use crate::{ClueDirection, ClueSpec, Crossword, CrosswordState, Solution};
+
+pub fn solution<'a>() -> impl Parser<'a, &'a str, Solution, Err<ParseError<'a>>> + Clone {
+    text::ident().map(Solution::from)
 }
 
-// impl TxtPuzzle<CrosswordState> for Crossword {
-//     fn read_text(reader: &mut TxtState) -> read::Result<(Self, CrosswordState)> {
-//         let (squares, entries) = reader.read_squares_and_entries()?;
-//
-//         // Read the clues and metadata
-//         let clues = read_clues(reader)?;
-//         let (metadata, timer) = reader.read_metadata(None)?;
-//
-//         // Create the state
-//         let solutions = squares.map_ref(|square| square.map_ref(|sq| Some(sq.solution.clone())));
-//
-//         let timer = timer.unwrap_or_default();
-//         let state = CrosswordState::new(solutions, entries, timer);
-//
-//         // Create the puzzle
-//         let mut puzzle = Crossword::from_squares(squares, metadata);
-//         puzzle.insert_clues(clues);
-//
-//         Ok((puzzle, state))
-//     }
-// }
+pub fn clue<'a>() -> impl Parser<'a, &'a str, ClueSpec, Err<ParseError<'a>>> + Clone {
+    one_of("AD")
+        .padded()
+        .then_ignore(just(":").padded())
+        .then(quoted_string())
+        .try_map(|(dir, clue), span| {
+            let dir_str = dir.to_string();
+            let dir = ClueDirection::from_str(dir_str.as_str())
+                .map_err(|err| ParseError::custom(span, err.to_string()))?;
 
-// fn read_clues(reader: &mut TxtState) -> read::Result<Vec<ClueSpec>> {
-//     let mut clues = Vec::new();
-//
-//     let err = |reason: &str| {
-//         let error = Error::InvalidClueSpec {
-//             reason: reason.to_string(),
-//         };
-//         format::Error::PuzzleSpecific(Box::new(error))
-//     };
-//
-//     while let Some(line) = reader.next_prefixed("-") {
-//         // Validate direction/text separation
-//         let (dir_str, text) = line
-//             .split_once(':')
-//             .ok_or(err("Clues should be specified as <dir> : <text>"))?;
-//
-//         // Validate the direction of the clue
-//         let direction = match dir_str.trim() {
-//             "A" => ClueDirection::Across,
-//             "D" => ClueDirection::Down,
-//             _ => {
-//                 return Err(err("Clue direction should be either A (across) or D (down)").into());
-//             }
-//         };
-//
-//         // Validate the clue text
-//         let text = reader.read_string(text)?;
-//
-//         // Add the clue
-//         let clue = ClueSpec::new(direction, text);
-//         clues.push(clue);
-//     }
-//
-//     Ok(clues)
-// }
+            Ok(ClueSpec::new(dir, clue))
+        })
+}
+
+pub fn clues<'a>() -> impl Parser<'a, &'a str, Vec<ClueSpec>, Err<ParseError<'a>>> + Clone {
+    just("-")
+        .padded()
+        .ignore_then(clue())
+        .padded() // allow spaces/newlines after each clue
+        .repeated()
+        .collect()
+        .then_ignore(end())
+}
+
+impl TxtPuzzle<CrosswordState> for Crossword {
+    fn read_text<'a>(input: &str) -> read::Result<(Self, CrosswordState)> {
+        let ((squares, entries), clues) = group((square_entry_grids(solution()), clues()))
+            .parse(input)
+            .into_result()
+            .map_err(|errs| {
+                read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
+            })?;
+
+        let solutions =
+            squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+
+        let timer = Timer::default();
+        let meta = Metadata::default();
+
+        let mut puzzle = Crossword::from_squares(squares, meta);
+        puzzle.insert_clues(clues);
+
+        let state = CrosswordState::new(solutions, entries, timer);
+
+        Ok((puzzle, state))
+    }
+
+    fn write_text(&self, state: &CrosswordState) -> String {
+        format!("{state}\n{}", self.meta())
+    }
+}

@@ -6,10 +6,8 @@ pub use state::*;
 
 use crate::Puzzle;
 
-pub trait Solve<P>
-where
-    P: Puzzle,
-{
+pub trait Solve {
+    type Puzzle: Puzzle;
     type Value: Clone + Eq;
     type Position;
     type Error;
@@ -36,5 +34,5 @@ where
         self.check(pos)
     }
 
-    fn try_finalize(&self) -> Result<P::Solution, Self::Error>;
+    fn try_finalize(&self) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
 }

@@ -1,21 +1,19 @@
 use std::collections::{BTreeMap, VecDeque};
 
 use bitvec::{bitvec, vec::BitVec};
-use delegate::delegate;
-use puzzled_core::{
-    Entry, Grid, GridError, GridState, Line, LinePosition, Position, Solve, Timer,
-    impl_solve_for_grid_state,
-};
+use derive_more::{Deref, DerefMut};
+use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Timer, impl_solve_for_grid_state};
 
 use crate::{Fill, LineConstraint, LineValidation, Nonogram};
 
 pub(crate) type LineMap<T> = BTreeMap<Line, T>;
 pub(crate) type LineMask = BitVec;
 
-#[derive(Debug)]
+#[derive(Debug, Deref, DerefMut)]
 pub struct NonogramState {
+    #[deref]
+    #[deref_mut]
     pub state: GridState<Fill>,
-    pub timer: Timer,
 
     pub(crate) frontier: VecDeque<Line>,
 
@@ -24,7 +22,7 @@ pub struct NonogramState {
     pub(crate) masks: LineMap<BTreeMap<Fill, LineMask>>,
 }
 
-impl_solve_for_grid_state!(Nonogram, Fill);
+impl_solve_for_grid_state!(NonogramState, state, Nonogram, Fill);
 
 impl NonogramState {
     pub fn new(solutions: Grid<Option<Fill>>, entries: Grid<Entry<Fill>>, timer: Timer) -> Self {
@@ -34,7 +32,6 @@ impl NonogramState {
                 entries,
                 timer,
             },
-            timer,
             frontier: VecDeque::default(),
             validations: LineMap::default(),
             constraints: LineMap::default(),
@@ -168,28 +165,29 @@ impl From<&Nonogram> for NonogramState {
     }
 }
 
-impl Solve<Nonogram> for NonogramState {
-    type Value = Fill;
-    type Position = Position;
-    type Error = String;
-
-    delegate! {
-        to self.state {
-            fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
-            fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
-            fn reveal(&mut self, pos: &Self::Position) -> bool;
-            fn check(&mut self, pos: &Self::Position) -> Option<bool>;
-
-            fn reveal_all(&mut self);
-            fn check_all(&mut self);
-
-            fn enter_checked(&mut self, pos: &Self::Position, entry: Self::Value) -> Option<bool>;
-
-            fn guess(&mut self, pos: &Self::Position, guess: Self::Value) -> bool;
-
-            fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
-
-            fn try_finalize(&self) -> Result<Grid<Fill>, Self::Error>;
-        }
-    }
-}
+// impl Solve for NonogramState {
+//     type Puzzle = Nonogram;
+//     type Value = Fill;
+//     type Position = Position;
+//     type Error = String;
+//
+//     delegate! {
+//         to self.state {
+//             fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
+//             fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
+//             fn reveal(&mut self, pos: &Self::Position) -> bool;
+//             fn check(&mut self, pos: &Self::Position) -> Option<bool>;
+//
+//             fn reveal_all(&mut self);
+//             fn check_all(&mut self);
+//
+//             fn enter_checked(&mut self, pos: &Self::Position, entry: Self::Value) -> Option<bool>;
+//
+//             fn guess(&mut self, pos: &Self::Position, guess: Self::Value) -> bool;
+//
+//             fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
+//
+//             fn try_finalize(&self) -> Result<Grid<Fill>, Self::Error>;
+//         }
+//     }
+// }

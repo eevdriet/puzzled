@@ -3,10 +3,10 @@ use chumsky::{
     extra::Err,
     prelude::{choice, just},
 };
-use puzzled_core::{Grid, Metadata, Timer};
+use puzzled_core::{Metadata, Timer};
 use puzzled_io::text::{
     TxtPuzzle,
-    read::{self, ParseError, cell_entry, grid, ignore_case_keyword},
+    read::{self, ParseError, cell_entry_grids, ignore_case_keyword},
 };
 
 use crate::{Binario, BinarioState, Bit};
@@ -26,30 +26,15 @@ pub fn bit<'a>() -> impl Parser<'a, &'a str, Bit, Err<ParseError<'a>>> + Clone {
 
 impl TxtPuzzle<BinarioState> for Binario {
     fn read_text<'a>(input: &str) -> read::Result<(Self, BinarioState)> {
-        let cell_entries = grid(cell_entry(bit()))
-            .parse(input)
-            .into_result()
-            .map_err(|errs| {
-                read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
-            })?;
+        let (cells, entries) =
+            cell_entry_grids(bit())
+                .parse(input)
+                .into_result()
+                .map_err(|errs| {
+                    read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
+                })?;
 
-        let cols = cell_entries.cols();
-        eprintln!("Cols: {cols}");
-
-        let (cells, solutions, entries) = cell_entries.into_iter().fold(
-            (vec![], vec![], vec![]),
-            |(mut cells, mut solutions, mut entries), (cell, entry)| {
-                solutions.push(cell.solution);
-                cells.push(cell);
-                entries.push(entry);
-
-                (cells, solutions, entries)
-            },
-        );
-
-        let cells = Grid::from_vec(cells, cols).expect("Read cells from grid");
-        let solutions = Grid::from_vec(solutions, cols).expect("Read solutions from grid");
-        let entries = Grid::from_vec(entries, cols).expect("Read entries from grid");
+        let solutions = cells.map_ref(|cell| cell.solution);
 
         let timer = Timer::default();
         let meta = Metadata::default();
@@ -69,7 +54,10 @@ impl TxtPuzzle<BinarioState> for Binario {
 mod tests {
     use std::path::PathBuf;
 
-    use puzzled_io::{TxtPuzzle, TxtReader, text::read::grid_row};
+    use puzzled_io::{
+        TxtPuzzle, TxtReader,
+        text::read::{cell_entry, grid_row},
+    };
     use rstest::rstest;
 
     use super::*;
