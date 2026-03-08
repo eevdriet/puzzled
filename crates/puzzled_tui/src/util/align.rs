@@ -10,15 +10,24 @@ pub fn clamp_area(area: Rect, size: Size) -> Rect {
 }
 
 pub fn align_area(
+    area: Rect,
     size: Size,
-    parent: Rect,
     h_align: HorizontalAlignment,
     v_align: VerticalAlignment,
 ) -> Rect {
-    let (x, width) = align_horizontally(size.width, parent.left(), parent.right(), h_align);
-    let (y, height) = align_vertically(size.height, parent.top(), parent.bottom(), v_align);
+    let (x, width) = align_horizontally(size.width, area.left(), area.right(), h_align);
+    let (y, height) = align_vertically(size.height, area.top(), area.bottom(), v_align);
 
     Rect::new(x, y, width, height)
+}
+
+pub fn center_area(area: Rect, size: Size) -> Rect {
+    align_area(
+        area,
+        size,
+        HorizontalAlignment::Center,
+        VerticalAlignment::Center,
+    )
 }
 
 pub fn align_horizontally(

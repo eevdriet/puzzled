@@ -20,8 +20,8 @@ impl StatefulWidgetRef for PuzzleScreen {
         let grid = self.solve_state.to_merged().map(RenderBit);
 
         let bordered_area = align_area(
-            grid.render_size(r_state),
             area,
+            grid.render_size(r_state),
             r_state.options.h_align,
             r_state.options.v_align,
         );

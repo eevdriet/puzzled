@@ -2,6 +2,8 @@ mod actions;
 mod options;
 mod state;
 
+use std::ops::Range;
+
 pub use options::*;
 pub use state::*;
 
@@ -18,8 +20,8 @@ impl<T> RenderSize for Grid<T> {
     type State = GridRenderState;
 
     fn render_size(&self, state: &Self::State) -> Size {
-        let cols = state.viewport.cols().min(self.cols()) as u16;
-        let rows = state.viewport.rows().min(self.rows()) as u16;
+        let cols = self.cols() as u16;
+        let rows = self.rows() as u16;
 
         let mut width = cols * state.options.cell_width;
         let mut height = rows * state.options.cell_height;
@@ -40,6 +42,9 @@ impl<T> RenderSize for Grid<T> {
 
 pub trait RenderGrid<S> {
     fn render(&self, area: Rect, buf: &mut Buffer, render_state: &GridRenderState, cell_state: &S);
+
+    fn visible_rows(&self, render_state: &GridRenderState) -> Range<usize>;
+    fn visible_cols(&self, render_state: &GridRenderState) -> Range<usize>;
 }
 
 impl<T, S> RenderGrid<S> for Grid<T>
@@ -60,7 +65,6 @@ where
         };
 
         // Render the grid itself
-        let vp = &state.viewport;
         let opts = &state.options;
 
         let draw_inner = opts.draw_inner_borders;
@@ -70,10 +74,10 @@ where
         let x_start = area.x;
         let mut y = area.y;
 
-        for row in vp.row_start..vp.row_end {
+        for row in self.visible_rows(state) {
             let mut x = x_start;
 
-            for col in vp.col_start..vp.col_end {
+            for col in self.visible_cols(state) {
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self[pos];
@@ -113,7 +117,7 @@ where
             {
                 let mut div_x = x_start;
 
-                for col in vp.col_start..vp.col_end {
+                for col in self.visible_cols(state) {
                     let col = col as u16;
 
                     if draw_inner {
@@ -146,5 +150,59 @@ where
         if state.options.draw_outer_borders {
             render_borders(bordered_area, buf, state);
         }
+    }
+
+    fn visible_rows(&self, render_state: &GridRenderState) -> Range<usize> {
+        let vp = &render_state.viewport;
+        let opts = &render_state.options;
+        let start = render_state.offset.row;
+        let mut end = start;
+        let mut y = 0;
+
+        while y < vp.height && end < self.rows() {
+            y += opts.cell_height;
+
+            if let Some(inner) = opts.inner {
+                if (end + 1) % inner.height as usize == 0 {
+                    y += 1;
+                }
+            }
+
+            if y > vp.height {
+                break;
+            }
+
+            end += 1;
+        }
+
+        let end = end.min(self.rows());
+        start..end
+    }
+
+    fn visible_cols(&self, render_state: &GridRenderState) -> Range<usize> {
+        let vp = &render_state.viewport;
+        let opts = &render_state.options;
+        let start = render_state.offset.col;
+        let mut end = start;
+        let mut x = 0;
+
+        while x < vp.width && end < self.cols() {
+            x += opts.cell_width;
+
+            if let Some(inner) = opts.inner {
+                if (end + 1) % inner.width as usize == 0 {
+                    x += 1;
+                }
+            }
+
+            if x > vp.width {
+                break;
+            }
+
+            end += 1;
+        }
+
+        let end = end.min(self.cols());
+        start..end
     }
 }

@@ -29,7 +29,7 @@ impl Widget for TextBlock<'_> {
             width: self.text.width() as u16,
             height: self.text.height() as u16,
         };
-        let text_area = align_area(text_size, inner, self.h_align, self.v_align);
+        let text_area = align_area(inner, text_size, self.h_align, self.v_align);
         self.text.render(text_area, buf);
     }
 }

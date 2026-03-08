@@ -13,9 +13,8 @@ use ratatui::{
 use std::io;
 
 use puzzled_binario::Binario;
-use puzzled_core::{Direction, Position};
 use puzzled_io::TxtPuzzle;
-use puzzled_tui::{App, EventTrie, GridOptions, GridRenderState, Viewport, init_logging};
+use puzzled_tui::{App, EventTrie, GridRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -23,23 +22,11 @@ async fn main() -> io::Result<()> {
 
     let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
 
-    let render_state = GridRenderState {
-        options: GridOptions {
-            cell_width: 5,
-            cell_height: 3,
-            inner: None,
-            // inner: Some(Size::new(1, 1)),
-            inner_border_style: Style::default(),
-            outer_border_style: Style::default(),
-            draw_inner_borders: false,
-            draw_outer_borders: false,
-            h_align: HorizontalAlignment::Center,
-            v_align: VerticalAlignment::Top,
-        },
-        viewport: Viewport::from_grid(puzzle.cells()),
-        cursor: Position::default(),
-        direction: Direction::default(),
-    };
+    let mut render_state = GridRenderState::default();
+    let opts = &mut render_state.options;
+
+    opts.cell_width = 5;
+    opts.cell_height = 3;
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events: EventTrie<BinarioAction> = EventTrie::from_config::<Binario>()?;

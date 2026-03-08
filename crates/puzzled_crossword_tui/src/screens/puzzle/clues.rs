@@ -54,9 +54,16 @@ impl StatefulWidgetRef for CluesWidget {
             }
         }
 
+        let mut highlight_style = Style::default();
+        let curr_dir = ClueDirection::from(state.render.direction);
+
+        if curr_dir == self.direction {
+            highlight_style = highlight_style.fg(Color::Yellow).italic();
+        }
+
         List::new(items)
             .block(Block::bordered().title(format!(" {:?} ", self.direction)))
-            .highlight_style(Style::new().fg(Color::Yellow).italic())
+            .highlight_style(highlight_style)
             .highlight_symbol(">> ")
             .render(area, buf, &mut list_state);
     }

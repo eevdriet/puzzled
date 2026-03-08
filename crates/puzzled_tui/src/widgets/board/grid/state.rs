@@ -1,15 +1,19 @@
+use std::ops::Range;
+
 use puzzled_core::{Direction, Position};
-use ratatui::layout::Position as AppPosition;
+use ratatui::layout::{Position as AppPosition, Rect};
 
-use crate::{GridOptions, Viewport};
+use crate::GridOptions;
 
+#[derive(Debug, Default)]
 pub struct GridRenderState {
     pub options: GridOptions,
 
     /// Visible area of the grid
-    pub viewport: Viewport,
+    pub viewport: Rect,
 
     /// Offset of the grid with its top-left most cell
+    pub offset: Position,
     pub cursor: Position,
     pub direction: Direction,
 }
@@ -22,14 +26,14 @@ impl GridRenderState {
         let opts = &self.options;
 
         // Ignore positions outside of the viewport
-        if !vp.area.contains(app_pos) {
-            tracing::debug!("\t Viewport {} does not contain", vp.area);
+        if !vp.contains(app_pos) {
+            tracing::debug!("\t Viewport {} does not contain", vp);
             return None;
         }
 
         // Normalize position from the viewport start
-        let mut x = app_pos.x.checked_sub(vp.area.x)?;
-        let mut y = app_pos.y.checked_sub(vp.area.y)?;
+        let mut x = app_pos.x.checked_sub(vp.x)?;
+        let mut y = app_pos.y.checked_sub(vp.y)?;
 
         // Remove inner cell borders if set
         let cell_w = opts.cell_width;
@@ -62,20 +66,12 @@ impl GridRenderState {
         let vp = &self.viewport;
         let opts = &self.options;
 
-        // Ignore positions outside of the viewport
-        if !(vp.row_start..vp.row_end).contains(&pos.row) {
-            return None;
-        }
-        if !(vp.col_start..vp.col_end).contains(&pos.col) {
-            return None;
-        }
-
         // Normalize position from the viewport start
-        let row = (pos.row - vp.row_start) as u16;
-        let col = (pos.col - vp.col_start) as u16;
+        let row = pos.row as u16;
+        let col = pos.col as u16;
 
-        let mut x = vp.area.x;
-        let mut y = vp.area.y;
+        let mut x = vp.x;
+        let mut y = vp.y;
 
         // Adjust for variable cell size
         let cell_w = opts.cell_width;
@@ -90,6 +86,7 @@ impl GridRenderState {
             y += row / inner.height;
         }
 
-        Some(AppPosition::new(x, y))
+        let app_pos = AppPosition::new(x, y);
+        vp.contains(app_pos).then_some(app_pos)
     }
 }

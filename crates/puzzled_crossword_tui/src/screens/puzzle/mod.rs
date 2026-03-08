@@ -5,7 +5,7 @@ pub use clues::*;
 pub use crossword::*;
 
 use ratatui::{
-    layout::{Constraint, Layout},
+    layout::{Constraint, HorizontalAlignment, Layout, VerticalAlignment},
     prelude::{Buffer, Rect},
     widgets::StatefulWidgetRef,
 };
@@ -13,7 +13,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionResolver, AppEvent, CommandHistory, FocusManager,
-    GridRenderState, HandleAction, RenderSize, StatefulScreen, clamp_area,
+    GridRenderState, HandleAction, RenderSize, StatefulScreen, align_area,
 };
 
 use crate::{AppState, CrosswordAction};
@@ -91,7 +91,14 @@ impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
         .areas(area);
 
         // Render widgets
-        let crossword = clamp_area(crossword, self.crossword.render_size(&self.state));
+        let crossword_size = self.crossword.render_size(&self.state);
+        let crossword = align_area(
+            crossword,
+            crossword_size,
+            HorizontalAlignment::Center,
+            VerticalAlignment::Top,
+        );
+
         self.crossword.render_ref(crossword, buf, &mut self.state);
 
         // Clues on the right

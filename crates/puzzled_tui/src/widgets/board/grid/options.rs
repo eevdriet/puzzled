@@ -30,8 +30,8 @@ impl Default for GridOptions {
             inner: None,
             inner_border_style: Style::default().fg(Color::DarkGray).dim(),
             outer_border_style: Style::default().fg(Color::Yellow),
-            draw_inner_borders: true,
-            draw_outer_borders: true,
+            draw_inner_borders: false,
+            draw_outer_borders: false,
             h_align: HorizontalAlignment::Center,
             v_align: VerticalAlignment::Center,
         }

@@ -21,25 +21,23 @@ impl StatefulWidgetRef for CrosswordWidget {
     type State = PuzzleScreenState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let r_state = &state.render;
         let grid = state.solve.entries.map_ref(RenderSquareSolution);
         let title = Crossword::title(state.puzzle.meta());
 
         let block = Block::default()
             .title(format!(" {title} "))
-            .borders(Borders::ALL)
+            .borders(Borders::TOP)
             .title_alignment(HorizontalAlignment::Center)
             .border_type(BorderType::Rounded);
 
-        let bordered_area = align_area(
-            grid.render_size(r_state),
-            block.inner(area),
-            HorizontalAlignment::Left,
-            r_state.options.v_align,
-        );
+        let bordered_area = block.inner(area);
+        state.render.viewport = bordered_area;
+
+        tracing::info!("Border area: {area}");
+        tracing::info!("Grid area: {bordered_area}");
 
         block.render(area, buf);
-        grid.render(bordered_area, buf, r_state, state);
+        grid.render(bordered_area, buf, &state.render, state);
     }
 }
 
