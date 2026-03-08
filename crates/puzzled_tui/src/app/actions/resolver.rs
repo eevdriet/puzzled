@@ -1,6 +1,6 @@
 use tokio::sync::mpsc;
 
-use crate::{ActionOutcome, Command, StatefulScreen};
+use crate::{Action, ActionOutcome, Command, StatefulScreen};
 
 pub struct ActionResolver<A, T> {
     pub(crate) sender: mpsc::UnboundedSender<ActionOutcome<A, T>>,
@@ -39,6 +39,12 @@ impl<A, T> ActionResolver<A, T> {
         self.sender
             .send(ActionOutcome::Command(command))
             .expect("Should be able to resolve command");
+    }
+
+    pub fn fire_action(&self, action: Action<A>) {
+        self.sender
+            .send(ActionOutcome::Action(action))
+            .expect("Should be able to resolve action");
     }
 }
 

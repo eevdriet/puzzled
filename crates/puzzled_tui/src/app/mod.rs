@@ -6,7 +6,7 @@ pub use actions::*;
 pub use commands::*;
 pub use events::*;
 
-use std::{collections::VecDeque, time::Duration};
+use std::{collections::VecDeque, fmt::Debug, time::Duration};
 
 use crossterm::{
     event::{self, EnableMouseCapture},
@@ -27,7 +27,7 @@ pub struct App<A, T> {
 
 impl<A, T> App<A, T>
 where
-    A: Clone + Send + ActionBehavior + 'static,
+    A: Clone + Send + ActionBehavior + 'static + Debug,
 {
     pub fn new(state: T, events: EventTrie<A>) -> Self {
         // Set up a channel to receive input events from the user
@@ -112,6 +112,8 @@ where
             tokio::select! {
                 // Handle incoming actions from the current screen
                 Some(action) = self.actions.recv() => {
+                    tracing::info!("Received {action:?}");
+
                     match action {
                         ActionOrEvent::Action(Action::Quit) => break,
                         ActionOrEvent::Action(action) => screen.on_action(action, resolver.clone(), &mut self.state),
@@ -125,6 +127,11 @@ where
                 // Resolve the result of completed actions
                 Some(outcome) = actions_rx.recv() => {
                     match outcome {
+                        // Handle actions
+                        ActionOutcome::Action(action) => {
+                            screen.on_action(action, resolver.clone(), &mut self.state);
+                        }
+
                         // Completely exit the app
                         ActionOutcome::Quit => {
                             // Exit out of all screens in order

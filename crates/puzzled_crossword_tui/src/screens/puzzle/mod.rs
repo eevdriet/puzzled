@@ -13,7 +13,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionResolver, AppEvent, CommandHistory, FocusManager,
-    GridRenderState, HandleAction, RenderSize, StatefulScreen, align_area,
+    GridRenderState, HandleAction, HandleEvent, RenderSize, StatefulScreen, align_area,
 };
 
 use crate::{AppState, CrosswordAction};
@@ -141,10 +141,14 @@ impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
 
     fn on_event(
         &mut self,
-        _event: AppEvent,
-        _resolver: ActionResolver<CrosswordAction, AppState>,
+        event: AppEvent,
+        resolver: ActionResolver<CrosswordAction, AppState>,
         _state: &mut AppState,
     ) {
+        match self.state.focus.current() {
+            Focus::Crossword => self.crossword.on_event(event, resolver, &mut self.state),
+            _ => self.crossword.on_event(event, resolver, &mut self.state),
+        }
     }
 
     fn on_pause(&mut self, _state: &mut AppState) {

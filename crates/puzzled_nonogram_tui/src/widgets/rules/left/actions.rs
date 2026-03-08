@@ -127,8 +127,6 @@ impl HandleAction for &RowRulesWidget {
             _ => (pos, false),
         };
 
-        tracing::info!("{pos:?} -> {end:?}");
-
         let cursor = puzzle_to_app(end);
         state.rules_left.cursor = cursor;
 

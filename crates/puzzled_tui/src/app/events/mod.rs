@@ -1,10 +1,12 @@
 mod engine;
+mod handle;
 mod mode;
 mod trie;
 
 use std::{fmt, hash::Hash, ops::Deref};
 
 pub use engine::*;
+pub use handle::*;
 pub use mode::*;
 pub use trie::*;
 
@@ -23,7 +25,7 @@ impl AppEvent {
         Self(event)
     }
 
-    pub fn key(code: KeyCode, modifiers: KeyModifiers) -> Self {
+    pub fn new_key(code: KeyCode, modifiers: KeyModifiers) -> Self {
         Self(Event::Key(KeyEvent {
             code,
             modifiers,
@@ -39,6 +41,13 @@ impl AppEvent {
             column: 0,
             row: 0,
         }))
+    }
+
+    pub fn key(&self) -> Option<KeyEvent> {
+        match self.0 {
+            Event::Key(key) => Some(key),
+            _ => None,
+        }
     }
 
     pub fn mouse(&self) -> Option<MouseEvent> {
@@ -221,7 +230,7 @@ pub(crate) fn parse_key<A>(key: &str, action: &Action<A>) -> Result<Vec<AppEvent
     'outer: while idx < key_str.len() {
         for (key, code) in SPECIAL_KEY_CODES {
             if key_str[idx..].starts_with(key) {
-                let event = AppEvent::key(code, mods);
+                let event = AppEvent::new_key(code, mods);
                 key_events.push(event);
 
                 break 'outer;
@@ -232,7 +241,7 @@ pub(crate) fn parse_key<A>(key: &str, action: &Action<A>) -> Result<Vec<AppEvent
 
         for key in SHIFTED_KEY_CODES.chars() {
             if first == key || first == '_' {
-                let event = AppEvent::key(Char(first), mods);
+                let event = AppEvent::new_key(Char(first), mods);
                 key_events.push(event);
 
                 break 'outer;
@@ -240,7 +249,7 @@ pub(crate) fn parse_key<A>(key: &str, action: &Action<A>) -> Result<Vec<AppEvent
         }
 
         if first.is_ascii_alphanumeric() || first.is_whitespace() {
-            let event = AppEvent::key(Char(first), mods);
+            let event = AppEvent::new_key(Char(first), mods);
             key_events.push(event);
 
             idx += 1;

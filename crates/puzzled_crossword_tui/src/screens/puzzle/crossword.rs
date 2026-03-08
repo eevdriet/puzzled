@@ -1,12 +1,14 @@
+use crossterm::event::KeyCode;
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Position, Puzzle, Square, SquareGridRef};
+use puzzled_core::{Entry, Position, Puzzle, Solve, Square, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, ActionResolver, CellRender, HandleAction, RenderGrid, RenderSize, TextBlock, align_area,
+    Action, ActionResolver, AppEvent, CellRender, HandleAction, HandleEvent, RenderGrid,
+    RenderSize, TextBlock,
 };
 
 use ratatui::{
-    layout::HorizontalAlignment,
+    layout::{HorizontalAlignment, Margin},
     prelude::{Buffer, Rect, Size},
     style::{Color, Modifier, Style, Stylize},
     text::Text,
@@ -20,8 +22,8 @@ pub struct CrosswordWidget;
 impl StatefulWidgetRef for CrosswordWidget {
     type State = PuzzleScreenState;
 
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let grid = state.solve.entries.map_ref(RenderSquareSolution);
+    fn render_ref(&self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        // Render the outside block with the puzzle title
         let title = Crossword::title(state.puzzle.meta());
 
         let block = Block::default()
@@ -30,14 +32,36 @@ impl StatefulWidgetRef for CrosswordWidget {
             .title_alignment(HorizontalAlignment::Center)
             .border_type(BorderType::Rounded);
 
-        let bordered_area = block.inner(area);
-        state.render.viewport = bordered_area;
+        let area = block.inner(root);
+        block.render(root, buf);
 
-        tracing::info!("Border area: {area}");
-        tracing::info!("Grid area: {bordered_area}");
+        // Render the active clue
+        let clues = state.puzzle.clues();
 
-        block.render(area, buf);
-        grid.render(bordered_area, buf, &state.render, state);
+        if let Some((across, down)) = clues.get_clues(state.render.cursor) {
+            let clue_dir = ClueDirection::from(state.render.direction);
+            let clue = match clue_dir {
+                ClueDirection::Across => across,
+                ClueDirection::Down => down,
+            };
+
+            let clue_area = area.inner(Margin::new(1, 0));
+            let clue_text = format!("{}{}  {}", clue.num(), clue.direction(), clue.text());
+
+            Text::from(clue_text)
+                .style(Style::default().fg(Color::White).bold())
+                .render(clue_area, buf);
+        }
+
+        tracing::info!("Border area: {root}");
+        tracing::info!("Grid area: {area}");
+
+        // Render the squares grid
+        state.render.viewport = area;
+        let grid_area = area.inner(Margin::new(0, 1));
+
+        let grid = state.solve.entries.map_ref(RenderSquareSolution);
+        grid.render(grid_area, buf, &state.render, state);
     }
 }
 
@@ -50,6 +74,9 @@ impl RenderSize for CrosswordWidget {
         // Border around puzzle grid
         size.width += 2;
         size.height += 2;
+
+        // Current clue
+        size.height += 1;
 
         size
     }
@@ -66,6 +93,58 @@ impl HandleAction<CrosswordAction, AppState> for CrosswordWidget {
     ) {
         let mut grid = SquareGridRef(&state.solve.entries);
         grid.on_action(action, resolver, &mut state.render);
+    }
+}
+
+impl HandleEvent<CrosswordAction, AppState> for CrosswordWidget {
+    type State = PuzzleScreenState;
+
+    fn on_event(
+        &mut self,
+        event: AppEvent,
+        resolver: ActionResolver<CrosswordAction, AppState>,
+        state: &mut Self::State,
+    ) {
+        tracing::info!("Event: {event}");
+
+        if let Some(key) = event.key() {
+            let pos = state.render.cursor;
+            let dir = state.render.direction;
+
+            match key.code {
+                // Movements
+                KeyCode::Down => resolver.fire_action(Action::MoveDown(1)),
+                KeyCode::Left => resolver.fire_action(Action::MoveLeft(1)),
+                KeyCode::Right => resolver.fire_action(Action::MoveRight(1)),
+                KeyCode::Up => resolver.fire_action(Action::MoveUp(1)),
+
+                KeyCode::Char(ch) => {
+                    let _ = state
+                        .solve
+                        .enter(&pos, Solution::Letter(ch.to_ascii_uppercase()));
+
+                    if let Some(next) = pos + dir
+                        && state.puzzle.squares().get_fill(next).is_some()
+                    {
+                        state.render.cursor = next;
+                    }
+                }
+
+                KeyCode::Backspace | KeyCode::Delete => {
+                    state.solve.clear(&pos);
+
+                    if let Some(next) = pos - dir
+                        && state.puzzle.squares().get_fill(next).is_some()
+                    {
+                        state.render.cursor = next;
+                    }
+                }
+
+                KeyCode::Enter => resolver.quit(),
+
+                _ => {}
+            }
+        }
     }
 }
 
@@ -95,7 +174,6 @@ impl<'a> CellRender<PuzzleScreenState> for RenderSquareSolution<'a> {
         }
 
         if let Some((across, down)) = state.puzzle.clues().get_clues(cursor) {
-            tracing::info!("Position {pos} clues: A: {across:?} | D: {down:?}");
             let clue_dir = ClueDirection::from(state.render.direction);
             let active_clue_style = border_style.fg(Color::Cyan).bold();
             let alt_clue_style = border_style.fg(Color::White).dim();

@@ -1,12 +1,11 @@
-use std::{
-    fmt::Debug,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crossterm::event::{Event, KeyCode};
+use derive_more::Debug;
 
 use crate::{Action, ActionBehavior, AppEvent, EventMode, EventSearchResult, EventTrie};
 
+#[derive(Debug)]
 pub enum ActionOrEvent<A> {
     Action(Action<A>),
     Event(AppEvent),
@@ -34,7 +33,8 @@ impl<A> EventEngine<A> {
             pending_operand: None,
             buffer: Vec::new(),
             last_insert: Instant::now(),
-            mode: EventMode::Normal,
+            // mode: EventMode::Normal,
+            mode: EventMode::Insert,
         }
     }
 }

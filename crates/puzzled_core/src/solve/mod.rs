@@ -14,11 +14,13 @@ pub trait Solve {
 
     fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
     fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
+    fn clear(&mut self, pos: &Self::Position) -> bool;
     fn reveal(&mut self, pos: &Self::Position) -> bool;
     fn check(&mut self, pos: &Self::Position) -> Option<bool>;
 
     fn reveal_all(&mut self);
     fn check_all(&mut self);
+    fn clear_all(&mut self);
 
     fn enter_checked(&mut self, pos: &Self::Position, entry: Self::Value) -> Option<bool> {
         self.enter(pos, entry);

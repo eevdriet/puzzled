@@ -4,8 +4,9 @@ use crate::{Offset, Position};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Direction {
-    #[default]
     Up = 0,
+
+    #[default]
     Right = 1,
     Down = 2,
     Left = 3,
@@ -64,6 +65,14 @@ impl ops::Add<Direction> for Position {
             Direction::Left => Position::new(row, col.checked_sub(1)?),
         };
         Some(pos)
+    }
+}
+
+impl ops::Sub<Direction> for Position {
+    type Output = Option<Self>;
+
+    fn sub(self, direction: Direction) -> Self::Output {
+        self + !direction
     }
 }
 

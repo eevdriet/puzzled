@@ -71,6 +71,17 @@ macro_rules! impl_solve_for_grid_state {
                 true
             }
 
+            fn clear(&mut self, pos: &Self::Position) -> bool {
+                let $crate::GridState { entries, .. } = &mut self.$field;
+
+                let Some(entry) = entries.get_mut(*pos) else {
+                    return false;
+                };
+
+                entry.clear();
+                true
+            }
+
             fn reveal(&mut self, pos: &Self::Position) -> bool {
                 let $crate::GridState {
                     solutions, entries, ..
@@ -132,6 +143,18 @@ macro_rules! impl_solve_for_grid_state {
                         (solutions.get(pos), entries.get_mut(pos))
                     {
                         entry.check(solution);
+                    }
+                }
+            }
+
+            fn clear_all(&mut self) {
+                let $crate::GridState {
+                    solutions, entries, ..
+                } = &mut self.$field;
+
+                for pos in solutions.positions() {
+                    if let Some(entry) = entries.get_mut(pos) {
+                        entry.clear();
                     }
                 }
             }
@@ -255,6 +278,17 @@ macro_rules! impl_solve_for_square_grid_state {
                 entry.check(solution)
             }
 
+            fn clear(&mut self, pos: &Self::Position) -> bool {
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
+
+                let Some(entry) = entries.get_fill_mut(*pos) else {
+                    return false;
+                };
+
+                entry.clear();
+                true
+            }
+
             fn reveal_all(&mut self) {
                 let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
 
@@ -276,6 +310,16 @@ macro_rules! impl_solve_for_square_grid_state {
                         (solutions.get_fill(pos), entries.get_fill_mut(pos))
                     {
                         entry.check(solution);
+                    }
+                }
+            }
+
+            fn clear_all(&mut self) {
+                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
+
+                for pos in solutions.positions() {
+                    if let Some(entry) = entries.get_fill_mut(pos) {
+                        entry.clear();
                     }
                 }
             }
