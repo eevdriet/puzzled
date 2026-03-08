@@ -4,10 +4,11 @@ mod iter;
 mod sided;
 mod square;
 
+pub use iter::*;
 pub use sided::*;
+pub use square::*;
 
 pub use error::Error as GridError;
-pub(crate) use iter::*;
 
 use crate::{Line, Position};
 use std::fmt::{self, Debug};
@@ -82,9 +83,9 @@ impl<T> Grid<T> {
     }
 
     /// Map each referenced entry in the grid to create a new grid
-    pub fn map_ref<U, F>(&self, f: F) -> Grid<U>
+    pub fn map_ref<'a, U, F>(&'a self, f: F) -> Grid<U>
     where
-        F: FnMut(&T) -> U,
+        F: FnMut(&'a T) -> U,
     {
         Grid {
             data: self.data.iter().map(f).collect(),

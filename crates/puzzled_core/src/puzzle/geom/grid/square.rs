@@ -1,4 +1,9 @@
-use crate::{Grid, PosIter, PosIterMut, Position, Square};
+use derive_more::{Deref, DerefMut};
+
+use crate::{Grid, IndexedIter, Position, Square};
+
+#[derive(Deref, DerefMut)]
+pub struct SquareGrid<T>(Grid<Square<T>>);
 
 impl<T> Grid<Square<T>> {
     /// Get a reference to the [filled square](Square::Filled) at the given position
@@ -97,13 +102,8 @@ impl<T> Grid<Square<T>> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_fills_indexed(&self) -> impl Iterator<Item = (Position, &T)> {
-        let iter = self
-            .data
-            .iter()
-            .enumerate()
-            .filter_map(|(pos, square)| square.as_ref().map(|sq| (pos, sq)));
-
-        PosIter::new(iter, self.cols, false)
+        self.iter_indexed()
+            .filter_map(|(pos, sq)| sq.as_ref().map(|sq| (pos, sq)))
     }
 
     /// Creates a mutable indexed iterator over the grid
@@ -124,12 +124,7 @@ impl<T> Grid<Square<T>> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_fills_indexed_mut(&mut self) -> impl Iterator<Item = (Position, &mut T)> {
-        let iter = self
-            .data
-            .iter_mut()
-            .enumerate()
-            .filter_map(|(pos, square)| square.as_mut().map(|sq| (pos, sq)));
-
-        PosIterMut::new(iter, self.cols, false)
+        self.iter_indexed_mut()
+            .filter_map(|(pos, sq)| sq.as_mut().map(|sq| (pos, sq)))
     }
 }
