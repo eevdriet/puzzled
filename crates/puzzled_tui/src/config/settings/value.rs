@@ -533,13 +533,13 @@ impl<'de> Deserialize<'de> for SettingValue {
     }
 }
 
-impl<A, T> HandleCommand<A, T> for SettingValue {
+impl<M, A, T> HandleCommand<M, A, T> for SettingValue {
     type State = ();
 
     fn on_command(
         &mut self,
-        _command: Command<A>,
-        _resolver: ActionResolver<A, T>,
+        _command: Command<M, A>,
+        _resolver: ActionResolver<M, A, T>,
         _state: &mut Self::State,
     ) -> bool {
         // match self {

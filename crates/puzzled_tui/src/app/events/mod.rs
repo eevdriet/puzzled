@@ -1,12 +1,10 @@
 mod engine;
-mod handle;
 mod mode;
 mod trie;
 
 use std::{fmt, hash::Hash, ops::Deref};
 
 pub use engine::*;
-pub use handle::*;
 pub use mode::*;
 pub use trie::*;
 
@@ -165,7 +163,7 @@ impl fmt::Display for AppEvent {
     }
 }
 
-pub(crate) fn parse_key<A>(key: &str, entry: &TrieEntry<A>) -> Result<Vec<AppEvent>, String> {
+pub(crate) fn parse_key<M, A>(key: &str, entry: &TrieEntry<M, A>) -> Result<Vec<AppEvent>, String> {
     use KeyCode::*;
 
     let mut s = key.trim().to_ascii_lowercase();

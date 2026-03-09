@@ -9,15 +9,9 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum ActionOrEvent<A> {
-    Action(Action<A>),
-    Event(AppEvent),
-}
-
-#[derive(Debug)]
-pub struct EventEngine<A> {
+pub struct EventEngine<M, A> {
     buffer: Vec<AppEvent>,
-    actions: EventTrie<A>,
+    actions: EventTrie<M, A>,
     pending_operator: Option<Operator>,
 
     repeat: RepeatState,
@@ -27,8 +21,8 @@ pub struct EventEngine<A> {
     mode: EventMode,
 }
 
-impl<A> EventEngine<A> {
-    pub fn new(mut actions: EventTrie<A>, timeout: Duration) -> Self {
+impl<M, A> EventEngine<M, A> {
+    pub fn new(mut actions: EventTrie<M, A>, timeout: Duration) -> Self {
         actions.insert_mode_switches();
 
         Self {
@@ -43,11 +37,12 @@ impl<A> EventEngine<A> {
     }
 }
 
-impl<A> EventEngine<A>
+impl<M, A> EventEngine<M, A>
 where
     A: Clone + ActionBehavior,
+    M: Clone,
 {
-    pub fn push(&mut self, event: AppEvent) -> Option<Command<A>> {
+    pub fn push(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         let result = match self.mode {
             EventMode::Normal => self.normal_event(event),
             EventMode::Insert => self.insert_event(event),
@@ -58,7 +53,7 @@ where
         result
     }
 
-    fn search_command(&mut self, events: &[AppEvent]) -> Option<Command<A>> {
+    fn search_command(&mut self, events: &[AppEvent]) -> Option<Command<M, A>> {
         match self.actions.search(events) {
             // Perform action for known sequence
             EventSearchResult::Exact(entry) | EventSearchResult::ExactPrefix(entry) => {
@@ -105,7 +100,7 @@ where
         }
     }
 
-    fn push_action(&mut self, event: AppEvent) -> Option<Command<A>> {
+    fn push_action(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
@@ -129,7 +124,7 @@ where
         self.search_command(&self.buffer.to_vec())
     }
 
-    pub fn tick(&mut self) -> Option<Command<A>> {
+    pub fn tick(&mut self) -> Option<Command<M, A>> {
         if self.buffer.is_empty() {
             return None;
         }
@@ -163,13 +158,13 @@ where
         self.repeat.clear();
     }
 
-    fn normal_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+    fn normal_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         let action = self.push_action(event)?;
 
         Some(action)
     }
 
-    fn insert_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+    fn insert_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         let Some(key) = event.key() else {
             return None;
         };
@@ -201,7 +196,7 @@ where
         Some(command)
     }
 
-    fn replace_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+    fn replace_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         let Some(key) = event.key() else {
             return None;
         };
@@ -232,7 +227,7 @@ where
         Some(command)
     }
 
-    fn handle_mode_switch(&mut self, result: &Option<Command<A>>) {
+    fn handle_mode_switch(&mut self, result: &Option<Command<M, A>>) {
         let Some(command) = result else {
             return;
         };

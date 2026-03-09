@@ -13,19 +13,19 @@ use super::EventMode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
 #[serde(untagged)]
-pub enum TrieEntry<A> {
-    Motion(Motion),
+pub enum TrieEntry<M, A> {
+    Motion(Motion<M>),
     Operator(Operator),
     Action(Action<A>),
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrieNode<A> {
-    entry: Option<TrieEntry<A>>,
-    children: HashMap<AppEvent, EventTrieNode<A>>,
+pub struct EventTrieNode<M, A> {
+    entry: Option<TrieEntry<M, A>>,
+    children: HashMap<AppEvent, EventTrieNode<M, A>>,
 }
 
-impl<A> Default for EventTrieNode<A> {
+impl<M, A> Default for EventTrieNode<M, A> {
     fn default() -> Self {
         Self {
             entry: None,
@@ -35,7 +35,7 @@ impl<A> Default for EventTrieNode<A> {
 }
 
 #[derive(Debug)]
-pub enum EventSearchResult<A> {
+pub enum EventSearchResult<M, A> {
     /// Event search does not lead to an action
     None,
 
@@ -46,13 +46,13 @@ pub enum EventSearchResult<A> {
     Prefix,
 
     /// Events trigger an action
-    Exact(TrieEntry<A>),
+    Exact(TrieEntry<M, A>),
 
     /// Events trigger an action and and prefix
-    ExactPrefix(TrieEntry<A>),
+    ExactPrefix(TrieEntry<M, A>),
 }
 
-impl<A> EventSearchResult<A> {
+impl<M, A> EventSearchResult<M, A> {
     pub fn is_partial(&self) -> bool {
         matches!(
             self,
@@ -62,21 +62,22 @@ impl<A> EventSearchResult<A> {
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrie<A> {
-    root: EventTrieNode<A>,
+pub struct EventTrie<M, A> {
+    root: EventTrieNode<M, A>,
 }
 
-impl<A> Default for EventTrie<A> {
+impl<M, A> Default for EventTrie<M, A> {
     fn default() -> Self {
         Self {
-            root: EventTrieNode::<A>::default(),
+            root: EventTrieNode::<M, A>::default(),
         }
     }
 }
 
-impl<A> EventTrie<A>
+impl<M, A> EventTrie<M, A>
 where
     A: Hash + Clone + Eq + DeserializeOwned,
+    M: Hash + Clone + Eq + DeserializeOwned,
 {
     pub fn from_config<P>() -> io::Result<Self>
     where
@@ -87,15 +88,16 @@ where
             return Ok(EventTrie::default());
         };
 
-        let action_keys: RawActionKeys<A> = toml::from_str(&contents).map_err(io::Error::other)?;
+        let action_keys: RawActionKeys<M, A> =
+            toml::from_str(&contents).map_err(io::Error::other)?;
 
         let trie = parse_action_events(action_keys).map_err(io::Error::other)?;
         Ok(trie)
     }
 }
 
-impl<A> EventTrie<A> {
-    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<A>) -> bool {
+impl<M, A> EventTrie<M, A> {
+    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<M, A>) -> bool {
         let Ok(events) = parse_key(key, &entry) else {
             return false;
         };
@@ -104,7 +106,7 @@ impl<A> EventTrie<A> {
         true
     }
 
-    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<A>) {
+    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<M, A>) {
         let mut node = &mut self.root;
 
         for event in events {
@@ -120,11 +122,12 @@ impl<A> EventTrie<A> {
     }
 }
 
-impl<A> EventTrie<A>
+impl<M, A> EventTrie<M, A>
 where
     A: Clone,
+    M: Clone,
 {
-    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<A> {
+    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<M, A> {
         if events.is_empty() {
             return EventSearchResult::None;
         }
@@ -155,31 +158,32 @@ where
                     EventSearchResult::None
                 }
             }
-            Some(ref action) => {
+            Some(ref command) => {
                 // if action.requires_operand() {
                 //     return EventSearchResult::RequireOperand(action);
                 // }
 
                 if has_children {
-                    EventSearchResult::ExactPrefix(action.clone())
+                    EventSearchResult::ExactPrefix(command.clone())
                 } else {
-                    EventSearchResult::Exact(action.clone())
+                    EventSearchResult::Exact(command.clone())
                 }
             }
         }
     }
 }
 
-impl<A> EventTrie<A>
+impl<M, A> EventTrie<M, A>
 where
     A: ActionBehavior + Eq + Hash + Clone,
+    M: Eq + Hash + Clone,
 {
-    pub fn action_keys(&self) -> HashMap<TrieEntry<A>, Vec<String>> {
+    pub fn action_keys(&self) -> HashMap<TrieEntry<M, A>, Vec<String>> {
         // Initialize keys for all action variants
         let mut keys = HashMap::default();
 
         // TODO: add back all variants for motions/operators etc.
-        // for action in Action::<A>::variants() {
+        // for action in Action::<M, A>::variants() {
         //     keys.entry(action).or_default();
         // }
         //
@@ -191,12 +195,13 @@ where
     }
 }
 
-fn dfs<A>(
-    node: &EventTrieNode<A>,
-    result: &mut HashMap<TrieEntry<A>, Vec<String>>,
+fn dfs<M, A>(
+    node: &EventTrieNode<M, A>,
+    result: &mut HashMap<TrieEntry<M, A>, Vec<String>>,
     current_events: Vec<AppEvent>,
 ) where
     A: Eq + Hash + Clone,
+    M: Eq + Hash + Clone,
 {
     // If the node has an action, add the current path of events to the result
     if let Some(entry) = &node.entry {

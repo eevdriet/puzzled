@@ -1,16 +1,16 @@
 use std::fmt::Debug;
 
-use puzzled_core::{Direction, Grid, Position, Square, SquareGridRef};
+use puzzled_core::{Direction, Grid, Position, SquareGridRef};
 
-use crate::{Action, ActionResolver, Command, GridRenderState, HandleCommand, Motion};
+use crate::{ActionResolver, Command, GridRenderState, HandleCommand, Motion};
 
-impl<A, S, T> HandleCommand<A, S> for Grid<T> {
+impl<M, A, S, T> HandleCommand<M, A, S> for Grid<T> {
     type State = GridRenderState;
 
     fn on_command(
         &mut self,
-        command: Command<A>,
-        _resolver: ActionResolver<A, S>,
+        command: Command<M, A>,
+        _resolver: ActionResolver<M, A, S>,
         state: &mut Self::State,
     ) -> bool {
         let count = command.count();
@@ -92,25 +92,19 @@ impl<A, S, T> HandleCommand<A, S> for Grid<T> {
     }
 }
 
-impl<A, S, T> HandleCommand<A, S> for SquareGridRef<'_, T>
-where
-    A: Debug,
-{
+impl<M, A, S, T> HandleCommand<M, A, S> for SquareGridRef<'_, T> {
     type State = GridRenderState;
 
     fn on_command(
         &mut self,
-        command: Command<A>,
-        _resolver: ActionResolver<A, S>,
+        command: Command<M, A>,
+        _resolver: ActionResolver<M, A, S>,
         state: &mut Self::State,
     ) -> bool {
-        tracing::info!("Ccommandd: {command:?}");
         let count = command.count();
         let Some(motion) = command.motion() else {
-            tracing::debug!("\t No motion");
             return false;
         };
-        tracing::debug!("\t Motion: {motion:?}");
 
         let start = state.cursor;
         let Position { col, row } = start;

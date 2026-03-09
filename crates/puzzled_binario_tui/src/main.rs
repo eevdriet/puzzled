@@ -25,7 +25,7 @@ async fn main() -> io::Result<()> {
     opts.cell_height = 3;
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    let events: EventTrie<BinarioAction> = EventTrie::from_config::<Binario>()?;
+    let events: EventTrie<(), BinarioAction> = EventTrie::from_config::<Binario>()?;
 
     // let action_keys = events.action_keys();
     // dbg!(action_keys);

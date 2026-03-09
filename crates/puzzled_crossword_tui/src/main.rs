@@ -1,8 +1,8 @@
-mod action;
+mod commands;
 mod screens;
 mod state;
 
-pub use action::*;
+pub use commands::*;
 pub use screens::*;
 pub use state::*;
 
@@ -27,7 +27,8 @@ async fn main() -> io::Result<()> {
     opts.draw_inner_borders = true;
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    let events: EventTrie<CrosswordAction> = EventTrie::from_config::<Crossword>()?;
+    let events: EventTrie<CrosswordMotion, CrosswordAction> =
+        EventTrie::from_config::<Crossword>()?;
 
     let state = AppState {};
     let mut app = App::new(state, events);

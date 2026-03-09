@@ -78,7 +78,3 @@ pub enum Action<A = ()> {
     #[serde(untagged)]
     Other(A),
 }
-
-fn default_count() -> usize {
-    1
-}

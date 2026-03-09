@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum Motion {
+pub enum Motion<M> {
     // Left-right
     Col(usize),
     Left,
@@ -19,4 +19,8 @@ pub enum Motion {
 
     // Word
     Word,
+
+    // Other (for puzzle specific motions)
+    #[serde(untagged)]
+    Other(M),
 }

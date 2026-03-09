@@ -2,16 +2,16 @@ use tokio::sync::mpsc;
 
 use crate::{Command, CommandOutcome, StatefulScreen};
 
-pub struct ActionResolver<A, T> {
-    pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<A, T>>,
+pub struct ActionResolver<M, A, T> {
+    pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<M, A, T>>,
 }
 
-impl<A, T> ActionResolver<A, T> {
-    pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<A, T>>) -> Self {
+impl<M, A, T> ActionResolver<M, A, T> {
+    pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<M, A, T>>) -> Self {
         Self { sender }
     }
 
-    pub fn next_screen(&self, screen: Box<dyn StatefulScreen<A, T>>) {
+    pub fn next_screen(&self, screen: Box<dyn StatefulScreen<M, A, T>>) {
         self.sender
             .send(CommandOutcome::NextScreen(screen))
             .expect("Should be able to resolve next screen");
@@ -23,7 +23,7 @@ impl<A, T> ActionResolver<A, T> {
             .expect("Should be able to resolve previous screen");
     }
 
-    pub fn replace_screen(&self, screen: Box<dyn StatefulScreen<A, T>>) {
+    pub fn replace_screen(&self, screen: Box<dyn StatefulScreen<M, A, T>>) {
         self.sender
             .send(CommandOutcome::ReplaceScreen(screen))
             .expect("Should be able to resolve replace screen");
@@ -35,14 +35,14 @@ impl<A, T> ActionResolver<A, T> {
             .expect("Should be able to resolve exit");
     }
 
-    pub fn fire_command(&self, command: Command<A>) {
+    pub fn fire_command(&self, command: Command<M, A>) {
         self.sender
             .send(CommandOutcome::Command(command))
             .expect("Should be able to resolve command");
     }
 }
 
-impl<A, T> Clone for ActionResolver<A, T> {
+impl<M, A, T> Clone for ActionResolver<M, A, T> {
     fn clone(&self) -> Self {
         Self {
             sender: self.sender.clone(),

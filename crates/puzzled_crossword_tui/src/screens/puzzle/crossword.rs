@@ -3,8 +3,7 @@ use derive_more::{Deref, DerefMut};
 use puzzled_core::{Direction, Entry, Position, Puzzle, Solve, Square, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, ActionResolver, AppEvent, CellRender, Command, HandleCommand, HandleEvent, RenderGrid,
-    RenderSize, TextBlock,
+    ActionResolver, AppEvent, CellRender, Command, HandleCommand, RenderGrid, RenderSize, TextBlock,
 };
 
 use ratatui::{
@@ -15,7 +14,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, StatefulWidgetRef, Widget},
 };
 
-use crate::{AppState, CrosswordAction, Focus, PuzzleScreenState};
+use crate::{AppState, CrosswordAction, CrosswordMotion, Focus, PuzzleScreenState};
 
 pub struct CrosswordWidget;
 
@@ -89,13 +88,13 @@ impl RenderSize for CrosswordWidget {
     }
 }
 
-impl HandleCommand<CrosswordAction, AppState> for CrosswordWidget {
+impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidget {
     type State = PuzzleScreenState;
 
     fn on_command(
         &mut self,
-        command: Command<CrosswordAction>,
-        resolver: ActionResolver<CrosswordAction, AppState>,
+        command: Command<CrosswordMotion, CrosswordAction>,
+        resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
         state: &mut Self::State,
     ) -> bool {
         let mut grid = SquareGridRef(&state.solve.entries);
@@ -103,55 +102,55 @@ impl HandleCommand<CrosswordAction, AppState> for CrosswordWidget {
     }
 }
 
-impl HandleEvent<CrosswordAction, AppState> for CrosswordWidget {
-    type State = PuzzleScreenState;
-
-    fn on_event(
-        &mut self,
-        event: AppEvent,
-        resolver: ActionResolver<CrosswordAction, AppState>,
-        state: &mut Self::State,
-    ) -> bool {
-        let Some(key) = event.key() else {
-            return false;
-        };
-
-        let pos = state.render.cursor;
-        let dir = match state.render.direction {
-            Direction::Left | Direction::Right => Direction::Right,
-            Direction::Up | Direction::Down => Direction::Down,
-        };
-
-        match key.code {
-            // Movements
-            KeyCode::Char(ch) => {
-                let _ = state
-                    .solve
-                    .enter(&pos, Solution::Letter(ch.to_ascii_uppercase()));
-
-                if let Some(next) = pos + dir
-                    && state.puzzle.squares().get_fill(next).is_some()
-                {
-                    state.render.cursor = next;
-                }
-            }
-
-            KeyCode::Backspace | KeyCode::Delete => {
-                state.solve.clear(&pos);
-
-                if let Some(next) = pos - dir
-                    && state.puzzle.squares().get_fill(next).is_some()
-                {
-                    state.render.cursor = next;
-                }
-            }
-
-            _ => return false,
-        }
-
-        true
-    }
-}
+// impl HandleEvent<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidget {
+//     type State = PuzzleScreenState;
+//
+//     fn on_event(
+//         &mut self,
+//         event: AppEvent,
+//         resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+//         state: &mut Self::State,
+//     ) -> bool {
+//         let Some(key) = event.key() else {
+//             return false;
+//         };
+//
+//         let pos = state.render.cursor;
+//         let dir = match state.render.direction {
+//             Direction::Left | Direction::Right => Direction::Right,
+//             Direction::Up | Direction::Down => Direction::Down,
+//         };
+//
+//         match key.code {
+//             // Movements
+//             KeyCode::Char(ch) => {
+//                 let _ = state
+//                     .solve
+//                     .enter(&pos, Solution::Letter(ch.to_ascii_uppercase()));
+//
+//                 if let Some(next) = pos + dir
+//                     && state.puzzle.squares().get_fill(next).is_some()
+//                 {
+//                     state.render.cursor = next;
+//                 }
+//             }
+//
+//             KeyCode::Backspace | KeyCode::Delete => {
+//                 state.solve.clear(&pos);
+//
+//                 if let Some(next) = pos - dir
+//                     && state.puzzle.squares().get_fill(next).is_some()
+//                 {
+//                     state.render.cursor = next;
+//                 }
+//             }
+//
+//             _ => return false,
+//         }
+//
+//         true
+//     }
+// }
 
 #[derive(Deref, DerefMut)]
 struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>>);

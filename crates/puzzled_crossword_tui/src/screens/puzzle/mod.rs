@@ -16,7 +16,7 @@ use puzzled_tui::{
     HandleCommand, RenderSize, StatefulScreen, align_area,
 };
 
-use crate::{AppState, CrosswordAction};
+use crate::{AppState, CrosswordAction, CrosswordMotion};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Focus {
@@ -78,7 +78,7 @@ impl PuzzleScreen {
     }
 }
 
-impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
+impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen {
     fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
         let gap = Constraint::Length(2);
 
@@ -112,8 +112,8 @@ impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
 
     fn on_command(
         &mut self,
-        command: Command<CrosswordAction>,
-        resolver: ActionResolver<CrosswordAction, AppState>,
+        command: Command<CrosswordMotion, CrosswordAction>,
+        resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
         _state: &mut AppState,
     ) -> bool {
         tracing::info!("Command reached crossword: {command:?}");

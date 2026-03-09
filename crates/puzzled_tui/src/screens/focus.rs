@@ -69,7 +69,7 @@ where
     }
 }
 
-impl<A, T, F> HandleCommand<A, T> for FocusManager<F>
+impl<M, A, T, F> HandleCommand<M, A, T> for FocusManager<F>
 where
     F: Eq + Hash + Copy,
 {
@@ -77,8 +77,8 @@ where
 
     fn on_command(
         &mut self,
-        command: Command<A>,
-        _resolver: ActionResolver<A, T>,
+        command: Command<M, A>,
+        _resolver: ActionResolver<M, A, T>,
         _state: &mut Self::State,
     ) -> bool {
         // Make sure focus can be given up from the current node

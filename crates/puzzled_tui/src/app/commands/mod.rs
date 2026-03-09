@@ -15,14 +15,14 @@ pub use operator::*;
 pub use resolver::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Command<A> {
+pub struct Command<M, A> {
     count: usize,
     operator: Option<Operator>,
-    motion: Option<Motion>,
+    motion: Option<Motion<M>>,
     action: Option<Action<A>>,
 }
 
-impl<A> Default for Command<A> {
+impl<M, A> Default for Command<M, A> {
     fn default() -> Self {
         Self {
             count: 1,
@@ -33,11 +33,11 @@ impl<A> Default for Command<A> {
     }
 }
 
-impl<A> Command<A> {
+impl<M, A> Command<M, A> {
     pub fn new(
         count: usize,
         operator: Option<Operator>,
-        motion: Option<Motion>,
+        motion: Option<Motion<M>>,
         action: Option<Action<A>>,
     ) -> Self {
         Self {
@@ -55,7 +55,7 @@ impl<A> Command<A> {
         }
     }
 
-    pub fn new_motion(motion: Motion) -> Self {
+    pub fn new_motion(motion: Motion<M>) -> Self {
         Self {
             motion: Some(motion),
             ..Default::default()
@@ -70,7 +70,7 @@ impl<A> Command<A> {
         self.operator.as_ref()
     }
 
-    pub fn motion(&self) -> Option<&Motion> {
+    pub fn motion(&self) -> Option<&Motion<M>> {
         self.motion.as_ref()
     }
 
