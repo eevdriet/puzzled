@@ -10,7 +10,7 @@ use std::io;
 
 use puzzled_binario::Binario;
 use puzzled_io::TxtPuzzle;
-use puzzled_tui::{App, EventTrie, GridRenderState, init_logging};
+use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -31,7 +31,8 @@ async fn main() -> io::Result<()> {
     // dbg!(action_keys);
 
     let state = AppState {};
-    let mut app = App::new(state, events);
+    let context = AppContext::new(state);
+    let mut app = App::new(context, events);
 
     app.run(Box::new(screen)).await?;
 

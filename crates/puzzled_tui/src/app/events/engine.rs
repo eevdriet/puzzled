@@ -42,14 +42,14 @@ where
     A: Clone + ActionBehavior,
     M: Clone,
 {
-    pub fn push(&mut self, event: AppEvent) -> Option<Command<M, A>> {
-        let result = match self.mode {
+    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> Option<Command<M, A>> {
+        let result = match mode {
             EventMode::Normal => self.normal_event(event),
             EventMode::Insert => self.insert_event(event),
             EventMode::Replace => self.replace_event(event),
         };
 
-        self.handle_mode_switch(&result);
+        self.handle_mode_switch(&result, mode);
         result
     }
 
@@ -227,13 +227,13 @@ where
         Some(command)
     }
 
-    fn handle_mode_switch(&mut self, result: &Option<Command<M, A>>) {
+    fn handle_mode_switch(&mut self, result: &Option<Command<M, A>>, mode: &mut EventMode) {
         let Some(command) = result else {
             return;
         };
 
-        if let Some(Action::NextMode(mode)) = command.action() {
-            self.mode = *mode;
+        if let Some(Action::NextMode(next_mode)) = command.action() {
+            *mode = *next_mode;
         }
     }
 }

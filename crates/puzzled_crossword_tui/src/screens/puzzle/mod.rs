@@ -1,19 +1,22 @@
 mod clues;
 mod crossword;
+mod state;
 
 pub use clues::*;
 pub use crossword::*;
+use puzzled_core::Direction;
+pub use state::*;
 
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, VerticalAlignment},
     prelude::{Buffer, Rect},
-    widgets::StatefulWidgetRef,
+    widgets::{ListState, StatefulWidgetRef},
 };
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    Action, ActionBehavior, ActionResolver, Command, CommandHistory, FocusManager, GridRenderState,
-    HandleCommand, RenderSize, StatefulScreen, align_area,
+    Action, ActionBehavior, ActionResolver, AppContext, Command, CommandHistory, EventMode,
+    FocusManager, GridRenderState, HandleCommand, RenderSize, StatefulScreen, align_area,
 };
 
 use crate::{AppState, CrosswordAction, CrosswordMotion};
@@ -26,16 +29,6 @@ pub enum Focus {
     AcrossClues,
     DownClues,
     Footer,
-}
-
-pub struct PuzzleScreenState {
-    // Solve state
-    puzzle: Crossword,
-    solve: CrosswordState,
-    render: GridRenderState,
-
-    // UI state
-    focus: FocusManager<Focus>,
 }
 
 pub struct PuzzleScreen {
@@ -56,19 +49,28 @@ impl PuzzleScreen {
         solve_state: CrosswordState,
         render_state: GridRenderState,
     ) -> Self {
-        let mut focus = FocusManager::default();
+        let mut focus = FocusManager::from_mode_nodes([
+            (Focus::AcrossClues, EventMode::Normal),
+            (Focus::DownClues, EventMode::Normal),
+        ]);
+
         focus.link_right(Focus::Crossword, &[Focus::AcrossClues]);
         focus.link_right(Focus::AcrossClues, &[Focus::DownClues]);
         focus.link_below(Focus::Footer, &[Focus::AcrossClues, Focus::DownClues]);
 
-        Self {
-            state: PuzzleScreenState {
-                puzzle,
-                solve: solve_state,
-                render: render_state,
-                focus,
-            },
+        let list = ListState::default().with_selected(Some(0));
+        let mut state = PuzzleScreenState {
+            puzzle,
+            solve: solve_state,
+            render: render_state,
+            across: list,
+            down: list,
+            focus,
+        };
+        state.update_clues_from_cursor();
 
+        Self {
+            state,
             crossword: CrosswordWidget,
             across_clues: CluesWidget::new(ClueDirection::Across, Focus::AcrossClues),
             down_clues: CluesWidget::new(ClueDirection::Down, Focus::DownClues),
@@ -79,7 +81,7 @@ impl PuzzleScreen {
 }
 
 impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
+    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppContext<AppState>) {
         let gap = Constraint::Length(2);
 
         // Crossword on the left
@@ -114,7 +116,7 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
         &mut self,
         command: Command<CrosswordMotion, CrosswordAction>,
         resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
-        _state: &mut AppState,
+        ctx: &mut AppContext<AppState>,
     ) -> bool {
         tracing::info!("Command reached crossword: {command:?}");
 
@@ -128,7 +130,25 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
 
                 // Focus change actions
                 action if action.is_focus() => {
-                    return self.state.focus.on_command(command, resolver, &mut ());
+                    let changed_focus =
+                        self.state
+                            .focus
+                            .on_command(command, resolver, &mut ctx.mode);
+
+                    // Update the grid direction to reflect the active clue widget
+                    if changed_focus {
+                        match self.state.focus.current() {
+                            Focus::AcrossClues => {
+                                self.state.render.direction = ClueDirection::Across.into();
+                            }
+                            Focus::DownClues => {
+                                self.state.render.direction = ClueDirection::Down.into();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    return changed_focus;
                 }
                 _ => {}
             }
@@ -150,11 +170,11 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
         }
     }
 
-    fn on_pause(&mut self, _state: &mut AppState) {
+    fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
         self.state.solve.timer.pause();
     }
 
-    fn on_resume(&mut self, _state: &mut AppState) {
+    fn on_resume(&mut self, _ctx: &mut AppContext<AppState>) {
         self.state.solve.timer.start();
     }
 }

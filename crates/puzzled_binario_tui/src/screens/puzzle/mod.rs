@@ -2,7 +2,7 @@ mod actions;
 mod render;
 
 use puzzled_binario::{Binario, BinarioState};
-use puzzled_tui::{CommandHistory, GridRenderState, StatefulScreen};
+use puzzled_tui::{AppContext, CommandHistory, GridRenderState, StatefulScreen};
 use ratatui::prelude::{Buffer, Rect};
 
 use crate::{AppState, BinarioAction};
@@ -28,13 +28,13 @@ impl PuzzleScreen {
 }
 
 impl StatefulScreen<(), BinarioAction, AppState> for PuzzleScreen {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState) {}
+    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppContext<AppState>) {}
 
-    fn on_pause(&mut self, _state: &mut AppState) {
+    fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
         self.solve_state.timer.pause();
     }
 
-    fn on_resume(&mut self, _state: &mut AppState) {
+    fn on_resume(&mut self, _ctx: &mut AppContext<AppState>) {
         self.solve_state.timer.start();
     }
 }

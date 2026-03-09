@@ -2,24 +2,26 @@ use std::{collections::HashMap, hash::Hash};
 
 use puzzled_core::Direction;
 
-use crate::{Action, ActionResolver, Command, HandleCommand};
+use crate::{Action, ActionResolver, Command, EventMode, HandleCommand};
+
+#[derive(Debug, Clone, Copy)]
+pub struct FocusNode<F> {
+    links: [Option<F>; 4],
+    mode: Option<EventMode>,
+}
+
+impl<F> Default for FocusNode<F> {
+    fn default() -> Self {
+        Self {
+            links: [None, None, None, None],
+            mode: None,
+        }
+    }
+}
 
 pub struct FocusManager<F> {
     curr: F,
-    links: HashMap<F, [Option<F>; 4]>,
-}
-
-impl<F> FocusManager<F> {
-    pub fn new(curr: F) -> Self {
-        Self {
-            curr,
-            links: HashMap::default(),
-        }
-    }
-
-    pub fn current(&self) -> &F {
-        &self.curr
-    }
+    graph: HashMap<F, FocusNode<F>>,
 }
 
 impl<F> Default for FocusManager<F>
@@ -29,8 +31,40 @@ where
     fn default() -> Self {
         Self {
             curr: F::default(),
-            links: HashMap::default(),
+            graph: HashMap::default(),
         }
+    }
+}
+
+impl<F> FocusManager<F> {
+    pub fn new(curr: F) -> Self {
+        Self {
+            curr,
+            graph: HashMap::new(),
+        }
+    }
+
+    pub fn from_mode_nodes<M>(nodes: M) -> Self
+    where
+        F: Default + Eq + Hash,
+        M: Into<HashMap<F, EventMode>>,
+    {
+        let mut graph = HashMap::default();
+        let nodes = nodes.into();
+
+        for (focus, mode) in nodes {
+            let node: &mut FocusNode<F> = graph.entry(focus).or_default();
+            node.mode = Some(mode);
+        }
+
+        Self {
+            curr: F::default(),
+            graph,
+        }
+    }
+
+    pub fn current(&self) -> &F {
+        &self.curr
     }
 }
 
@@ -57,13 +91,13 @@ where
     fn link_in_direction(&mut self, middle: F, others: &[F], direction: Direction) {
         for other in others {
             {
-                let middle_links = self.links.entry(middle).or_default();
-                middle_links[!direction as usize] = Some(*other);
+                let node = self.graph.entry(middle).or_default();
+                node.links[!direction as usize] = Some(*other);
             }
 
             {
-                let other_links = self.links.entry(*other).or_default();
-                other_links[direction as usize] = Some(middle);
+                let node = self.graph.entry(*other).or_default();
+                node.links[direction as usize] = Some(middle);
             }
         }
     }
@@ -73,16 +107,16 @@ impl<M, A, T, F> HandleCommand<M, A, T> for FocusManager<F>
 where
     F: Eq + Hash + Copy,
 {
-    type State = ();
+    type State = EventMode;
 
     fn on_command(
         &mut self,
         command: Command<M, A>,
         _resolver: ActionResolver<M, A, T>,
-        _state: &mut Self::State,
+        mode: &mut Self::State,
     ) -> bool {
         // Make sure focus can be given up from the current node
-        let Some(links) = self.links.get(&self.curr) else {
+        let Some(node) = self.graph.get(&self.curr) else {
             return false;
         };
 
@@ -93,15 +127,24 @@ where
 
         // Determine which node to focus next and focus if found
         let next = match action {
-            Action::FocusUp => links[Direction::Up as usize],
-            Action::FocusRight => links[Direction::Right as usize],
-            Action::FocusDown => links[Direction::Down as usize],
-            Action::FocusLeft => links[Direction::Left as usize],
+            Action::FocusUp => node.links[Direction::Up as usize],
+            Action::FocusRight => node.links[Direction::Right as usize],
+            Action::FocusDown => node.links[Direction::Down as usize],
+            Action::FocusLeft => node.links[Direction::Left as usize],
             _ => return false,
         };
 
-        if let Some(next) = next {
-            self.curr = next;
+        let Some(next) = next else {
+            return false;
+        };
+
+        self.curr = next;
+
+        // Also set the entering mode if one is defined
+        if let Some(next_node) = self.graph.get(&next)
+            && let Some(next_mode) = next_node.mode
+        {
+            *mode = next_mode;
         }
 
         true

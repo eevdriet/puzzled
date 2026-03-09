@@ -21,7 +21,7 @@ impl StatefulWidgetRef for PuzzleScreen {
 
         let bordered_area = align_area(
             area,
-            grid.render_size(r_state),
+            grid.render_size(&r_state.options),
             r_state.options.h_align,
             r_state.options.v_align,
         );

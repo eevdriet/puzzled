@@ -9,8 +9,6 @@ pub use list::*;
 
 use ratatui::layout::Size;
 
-pub trait RenderSize {
-    type State;
-
-    fn render_size(&self, state: &Self::State) -> Size;
+pub trait RenderSize<S> {
+    fn render_size(&self, state: &S) -> Size;
 }

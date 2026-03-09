@@ -1,7 +1,9 @@
 mod commands;
+mod context;
 mod events;
 
 pub use commands::*;
+pub use context::*;
 pub use events::*;
 
 use std::{collections::VecDeque, fmt::Debug, time::Duration};
@@ -22,7 +24,7 @@ const POLL_DURATION: Duration = Duration::from_millis(30);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<M, A, T> {
-    state: T,
+    context: AppContext<T>,
 
     events_rx: mpsc::UnboundedReceiver<AppEvent>,
 
@@ -36,7 +38,7 @@ where
     A: Clone + Send + ActionBehavior + 'static + Debug,
     M: Clone + Send + 'static,
 {
-    pub fn new(state: T, actions: EventTrie<M, A>) -> Self {
+    pub fn new(context: AppContext<T>, actions: EventTrie<M, A>) -> Self {
         let (events_tx, events_rx) = unbounded_channel();
         let events_tx2 = events_tx.clone();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
@@ -62,7 +64,7 @@ where
         let engine = EventEngine::new(actions, TICK_DURATION);
 
         Self {
-            state,
+            context,
             engine,
 
             events_rx,
@@ -83,7 +85,7 @@ where
         screens
             .back_mut()
             .expect("Added initial screen")
-            .on_enter(&mut self.state);
+            .on_enter(&mut self.context);
 
         // Set up an action resolver
         let (actions_tx, mut actions_rx) = mpsc::unbounded_channel();
@@ -99,7 +101,7 @@ where
             // Get the current screen and render its contents
             if render {
                 terminal.draw(|frame| {
-                    screen.render(frame.area(), frame.buffer_mut(), &mut self.state);
+                    screen.render(frame.area(), frame.buffer_mut(), &mut self.context);
                 })?;
 
                 render = false;
@@ -111,7 +113,7 @@ where
                 Some(event) = self.events_rx.recv() => {
                     tracing::info!("Received event: {event}");
 
-                    if let Some(command) = self.engine.push(event) {
+                    if let Some(command) = self.engine.push(event, &mut self.context.mode) {
                         resolver.fire_command(command);
                         render = true;
                     }
@@ -130,7 +132,7 @@ where
                     match outcome {
                         // Handle actions
                         CommandOutcome::Command(command) => {
-                            screen.on_command(command, resolver.clone(), &mut self.state);
+                            screen.on_command(command, resolver.clone(), &mut self.context);
                         }
 
                         // Completely exit the app
@@ -142,20 +144,20 @@ where
                         CommandOutcome::PreviousScreen => {
                             if screens.len() > 1 {
                                 let mut old_screen = screens.pop_back().expect("Verified screens length");
-                                old_screen.on_exit(&mut self.state);
+                                old_screen.on_exit(&mut self.context);
 
                                 let curr_screen = screens.back_mut().expect("Verified screen length");
-                                curr_screen.on_resume(&mut self.state);
+                                curr_screen.on_resume(&mut self.context);
                             }
                         }
 
                         // Go to the next screen
                         CommandOutcome::NextScreen(mut next_screen) => {
                             // Pause the current screen
-                            screen.on_pause(&mut self.state);
+                            screen.on_pause(&mut self.context);
 
                             // Enter the next screen
-                            next_screen.on_enter(&mut self.state);
+                            next_screen.on_enter(&mut self.context);
                             screens.push_back(next_screen);
                         }
                         _ => {}
@@ -175,7 +177,7 @@ where
 
         // Exit out of all screens in order
         while let Some(mut screen) = screens.pop_back() {
-            screen.on_exit(&mut self.state);
+            screen.on_exit(&mut self.context);
         }
 
         execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;

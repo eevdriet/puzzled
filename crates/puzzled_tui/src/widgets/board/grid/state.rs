@@ -1,7 +1,6 @@
-use std::ops::Range;
-
 use puzzled_core::{Direction, Position};
-use ratatui::layout::{Position as AppPosition, Rect};
+use ratatui::layout::{Offset, Position as AppPosition, Rect};
+use tui_scrollview::ScrollViewState;
 
 use crate::GridOptions;
 
@@ -16,6 +15,7 @@ pub struct GridRenderState {
     pub offset: Position,
     pub cursor: Position,
     pub direction: Direction,
+    pub scroll: ScrollViewState,
 }
 
 impl GridRenderState {
@@ -88,5 +88,36 @@ impl GridRenderState {
 
         let app_pos = AppPosition::new(x, y);
         vp.contains(app_pos).then_some(app_pos)
+    }
+
+    pub fn ensure_cursor_visible(&mut self) {
+        let cell_w = self.options.cell_width;
+        let cell_h = self.options.cell_height;
+        let vp = self.viewport;
+
+        // Determine the cursor and current offset position (viewport aligned)
+        let cursor_x = self.cursor.col as u16 * cell_w;
+        let cursor_y = self.cursor.row as u16 * cell_h;
+
+        let mut offset_x = self.scroll.offset().x;
+        let mut offset_y = self.scroll.offset().y;
+
+        // Horizontal
+        if offset_x > cursor_x {
+            offset_x = cursor_x;
+        } else if offset_x + vp.width < cursor_x + cell_w {
+            offset_x = cursor_x + cell_w - vp.width;
+        }
+
+        // Vertical
+        if offset_y > cursor_y {
+            offset_y = cursor_y;
+        } else if offset_y + vp.height < cursor_y + cell_w {
+            offset_y = cursor_y + cell_w - vp.height;
+        }
+
+        let offset = AppPosition::new(offset_x, offset_y);
+
+        self.scroll.set_offset(offset);
     }
 }

@@ -1,6 +1,6 @@
-use std::fmt::Debug;
-
 use puzzled_core::{Direction, Grid, Position, SquareGridRef};
+use ratatui::layout::{Rect, Size};
+use tui_scrollview::ScrollViewState;
 
 use crate::{ActionResolver, Command, GridRenderState, HandleCommand, Motion};
 
@@ -172,6 +172,7 @@ impl<M, A, S, T> HandleCommand<M, A, S> for SquareGridRef<'_, T> {
                     .find(|&(_, square)| square.is_some())
                     .map(|(pos, _)| pos)
                     .unwrap_or(start);
+
                 (next, dir)
             }
             Motion::RowStart => {
@@ -190,6 +191,7 @@ impl<M, A, S, T> HandleCommand<M, A, S> for SquareGridRef<'_, T> {
 
         state.cursor = next;
         state.direction = next_dir;
+        state.ensure_cursor_visible();
 
         true
     }

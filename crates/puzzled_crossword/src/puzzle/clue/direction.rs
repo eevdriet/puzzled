@@ -49,6 +49,15 @@ impl From<Direction> for ClueDirection {
     }
 }
 
+impl From<ClueDirection> for Direction {
+    fn from(clue_dir: ClueDirection) -> Self {
+        match clue_dir {
+            ClueDirection::Across => Direction::Right,
+            ClueDirection::Down => Direction::Down,
+        }
+    }
+}
+
 #[cfg(feature = "serde")]
 mod serde_impl {
     use serde::{Deserialize, Serialize};

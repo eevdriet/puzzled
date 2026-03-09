@@ -10,7 +10,7 @@ use std::io;
 
 use puzzled_crossword::Crossword;
 use puzzled_io::TxtPuzzle;
-use puzzled_tui::{App, EventTrie, GridRenderState, init_logging};
+use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -24,14 +24,16 @@ async fn main() -> io::Result<()> {
     opts.cell_width = 5;
     opts.cell_height = 3;
     // opts.inner = Some(ratatui::layout::Size::new(5, 5));
-    opts.draw_inner_borders = true;
+    // opts.draw_inner_borders = true;
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events: EventTrie<CrosswordMotion, CrosswordAction> =
         EventTrie::from_config::<Crossword>()?;
 
-    let state = AppState {};
-    let mut app = App::new(state, events);
+    let state = AppState::default();
+    let ctx = AppContext::new(state);
+
+    let mut app = App::new(ctx, events);
 
     app.run(Box::new(screen)).await?;
 
