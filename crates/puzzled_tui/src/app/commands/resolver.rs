@@ -1,50 +1,44 @@
 use tokio::sync::mpsc;
 
-use crate::{Action, ActionOutcome, Command, StatefulScreen};
+use crate::{Command, CommandOutcome, StatefulScreen};
 
 pub struct ActionResolver<A, T> {
-    pub(crate) sender: mpsc::UnboundedSender<ActionOutcome<A, T>>,
+    pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<A, T>>,
 }
 
 impl<A, T> ActionResolver<A, T> {
-    pub(crate) fn new(sender: mpsc::UnboundedSender<ActionOutcome<A, T>>) -> Self {
+    pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<A, T>>) -> Self {
         Self { sender }
     }
 
     pub fn next_screen(&self, screen: Box<dyn StatefulScreen<A, T>>) {
         self.sender
-            .send(ActionOutcome::NextScreen(screen))
+            .send(CommandOutcome::NextScreen(screen))
             .expect("Should be able to resolve next screen");
     }
 
     pub fn prev_screen(&self) {
         self.sender
-            .send(ActionOutcome::PreviousScreen)
+            .send(CommandOutcome::PreviousScreen)
             .expect("Should be able to resolve previous screen");
     }
 
     pub fn replace_screen(&self, screen: Box<dyn StatefulScreen<A, T>>) {
         self.sender
-            .send(ActionOutcome::ReplaceScreen(screen))
+            .send(CommandOutcome::ReplaceScreen(screen))
             .expect("Should be able to resolve replace screen");
     }
 
     pub fn quit(&self) {
         self.sender
-            .send(ActionOutcome::Quit)
+            .send(CommandOutcome::Quit)
             .expect("Should be able to resolve exit");
     }
 
-    pub fn fire_command(&self, command: Box<dyn Command<T>>) {
+    pub fn fire_command(&self, command: Command<A>) {
         self.sender
-            .send(ActionOutcome::Command(command))
+            .send(CommandOutcome::Command(command))
             .expect("Should be able to resolve command");
-    }
-
-    pub fn fire_action(&self, action: Action<A>) {
-        self.sender
-            .send(ActionOutcome::Action(action))
-            .expect("Should be able to resolve action");
     }
 }
 

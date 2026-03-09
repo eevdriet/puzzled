@@ -1,16 +1,24 @@
-use puzzled_core::{Direction, Grid, Position, SquareGridRef};
+use std::fmt::Debug;
 
-use crate::{Action, ActionResolver, GridRenderState, HandleAction};
+use puzzled_core::{Direction, Grid, Position, Square, SquareGridRef};
 
-impl<A, S, T> HandleAction<A, S> for Grid<T> {
+use crate::{Action, ActionResolver, Command, GridRenderState, HandleCommand, Motion};
+
+impl<A, S, T> HandleCommand<A, S> for Grid<T> {
     type State = GridRenderState;
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: Action<A>,
+        command: Command<A>,
         _resolver: ActionResolver<A, S>,
         state: &mut Self::State,
-    ) {
+    ) -> bool {
+        let Command { count, motion, .. } = command;
+
+        let Some(motion) = motion else {
+            return false;
+        };
+
         // Bounds
         let max_row = self.rows() - 1;
         let max_col = self.cols() - 1;
@@ -20,59 +28,59 @@ impl<A, S, T> HandleAction<A, S> for Grid<T> {
         let Position { col, row } = start;
 
         // Determine the end position of cursor movements
-        let end: Position = match action {
+
+        let end: Position = match motion {
             // -- Movements --
             // Left
-            Action::MoveLeft(count) => Position {
+            Motion::Left => Position {
                 col: col.saturating_sub(count),
                 ..start
             },
             // Right
-            Action::MoveRight(count) => Position {
+            Motion::Right => Position {
                 col: (col + count).min(max_col),
                 ..start
             },
             // Up
-            Action::MoveUp(count) => Position {
+            Motion::Up => Position {
                 row: row.saturating_sub(count),
                 ..start
             },
             // Down
-            Action::MoveDown(count) => Position {
+            Motion::Down => Position {
                 row: (row + count).min(max_row),
                 ..start
             },
 
             // Column
-            Action::MoveCol(col) => Position { col, ..start },
-            Action::MoveColEnd => Position {
+            Motion::Col(col) => Position { col, ..start },
+            Motion::ColEnd => Position {
                 row: max_row,
                 ..start
             },
-            Action::MoveColStart => Position { row: 0, ..start },
+            Motion::ColStart => Position { row: 0, ..start },
 
             // Row
-            Action::MoveRow(row) => Position { row, ..start },
-            Action::MoveRowEnd => Position {
+            Motion::Row(row) => Position { row, ..start },
+            Motion::RowEnd => Position {
                 col: max_col,
                 ..start
             },
-            Action::MoveRowStart => Position { col: 0, ..start },
+            Motion::RowStart => Position { col: 0, ..start },
 
             // Mouse
-            Action::Click(mouse) | Action::Drag(mouse) => match state.to_grid(mouse) {
-                None => start,
-                Some(pos) => pos,
-            },
-
-            _ => start,
+            // Action::Click(mouse) | Action::Drag(mouse) => match state.to_grid(mouse) {
+            //     None => start,
+            //     Some(pos) => pos,
+            // },
+            _ => return false,
         };
 
-        let direction = match action {
-            Action::MoveUp(_) => Direction::Up,
-            Action::MoveDown(_) => Direction::Down,
-            Action::MoveLeft(_) => Direction::Left,
-            Action::MoveRight(_) => Direction::Right,
+        let direction = match motion {
+            Motion::Up => Direction::Up,
+            Motion::Down => Direction::Down,
+            Motion::Left => Direction::Left,
+            Motion::Right => Direction::Right,
             _ => state.direction,
         };
 
@@ -80,66 +88,48 @@ impl<A, S, T> HandleAction<A, S> for Grid<T> {
             state.cursor = end;
             state.direction += direction;
         }
+
+        true
     }
 }
 
-impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
+impl<A, S, T> HandleCommand<A, S> for SquareGridRef<'_, T>
+where
+    A: Debug,
+{
     type State = GridRenderState;
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: Action<A>,
+        command: Command<A>,
         _resolver: ActionResolver<A, S>,
         state: &mut Self::State,
-    ) {
-        let move_in_dir = |dir: Direction, count: usize| {
-            let mut pos = state.cursor;
-            let curr_dir = state.direction;
-
-            // If currently going in another direction, change the direction
-            if ![dir, !dir].contains(&curr_dir) {
-                return (pos, dir);
-            }
-
-            // Continue moving in the direction until out of the grid or the correct number of moves
-            let mut move_count = 0;
-
-            while let Some(next) = pos + dir
-                && self.0.is_in_bounds(next)
-                && move_count < count
-            {
-                match self.0.get_fill(next) {
-                    // Move to next playable square
-                    Some(_) => {
-                        pos = next;
-                        move_count += 1;
-                    }
-                    // Move over directly adjacent non-playable squares
-                    None if move_count == 0 => {
-                        pos = next;
-                    }
-                    // Stop if a non-adjacent non-playable square is found
-                    None => break,
-                }
-            }
-
-            let end = if move_count == 0 { state.cursor } else { pos };
-            (end, dir)
+    ) -> bool {
+        tracing::info!("Ccommandd: {command:?}");
+        let Command { count, motion, .. } = command;
+        let Some(motion) = motion else {
+            tracing::debug!("\t No motion");
+            return false;
         };
+        tracing::debug!("\t Motion: {motion:?}");
 
         let start = state.cursor;
         let Position { col, row } = start;
         let dir = state.direction;
 
-        let (next, next_dir) = match action {
+        let mut move_dir = |dir: Direction, count: usize| {
+            move_in_dir(self, state.cursor, state.direction, dir, count)
+        };
+
+        let (next, next_dir) = match motion {
             // Direct moves
-            Action::MoveDown(count) => move_in_dir(Direction::Down, count),
-            Action::MoveLeft(count) => move_in_dir(Direction::Left, count),
-            Action::MoveRight(count) => move_in_dir(Direction::Right, count),
-            Action::MoveUp(count) => move_in_dir(Direction::Up, count),
+            Motion::Down => move_dir(Direction::Down, count),
+            Motion::Left => move_dir(Direction::Left, count),
+            Motion::Right => move_dir(Direction::Right, count),
+            Motion::Up => move_dir(Direction::Up, count),
 
             // Column
-            Action::MoveCol(col) => {
+            Motion::Col(col) => {
                 let next = self
                     .0
                     .iter_indexed_col(col)
@@ -149,7 +139,7 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
 
                 (next, dir)
             }
-            Action::MoveColEnd => {
+            Motion::ColEnd => {
                 let next = self
                     .0
                     .iter_indexed_col(col)
@@ -159,7 +149,7 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
                     .unwrap_or(start);
                 (next, dir)
             }
-            Action::MoveColStart => {
+            Motion::ColStart => {
                 let next = self
                     .0
                     .iter_indexed_col(col)
@@ -171,7 +161,7 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
             }
 
             // Row
-            Action::MoveRow(row) => {
+            Motion::Row(row) => {
                 let next = self
                     .0
                     .iter_indexed_row(row)
@@ -181,7 +171,7 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
 
                 (next, dir)
             }
-            Action::MoveRowEnd => {
+            Motion::RowEnd => {
                 let next = self
                     .0
                     .iter_indexed_row(row)
@@ -191,7 +181,7 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
                     .unwrap_or(start);
                 (next, dir)
             }
-            Action::MoveRowStart => {
+            Motion::RowStart => {
                 let next = self
                     .0
                     .iter_indexed_row(row)
@@ -202,9 +192,52 @@ impl<A, S, T> HandleAction<A, S> for SquareGridRef<'_, T> {
                 (next, dir)
             }
 
-            _ => (state.cursor, state.direction),
+            _ => return false,
         };
+
         state.cursor = next;
         state.direction = next_dir;
+
+        true
     }
+}
+
+fn move_in_dir<'a, T>(
+    grid: &mut SquareGridRef<'a, T>,
+    curr_pos: Position,
+    curr_dir: Direction,
+    dir: Direction,
+    count: usize,
+) -> (Position, Direction) {
+    let mut pos = curr_pos;
+
+    // If currently going in another direction, change the direction
+    if ![dir, !dir].contains(&curr_dir) {
+        return (pos, dir);
+    }
+
+    // Continue moving in the direction until out of the grid or the correct number of moves
+    let mut move_count = 0;
+
+    while let Some(next) = pos + dir
+        && grid.0.is_in_bounds(next)
+        && move_count < count
+    {
+        match grid.0.get_fill(next) {
+            // Move to next playable square
+            Some(_) => {
+                pos = next;
+                move_count += 1;
+            }
+            // Move over directly adjacent non-playable squares
+            None if move_count == 0 => {
+                pos = next;
+            }
+            // Stop if a non-adjacent non-playable square is found
+            None => break,
+        }
+    }
+
+    let end = if move_count == 0 { curr_pos } else { pos };
+    (end, dir)
 }

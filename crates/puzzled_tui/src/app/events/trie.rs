@@ -2,22 +2,33 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, io};
 
 use puzzled_core::Puzzle;
 use puzzled_io::puzzle_config_dir;
-use serde::de::DeserializeOwned;
+use serde::{Deserialize, de::DeserializeOwned};
 
 use crate::{
-    Action, ActionBehavior, AppEvent, RawActionKeys, app::events::parse_key, parse_action_events,
+    Action, ActionBehavior, AppEvent, Motion, Operator, RawActionKeys, app::events::parse_key,
+    parse_action_events,
 };
+
+use super::EventMode;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[serde(untagged)]
+pub enum TrieEntry<A> {
+    Motion(Motion),
+    Operator(Operator),
+    Action(Action<A>),
+}
 
 #[derive(Debug, Clone)]
 pub struct EventTrieNode<A> {
-    action: Option<Action<A>>,
+    entry: Option<TrieEntry<A>>,
     children: HashMap<AppEvent, EventTrieNode<A>>,
 }
 
 impl<A> Default for EventTrieNode<A> {
     fn default() -> Self {
         Self {
-            action: None,
+            entry: None,
             children: HashMap::default(),
         }
     }
@@ -29,28 +40,19 @@ pub enum EventSearchResult<A> {
     None,
 
     /// Events require an operand to constitute a full action
-    RequireOperand(Action<A>),
+    RequireOperand(Operator),
 
     /// Events constitute a prefix for an action
     Prefix,
 
     /// Events trigger an action
-    Exact(Action<A>),
+    Exact(TrieEntry<A>),
 
     /// Events trigger an action and and prefix
-    ExactPrefix(Action<A>),
+    ExactPrefix(TrieEntry<A>),
 }
 
 impl<A> EventSearchResult<A> {
-    pub fn action(self) -> Option<Action<A>> {
-        match self {
-            EventSearchResult::Exact(action)
-            | EventSearchResult::ExactPrefix(action)
-            | EventSearchResult::RequireOperand(action) => Some(action),
-            _ => None,
-        }
-    }
-
     pub fn is_partial(&self) -> bool {
         matches!(
             self,
@@ -93,23 +95,28 @@ where
 }
 
 impl<A> EventTrie<A> {
-    pub fn insert_key(&mut self, key: &str, action: Action<A>) -> bool {
-        let Ok(events) = parse_key(key, &action) else {
+    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<A>) -> bool {
+        let Ok(events) = parse_key(key, &entry) else {
             return false;
         };
 
-        self.insert(&events, action);
+        self.insert(&events, entry);
         true
     }
 
-    pub fn insert(&mut self, events: &[AppEvent], action: Action<A>) {
+    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<A>) {
         let mut node = &mut self.root;
 
         for event in events {
             node = node.children.entry(event.clone()).or_default();
         }
 
-        node.action = Some(action);
+        node.entry = Some(entry);
+    }
+
+    pub fn insert_mode_switches(&mut self) {
+        self.insert_key("i", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
+        self.insert_key("a", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
     }
 }
 
@@ -140,7 +147,7 @@ where
 
         let has_children = !node.children.is_empty();
 
-        match node.action {
+        match node.entry {
             None => {
                 if has_children {
                     EventSearchResult::Prefix
@@ -167,13 +174,15 @@ impl<A> EventTrie<A>
 where
     A: ActionBehavior + Eq + Hash + Clone,
 {
-    pub fn action_keys(&self) -> HashMap<Action<A>, Vec<String>> {
+    pub fn action_keys(&self) -> HashMap<TrieEntry<A>, Vec<String>> {
         // Initialize keys for all action variants
         let mut keys = HashMap::default();
 
-        for action in Action::<A>::variants() {
-            keys.entry(action).or_default();
-        }
+        // TODO: add back all variants for motions/operators etc.
+        // for action in Action::<A>::variants() {
+        //     keys.entry(action).or_default();
+        // }
+        //
 
         // Perform a DFS to find all actions for which keys are defined
         dfs(&self.root, &mut keys, vec![]);
@@ -184,20 +193,20 @@ where
 
 fn dfs<A>(
     node: &EventTrieNode<A>,
-    result: &mut HashMap<Action<A>, Vec<String>>,
+    result: &mut HashMap<TrieEntry<A>, Vec<String>>,
     current_events: Vec<AppEvent>,
 ) where
     A: Eq + Hash + Clone,
 {
     // If the node has an action, add the current path of events to the result
-    if let Some(action) = &node.action {
+    if let Some(entry) = &node.entry {
         let keys = current_events
             .clone()
             .into_iter()
             .map(|ev| ev.to_string())
             .fold(String::new(), |acc, item| acc + &item);
 
-        result.entry(action.clone()).or_default().push(keys);
+        result.entry(entry.clone()).or_default().push(keys);
     }
 
     // Traverse children nodes, accumulating events

@@ -1,5 +1,5 @@
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{Action, ActionResolver, HandleAction, RenderSize};
+use puzzled_tui::{Action, ActionResolver, Command, HandleCommand, RenderSize};
 use ratatui::{
     layout::Size,
     prelude::{Buffer, Rect},
@@ -69,14 +69,15 @@ impl StatefulWidgetRef for CluesWidget {
     }
 }
 
-impl HandleAction<CrosswordAction, AppState> for CluesWidget {
+impl HandleCommand<CrosswordAction, AppState> for CluesWidget {
     type State = PuzzleScreenState;
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        _action: Action<CrosswordAction>,
+        _command: Command<CrosswordAction>,
         _resolver: ActionResolver<CrosswordAction, AppState>,
         _state: &mut Self::State,
-    ) {
+    ) -> bool {
+        false
     }
 }

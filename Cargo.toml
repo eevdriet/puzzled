@@ -30,7 +30,7 @@ tracing-test = "0.2.5"
 
 [workspace.dependencies.tokio]
 version = "1.50.0"
-features = ["sync", "rt", "macros", "rt-multi-thread"]
+features = ["sync", "rt", "macros", "rt-multi-thread", "time"]
 
 [workspace.dependencies.bitflags]
 version = "2.11.0"

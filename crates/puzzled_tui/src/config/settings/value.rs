@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt};
 
 use serde::{Deserialize, Serialize, Serializer, de::Visitor, ser};
 
-use crate::{Action, ActionResolver, HandleAction};
+use crate::{Action, ActionResolver, Command, HandleCommand};
 
 #[derive(Debug)]
 pub enum SettingValue {
@@ -533,54 +533,56 @@ impl<'de> Deserialize<'de> for SettingValue {
     }
 }
 
-impl<A, T> HandleAction<A, T> for SettingValue {
+impl<A, T> HandleCommand<A, T> for SettingValue {
     type State = ();
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: Action<A>,
+        _command: Command<A>,
         _resolver: ActionResolver<A, T>,
         _state: &mut Self::State,
-    ) {
-        match self {
-            SettingValue::Bool(b) => match action {
-                Action::MoveLeft(_) | Action::MoveRight(_) => *b = !*b,
-                _ => {}
-            },
-            SettingValue::Int {
-                value,
-                min,
-                max,
-                step,
-            } => {
-                *value = match action {
-                    Action::MoveLeft(_) => (*value - *step).max(*min),
-                    Action::MoveRight(_) => (*value + *step).min(*max),
-                    _ => *value,
-                }
-            }
-            SettingValue::Float {
-                value,
-                min,
-                max,
-                step,
-            } => {
-                *value = match action {
-                    Action::MoveLeft(_) => (*value - *step).max(*min),
-                    Action::MoveRight(_) => (*value + *step).min(*max),
-                    _ => *value,
-                }
-            }
-            SettingValue::List { index, options } => {
-                let len = options.len();
+    ) -> bool {
+        // match self {
+        //     SettingValue::Bool(b) => match command {
+        //         Action::MoveLeft(_) | Action::MoveRight(_) => *b = !*b,
+        //         _ => return false,
+        //     },
+        //     SettingValue::Int {
+        //         value,
+        //         min,
+        //         max,
+        //         step,
+        //     } => {
+        //         *value = match command {
+        //             Action::MoveLeft(_) => (*value - *step).max(*min),
+        //             Action::MoveRight(_) => (*value + *step).min(*max),
+        //             _ => return false,
+        //         }
+        //     }
+        //     SettingValue::Float {
+        //         value,
+        //         min,
+        //         max,
+        //         step,
+        //     } => {
+        //         *value = match command {
+        //             Action::MoveLeft(_) => (*value - *step).max(*min),
+        //             Action::MoveRight(_) => (*value + *step).min(*max),
+        //             _ => return false,
+        //         }
+        //     }
+        //     SettingValue::List { index, options } => {
+        //         let len = options.len();
+        //
+        //         *index = match command {
+        //             Action::MoveLeft(_) => (*index + len - 1) % len,
+        //             Action::MoveRight(_) => (*index + 1) % len,
+        //             _ => return false,
+        //         }
+        //     }
+        // }
 
-                *index = match action {
-                    Action::MoveLeft(_) => (*index + len - 1) % len,
-                    Action::MoveRight(_) => (*index + 1) % len,
-                    _ => *index,
-                }
-            }
-        }
+        true
     }
 }
 

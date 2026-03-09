@@ -3,7 +3,10 @@ use std::time::{Duration, Instant};
 use crossterm::event::{Event, KeyCode};
 use derive_more::Debug;
 
-use crate::{Action, ActionBehavior, AppEvent, EventMode, EventSearchResult, EventTrie};
+use crate::{
+    Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
+    Operator, TrieEntry,
+};
 
 #[derive(Debug)]
 pub enum ActionOrEvent<A> {
@@ -15,7 +18,7 @@ pub enum ActionOrEvent<A> {
 pub struct EventEngine<A> {
     buffer: Vec<AppEvent>,
     actions: EventTrie<A>,
-    pending_operand: Option<Action<A>>,
+    pending_operator: Option<Operator>,
 
     repeat: RepeatState,
 
@@ -25,16 +28,17 @@ pub struct EventEngine<A> {
 }
 
 impl<A> EventEngine<A> {
-    pub fn new(actions: EventTrie<A>, timeout: Duration) -> Self {
+    pub fn new(mut actions: EventTrie<A>, timeout: Duration) -> Self {
+        actions.insert_mode_switches();
+
         Self {
             timeout,
             actions,
             repeat: RepeatState::default(),
-            pending_operand: None,
+            pending_operator: None,
             buffer: Vec::new(),
             last_insert: Instant::now(),
-            // mode: EventMode::Normal,
-            mode: EventMode::Insert,
+            mode: EventMode::Normal,
         }
     }
 }
@@ -43,25 +47,75 @@ impl<A> EventEngine<A>
 where
     A: Clone + ActionBehavior,
 {
-    pub fn push(&mut self, event: AppEvent) -> Option<ActionOrEvent<A>> {
-        match self.mode {
-            EventMode::Normal => self.push_action(event).map(ActionOrEvent::Action),
-            EventMode::Insert => Some(ActionOrEvent::Event(event)),
+    pub fn push(&mut self, event: AppEvent) -> Option<Command<A>> {
+        let result = match self.mode {
+            EventMode::Normal => self.normal_event(event),
+            EventMode::Insert => self.insert_event(event),
+            EventMode::Replace => self.replace_event(event),
+        };
+
+        self.handle_mode_switch(&result);
+        result
+    }
+
+    fn search_command(&mut self, events: &[AppEvent]) -> Option<Command<A>> {
+        match self.actions.search(events) {
+            // Perform action for known sequence
+            EventSearchResult::Exact(entry) | EventSearchResult::ExactPrefix(entry) => {
+                let count = self.repeat.count().unwrap_or(1);
+                // let events: Vec<_> = self.buffer.drain(..).collect();
+                self.reset();
+
+                match entry {
+                    TrieEntry::Motion(motion) => {
+                        let operator = self.pending_operator.take();
+
+                        Some(Command {
+                            operator,
+                            motion: Some(motion),
+                            action: None,
+                            count,
+                        })
+                    }
+                    TrieEntry::Operator(op) => {
+                        self.pending_operator = Some(op);
+                        None
+                    }
+                    TrieEntry::Action(action) => Some(Command {
+                        operator: None,
+                        motion: None,
+                        action: Some(action),
+                        count,
+                    }),
+                }
+            }
+
+            // Wait for additional input for prefix sequence
+            EventSearchResult::RequireOperand(operator) => {
+                // tracing::debug!("\tFound action {action:?} that requires operand, waiting...");
+                self.pending_operator = Some(operator);
+                None
+            }
+
+            // Clear previous keys for unknown sequence but keep repeat
+            EventSearchResult::None => {
+                tracing::debug!("\tFound no action, clearing buffer");
+
+                self.buffer.clear();
+                None
+            }
+
+            // Wait for additional input for prefix sequence
+            EventSearchResult::Prefix => {
+                tracing::debug!("\tFound prefix, waiting...");
+                None
+            }
         }
     }
 
-    fn push_action(&mut self, event: AppEvent) -> Option<Action<A>> {
+    fn push_action(&mut self, event: AppEvent) -> Option<Command<A>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
-
-        // If we are waiting for an operand, consume this event directly
-        if let Some(action) = self.pending_operand.take() {
-            let count = self.repeat.count().unwrap_or(1);
-            let events = self.buffer.drain(..).collect();
-            self.reset();
-
-            return Some(action.hydrate(events, count));
-        }
 
         // Intercept leading digits (note: 0 is not a command if following another digit)
         if let Event::Key(key) = *event
@@ -80,44 +134,11 @@ where
         tracing::debug!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
-        let result = self.actions.search(&self.buffer);
-        // tracing::debug!("\tSearch with events {:?} -> {result:?}", &self.buffer);
-
-        match result {
-            // Perform action for known sequence
-            EventSearchResult::Exact(action) | EventSearchResult::ExactPrefix(action) => {
-                let count = self.repeat.count().unwrap_or(1);
-                let events = self.buffer.drain(..).collect();
-                self.reset();
-
-                Some(action.hydrate(events, count))
-            }
-
-            // Clear previous keys for unknown sequence but keep repeat
-            EventSearchResult::None => {
-                tracing::debug!("\tFound no action, clearing buffer");
-
-                self.buffer.clear();
-                None
-            }
-
-            // Wait for additional input for prefix sequence
-            EventSearchResult::Prefix => {
-                tracing::debug!("\tFound prefix, waiting...");
-                None
-            }
-
-            // Wait for additional input for prefix sequence
-            EventSearchResult::RequireOperand(action) => {
-                // tracing::debug!("\tFound action {action:?} that requires operand, waiting...");
-                self.pending_operand = Some(action);
-                None
-            }
-        }
+        self.search_command(&self.buffer.to_vec())
     }
 
-    pub fn tick(&mut self) -> Option<ActionOrEvent<A>> {
-        if matches!(self.mode, EventMode::Insert) || self.buffer.is_empty() {
+    pub fn tick(&mut self) -> Option<Command<A>> {
+        if self.buffer.is_empty() {
             return None;
         }
 
@@ -127,30 +148,106 @@ where
         }
 
         // After time out, perform the action w.r.t. longest valid action
-        let mut result = None;
+        match self.mode {
+            EventMode::Normal => {
+                for idx in (1..=self.buffer.len()).rev() {
+                    let events = self.buffer[..idx].to_vec();
 
-        for idx in (1..=self.buffer.len()).rev() {
-            let events = &self.buffer[..idx];
-            let search = self.actions.search(events);
+                    if let Some(command) = self.search_command(&events) {
+                        return Some(command);
+                    }
+                }
 
-            // Do not reset on partial results that require more input
-            if search.is_partial() {
-                break;
+                self.reset();
             }
-
-            if let Some(action) = search.action() {
-                result = Some(action);
-                break;
-            }
+            _ => {} // _ => self.buffer.pop().map(ActionOrEvent::Event),
         }
 
-        self.reset();
-        result.map(ActionOrEvent::Action)
+        None
     }
 
     fn reset(&mut self) {
         self.buffer.clear();
         self.repeat.clear();
+    }
+
+    fn normal_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+        let action = self.push_action(event)?;
+
+        Some(action)
+    }
+
+    fn insert_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+        let Some(key) = event.key() else {
+            return None;
+        };
+
+        let command = match key.code {
+            // Insert
+            KeyCode::Char(char) => Command::action(Action::Insert(char)),
+
+            // Delete
+            KeyCode::Backspace => Command::action(Action::DeleteLeft),
+            KeyCode::Delete => Command::action(Action::DeleteRight),
+
+            // Movements
+            KeyCode::Down => Command::motion(Motion::Down),
+            KeyCode::End => Command::motion(Motion::RowEnd),
+            KeyCode::Home => Command::motion(Motion::RowStart),
+            KeyCode::Left => Command::motion(Motion::Left),
+            KeyCode::PageDown => Command::motion(Motion::ColEnd),
+            KeyCode::PageUp => Command::motion(Motion::ColStart),
+            KeyCode::Right => Command::motion(Motion::Right),
+            KeyCode::Up => Command::motion(Motion::Up),
+
+            // Modes
+            KeyCode::Esc => Command::action(Action::NextMode(EventMode::Normal)),
+
+            _ => return None,
+        };
+
+        Some(command)
+    }
+
+    fn replace_event(&mut self, event: AppEvent) -> Option<Command<A>> {
+        let Some(key) = event.key() else {
+            return None;
+        };
+
+        let command = match key.code {
+            // Insert
+            KeyCode::Char(char) => Command::action(Action::Replace(char)),
+
+            // Delete
+            KeyCode::Delete => Command::action(Action::DeleteRight),
+
+            // Movements
+            KeyCode::Down => Command::motion(Motion::Down),
+            KeyCode::End => Command::motion(Motion::RowEnd),
+            KeyCode::Home => Command::motion(Motion::RowStart),
+            KeyCode::Left | KeyCode::Backspace => Command::motion(Motion::Left),
+            KeyCode::PageDown => Command::motion(Motion::ColEnd),
+            KeyCode::PageUp => Command::motion(Motion::ColStart),
+            KeyCode::Right => Command::motion(Motion::Right),
+            KeyCode::Up => Command::motion(Motion::Up),
+
+            // Modes
+            KeyCode::Esc => Command::action(Action::NextMode(EventMode::Normal)),
+
+            _ => return None,
+        };
+
+        Some(command)
+    }
+
+    fn handle_mode_switch(&mut self, result: &Option<Command<A>>) {
+        let Some(command) = result else {
+            return;
+        };
+
+        if let Some(Action::NextMode(mode)) = command.action {
+            self.mode = mode;
+        }
     }
 }
 

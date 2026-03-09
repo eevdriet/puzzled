@@ -6,10 +6,6 @@ pub use action::*;
 pub use screens::*;
 pub use state::*;
 
-use ratatui::{
-    layout::{HorizontalAlignment, VerticalAlignment},
-    style::Style,
-};
 use std::io;
 
 use puzzled_binario::Binario;

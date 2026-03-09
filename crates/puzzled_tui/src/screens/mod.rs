@@ -6,15 +6,21 @@ pub use focus::*;
 
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{Action, ActionResolver, AppEvent};
+use crate::{ActionResolver, Command};
 
 pub trait StatefulScreen<A, S> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut S);
 
     // Actions
-    fn on_action(&mut self, _action: Action<A>, _resolver: ActionResolver<A, S>, _state: &mut S) {}
-    fn on_event(&mut self, _event: AppEvent, _resolver: ActionResolver<A, S>, _state: &mut S) {}
+    fn on_command(
+        &mut self,
+        _command: Command<A>,
+        _resolver: ActionResolver<A, S>,
+        _state: &mut S,
+    ) -> bool {
+        false
+    }
 
     // Lifetime events
     fn on_enter(&mut self, _state: &mut S) {}

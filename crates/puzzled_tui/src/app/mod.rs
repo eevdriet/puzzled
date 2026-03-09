@@ -1,19 +1,20 @@
-mod actions;
 mod commands;
 mod events;
 
-pub use actions::*;
 pub use commands::*;
 pub use events::*;
 
 use std::{collections::VecDeque, fmt::Debug, time::Duration};
 
 use crossterm::{
-    event::{self, EnableMouseCapture},
+    event::{self, DisableMouseCapture, EnableMouseCapture},
     execute,
-    terminal::EnterAlternateScreen,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
-use tokio::sync::mpsc::{self, unbounded_channel};
+use tokio::sync::{
+    mpsc::{self, unbounded_channel},
+    oneshot,
+};
 
 use crate::StatefulScreen;
 
@@ -21,58 +22,50 @@ const POLL_DURATION: Duration = Duration::from_millis(30);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<A, T> {
-    actions: mpsc::UnboundedReceiver<ActionOrEvent<A>>,
     state: T,
+
+    events_rx: mpsc::UnboundedReceiver<AppEvent>,
+
+    engine: EventEngine<A>,
+
+    shutdown: Option<oneshot::Sender<()>>,
 }
 
 impl<A, T> App<A, T>
 where
     A: Clone + Send + ActionBehavior + 'static + Debug,
 {
-    pub fn new(state: T, events: EventTrie<A>) -> Self {
-        // Set up a channel to receive input events from the user
-        let (actions_tx, actions_rx) = unbounded_channel();
+    pub fn new(state: T, actions: EventTrie<A>) -> Self {
+        let (events_tx, events_rx) = unbounded_channel();
+        let events_tx2 = events_tx.clone();
+        let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 
-        tokio::task::spawn_blocking(move || {
-            let mut events = EventEngine::new(events, TICK_DURATION);
-            let mut is_running = true;
-
-            while is_running {
-                // Poll for new events
-                if let Ok(poll) = event::poll(POLL_DURATION)
-                    && poll
-                    && let Ok(event) = event::read()
-                {
-                    let app_event = AppEvent::new(event);
-
-                    // See whether the application handles it and whether it needs action
-                    if let Some(action) = events.push(app_event) {
-                        if matches!(action, ActionOrEvent::Action(Action::Quit)) {
-                            is_running = false;
-                        }
-
-                        if actions_tx.send(action).is_err() {
-                            break;
-                        }
-                    }
-                }
-
-                // Expire old events
-                if let Some(action) = events.tick() {
-                    if matches!(action, ActionOrEvent::Action(Action::Quit)) {
-                        is_running = false;
-                    }
-
-                    if actions_tx.send(action).is_err() {
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = &mut shutdown_rx => {
                         break;
+                    }
+
+                    _ = tokio::time::sleep(POLL_DURATION) => {
+                        if let Ok(poll) = event::poll(Duration::ZERO) && poll &&
+                            let Ok(event) = event::read()
+                        {
+                            let _ = events_tx2.send(AppEvent::new(event));
+                        }
                     }
                 }
             }
         });
 
+        let engine = EventEngine::new(actions, TICK_DURATION);
+
         Self {
             state,
-            actions: actions_rx,
+            engine,
+
+            events_rx,
+            shutdown: Some(shutdown_tx),
         }
     }
 
@@ -110,40 +103,39 @@ where
 
             // Then handle any actions or their results
             tokio::select! {
-                // Handle incoming actions from the current screen
-                Some(action) = self.actions.recv() => {
-                    tracing::info!("Received {action:?}");
+                // Handle raw app events
+                Some(event) = self.events_rx.recv() => {
+                    tracing::info!("Received event: {event}");
 
-                    match action {
-                        ActionOrEvent::Action(Action::Quit) => break,
-                        ActionOrEvent::Action(action) => screen.on_action(action, resolver.clone(), &mut self.state),
-                        ActionOrEvent::Event(event) => screen.on_event(event, resolver.clone(), &mut self.state),
+                    if let Some(command) = self.engine.push(event) {
+                        resolver.fire_command(command);
+                        render = true;
                     }
+                }
 
-                    // Re-render to communicate the state change
-                    render = true;
-                },
+                // Handle app event time out
+                _ = tokio::time::sleep(TICK_DURATION) => {
+                    if let Some(command) = self.engine.tick() {
+                        resolver.fire_command(command);
+                        render = true;
+                    }
+                }
 
                 // Resolve the result of completed actions
                 Some(outcome) = actions_rx.recv() => {
                     match outcome {
                         // Handle actions
-                        ActionOutcome::Action(action) => {
-                            screen.on_action(action, resolver.clone(), &mut self.state);
+                        CommandOutcome::Command(command) => {
+                            screen.on_command(command, resolver.clone(), &mut self.state);
                         }
 
                         // Completely exit the app
-                        ActionOutcome::Quit => {
-                            // Exit out of all screens in order
-                            while let Some(mut screen) = screens.pop_back() {
-                                screen.on_exit(&mut self.state);
-                            }
-
+                        CommandOutcome::Quit => {
                             break;
                         }
 
                         // Go to the previous screen
-                        ActionOutcome::PreviousScreen => {
+                        CommandOutcome::PreviousScreen => {
                             if screens.len() > 1 {
                                 let mut old_screen = screens.pop_back().expect("Verified screens length");
                                 old_screen.on_exit(&mut self.state);
@@ -154,7 +146,7 @@ where
                         }
 
                         // Go to the next screen
-                        ActionOutcome::NextScreen(mut next_screen) => {
+                        CommandOutcome::NextScreen(mut next_screen) => {
                             // Pause the current screen
                             screen.on_pause(&mut self.state);
 
@@ -171,7 +163,18 @@ where
             }
         }
 
-        execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
+        // Shutdown event loop
+        if let Some(tx) = self.shutdown.take() {
+            let _ = tx.send(());
+            eprintln!("Shutdown");
+        }
+
+        // Exit out of all screens in order
+        while let Some(mut screen) = screens.pop_back() {
+            screen.on_exit(&mut self.state);
+        }
+
+        execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
         ratatui::restore();
         Ok(())
     }

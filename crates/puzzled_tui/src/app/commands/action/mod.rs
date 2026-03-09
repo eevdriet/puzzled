@@ -1,18 +1,14 @@
 mod behavior;
-mod handle;
-mod resolver;
-
-use std::hash::Hash;
 
 pub use behavior::*;
-pub use handle::*;
-pub use resolver::*;
 
 use derive_more::{Display, Eq};
 use ratatui::layout::Position;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display)]
+use crate::EventMode;
+
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A = ()> {
     // Lifetime management
@@ -20,6 +16,11 @@ pub enum Action<A = ()> {
     Select,
     Cancel,
 
+    // Mode management
+    #[serde(skip)]
+    NextMode(EventMode),
+
+    // -- Normal -- //
     // Mouse
     Click(
         #[serde(skip, default)]
@@ -105,7 +106,13 @@ pub enum Action<A = ()> {
     CenterViewport,
     TopViewport,
 
-    // Commands
+    // -- Insert/Replace -- //
+    Insert(char),
+    Replace(char),
+    DeleteLeft,
+    DeleteRight,
+
+    // -- Command -- //
     Undo,
     Redo,
 
@@ -116,11 +123,4 @@ pub enum Action<A = ()> {
 
 fn default_count() -> usize {
     1
-}
-
-impl<A> Hash for Action<A>
-where
-    A: Hash,
-{
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {}
 }

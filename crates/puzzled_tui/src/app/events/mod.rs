@@ -165,7 +165,7 @@ impl fmt::Display for AppEvent {
     }
 }
 
-pub(crate) fn parse_key<A>(key: &str, action: &Action<A>) -> Result<Vec<AppEvent>, String> {
+pub(crate) fn parse_key<A>(key: &str, entry: &TrieEntry<A>) -> Result<Vec<AppEvent>, String> {
     use KeyCode::*;
 
     let mut s = key.trim().to_ascii_lowercase();
@@ -210,13 +210,13 @@ pub(crate) fn parse_key<A>(key: &str, action: &Action<A>) -> Result<Vec<AppEvent
 
     // If so, determine the type of event based on the action
     if let Some(button) = mouse {
-        let kind = match action {
-            Action::Click(_) => MouseEventKind::Down(button),
-            Action::Drag(_) => MouseEventKind::Drag(button),
-            Action::ScrollLeft(_) => MouseEventKind::ScrollLeft,
-            Action::ScrollUp(_) => MouseEventKind::ScrollUp,
-            Action::ScrollDown(_) => MouseEventKind::ScrollDown,
-            Action::ScrollRight(_) => MouseEventKind::ScrollRight,
+        let kind = match entry {
+            TrieEntry::Action(Action::Click(_)) => MouseEventKind::Down(button),
+            TrieEntry::Action(Action::Drag(_)) => MouseEventKind::Drag(button),
+            TrieEntry::Action(Action::ScrollLeft(_)) => MouseEventKind::ScrollLeft,
+            TrieEntry::Action(Action::ScrollUp(_)) => MouseEventKind::ScrollUp,
+            TrieEntry::Action(Action::ScrollDown(_)) => MouseEventKind::ScrollDown,
+            TrieEntry::Action(Action::ScrollRight(_)) => MouseEventKind::ScrollRight,
             _ => return Err("Invalid action {action:?} to be performed by {button:?}".to_string()),
         };
 

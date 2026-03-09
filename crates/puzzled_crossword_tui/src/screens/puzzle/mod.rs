@@ -12,8 +12,8 @@ use ratatui::{
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    Action, ActionBehavior, ActionResolver, AppEvent, CommandHistory, FocusManager,
-    GridRenderState, HandleAction, HandleEvent, RenderSize, StatefulScreen, align_area,
+    Action, ActionBehavior, ActionResolver, Command, CommandHistory, FocusManager, GridRenderState,
+    HandleCommand, RenderSize, StatefulScreen, align_area,
 };
 
 use crate::{AppState, CrosswordAction};
@@ -110,44 +110,43 @@ impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
         self.down_clues.render_ref(down_clues, buf, &mut self.state);
     }
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: Action<CrosswordAction>,
+        command: Command<CrosswordAction>,
         resolver: ActionResolver<CrosswordAction, AppState>,
         _state: &mut AppState,
-    ) {
-        match action {
-            // Lifetime actions
-            Action::Cancel => resolver.prev_screen(),
-            Action::Quit => resolver.quit(),
-            Action::Undo => self.commands.undo(&mut self.state.solve),
-            Action::Redo => self.commands.redo(&mut self.state.solve),
+    ) -> bool {
+        tracing::info!("Command reached crossword: {command:?}");
 
-            // Focus change actions
-            action if action.is_focus() => self.state.focus.on_action(action, resolver, &mut ()),
+        if let Some(action) = command.action.as_ref() {
+            match action {
+                // Lifetime actions
+                Action::Cancel => resolver.prev_screen(),
+                Action::Quit => resolver.quit(),
+                Action::Undo => self.commands.undo(&mut self.state.solve),
+                Action::Redo => self.commands.redo(&mut self.state.solve),
 
-            // Widget actions
-            action => match self.state.focus.current() {
-                Focus::Crossword => self.crossword.on_action(action, resolver, &mut self.state),
-                Focus::AcrossClues => {
-                    self.across_clues
-                        .on_action(action, resolver, &mut self.state)
+                // Focus change actions
+                action if action.is_focus() => {
+                    return self.state.focus.on_command(command, resolver, &mut ());
                 }
-                Focus::DownClues => self.down_clues.on_action(action, resolver, &mut self.state),
-                Focus::Footer => self.crossword.on_action(action, resolver, &mut self.state),
-            },
+                _ => {}
+            }
         }
-    }
 
-    fn on_event(
-        &mut self,
-        event: AppEvent,
-        resolver: ActionResolver<CrosswordAction, AppState>,
-        _state: &mut AppState,
-    ) {
         match self.state.focus.current() {
-            Focus::Crossword => self.crossword.on_event(event, resolver, &mut self.state),
-            _ => self.crossword.on_event(event, resolver, &mut self.state),
+            Focus::Crossword => self
+                .crossword
+                .on_command(command, resolver, &mut self.state),
+            Focus::AcrossClues => self
+                .across_clues
+                .on_command(command, resolver, &mut self.state),
+            Focus::DownClues => self
+                .down_clues
+                .on_command(command, resolver, &mut self.state),
+            Focus::Footer => self
+                .crossword
+                .on_command(command, resolver, &mut self.state),
         }
     }
 

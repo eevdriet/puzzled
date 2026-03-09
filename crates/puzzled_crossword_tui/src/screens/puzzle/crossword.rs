@@ -1,9 +1,9 @@
 use crossterm::event::KeyCode;
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Position, Puzzle, Solve, Square, SquareGridRef};
+use puzzled_core::{Direction, Entry, Position, Puzzle, Solve, Square, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, ActionResolver, AppEvent, CellRender, HandleAction, HandleEvent, RenderGrid,
+    Action, ActionResolver, AppEvent, CellRender, Command, HandleCommand, HandleEvent, RenderGrid,
     RenderSize, TextBlock,
 };
 
@@ -82,17 +82,17 @@ impl RenderSize for CrosswordWidget {
     }
 }
 
-impl HandleAction<CrosswordAction, AppState> for CrosswordWidget {
+impl HandleCommand<CrosswordAction, AppState> for CrosswordWidget {
     type State = PuzzleScreenState;
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: Action<CrosswordAction>,
+        command: Command<CrosswordAction>,
         resolver: ActionResolver<CrosswordAction, AppState>,
         state: &mut Self::State,
-    ) {
+    ) -> bool {
         let mut grid = SquareGridRef(&state.solve.entries);
-        grid.on_action(action, resolver, &mut state.render);
+        grid.on_command(command, resolver, &mut state.render)
     }
 }
 
@@ -104,47 +104,45 @@ impl HandleEvent<CrosswordAction, AppState> for CrosswordWidget {
         event: AppEvent,
         resolver: ActionResolver<CrosswordAction, AppState>,
         state: &mut Self::State,
-    ) {
-        tracing::info!("Event: {event}");
+    ) -> bool {
+        let Some(key) = event.key() else {
+            return false;
+        };
 
-        if let Some(key) = event.key() {
-            let pos = state.render.cursor;
-            let dir = state.render.direction;
+        let pos = state.render.cursor;
+        let dir = match state.render.direction {
+            Direction::Left | Direction::Right => Direction::Right,
+            Direction::Up | Direction::Down => Direction::Down,
+        };
 
-            match key.code {
-                // Movements
-                KeyCode::Down => resolver.fire_action(Action::MoveDown(1)),
-                KeyCode::Left => resolver.fire_action(Action::MoveLeft(1)),
-                KeyCode::Right => resolver.fire_action(Action::MoveRight(1)),
-                KeyCode::Up => resolver.fire_action(Action::MoveUp(1)),
+        match key.code {
+            // Movements
+            KeyCode::Char(ch) => {
+                let _ = state
+                    .solve
+                    .enter(&pos, Solution::Letter(ch.to_ascii_uppercase()));
 
-                KeyCode::Char(ch) => {
-                    let _ = state
-                        .solve
-                        .enter(&pos, Solution::Letter(ch.to_ascii_uppercase()));
-
-                    if let Some(next) = pos + dir
-                        && state.puzzle.squares().get_fill(next).is_some()
-                    {
-                        state.render.cursor = next;
-                    }
+                if let Some(next) = pos + dir
+                    && state.puzzle.squares().get_fill(next).is_some()
+                {
+                    state.render.cursor = next;
                 }
-
-                KeyCode::Backspace | KeyCode::Delete => {
-                    state.solve.clear(&pos);
-
-                    if let Some(next) = pos - dir
-                        && state.puzzle.squares().get_fill(next).is_some()
-                    {
-                        state.render.cursor = next;
-                    }
-                }
-
-                KeyCode::Enter => resolver.quit(),
-
-                _ => {}
             }
+
+            KeyCode::Backspace | KeyCode::Delete => {
+                state.solve.clear(&pos);
+
+                if let Some(next) = pos - dir
+                    && state.puzzle.squares().get_fill(next).is_some()
+                {
+                    state.render.cursor = next;
+                }
+            }
+
+            _ => return false,
         }
+
+        true
     }
 }
 

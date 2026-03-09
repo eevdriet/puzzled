@@ -8,5 +8,5 @@ pub trait HandleEvent<A, T> {
         _event: AppEvent,
         _resolver: ActionResolver<A, T>,
         _state: &mut Self::State,
-    );
+    ) -> bool;
 }

@@ -2,7 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use puzzled_core::Direction;
 
-use crate::{Action, HandleAction};
+use crate::{Action, ActionResolver, Command, HandleCommand};
 
 pub struct FocusManager<F> {
     curr: F,
@@ -62,32 +62,41 @@ where
     }
 }
 
-impl<A, T, F> HandleAction<A, T> for FocusManager<F>
+impl<A, T, F> HandleCommand<A, T> for FocusManager<F>
 where
     F: Eq + Hash + Clone,
 {
     type State = ();
 
-    fn on_action(
+    fn on_command(
         &mut self,
-        action: crate::Action<A>,
-        _resolver: crate::ActionResolver<A, T>,
+        command: Command<A>,
+        _resolver: ActionResolver<A, T>,
         _state: &mut Self::State,
-    ) {
+    ) -> bool {
+        // Make sure focus can be given up from the current node
         let Some(links) = self.links.get(&self.curr) else {
-            return;
+            return false;
         };
 
+        // Make sure a focus action is given
+        let Some(action) = command.action else {
+            return false;
+        };
+
+        // Determine which node to focus next and focus if found
         let next = match action {
             Action::FocusUp => links[Direction::Up as usize].clone(),
             Action::FocusRight => links[Direction::Right as usize].clone(),
             Action::FocusDown => links[Direction::Down as usize].clone(),
             Action::FocusLeft => links[Direction::Left as usize].clone(),
-            _ => None,
+            _ => return false,
         };
 
         if let Some(next) = next {
             self.curr = next;
         }
+
+        true
     }
 }
