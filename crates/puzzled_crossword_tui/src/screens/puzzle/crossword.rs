@@ -15,7 +15,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, StatefulWidgetRef, Widget},
 };
 
-use crate::{AppState, CrosswordAction, PuzzleScreenState};
+use crate::{AppState, CrosswordAction, Focus, PuzzleScreenState};
 
 pub struct CrosswordWidget;
 
@@ -26,9 +26,16 @@ impl StatefulWidgetRef for CrosswordWidget {
         // Render the outside block with the puzzle title
         let title = Crossword::title(state.puzzle.meta());
 
+        let border_style = if state.focus.current() == &Focus::Crossword {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
         let block = Block::default()
             .title(format!(" {title} "))
             .borders(Borders::TOP)
+            .border_style(border_style)
             .title_alignment(HorizontalAlignment::Center)
             .border_type(BorderType::Rounded);
 

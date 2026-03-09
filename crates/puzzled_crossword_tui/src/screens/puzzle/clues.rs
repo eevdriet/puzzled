@@ -7,15 +7,16 @@ use ratatui::{
     widgets::{Block, List, ListState, StatefulWidget, StatefulWidgetRef},
 };
 
-use crate::{AppState, CrosswordAction, PuzzleScreenState};
+use crate::{AppState, CrosswordAction, Focus, PuzzleScreenState};
 
 pub struct CluesWidget {
     direction: ClueDirection,
+    focus: Focus,
 }
 
 impl CluesWidget {
-    pub fn new(direction: ClueDirection) -> Self {
-        Self { direction }
+    pub fn new(direction: ClueDirection, focus: Focus) -> Self {
+        Self { direction, focus }
     }
 }
 
@@ -61,8 +62,18 @@ impl StatefulWidgetRef for CluesWidget {
             highlight_style = highlight_style.fg(Color::Yellow).italic();
         }
 
+        let border_style = if state.focus.current() == &self.focus {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
         List::new(items)
-            .block(Block::bordered().title(format!(" {:?} ", self.direction)))
+            .block(
+                Block::bordered()
+                    .border_style(border_style)
+                    .title(format!(" {:?} ", self.direction)),
+            )
             .highlight_style(highlight_style)
             .highlight_symbol(">> ")
             .render(area, buf, &mut list_state);

@@ -66,12 +66,12 @@ impl PuzzleScreen {
                 puzzle,
                 solve: solve_state,
                 render: render_state,
-                focus: FocusManager::default(),
+                focus,
             },
 
             crossword: CrosswordWidget,
-            across_clues: CluesWidget::new(ClueDirection::Across),
-            down_clues: CluesWidget::new(ClueDirection::Down),
+            across_clues: CluesWidget::new(ClueDirection::Across, Focus::AcrossClues),
+            down_clues: CluesWidget::new(ClueDirection::Down, Focus::DownClues),
 
             commands: CommandHistory::default(),
         }

@@ -36,7 +36,7 @@ where
 
 impl<F> FocusManager<F>
 where
-    F: Eq + Hash + Clone,
+    F: Eq + Hash + Copy,
 {
     pub fn link_left(&mut self, middle: F, left: &[F]) {
         self.link_in_direction(middle, left, Direction::Right);
@@ -54,17 +54,24 @@ where
         self.link_in_direction(middle, below, Direction::Up);
     }
 
-    fn link_in_direction(&mut self, middle: F, other: &[F], direction: Direction) {
-        for focus in other {
-            let links = self.links.entry(focus.clone()).or_default();
-            links[direction as usize] = Some(middle.clone());
+    fn link_in_direction(&mut self, middle: F, others: &[F], direction: Direction) {
+        for other in others {
+            {
+                let middle_links = self.links.entry(middle).or_default();
+                middle_links[!direction as usize] = Some(*other);
+            }
+
+            {
+                let other_links = self.links.entry(*other).or_default();
+                other_links[direction as usize] = Some(middle);
+            }
         }
     }
 }
 
 impl<A, T, F> HandleCommand<A, T> for FocusManager<F>
 where
-    F: Eq + Hash + Clone,
+    F: Eq + Hash + Copy,
 {
     type State = ();
 
@@ -86,10 +93,10 @@ where
 
         // Determine which node to focus next and focus if found
         let next = match action {
-            Action::FocusUp => links[Direction::Up as usize].clone(),
-            Action::FocusRight => links[Direction::Right as usize].clone(),
-            Action::FocusDown => links[Direction::Down as usize].clone(),
-            Action::FocusLeft => links[Direction::Left as usize].clone(),
+            Action::FocusUp => links[Direction::Up as usize],
+            Action::FocusRight => links[Direction::Right as usize],
+            Action::FocusDown => links[Direction::Down as usize],
+            Action::FocusLeft => links[Direction::Left as usize],
             _ => return false,
         };
 
