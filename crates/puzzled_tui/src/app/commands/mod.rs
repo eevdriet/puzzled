@@ -16,10 +16,10 @@ pub use resolver::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Command<A> {
-    pub count: usize,
-    pub operator: Option<Operator>,
-    pub action: Option<Action<A>>,
-    pub motion: Option<Motion>,
+    count: usize,
+    operator: Option<Operator>,
+    motion: Option<Motion>,
+    action: Option<Action<A>>,
 }
 
 impl<A> Default for Command<A> {
@@ -27,25 +27,55 @@ impl<A> Default for Command<A> {
         Self {
             count: 1,
             operator: None,
-            action: None,
             motion: None,
+            action: None,
         }
     }
 }
 
 impl<A> Command<A> {
-    pub fn action(action: Action<A>) -> Self {
+    pub fn new(
+        count: usize,
+        operator: Option<Operator>,
+        motion: Option<Motion>,
+        action: Option<Action<A>>,
+    ) -> Self {
+        Self {
+            count,
+            operator,
+            action,
+            motion,
+        }
+    }
+
+    pub fn new_action(action: Action<A>) -> Self {
         Self {
             action: Some(action),
             ..Default::default()
         }
     }
 
-    pub fn motion(motion: Motion) -> Self {
+    pub fn new_motion(motion: Motion) -> Self {
         Self {
             motion: Some(motion),
             ..Default::default()
         }
+    }
+
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    pub fn operator(&self) -> Option<&Operator> {
+        self.operator.as_ref()
+    }
+
+    pub fn motion(&self) -> Option<&Motion> {
+        self.motion.as_ref()
+    }
+
+    pub fn action(&self) -> Option<&Action<A>> {
+        self.action.as_ref()
     }
 }
 

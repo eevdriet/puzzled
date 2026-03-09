@@ -11,7 +11,7 @@ pub trait ActionBehavior: Display + Sized {
         false
     }
 
-    fn hydrate(self, _events: Vec<AppEvent>, _count: usize) -> Self {
+    fn hydrate(self, _events: Vec<AppEvent>) -> Self {
         self
     }
 
@@ -46,7 +46,7 @@ where
         )
     }
 
-    fn hydrate(self, events: Vec<AppEvent>, count: usize) -> Self {
+    fn hydrate(self, events: Vec<AppEvent>) -> Self {
         let mouse = events.last().and_then(|event| {
             event
                 .mouse()
@@ -54,15 +54,6 @@ where
         });
 
         match self {
-            // Counted actions
-            Action::MoveDown(_) => Action::MoveDown(count),
-            Action::MoveLeft(_) => Action::MoveLeft(count),
-            Action::MoveRight(_) => Action::MoveRight(count),
-            Action::MoveUp(_) => Action::MoveUp(count),
-
-            Action::MoveRow(_) => Action::MoveRow(count.saturating_sub(1)),
-            Action::MoveCol(_) => Action::MoveCol(count.saturating_sub(1)),
-
             // Mouse actions
             Action::Click(_) if mouse.is_some() => Action::Click(mouse.expect("Checked mouse")),
             Action::Drag(_) if mouse.is_some() => Action::Drag(mouse.expect("Checked mouse")),
@@ -86,7 +77,6 @@ where
 
     fn variants() -> Vec<Self> {
         let pos = Position::default();
-        let count = 1;
 
         let mut variants = vec![
             // Lifetime management
@@ -105,20 +95,6 @@ where
             Action::FocusLeft,
             Action::FocusRight,
             Action::FocusUp,
-            // Movement
-            Action::MoveDown(count),
-            Action::MoveLeft(count),
-            Action::MoveRight(count),
-            Action::MoveUp(count),
-            Action::MoveRow(count),
-            Action::MoveRowStart,
-            Action::MoveRowEnd,
-            Action::MoveCol(count),
-            Action::MoveColStart,
-            Action::MoveColEnd,
-            // Solving
-            Action::Reveal,
-            Action::RevealAll,
             // Viewport
             Action::BottomViewport,
             Action::CenterViewport,

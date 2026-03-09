@@ -70,23 +70,15 @@ where
                     TrieEntry::Motion(motion) => {
                         let operator = self.pending_operator.take();
 
-                        Some(Command {
-                            operator,
-                            motion: Some(motion),
-                            action: None,
-                            count,
-                        })
+                        Some(Command::new(count, operator, Some(motion), None))
                     }
                     TrieEntry::Operator(op) => {
                         self.pending_operator = Some(op);
                         None
                     }
-                    TrieEntry::Action(action) => Some(Command {
-                        operator: None,
-                        motion: None,
-                        action: Some(action),
-                        count,
-                    }),
+                    TrieEntry::Action(action) => {
+                        Some(Command::new(count, None, None, Some(action)))
+                    }
                 }
             }
 
@@ -184,24 +176,24 @@ where
 
         let command = match key.code {
             // Insert
-            KeyCode::Char(char) => Command::action(Action::Insert(char)),
+            KeyCode::Char(char) => Command::new_action(Action::Insert(char)),
 
             // Delete
-            KeyCode::Backspace => Command::action(Action::DeleteLeft),
-            KeyCode::Delete => Command::action(Action::DeleteRight),
+            KeyCode::Backspace => Command::new_action(Action::DeleteLeft),
+            KeyCode::Delete => Command::new_action(Action::DeleteRight),
 
             // Movements
-            KeyCode::Down => Command::motion(Motion::Down),
-            KeyCode::End => Command::motion(Motion::RowEnd),
-            KeyCode::Home => Command::motion(Motion::RowStart),
-            KeyCode::Left => Command::motion(Motion::Left),
-            KeyCode::PageDown => Command::motion(Motion::ColEnd),
-            KeyCode::PageUp => Command::motion(Motion::ColStart),
-            KeyCode::Right => Command::motion(Motion::Right),
-            KeyCode::Up => Command::motion(Motion::Up),
+            KeyCode::Down => Command::new_motion(Motion::Down),
+            KeyCode::End => Command::new_motion(Motion::RowEnd),
+            KeyCode::Home => Command::new_motion(Motion::RowStart),
+            KeyCode::Left => Command::new_motion(Motion::Left),
+            KeyCode::PageDown => Command::new_motion(Motion::ColEnd),
+            KeyCode::PageUp => Command::new_motion(Motion::ColStart),
+            KeyCode::Right => Command::new_motion(Motion::Right),
+            KeyCode::Up => Command::new_motion(Motion::Up),
 
             // Modes
-            KeyCode::Esc => Command::action(Action::NextMode(EventMode::Normal)),
+            KeyCode::Esc => Command::new_action(Action::NextMode(EventMode::Normal)),
 
             _ => return None,
         };
@@ -216,23 +208,23 @@ where
 
         let command = match key.code {
             // Insert
-            KeyCode::Char(char) => Command::action(Action::Replace(char)),
+            KeyCode::Char(char) => Command::new_action(Action::Replace(char)),
 
             // Delete
-            KeyCode::Delete => Command::action(Action::DeleteRight),
+            KeyCode::Delete => Command::new_action(Action::DeleteRight),
 
             // Movements
-            KeyCode::Down => Command::motion(Motion::Down),
-            KeyCode::End => Command::motion(Motion::RowEnd),
-            KeyCode::Home => Command::motion(Motion::RowStart),
-            KeyCode::Left | KeyCode::Backspace => Command::motion(Motion::Left),
-            KeyCode::PageDown => Command::motion(Motion::ColEnd),
-            KeyCode::PageUp => Command::motion(Motion::ColStart),
-            KeyCode::Right => Command::motion(Motion::Right),
-            KeyCode::Up => Command::motion(Motion::Up),
+            KeyCode::Down => Command::new_motion(Motion::Down),
+            KeyCode::End => Command::new_motion(Motion::RowEnd),
+            KeyCode::Home => Command::new_motion(Motion::RowStart),
+            KeyCode::Left | KeyCode::Backspace => Command::new_motion(Motion::Left),
+            KeyCode::PageDown => Command::new_motion(Motion::ColEnd),
+            KeyCode::PageUp => Command::new_motion(Motion::ColStart),
+            KeyCode::Right => Command::new_motion(Motion::Right),
+            KeyCode::Up => Command::new_motion(Motion::Up),
 
             // Modes
-            KeyCode::Esc => Command::action(Action::NextMode(EventMode::Normal)),
+            KeyCode::Esc => Command::new_action(Action::NextMode(EventMode::Normal)),
 
             _ => return None,
         };
@@ -245,8 +237,8 @@ where
             return;
         };
 
-        if let Some(Action::NextMode(mode)) = command.action {
-            self.mode = mode;
+        if let Some(Action::NextMode(mode)) = command.action() {
+            self.mode = *mode;
         }
     }
 }

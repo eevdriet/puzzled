@@ -80,7 +80,7 @@ where
         };
 
         // Make sure a focus action is given
-        let Some(action) = command.action else {
+        let Some(action) = command.action() else {
             return false;
         };
 

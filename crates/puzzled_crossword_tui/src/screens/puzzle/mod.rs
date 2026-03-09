@@ -118,7 +118,7 @@ impl StatefulScreen<CrosswordAction, AppState> for PuzzleScreen {
     ) -> bool {
         tracing::info!("Command reached crossword: {command:?}");
 
-        if let Some(action) = command.action.as_ref() {
+        if let Some(action) = command.action() {
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),

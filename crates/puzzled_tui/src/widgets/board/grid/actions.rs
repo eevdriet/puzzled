@@ -13,9 +13,8 @@ impl<A, S, T> HandleCommand<A, S> for Grid<T> {
         _resolver: ActionResolver<A, S>,
         state: &mut Self::State,
     ) -> bool {
-        let Command { count, motion, .. } = command;
-
-        let Some(motion) = motion else {
+        let count = command.count();
+        let Some(motion) = command.motion() else {
             return false;
         };
 
@@ -53,7 +52,7 @@ impl<A, S, T> HandleCommand<A, S> for Grid<T> {
             },
 
             // Column
-            Motion::Col(col) => Position { col, ..start },
+            Motion::Col(col) => Position { col: *col, ..start },
             Motion::ColEnd => Position {
                 row: max_row,
                 ..start
@@ -61,7 +60,7 @@ impl<A, S, T> HandleCommand<A, S> for Grid<T> {
             Motion::ColStart => Position { row: 0, ..start },
 
             // Row
-            Motion::Row(row) => Position { row, ..start },
+            Motion::Row(row) => Position { row: *row, ..start },
             Motion::RowEnd => Position {
                 col: max_col,
                 ..start
@@ -106,8 +105,8 @@ where
         state: &mut Self::State,
     ) -> bool {
         tracing::info!("Ccommandd: {command:?}");
-        let Command { count, motion, .. } = command;
-        let Some(motion) = motion else {
+        let count = command.count();
+        let Some(motion) = command.motion() else {
             tracing::debug!("\t No motion");
             return false;
         };
@@ -132,7 +131,7 @@ where
             Motion::Col(col) => {
                 let next = self
                     .0
-                    .iter_indexed_col(col)
+                    .iter_indexed_col(*col)
                     .find(|&(_, square)| square.is_some())
                     .map(|(pos, _)| pos)
                     .unwrap_or(start);
@@ -164,7 +163,7 @@ where
             Motion::Row(row) => {
                 let next = self
                     .0
-                    .iter_indexed_row(row)
+                    .iter_indexed_row(*row)
                     .find(|&(_, square)| square.is_some())
                     .map(|(pos, _)| pos)
                     .unwrap_or(start);

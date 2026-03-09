@@ -59,48 +59,6 @@ pub enum Action<A = ()> {
     FocusRight,
     FocusUp,
 
-    // Movement
-    MoveDown(
-        #[serde(skip, default = "default_count")]
-        #[eq(skip)]
-        usize,
-    ),
-    MoveLeft(
-        #[serde(skip, default = "default_count")]
-        #[eq(skip)]
-        usize,
-    ),
-    MoveRight(
-        #[serde(skip, default = "default_count")]
-        #[eq(skip)]
-        usize,
-    ),
-    MoveUp(
-        #[serde(skip, default = "default_count")]
-        #[eq(skip)]
-        usize,
-    ),
-
-    MoveRow(
-        #[serde(skip, default)]
-        #[eq(skip)]
-        usize,
-    ),
-    MoveRowStart,
-    MoveRowEnd,
-
-    MoveCol(
-        #[serde(skip, default)]
-        #[eq(skip)]
-        usize,
-    ),
-    MoveColStart,
-    MoveColEnd,
-
-    // Solving
-    Reveal,
-    RevealAll,
-
     // Viewport
     BottomViewport,
     CenterViewport,
