@@ -39,9 +39,6 @@ pub enum EventSearchResult<M, A> {
     /// Event search does not lead to an action
     None,
 
-    /// Events require an operand to constitute a full action
-    RequireOperand(Operator),
-
     /// Events constitute a prefix for an action
     Prefix,
 
@@ -54,10 +51,7 @@ pub enum EventSearchResult<M, A> {
 
 impl<M, A> EventSearchResult<M, A> {
     pub fn is_partial(&self) -> bool {
-        matches!(
-            self,
-            EventSearchResult::Prefix | EventSearchResult::RequireOperand(_)
-        )
+        matches!(self, EventSearchResult::Prefix)
     }
 }
 
@@ -118,6 +112,10 @@ impl<M, A> EventTrie<M, A> {
 
     pub fn insert_mode_switches(&mut self) {
         self.insert_key("i", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
+        self.insert_key(
+            "<S-r>",
+            TrieEntry::Action(Action::NextMode(EventMode::Replace)),
+        );
         self.insert_key("a", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
     }
 }
@@ -159,10 +157,6 @@ where
                 }
             }
             Some(ref command) => {
-                // if action.requires_operand() {
-                //     return EventSearchResult::RequireOperand(action);
-                // }
-
                 if has_children {
                     EventSearchResult::ExactPrefix(command.clone())
                 } else {

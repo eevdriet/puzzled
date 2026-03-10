@@ -26,10 +26,6 @@ where
     ) -> bool {
         let pos = state.cursor;
 
-        let Some(motion) = command.motion() else {
-            return false;
-        };
-
         let Some(op) = command.operator() else {
             return self.board.on_command(command, resolver, state);
         };
@@ -58,9 +54,7 @@ impl<M, A, S, T> HandleCommand<M, A, S> for Grid<T> {
         state: &mut Self::State,
     ) -> bool {
         let count = command.count();
-        let Some(motion) = command.motion() else {
-            return false;
-        };
+        let motion = command.motion();
 
         // Positions
         let start = state.cursor;
@@ -96,9 +90,7 @@ where
         state: &mut Self::State,
     ) -> bool {
         let count = command.count();
-        let Some(motion) = command.motion() else {
-            return false;
-        };
+        let motion = command.motion();
 
         let start = state.cursor;
         let dir = state.direction;
@@ -108,21 +100,19 @@ where
             .into_iter()
             .collect(); // Pass count to motion_range
 
-        tracing::info!("Motion range positions: {positions:?}");
-
         // Take the last position in the range (after all the steps)
         let next_dir = Direction::try_from(motion).unwrap_or(state.direction);
         let (end, next_dir) = move_in_dir(self, start, dir, next_dir, &positions);
-
-        tracing::info!("Dir 1");
 
         if (start, dir) != (end, next_dir) {
             state.cursor = end;
             state.direction = next_dir;
             state.ensure_cursor_visible();
+
+            return true;
         }
 
-        true
+        false
     }
 }
 

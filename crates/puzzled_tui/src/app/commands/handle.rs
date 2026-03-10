@@ -1,9 +1,8 @@
-use crate::{_Command, ActionResolver, Command, StatefulScreen};
+use crate::{ActionResolver, Command, StatefulScreen};
 
 pub enum CommandOutcome<M, A, T> {
     // Handled externally
     Command(Command<M, A>),
-    UndoCommand(Box<dyn _Command<T>>),
 
     // Screen management
     Quit,

@@ -64,6 +64,16 @@ impl Clues {
         Some((across, down))
     }
 
+    pub fn get_clue(&self, pos: Position, dir: ClueDirection) -> Option<&Clue> {
+        let list = match dir {
+            ClueDirection::Across => &self.across,
+            ClueDirection::Down => &self.down,
+        };
+
+        let id = list.get(&pos)?;
+        self.entries.get(id)
+    }
+
     pub fn get_num(&self, pos: Position) -> Option<u8> {
         self.numbers.get(&pos).cloned()
     }

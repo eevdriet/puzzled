@@ -17,8 +17,9 @@ pub use resolver::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Command<M, A> {
     count: usize,
+    motion: Motion<M>,
+
     operator: Option<Operator>,
-    motion: Option<Motion<M>>,
     action: Option<Action<A>>,
 }
 
@@ -26,8 +27,8 @@ impl<M, A> Default for Command<M, A> {
     fn default() -> Self {
         Self {
             count: 1,
+            motion: Motion::None,
             operator: None,
-            motion: None,
             action: None,
         }
     }
@@ -36,8 +37,8 @@ impl<M, A> Default for Command<M, A> {
 impl<M, A> Command<M, A> {
     pub fn new(
         count: usize,
+        motion: Motion<M>,
         operator: Option<Operator>,
-        motion: Option<Motion<M>>,
         action: Option<Action<A>>,
     ) -> Self {
         Self {
@@ -57,7 +58,7 @@ impl<M, A> Command<M, A> {
 
     pub fn new_motion(motion: Motion<M>) -> Self {
         Self {
-            motion: Some(motion),
+            motion,
             ..Default::default()
         }
     }
@@ -70,8 +71,8 @@ impl<M, A> Command<M, A> {
         self.operator.as_ref()
     }
 
-    pub fn motion(&self) -> Option<&Motion<M>> {
-        self.motion.as_ref()
+    pub fn motion(&self) -> &Motion<M> {
+        &self.motion
     }
 
     pub fn action(&self) -> Option<&Action<A>> {
@@ -79,11 +80,11 @@ impl<M, A> Command<M, A> {
     }
 }
 
-pub trait _Command<T> {
+pub trait ExecuteAction<T> {
     fn execute(&mut self, state: &mut T);
 }
 
-pub trait UndoCommand<T>: _Command<T> {
+pub trait UndoAction<T>: ExecuteAction<T> {
     fn undo(&mut self, state: &mut T);
 
     fn redo(&mut self, state: &mut T) {

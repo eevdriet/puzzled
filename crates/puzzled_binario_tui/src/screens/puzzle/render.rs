@@ -26,7 +26,7 @@ impl StatefulWidgetRef for PuzzleScreen {
             r_state.options.v_align,
         );
 
-        grid.render(bordered_area, buf, r_state, r_state);
+        // grid.render(bordered_area, buf, r_state, r_state);
     }
 }
 

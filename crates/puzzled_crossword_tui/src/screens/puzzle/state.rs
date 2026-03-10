@@ -1,6 +1,6 @@
-use puzzled_core::Position;
-use puzzled_crossword::{ClueDirection, ClueId, Crossword, CrosswordState};
-use puzzled_tui::{FocusManager, GridRenderState};
+use puzzled_core::Direction;
+use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState};
+use puzzled_tui::{ActionHistory, FocusManager, GridRenderState};
 use ratatui::widgets::ListState;
 
 use crate::Focus;
@@ -12,41 +12,44 @@ pub struct PuzzleScreenState {
     pub render: GridRenderState,
 
     // Clues state
+    pub clue_dir: Option<ClueDirection>,
+    pub across_down: ListState,
     pub across: ListState,
     pub down: ListState,
 
     // UI state
     pub focus: FocusManager<Focus>,
+
+    // Other
+    pub history: ActionHistory<CrosswordState>,
 }
 
 impl PuzzleScreenState {
-    pub fn list(&mut self, clue_dir: ClueDirection) -> &mut ListState {
+    pub fn clue_list(&mut self, clue_dir: Option<ClueDirection>) -> &mut ListState {
         match clue_dir {
-            ClueDirection::Across => &mut self.across,
-            ClueDirection::Down => &mut self.down,
+            Some(ClueDirection::Across) => &mut self.across,
+            Some(ClueDirection::Down) => &mut self.down,
+            None => &mut self.across_down,
         }
     }
 
+    pub fn clues(&self, clue_dir: Option<ClueDirection>) -> impl Iterator<Item = &Clue> {
+        self.puzzle
+            .clues()
+            .values()
+            .filter(move |clue| clue_dir.is_none_or(|dir| clue.direction() == dir))
+    }
+
     pub fn update_clues_from_cursor(&mut self) {
-        let clues = &self.puzzle.clues();
         let clue_dir = ClueDirection::from(self.render.direction);
 
         // Determine the clues under the cursor
-        if let Some((across, down)) = clues.get_clues(self.render.cursor) {
-            // Derive the list state and identifiers of the active clue
-            let nums: Vec<_> = clues
-                .iter_direction(clue_dir)
-                .map(|clue| clue.num())
-                .collect();
+        if let Some(clue) = self.puzzle.clues().get_clue(self.render.cursor, clue_dir) {
+            let num = clue.num();
+            let nums: Vec<_> = self.clues(self.clue_dir).map(|clue| clue.num()).collect();
 
-            let (list, num) = match clue_dir {
-                ClueDirection::Across => (&mut self.across, across.num()),
-                ClueDirection::Down => (&mut self.down, down.num()),
-            };
-
-            // Search for the index of the active clue
-            // Note that iter_direction above is ordered, so a binary search is valid
             if let Ok(idx) = nums.binary_search(&num) {
+                let list = self.clue_list(self.clue_dir);
                 list.select(Some(idx));
             }
         }
@@ -56,23 +59,20 @@ impl PuzzleScreenState {
 
     pub fn update_cursor_from_clues(&mut self) {
         // Determine the currently selected clue
-        let clues = &self.puzzle.clues();
-        let direction = ClueDirection::from(self.render.direction);
-        let selected = match direction {
-            ClueDirection::Across => self.across.selected(),
-            ClueDirection::Down => self.down.selected(),
-        };
-
-        let Some(idx) = selected else {
+        let Some(idx) = self.clue_list(self.clue_dir).selected() else {
             return;
         };
 
-        let Some(clue) = clues.iter_direction(direction).nth(idx) else {
+        let Some(clue) = self.clues(self.clue_dir).nth(idx) else {
             return;
         };
+
+        let clue_direction = clue.direction();
+        let cursor = clue.start();
 
         // Then update the cursor to be its starting position
-        self.render.cursor = clue.start();
+        self.render.direction = Direction::from(clue_direction);
+        self.render.cursor = cursor;
         self.render.ensure_cursor_visible();
     }
 }

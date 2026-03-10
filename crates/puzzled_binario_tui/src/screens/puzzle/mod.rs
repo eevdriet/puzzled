@@ -2,7 +2,7 @@ mod actions;
 mod render;
 
 use puzzled_binario::{Binario, BinarioState};
-use puzzled_tui::{AppContext, CommandHistory, GridRenderState, StatefulScreen};
+use puzzled_tui::{ActionHistory, AppContext, GridRenderState, StatefulScreen};
 use ratatui::prelude::{Buffer, Rect};
 
 use crate::{AppState, BinarioAction};
@@ -12,7 +12,7 @@ pub struct PuzzleScreen {
     solve_state: BinarioState,
     render_state: GridRenderState,
 
-    commands: CommandHistory<BinarioState>,
+    commands: ActionHistory<BinarioState>,
 }
 
 impl PuzzleScreen {
@@ -22,7 +22,7 @@ impl PuzzleScreen {
             solve_state,
             render_state,
 
-            commands: CommandHistory::default(),
+            commands: ActionHistory::default(),
         }
     }
 }

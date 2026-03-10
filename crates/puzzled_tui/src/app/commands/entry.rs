@@ -1,6 +1,6 @@
 use puzzled_core::Solve;
 
-use crate::{_Command, UndoCommand};
+use crate::{ExecuteAction, UndoAction};
 
 pub struct EntryCommand<T, P> {
     changes: Vec<EntryChange<T, P>>,
@@ -12,7 +12,7 @@ pub struct EntryChange<T, P> {
     after: T,
 }
 
-impl<T, P, S> _Command<S> for EntryCommand<T, P>
+impl<T, P, S> ExecuteAction<S> for EntryCommand<T, P>
 where
     T: Clone,
     S: Solve<Value = T, Position = P>,
@@ -24,7 +24,7 @@ where
     }
 }
 
-impl<T, P, S> UndoCommand<S> for EntryCommand<T, P>
+impl<T, P, S> UndoAction<S> for EntryCommand<T, P>
 where
     T: Clone,
     S: Solve<Value = T, Position = P>,

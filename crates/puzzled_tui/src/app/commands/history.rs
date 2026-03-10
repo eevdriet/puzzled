@@ -1,11 +1,11 @@
-use crate::UndoCommand;
+use crate::UndoAction;
 
-pub struct CommandHistory<T> {
-    undos: Vec<Box<dyn UndoCommand<T>>>,
-    redos: Vec<Box<dyn UndoCommand<T>>>,
+pub struct ActionHistory<T> {
+    undos: Vec<Box<dyn UndoAction<T>>>,
+    redos: Vec<Box<dyn UndoAction<T>>>,
 }
 
-impl<T> Default for CommandHistory<T> {
+impl<T> Default for ActionHistory<T> {
     fn default() -> Self {
         Self {
             undos: Vec::new(),
@@ -14,8 +14,8 @@ impl<T> Default for CommandHistory<T> {
     }
 }
 
-impl<T> CommandHistory<T> {
-    pub fn execute(&mut self, mut action: Box<dyn UndoCommand<T>>, state: &mut T) {
+impl<T> ActionHistory<T> {
+    pub fn execute(&mut self, mut action: Box<dyn UndoAction<T>>, state: &mut T) {
         self.redos.clear();
 
         action.execute(state);

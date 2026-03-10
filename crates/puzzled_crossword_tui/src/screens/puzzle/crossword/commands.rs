@@ -26,6 +26,7 @@ impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidg
         };
 
         let pos = state.render.cursor;
+        // let dir = state.render.direction;
         let dir = match state.render.direction {
             Direction::Left | Direction::Right => Direction::Right,
             Direction::Up | Direction::Down => Direction::Down,
@@ -51,6 +52,10 @@ impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidg
                 {
                     state.render.cursor = next;
                 }
+            }
+
+            Action::DeleteRight => {
+                state.solve.clear(&pos);
             }
 
             _ => return false,

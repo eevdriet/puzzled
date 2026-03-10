@@ -65,23 +65,20 @@ where
                     TrieEntry::Motion(motion) => {
                         let operator = self.pending_operator.take();
 
-                        Some(Command::new(count, operator, Some(motion), None))
+                        Some(Command::new(count, motion, operator, None))
                     }
                     TrieEntry::Operator(op) => {
-                        self.pending_operator = Some(op);
-                        None
+                        if op.requires_motion() {
+                            self.pending_operator = Some(op);
+                            None
+                        } else {
+                            Some(Command::new(count, Motion::None, Some(op), None))
+                        }
                     }
                     TrieEntry::Action(action) => {
-                        Some(Command::new(count, None, None, Some(action)))
+                        Some(Command::new(count, Motion::None, None, Some(action)))
                     }
                 }
-            }
-
-            // Wait for additional input for prefix sequence
-            EventSearchResult::RequireOperand(operator) => {
-                // tracing::debug!("\tFound action {action:?} that requires operand, waiting...");
-                self.pending_operator = Some(operator);
-                None
             }
 
             // Clear previous keys for unknown sequence but keep repeat
@@ -165,9 +162,7 @@ where
     }
 
     fn insert_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
-        let Some(key) = event.key() else {
-            return None;
-        };
+        let key = event.key()?;
 
         let command = match key.code {
             // Insert
@@ -197,13 +192,11 @@ where
     }
 
     fn replace_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
-        let Some(key) = event.key() else {
-            return None;
-        };
+        let key = event.key()?;
 
         let command = match key.code {
             // Insert
-            KeyCode::Char(char) => Command::new_action(Action::Replace(char)),
+            KeyCode::Char(char) => Command::new_action(Action::Insert(char)),
 
             // Delete
             KeyCode::Delete => Command::new_action(Action::DeleteRight),

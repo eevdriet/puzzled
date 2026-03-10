@@ -3,6 +3,7 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Operator {
+    // -- Motion -- //
     // Text
     Change,
     Delete,
@@ -11,4 +12,19 @@ pub enum Operator {
     // Puzzle
     Reveal,
     Check,
+
+    // -- Motionless -- //
+    ChangeSingle,
+    DeleteSingle,
+    YankSingle,
+    RevealSingle,
+    CheckSingle,
+}
+
+impl Operator {
+    pub fn requires_motion(&self) -> bool {
+        use Operator::*;
+
+        matches!(self, Change | Delete | Yank | Reveal | Check)
+    }
 }

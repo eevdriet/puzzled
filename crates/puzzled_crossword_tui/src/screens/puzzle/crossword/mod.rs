@@ -53,14 +53,9 @@ impl StatefulWidgetRef for CrosswordWidget {
 
         // Render the active clue
         let clues = puzzle.clues();
+        let clue_dir = ClueDirection::from(render.direction);
 
-        if let Some((across, down)) = clues.get_clues(render.cursor) {
-            let clue_dir = ClueDirection::from(render.direction);
-            let clue = match clue_dir {
-                ClueDirection::Across => across,
-                ClueDirection::Down => down,
-            };
-
+        if let Some(clue) = clues.get_clue(render.cursor, clue_dir) {
             let clue_area = area.inner(Margin::new(1, 0));
             let clue_text = format!("{}{}  {}", clue.num(), clue.direction(), clue.text());
 
@@ -70,7 +65,7 @@ impl StatefulWidgetRef for CrosswordWidget {
         }
 
         // Render the squares grid in a scrollable view
-        let grid_area = area.inner(Margin::new(0, 1));
+        let grid_area = area.inner(Margin::new(0, 2));
         render.viewport = grid_area;
 
         let cell_state = RenderSquareState {

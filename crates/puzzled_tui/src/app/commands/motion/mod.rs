@@ -4,9 +4,13 @@ pub use range::*;
 
 use puzzled_core::Direction;
 use serde::Deserialize;
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Motion<M> {
+    // No motion
+    #[default]
+    None,
+
     // Left-right
     Col(usize),
     Left,
