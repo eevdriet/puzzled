@@ -86,7 +86,7 @@ impl Header {
         // Try to parse a valid version, otherwise set empty bits
         let version = reader.read_slice::<4>().context("Version bytes")?;
         let version = state.ok_or_warn(
-            Version::new(&version)
+            Version::from_bytes(&version)
                 .map_err(format::Error::Version)
                 .context("Version"),
         )?;

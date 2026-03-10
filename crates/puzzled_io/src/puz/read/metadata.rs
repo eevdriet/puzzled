@@ -20,7 +20,7 @@ pub fn read_metadata(header: &Header, strings: &Strings) -> Metadata {
         metadata = metadata.with_title(title);
     }
 
-    if let Ok(version) = Version::new(&header.version) {
+    if let Ok(version) = Version::from_bytes(&header.version) {
         metadata = metadata.with_version(version)
     }
 

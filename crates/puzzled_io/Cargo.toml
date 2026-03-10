@@ -8,7 +8,6 @@ thiserror = {workspace = true}
 puzzled_core = {path = "../puzzled_core/"}
 directories = {workspace = true}
 image = {workspace = true, optional = true}
-nom = {workspace = true, optional = true}
 chumsky = {workspace = true, optional = true}
 
 [dev-dependencies]
@@ -21,7 +20,7 @@ default = ["text"]
 #! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
 #!
 ## Enables reading and writing puzzles from plain text
-text = ["dep:nom", "dep:chumsky"]
+text = ["dep:chumsky"]
 ## Enables reading and writing puzzles with the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)
 puz = []
 ## Enables reading and writing puzzles from images using the [`image`](https://docs.rs/serde/latest/image/) crate
