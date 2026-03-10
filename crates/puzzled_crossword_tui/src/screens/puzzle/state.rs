@@ -1,7 +1,7 @@
 use puzzled_core::Direction;
 use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState};
-use puzzled_tui::{ActionHistory, FocusManager, GridRenderState};
-use ratatui::widgets::ListState;
+use puzzled_tui::{ActionHistory, FocusManager, GridRenderState, ensure_cells_visible};
+use ratatui::{layout::Rect, widgets::ListState};
 
 use crate::Focus;
 
@@ -54,7 +54,7 @@ impl PuzzleScreenState {
             }
         }
 
-        self.render.ensure_cursor_visible();
+        self.ensure_curr_clue_visible();
     }
 
     pub fn update_cursor_from_clues(&mut self) {
@@ -73,6 +73,31 @@ impl PuzzleScreenState {
         // Then update the cursor to be its starting position
         self.render.direction = Direction::from(clue_direction);
         self.render.cursor = cursor;
-        self.render.ensure_cursor_visible();
+
+        self.ensure_curr_clue_visible();
+    }
+
+    pub fn ensure_curr_clue_visible(&mut self) {
+        let cursor = self.render.cursor;
+        let dir = ClueDirection::from(self.render.direction);
+
+        if let Some(clue) = self.puzzle.clues().get_clue(cursor, dir)
+            && let Some(end) = clue.positions().last()
+        {
+            let start = clue.start();
+            let cells = Rect {
+                x: start.col.min(end.col) as u16,
+                y: start.row.min(end.row) as u16,
+                width: 1 + start.col.abs_diff(end.col) as u16,
+                height: 1 + start.row.abs_diff(end.row) as u16,
+            };
+
+            ensure_cells_visible(
+                cells,
+                self.render.options,
+                self.render.viewport,
+                &mut self.render.scroll,
+            );
+        }
     }
 }

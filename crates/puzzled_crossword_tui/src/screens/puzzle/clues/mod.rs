@@ -3,9 +3,10 @@ mod list;
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{ActionResolver, Command, HandleCommand, Motion, RenderSize};
 use ratatui::{
-    layout::{Constraint, Layout, Offset, Size},
+    layout::{Constraint, Layout, Margin, Offset, Size},
     prelude::{Buffer, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
+    text::Text,
     widgets::{Block, Borders, StatefulWidgetRef, Tabs, Widget},
 };
 
@@ -38,7 +39,9 @@ impl RenderSize<PuzzleScreenState> for CluesWidget {
         let down_size = self.down.render_size(state);
 
         size.width = size.width.max(across_size.width + down_size.width + 2);
-        size.height = size.height.max(across_size.height.max(down_size.height));
+        size.height = size
+            .height
+            .max(2 + across_size.height.max(down_size.height));
 
         // Border
         size.width += 2;
@@ -81,15 +84,33 @@ impl StatefulWidgetRef for CluesWidget {
             .render(tab_area, buf);
 
         // Render the clue list(s)
+        let text_margin = Margin::new(0, 1);
+
         if state.clue_dir.is_none() {
-            self.across_down.render_ref(area, buf, state);
+            self.across_down
+                .render_ref(area.inner(text_margin), buf, state);
             return;
         }
 
         let [across, down] =
             Layout::horizontal(vec![Constraint::Fill(1), Constraint::Fill(1)]).areas(area);
 
+        // Render across clues
+        let [across_title, across] =
+            Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(across);
+
+        Text::from("Across")
+            .fg(Color::Green)
+            .render(across_title, buf);
+
         self.across.render_ref(across, buf, state);
+
+        // Render down clues
+        let [down_title, down] =
+            Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(down);
+
+        Text::from("Down").fg(Color::Blue).render(down_title, buf);
+
         self.down.render_ref(down, buf, state);
     }
 }

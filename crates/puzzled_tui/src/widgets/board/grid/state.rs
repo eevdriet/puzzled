@@ -1,5 +1,5 @@
 use puzzled_core::{Direction, Position};
-use ratatui::layout::{Offset, Position as AppPosition, Rect};
+use ratatui::layout::{Position as AppPosition, Rect};
 use tui_scrollview::ScrollViewState;
 
 use crate::GridOptions;
@@ -91,33 +91,57 @@ impl GridRenderState {
     }
 
     pub fn ensure_cursor_visible(&mut self) {
-        let cell_w = self.options.cell_width;
-        let cell_h = self.options.cell_height;
-        let vp = self.viewport;
-
-        // Determine the cursor and current offset position (viewport aligned)
-        let cursor_x = self.cursor.col as u16 * cell_w;
-        let cursor_y = self.cursor.row as u16 * cell_h;
-
-        let mut offset_x = self.scroll.offset().x;
-        let mut offset_y = self.scroll.offset().y;
-
-        // Horizontal
-        if offset_x > cursor_x {
-            offset_x = cursor_x;
-        } else if offset_x + vp.width < cursor_x + cell_w {
-            offset_x = cursor_x + cell_w - vp.width;
-        }
-
-        // Vertical
-        if offset_y > cursor_y {
-            offset_y = cursor_y;
-        } else if offset_y + vp.height < cursor_y + cell_w {
-            offset_y = cursor_y + cell_w - vp.height;
-        }
-
-        let offset = AppPosition::new(offset_x, offset_y);
-
-        self.scroll.set_offset(offset);
+        let cells = Rect {
+            x: self.cursor.col as u16,
+            y: self.cursor.row as u16,
+            width: 1,
+            height: 1,
+        };
+        ensure_cells_visible(cells, self.options, self.viewport, &mut self.scroll);
     }
+}
+
+pub fn ensure_cells_visible(
+    cells: Rect,
+    opts: GridOptions,
+    vp: Rect,
+    scroll: &mut ScrollViewState,
+) {
+    let cell_w = opts.cell_width;
+    let cell_h = opts.cell_height;
+
+    // Determine the cursor and current offset position (viewport aligned)
+    let start = AppPosition {
+        x: cells.x * cell_w,
+        y: cells.y * cell_h,
+    };
+    let end = AppPosition {
+        x: cells.right() * cell_w,
+        y: cells.bottom() * cell_h,
+    };
+
+    let mut offset_x = scroll.offset().x;
+    let mut offset_y = scroll.offset().y;
+
+    // Adjust horizontal offset to keep start_x and end_x visible within the viewport
+    if offset_x > start.x {
+        offset_x = start.x; // Move the viewport to the left if the start is too far right
+    } else if offset_x + vp.width < end.x {
+        offset_x = end.x - vp.width; // Move the viewport right to show the end
+    } else if offset_x + vp.width < start.x + cell_w {
+        offset_x = start.x + cell_w - vp.width; // Make sure the start is visible
+    }
+
+    // Adjust vertical offset to keep start_y and end_y visible within the viewport
+    if offset_y > start.y {
+        offset_y = start.y; // Move the viewport up if the start is too far down
+    } else if offset_y + vp.height < end.y {
+        offset_y = end.y - vp.height; // Move the viewport down to show the end
+    } else if offset_y + vp.height < start.y + cell_h {
+        offset_y = start.y + cell_h - vp.height; // Make sure the start is visible
+    }
+
+    // Adjust offset
+    let offset = AppPosition::new(offset_x, offset_y);
+    scroll.set_offset(offset);
 }
