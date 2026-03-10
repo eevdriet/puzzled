@@ -4,6 +4,10 @@ pub struct SquareGridRef<'a, T>(pub &'a Grid<Square<T>>);
 pub struct SquareGridRefMut<'a, T>(pub &'a mut Grid<Square<T>>);
 
 impl<T> Grid<Square<T>> {
+    pub fn is_fill(&self, pos: Position) -> bool {
+        self.get(pos).is_some_and(|square| square.is_some())
+    }
+
     /// Get a reference to the [filled square](Square::Filled) at the given position
     ///
     /// Same as [`get`](Grid<Square>::get), but additionally checks whether the square is a cell

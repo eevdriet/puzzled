@@ -4,11 +4,10 @@ use std::ops::Bound;
 
 pub use indexed::*;
 
-use crate::{Grid, Line, LineSegment, Offset, Order, Position};
+use crate::{Direction, Grid, Line, LineSegment, Offset, Order, Position};
 
-#[doc(hidden)]
 #[derive(Clone, Copy)]
-pub struct Iter<'a, T> {
+pub struct GridIter<'a, T> {
     grid: &'a Grid<T>,
     front: Position,
     back: Position,
@@ -16,7 +15,7 @@ pub struct Iter<'a, T> {
     remaining: usize,
 }
 
-impl<'a, T> Iter<'a, T> {
+impl<'a, T> GridIter<'a, T> {
     pub fn new(grid: &'a Grid<T>, start: Position, offset: Offset) -> Self {
         let (remaining, end) = if !grid.is_in_bounds(start) {
             (0, start)
@@ -60,12 +59,9 @@ impl<'a, T> Iter<'a, T> {
         offset: Offset,
         remaining: usize,
     ) -> Self {
-        let end = if remaining == 0 {
-            start
-        } else {
-            start
-                .offset(offset * (remaining - 1) as isize)
-                .unwrap_or_else(|| panic!("End position should be consistent with {remaining} items from (and including) {start}"))
+        let end = match start.offset(offset * remaining.saturating_sub(1) as isize) {
+            Some(end) => end,
+            _ => start,
         };
 
         Self {
@@ -108,7 +104,7 @@ fn steps_to_edge(start: usize, step: isize, max: usize) -> usize {
     }
 }
 
-impl<'a, T> Iterator for Iter<'a, T> {
+impl<'a, T> Iterator for GridIter<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -128,7 +124,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+impl<'a, T> DoubleEndedIterator for GridIter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {
             return None;
@@ -142,14 +138,14 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
     }
 }
 
-impl<'a, T> ExactSizeIterator for Iter<'a, T> {
+impl<'a, T> ExactSizeIterator for GridIter<'a, T> {
     fn len(&self) -> usize {
         self.remaining
     }
 }
 
 #[doc(hidden)]
-pub struct IterMut<'a, T> {
+pub struct GridIterMut<'a, T> {
     grid: &'a mut Grid<T>,
     front: Position,
     back: Position,
@@ -157,7 +153,7 @@ pub struct IterMut<'a, T> {
     remaining: usize,
 }
 
-impl<'a, T> IterMut<'a, T> {
+impl<'a, T> GridIterMut<'a, T> {
     pub fn new(grid: &'a mut Grid<T>, start: Position, offset: Offset) -> Self {
         let (remaining, end) = if !grid.is_in_bounds(start) {
             (0, start)
@@ -241,7 +237,7 @@ impl<'a, T> IterMut<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for IterMut<'a, T> {
+impl<'a, T> Iterator for GridIterMut<'a, T> {
     type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -262,7 +258,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     }
 }
 
-impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
+impl<'a, T> DoubleEndedIterator for GridIterMut<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {
             return None;
@@ -277,7 +273,7 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
     }
 }
 
-impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
+impl<'a, T> ExactSizeIterator for GridIterMut<'a, T> {
     fn len(&self) -> usize {
         self.remaining
     }
@@ -374,8 +370,8 @@ impl<T> Grid<T> {
     /// let mut iter = grid.iter_row(2);
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_row(&self, row: usize) -> Iter<'_, T> {
-        Iter::new_row(self, row)
+    pub fn iter_row(&self, row: usize) -> GridIter<'_, T> {
+        GridIter::new_row(self, row)
     }
 
     /// Creates a mutable iterator over a specified row of the grid
@@ -399,8 +395,8 @@ impl<T> Grid<T> {
     /// let mut iter = grid.iter_row_mut(2);
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_row_mut(&mut self, row: usize) -> IterMut<'_, T> {
-        IterMut::new_row(self, row)
+    pub fn iter_row_mut(&mut self, row: usize) -> GridIterMut<'_, T> {
+        GridIterMut::new_row(self, row)
     }
 
     /// Creates an iterator over the rows of the grid
@@ -415,8 +411,8 @@ impl<T> Grid<T> {
     /// let row_sums: Vec<usize> = grid.iter_rows().map(|row| row.sum()).collect();
     /// assert_eq!(row_sums, vec![6, 15, 24]);
     /// ```
-    pub fn iter_rows(&self) -> impl Iterator<Item = Iter<'_, T>> {
-        (0..self.rows).map(move |row| Iter::new_row(self, row))
+    pub fn iter_rows(&self) -> impl Iterator<Item = GridIter<'_, T>> {
+        (0..self.rows).map(move |row| GridIter::new_row(self, row))
     }
 
     /// Creates an iterator over a specified column of the grid
@@ -440,8 +436,8 @@ impl<T> Grid<T> {
     /// let mut iter = grid.iter_col(2);
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_col(&self, col: usize) -> Iter<'_, T> {
-        Iter::new_col(self, col)
+    pub fn iter_col(&self, col: usize) -> GridIter<'_, T> {
+        GridIter::new_col(self, col)
     }
 
     /// Creates a mutable iterator over a specified column of the grid
@@ -465,8 +461,8 @@ impl<T> Grid<T> {
     /// let mut iter = grid.iter_col_mut(2);
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_col_mut(&mut self, col: usize) -> IterMut<'_, T> {
-        IterMut::new_col(self, col)
+    pub fn iter_col_mut(&mut self, col: usize) -> GridIterMut<'_, T> {
+        GridIterMut::new_col(self, col)
     }
 
     /// Creates an iterator over the columns of the grid
@@ -481,8 +477,8 @@ impl<T> Grid<T> {
     /// let col_sums: Vec<usize> = grid.iter_cols().map(|col| col.sum()).collect();
     /// assert_eq!(col_sums, vec![12, 15, 18]);
     /// ```
-    pub fn iter_cols(&self) -> impl Iterator<Item = Iter<'_, T>> {
-        (0..self.cols).map(move |col| Iter::new_col(self, col))
+    pub fn iter_cols(&self) -> impl Iterator<Item = GridIter<'_, T>> {
+        (0..self.cols).map(move |col| GridIter::new_col(self, col))
     }
 
     /// Creates an iterator over a specified [line](Line) of the grid
@@ -503,10 +499,10 @@ impl<T> Grid<T> {
     /// assert_eq!(iter.next(), Some(&'C'));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_line<'a>(&'a self, line: Line) -> Iter<'a, T> {
+    pub fn iter_line<'a>(&'a self, line: Line) -> GridIter<'a, T> {
         match line {
-            Line::Row(row) => Iter::new_row(self, row),
-            Line::Col(col) => Iter::new_col(self, col),
+            Line::Row(row) => GridIter::new_row(self, row),
+            Line::Col(col) => GridIter::new_col(self, col),
         }
     }
 
@@ -532,10 +528,10 @@ impl<T> Grid<T> {
     ///     assert_eq!(iter.next(), None);
     /// }
     /// ```
-    pub fn iter_line_mut<'a>(&'a mut self, line: Line) -> IterMut<'a, T> {
+    pub fn iter_line_mut<'a>(&'a mut self, line: Line) -> GridIterMut<'a, T> {
         match line {
-            Line::Row(row) => IterMut::new_row(self, row),
-            Line::Col(col) => IterMut::new_col(self, col),
+            Line::Row(row) => GridIterMut::new_row(self, row),
+            Line::Col(col) => GridIterMut::new_col(self, col),
         }
     }
 
@@ -554,15 +550,15 @@ impl<T> Grid<T> {
     /// let col_sums: Vec<usize> = grid.iter_lines(Order::Cols).map(|col| col.sum()).collect();
     /// assert_eq!(col_sums, vec![12, 15, 18]);
     /// ```
-    pub fn iter_lines<'a>(&'a self, order: Order) -> impl Iterator<Item = Iter<'a, T>> {
+    pub fn iter_lines<'a>(&'a self, order: Order) -> impl Iterator<Item = GridIter<'a, T>> {
         let lines = match order {
             Order::Rows => 0..self.rows,
             Order::Cols => 0..self.cols,
         };
 
         lines.map(move |line| match order {
-            Order::Rows => Iter::new_row(self, line),
-            Order::Cols => Iter::new_col(self, line),
+            Order::Rows => GridIter::new_row(self, line),
+            Order::Cols => GridIter::new_col(self, line),
         })
     }
 }
@@ -580,55 +576,112 @@ fn resolve_range(start: &Bound<usize>, end: &Bound<usize>, max: usize) -> Option
         Bound::Unbounded => max,
     };
 
-    (start <= end && start < max && end < max).then_some((start, end))
+    (start <= end && end <= max).then_some((start, end))
 }
 
 impl<T> Grid<T> {
-    pub fn iter_segment(&self, segment: &LineSegment) -> Iter<'_, T> {
+    pub fn iter_segment(&self, pos: Position, dir: Direction) -> GridIter<'_, T> {
+        let segment = LineSegment::from((pos, dir));
+
         match segment.line {
             Line::Row(row) if row < self.rows => {
                 match resolve_range(&segment.start, &segment.end, self.cols) {
                     Some((start, end)) => {
-                        let pos = Position::new(row, start);
-                        Iter::new_with_remaining(self, pos, Offset::RIGHT, end - start)
+                        GridIter::new_with_remaining(self, pos, dir.into(), end - start)
                     }
-                    _ => Iter::new_empty(self),
+                    _ => GridIter::new_empty(self),
                 }
             }
             Line::Col(col) if col < self.cols => {
                 match resolve_range(&segment.start, &segment.end, self.rows) {
                     Some((start, end)) => {
-                        let pos = Position::new(start, col);
-                        Iter::new_with_remaining(self, pos, Offset::DOWN, end - start)
+                        GridIter::new_with_remaining(self, pos, dir.into(), end - start)
                     }
-                    _ => Iter::new_empty(self),
+                    _ => GridIter::new_empty(self),
                 }
             }
-            _ => Iter::new_empty(self),
+            _ => GridIter::new_empty(self),
         }
     }
 
-    pub fn iter_segment_mut(&mut self, segment: &LineSegment) -> IterMut<'_, T> {
+    pub fn iter_segment_mut(&mut self, pos: Position, dir: Direction) -> GridIterMut<'_, T> {
+        let segment = LineSegment::from((pos, dir));
+
         match segment.line {
             Line::Row(row) if row < self.rows => {
                 match resolve_range(&segment.start, &segment.end, self.cols) {
                     Some((start, end)) => {
-                        let pos = Position::new(row, start);
-                        IterMut::new_with_remaining(self, pos, Offset::RIGHT, end - start)
+                        GridIterMut::new_with_remaining(self, pos, dir.into(), end - start)
                     }
-                    _ => IterMut::new_empty(self),
+                    _ => GridIterMut::new_empty(self),
                 }
             }
             Line::Col(col) if col < self.cols => {
                 match resolve_range(&segment.start, &segment.end, self.rows) {
                     Some((start, end)) => {
-                        let pos = Position::new(start, col);
-                        IterMut::new_with_remaining(self, pos, Offset::DOWN, end - start)
+                        GridIterMut::new_with_remaining(self, pos, dir.into(), end - start)
                     }
-                    _ => IterMut::new_empty(self),
+                    _ => GridIterMut::new_empty(self),
                 }
             }
-            _ => IterMut::new_empty(self),
+            _ => GridIterMut::new_empty(self),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::{fixture, rstest};
+
+    use crate::puzzle::geom::grid::iter::resolve_range;
+    use crate::{Direction, Grid, Position, grid};
+    use crate::{Direction::*, LineSegment};
+
+    #[fixture]
+    fn grid() -> Grid<usize> {
+        grid!(
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+            [33, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+            [44, 42, 43, 44, 45, 46, 47, 48, 49, 50],
+            [55, 52, 53, 54, 55, 56, 57, 58, 59, 60],
+            [66, 62, 63, 64, 65, 66, 67, 68, 69, 70],
+            [77, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+            [88, 82, 83, 84, 85, 86, 87, 88, 89, 90],
+            [99, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+        )
+    }
+
+    #[rstest]
+    #[case(33, Right, vec![33, 34, 35, 36, 37, 38, 39, 40])]
+    #[case(33, Up, vec![33, 23, 13, 3])]
+    fn iter_segment(#[case] num: usize, #[case] dir: Direction, #[case] expected: Vec<usize>) {
+        use crate::Line;
+
+        let grid = grid();
+        let pos = grid.position(num - 1).expect("Specified valid number");
+        let segment = LineSegment::from((pos, dir));
+
+        let range = match segment.line {
+            Line::Row(row) if row < grid.rows => {
+                resolve_range(&segment.start, &segment.end, grid.rows)
+            }
+            Line::Col(col) if col < grid.cols => {
+                resolve_range(&segment.start, &segment.end, grid.rows)
+            }
+            _ => None,
+        };
+        eprintln!("Range: {range:?}");
+
+        if range.is_none() {
+            panic!(
+                "Invalid segment: {segment:?} (with {} rows and {} cols)",
+                grid.rows, grid.cols
+            );
+        }
+
+        let nums: Vec<_> = grid.iter_segment(pos, dir).copied().collect();
+        assert_eq!(expected, nums);
     }
 }

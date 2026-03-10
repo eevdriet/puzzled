@@ -36,6 +36,17 @@ impl fmt::Display for Direction {
     }
 }
 
+impl From<Direction> for Offset {
+    fn from(direction: Direction) -> Self {
+        match direction {
+            Direction::Down => Offset::DOWN,
+            Direction::Left => Offset::LEFT,
+            Direction::Right => Offset::RIGHT,
+            Direction::Up => Offset::UP,
+        }
+    }
+}
+
 impl ops::Add<Direction> for Direction {
     type Output = Direction;
 
