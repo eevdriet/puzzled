@@ -17,7 +17,11 @@ pub struct Version {
 }
 
 impl Version {
-    pub fn new(bytes: &[u8]) -> Result<Self, Error> {
+    pub fn new(major: u8, minor: u8) -> Self {
+        Self { major, minor }
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         // Optionally strip the trailing \0
         let version = bytes.strip_suffix(&[0]).unwrap_or(bytes);
 

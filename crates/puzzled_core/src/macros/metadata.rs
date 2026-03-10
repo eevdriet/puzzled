@@ -30,7 +30,7 @@ macro_rules! metadata {
 
     // Version parsing
     (@transform $meta:ident, version, $value:literal) => {
-        match $crate::Version::new($value.as_bytes()) {
+        match $crate::Version::from_bytes($value.as_bytes()) {
             Ok(v) => $meta = $meta.with_version(v),
             Err(_) => panic!("Invalid version string"),
         }
