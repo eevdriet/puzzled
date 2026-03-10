@@ -1905,7 +1905,6 @@ dependencies = [
  "chumsky",
  "directories",
  "image",
- "nom 8.0.0",
  "puzzled",
  "puzzled_core",
  "rstest",

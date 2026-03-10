@@ -108,9 +108,13 @@ where
             .into_iter()
             .collect(); // Pass count to motion_range
 
+        tracing::info!("Motion range positions: {positions:?}");
+
         // Take the last position in the range (after all the steps)
         let next_dir = Direction::try_from(motion).unwrap_or(state.direction);
         let (end, next_dir) = move_in_dir(self, start, dir, next_dir, &positions);
+
+        tracing::info!("Dir 1");
 
         if (start, dir) != (end, next_dir) {
             state.cursor = end;
@@ -129,20 +133,16 @@ fn move_in_dir<'a, T>(
     next_dir: Direction,
     positions: &[Position],
 ) -> (Position, Direction) {
-    tracing::info!("Move {next_dir} from ({start:?}, {dir:?}) with {positions:?}");
-
     // If currently going in anothr direction, change the direction
     if positions.len() <= 2 && ![next_dir, !next_dir].contains(&dir) {
         return (start, next_dir);
     }
 
     // Otherwise, find the last valid position to move to
-    for end in positions.iter().rev() {
-        if grid.0.get_fill(*end).is_some() {
-            return (*end, dir);
-        }
-    }
-
-    // If no valid position can be moved to, stay put
-    (start, dir)
+    let end = positions
+        .iter()
+        .rfind(|&&pos| grid.0.is_fill(pos))
+        .copied()
+        .unwrap_or(start);
+    (end, dir)
 }

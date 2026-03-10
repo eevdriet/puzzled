@@ -26,7 +26,7 @@ thiserror = "2.0.18"
 toml = "0.9.11"
 tracing = "0.1.44"
 tui-scrollview = "0.6.2"
-chumsky = "0.12.0"
+chumsky = {version = "0.12.0"}
 tracing-test = "0.2.5"
 
 [workspace.dependencies.tokio]

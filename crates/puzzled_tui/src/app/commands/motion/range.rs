@@ -71,7 +71,9 @@ impl<M, T> MotionRange<M> for SquareGridRef<'_, T> {
         // Otherwise, go to the first filled square in the given direction to perform the range
         let mut pos = start;
 
-        while let Some(next) = pos + dir {
+        while let Some(next) = pos + dir
+            && self.0.is_in_bounds(next)
+        {
             // NOTE: since count > 0, some motion always moves the position past the currently non-fill pos
             if self.0.is_fill(next) {
                 break;
