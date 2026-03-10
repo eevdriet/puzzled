@@ -12,8 +12,7 @@ where
 {
     fn count_visible(&self, pos: Position, dir: Direction) -> usize {
         // Iterate over all remaining positions (including the current) in the direction
-        let segment = pos.as_segment(dir);
-        let iter = self.iter_segment(&segment);
+        let iter = self.iter_segment(pos, dir);
 
         let mut max_height = 0;
         let mut count = 0;

@@ -111,8 +111,6 @@ where
             tokio::select! {
                 // Handle raw app events
                 Some(event) = self.events_rx.recv() => {
-                    tracing::info!("Received event: {event}");
-
                     if let Some(command) = self.engine.push(event, &mut self.context.mode) {
                         resolver.fire_command(command);
                         render = true;
