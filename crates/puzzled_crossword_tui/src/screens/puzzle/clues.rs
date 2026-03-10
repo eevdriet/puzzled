@@ -1,10 +1,12 @@
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{ActionResolver, Command, HandleCommand, Motion, RenderSize};
+use puzzled_tui::{
+    ActionResolver, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize,
+};
 use ratatui::{
     layout::Size,
     prelude::{Buffer, Rect},
     style::{Color, Style},
-    widgets::{Block, List, ListState, StatefulWidget, StatefulWidgetRef},
+    widgets::{Block, List, ListItem, StatefulWidget, StatefulWidgetRef},
 };
 
 use crate::{AppState, CrosswordAction, CrosswordMotion, Focus, PuzzleScreenState};
@@ -22,10 +24,31 @@ impl CluesWidget {
 
 impl RenderSize<PuzzleScreenState> for CluesWidget {
     fn render_size(&self, state: &PuzzleScreenState) -> Size {
-        let clues = state.puzzle.clues();
-        let clue_count = clues.iter_direction(self.direction).count();
+        let mut size = ListWidget::new(self).render_size(state);
 
-        Size::new(10, 10)
+        // Border
+        size.width += 2;
+        size.height += 2;
+
+        size
+    }
+}
+
+impl ListRender for CluesWidget {
+    type State = PuzzleScreenState;
+
+    fn render_items(
+        &self,
+        state: &Self::State,
+    ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
+        state
+            .puzzle
+            .clues()
+            .iter_direction(self.direction)
+            .map(|clue| {
+                let clue_text = format!("{:>2} {}", clue.num(), clue.text());
+                ListItem::new(clue_text)
+            })
     }
 }
 
@@ -87,6 +110,8 @@ impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesWidget {
         let list = state.list(self.direction);
 
         match motion {
+            Motion::ColStart => list.select_first(),
+            Motion::ColEnd => list.select_last(),
             Motion::Down => list.scroll_down_by(count),
             Motion::Up => list.scroll_up_by(count),
             _ => return false,

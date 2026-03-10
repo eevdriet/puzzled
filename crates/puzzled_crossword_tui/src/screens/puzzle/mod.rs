@@ -4,11 +4,10 @@ mod state;
 
 pub use clues::*;
 pub use crossword::*;
-use puzzled_core::Direction;
 pub use state::*;
 
 use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout, VerticalAlignment},
+    layout::{Constraint, Flex, HorizontalAlignment, Layout, VerticalAlignment},
     prelude::{Buffer, Rect},
     widgets::{ListState, StatefulWidgetRef},
 };
@@ -59,7 +58,7 @@ impl PuzzleScreen {
         focus.link_below(Focus::Footer, &[Focus::AcrossClues, Focus::DownClues]);
 
         let list = ListState::default().with_selected(Some(0));
-        let mut state = PuzzleScreenState {
+        let state = PuzzleScreenState {
             puzzle,
             solve: solve_state,
             render: render_state,
@@ -67,7 +66,6 @@ impl PuzzleScreen {
             down: list,
             focus,
         };
-        state.update_clues_from_cursor();
 
         Self {
             state,
@@ -81,31 +79,52 @@ impl PuzzleScreen {
 }
 
 impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppContext<AppState>) {
-        let gap = Constraint::Length(2);
+    fn render(&mut self, root: Rect, buf: &mut Buffer, _state: &mut AppContext<AppState>) {
+        // Compute sizes
+        let gap = 2;
 
-        // Crossword on the left
-        let [crossword, _, right] = Layout::horizontal(vec![
-            Constraint::Length(self.crossword.render_size(&self.state).width),
-            gap,
-            Constraint::Min(0),
+        let crossword_size = self.crossword.render_size(&self.state);
+        let across_size = self.across_clues.render_size(&self.state);
+        let down_size = self.down_clues.render_size(&self.state);
+
+        let width =
+            (crossword_size.width + across_size.width + down_size.width + 2 * gap).min(root.width);
+
+        let [area] = Layout::horizontal(vec![Constraint::Length(width)])
+            .flex(Flex::Center)
+            .areas(root);
+
+        // Have crossword be at most 50% and clues 25% of the area
+        let crossword_width = crossword_size.width.min(5 * area.width / 10);
+        let across_width = across_size.width.min(area.width / 5);
+        let down_width = down_size.width.min(area.width / 5);
+
+        // Clues on the right
+        let [crossword, _, across_clues, _, down_clues] = Layout::horizontal(vec![
+            Constraint::Length(crossword_width),
+            Constraint::Max(gap),
+            Constraint::Fill(1),
+            Constraint::Max(gap),
+            Constraint::Fill(1),
         ])
         .areas(area);
 
+        tracing::debug!("Screen");
+        tracing::debug!("\tRoot: {root}");
+        tracing::debug!("\tArea: {area}");
+        tracing::debug!("\tCrossword: {crossword}");
+        tracing::debug!("\tAcross: {across_clues}");
+        tracing::debug!("\tDown: {down_clues}");
+
         // Render widgets
-        let crossword_size = self.crossword.render_size(&self.state);
-        let crossword = align_area(
-            crossword,
-            crossword_size,
-            HorizontalAlignment::Center,
-            VerticalAlignment::Top,
-        );
+        // let crossword = align_area(
+        //     crossword,
+        //     crossword_size,
+        //     HorizontalAlignment::Left,
+        //     VerticalAlignment::Top,
+        // );
 
         self.crossword.render_ref(crossword, buf, &mut self.state);
-
-        // Clues on the right
-        let [across_clues, _, down_clues] =
-            Layout::horizontal(vec![Constraint::Fill(1), gap, Constraint::Fill(1)]).areas(right);
 
         self.across_clues
             .render_ref(across_clues, buf, &mut self.state);
@@ -118,8 +137,6 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
         resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
         ctx: &mut AppContext<AppState>,
     ) -> bool {
-        tracing::info!("Command reached crossword: {command:?}");
-
         if let Some(action) = command.action() {
             match action {
                 // Lifetime actions

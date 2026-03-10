@@ -14,7 +14,7 @@ use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    init_logging(true);
+    init_logging(false);
 
     let (puzzle, solve_state) = Crossword::load_text("2026-03-07-nyt").map_err(io::Error::other)?;
 

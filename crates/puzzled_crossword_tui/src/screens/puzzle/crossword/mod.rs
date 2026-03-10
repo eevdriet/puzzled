@@ -16,7 +16,7 @@ use ratatui::{
 };
 
 use crate::{Focus, PuzzleScreenState};
-use tui_scrollview::{ScrollView, ScrollbarVisibility};
+use tui_scrollview::ScrollView;
 
 pub struct CrosswordWidget;
 
@@ -69,15 +69,9 @@ impl StatefulWidgetRef for CrosswordWidget {
                 .render(clue_area, buf);
         }
 
-        tracing::info!("Border area: {root}");
-        tracing::info!("Grid area: {area}");
-
         // Render the squares grid in a scrollable view
         let grid_area = area.inner(Margin::new(0, 1));
         render.viewport = grid_area;
-
-        let grid = state.solve.entries.map_ref(RenderSquareSolution);
-        let grid_size = grid.render_size(&render.options as &_);
 
         let cell_state = RenderSquareState {
             cursor: render.cursor,
@@ -86,10 +80,12 @@ impl StatefulWidgetRef for CrosswordWidget {
             opts: render.options,
         };
 
+        let grid = solve.entries.map_ref(RenderSquareSolution);
+        let grid_size = grid.render_size(&render.options as &_);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
-        let mut scroll_view =
-            ScrollView::new(grid_size).scrollbars_visibility(ScrollbarVisibility::Always);
+        let mut scroll_view = ScrollView::new(grid_size);
+
         scroll_view.render_stateful_widget(grid_widget, area, render);
         scroll_view.render(grid_area, buf, &mut render.scroll);
     }

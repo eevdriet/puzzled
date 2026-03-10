@@ -50,6 +50,8 @@ impl PuzzleScreenState {
                 list.select(Some(idx));
             }
         }
+
+        self.render.ensure_cursor_visible();
     }
 
     pub fn update_cursor_from_clues(&mut self) {

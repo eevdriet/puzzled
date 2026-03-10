@@ -94,7 +94,7 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
                 .title(num.to_string())
                 .title_style(clue_style)
                 .bold()
-                .title_alignment(HorizontalAlignment::Center);
+                .title_alignment(HorizontalAlignment::Left);
         }
 
         let symbol = match &self.0.0 {
