@@ -35,7 +35,7 @@ impl<T> RenderSize<GridOptions> for Grid<T> {
         let rows = self.rows() as u16;
 
         let mut width = cols * opts.cell_width;
-        let mut height = rows * opts.cell_height + 2;
+        let mut height = rows * opts.cell_height;
 
         if let Some(inner) = opts.inner {
             width += (cols - 1) / inner.width;

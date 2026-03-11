@@ -16,7 +16,7 @@ use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 async fn main() -> io::Result<()> {
     init_logging(false);
 
-    let (puzzle, solve_state) = Crossword::load_text("2026-03-07-nyt").map_err(io::Error::other)?;
+    let (puzzle, solve_state) = Crossword::load_text("2026-03-08-nyt").map_err(io::Error::other)?;
 
     let mut render_state = GridRenderState::default();
     let opts = &mut render_state.options;

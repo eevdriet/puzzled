@@ -8,7 +8,7 @@ use puzzled_crossword::{ClueDirection, Crossword};
 use puzzled_tui::{GridWidget, RenderSize};
 
 use ratatui::{
-    layout::{HorizontalAlignment, Margin},
+    layout::{Constraint, HorizontalAlignment, Layout},
     prelude::{Buffer, Rect},
     style::{Color, Style},
     text::Text,
@@ -52,11 +52,13 @@ impl StatefulWidgetRef for CrosswordWidget {
         block.render(root, buf);
 
         // Render the active clue
+        let [clue_area, grid_area] =
+            Layout::vertical(vec![Constraint::Length(2), Constraint::Min(0)]).areas(area);
+
         let clues = puzzle.clues();
         let clue_dir = ClueDirection::from(render.direction);
 
         if let Some(clue) = clues.get_clue(render.cursor, clue_dir) {
-            let clue_area = area.inner(Margin::new(1, 0));
             let clue_text = format!("{}{}  {}", clue.num(), clue.direction(), clue.text());
 
             Text::from(clue_text)
@@ -64,8 +66,7 @@ impl StatefulWidgetRef for CrosswordWidget {
                 .render(clue_area, buf);
         }
 
-        // Render the squares grid in a scrollable view
-        let grid_area = area.inner(Margin::new(0, 2));
+        // Set up the squares grid
         render.viewport = grid_area;
 
         let cell_state = RenderSquareState {
@@ -79,9 +80,10 @@ impl StatefulWidgetRef for CrosswordWidget {
         let grid_size = grid.render_size(&render.options as &_);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
+        // Render the grid in a scrollable view
         let mut scroll_view = ScrollView::new(grid_size);
 
-        scroll_view.render_stateful_widget(grid_widget, area, render);
+        scroll_view.render_stateful_widget(grid_widget, Rect::from(grid_size), render);
         scroll_view.render(grid_area, buf, &mut render.scroll);
     }
 }

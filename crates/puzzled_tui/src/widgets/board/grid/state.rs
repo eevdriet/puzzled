@@ -12,7 +12,6 @@ pub struct GridRenderState {
     pub viewport: Rect,
 
     /// Offset of the grid with its top-left most cell
-    pub offset: Position,
     pub cursor: Position,
     pub direction: Direction,
     pub scroll: ScrollViewState,

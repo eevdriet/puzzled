@@ -113,32 +113,10 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
 
                 // Focus change actions
                 action if action.is_focus() => {
-                    let changed_focus =
-                        self.state
-                            .focus
-                            .on_command(command, resolver, &mut ctx.mode);
-
-                    // Update the grid direction to reflect the active clue widget
-                    if changed_focus {
-                        match self.state.focus.current() {
-                            // Focus::AcrossClues => {
-                            //     let dir = ClueDirection::Across;
-                            //     self.state.render.direction = dir.into();
-                            //     self.state.clue_dir = Some(dir);
-                            // }
-                            // Focus::DownClues => {
-                            //     let dir = ClueDirection::Down;
-                            //     self.state.render.direction = dir.into();
-                            //     self.state.clue_dir = Some(dir);
-                            // }
-                            // Focus::Clues => {
-                            //     self.state.clue_dir = None;
-                            // }
-                            _ => {}
-                        }
-                    }
-
-                    return changed_focus;
+                    return self
+                        .state
+                        .focus
+                        .on_command(command, resolver, &mut ctx.mode);
                 }
                 _ => {}
             }

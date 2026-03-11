@@ -24,7 +24,7 @@ impl RenderSize<PuzzleScreenState> for CrosswordWidget {
         size.height += 2;
 
         // Current clue
-        size.height += 1;
+        size.height += 2;
 
         size
     }
