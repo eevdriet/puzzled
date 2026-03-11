@@ -41,17 +41,29 @@ impl PuzzleScreenState {
     }
 
     pub fn update_clues_from_cursor(&mut self) {
-        let clue_dir = ClueDirection::from(self.render.direction);
+        let clues = self.puzzle.clues();
 
         // Determine the clues under the cursor
-        if let Some(clue) = self.puzzle.clues().get_clue(self.render.cursor, clue_dir) {
-            let num = clue.num();
-            let nums: Vec<_> = self.clues(self.clue_dir).map(|clue| clue.num()).collect();
+        if let Some((across, down)) = clues.get_clues(self.render.cursor) {
+            let across_num = across.num();
+            let across_nums: Vec<_> = clues.iter_across().map(|clue| clue.num()).collect();
 
-            if let Ok(idx) = nums.binary_search(&num) {
-                let list = self.clue_list(self.clue_dir);
-                list.select(Some(idx));
+            if let Ok(idx) = across_nums.binary_search(&across_num) {
+                self.across.select(Some(idx));
             }
+
+            let down_num = down.num();
+            let down_nums: Vec<_> = clues.iter_down().map(|clue| clue.num()).collect();
+
+            if let Ok(idx) = down_nums.binary_search(&down_num) {
+                self.down.select(Some(idx));
+            }
+        }
+
+        // Determine the active clue window based on clue direction
+        if self.clue_dir.is_some() {
+            let clue_dir = ClueDirection::from(self.render.direction);
+            self.clue_dir = Some(clue_dir);
         }
 
         self.ensure_curr_clue_visible();
