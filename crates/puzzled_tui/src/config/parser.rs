@@ -29,7 +29,7 @@ where
         };
 
         for key_str in key_strs {
-            let events = parse_key(&key_str, &action)?;
+            let events = parse_key(&key_str)?;
             trie.insert(&events, action.clone());
         }
     }

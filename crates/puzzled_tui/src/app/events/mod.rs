@@ -163,7 +163,7 @@ impl fmt::Display for AppEvent {
     }
 }
 
-pub(crate) fn parse_key<M, A>(key: &str, entry: &TrieEntry<M, A>) -> Result<Vec<AppEvent>, String> {
+pub(crate) fn parse_key(key: &str) -> Result<Vec<AppEvent>, String> {
     use KeyCode::*;
 
     let mut s = key.trim().to_ascii_lowercase();
@@ -197,29 +197,6 @@ pub(crate) fn parse_key<M, A>(key: &str, entry: &TrieEntry<M, A>) -> Result<Vec<
     else {
         modifiers[0]
     };
-
-    // Determine if a mouse button corresponds to the action
-    let mouse = match key_str {
-        "mouseleft" | "mouse1" => Some(MouseButton::Left),
-        "mouseright" | "mouse2" => Some(MouseButton::Right),
-        "mousemiddle" | "mouse3" => Some(MouseButton::Middle),
-        _ => None,
-    };
-
-    // If so, determine the type of event based on the action
-    if let Some(button) = mouse {
-        let kind = match entry {
-            TrieEntry::Action(Action::Click(_)) => MouseEventKind::Down(button),
-            TrieEntry::Action(Action::Drag(_)) => MouseEventKind::Drag(button),
-            TrieEntry::Action(Action::ScrollLeft(_)) => MouseEventKind::ScrollLeft,
-            TrieEntry::Action(Action::ScrollUp(_)) => MouseEventKind::ScrollUp,
-            TrieEntry::Action(Action::ScrollDown(_)) => MouseEventKind::ScrollDown,
-            TrieEntry::Action(Action::ScrollRight(_)) => MouseEventKind::ScrollRight,
-            _ => return Err("Invalid action {action:?} to be performed by {button:?}".to_string()),
-        };
-
-        return Ok(vec![AppEvent::new_mouse(kind, mods)]);
-    }
 
     // Keep trying to take as much away from the key str as possible and collect events
     let mut key_events: Vec<AppEvent> = Vec::new();

@@ -2,8 +2,9 @@ mod behavior;
 
 pub use behavior::*;
 
+use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use derive_more::{Display, Eq};
-use ratatui::layout::Position;
+use ratatui::layout::Position as AppPosition;
 use serde::Deserialize;
 
 use crate::EventMode;
@@ -22,36 +23,24 @@ pub enum Action<A = ()> {
 
     // -- Normal -- //
     // Mouse
-    Click(
-        #[serde(skip, default)]
+    #[serde(skip)]
+    #[display("{pos}")]
+    Click {
         #[eq(skip)]
-        Position,
-    ),
-    Drag(
-        #[serde(skip, default)]
+        pos: AppPosition,
+
         #[eq(skip)]
-        Position,
-    ),
-    ScrollDown(
-        #[serde(skip, default)]
+        button: MouseButton,
+    },
+    #[serde(skip)]
+    #[display("{pos}")]
+    Drag {
         #[eq(skip)]
-        Position,
-    ),
-    ScrollLeft(
-        #[serde(skip, default)]
+        pos: AppPosition,
+
         #[eq(skip)]
-        Position,
-    ),
-    ScrollRight(
-        #[serde(skip, default)]
-        #[eq(skip)]
-        Position,
-    ),
-    ScrollUp(
-        #[serde(skip, default)]
-        #[eq(skip)]
-        Position,
-    ),
+        button: MouseButton,
+    },
 
     // Focus
     FocusDown,

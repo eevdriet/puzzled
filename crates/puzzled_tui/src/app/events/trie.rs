@@ -92,7 +92,7 @@ where
 
 impl<M, A> EventTrie<M, A> {
     pub fn insert_key(&mut self, key: &str, entry: TrieEntry<M, A>) -> bool {
-        let Ok(events) = parse_key(key, &entry) else {
+        let Ok(events) = parse_key(key) else {
             return false;
         };
 

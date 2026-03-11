@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crossterm::event::MouseButton;
 use ratatui::layout::Position;
 
 use crate::{Action, AppEvent};
@@ -9,10 +10,6 @@ pub trait ActionBehavior: Display + Sized {
 
     fn is_focus(&self) -> bool {
         false
-    }
-
-    fn hydrate(self, _events: Vec<AppEvent>) -> Self {
-        self
     }
 
     fn variants() -> Vec<Self>;
@@ -25,12 +22,7 @@ where
     fn is_mouse(&self) -> bool {
         match self {
             // Mouse actions
-            Action::Click(_)
-            | Action::Drag(_)
-            | Action::ScrollLeft(_)
-            | Action::ScrollRight(_)
-            | Action::ScrollDown(_)
-            | Action::ScrollUp(_) => true,
+            Action::Click { .. } | Action::Drag { .. } => true,
 
             // Mouse actions for other type of action
             Action::Other(other) => other.is_mouse(),
@@ -46,37 +38,9 @@ where
         )
     }
 
-    fn hydrate(self, events: Vec<AppEvent>) -> Self {
-        let mouse = events.last().and_then(|event| {
-            event
-                .mouse()
-                .map(|mouse| Position::new(mouse.column, mouse.row))
-        });
-
-        match self {
-            // Mouse actions
-            Action::Click(_) if mouse.is_some() => Action::Click(mouse.expect("Checked mouse")),
-            Action::Drag(_) if mouse.is_some() => Action::Drag(mouse.expect("Checked mouse")),
-            Action::ScrollDown(_) if mouse.is_some() => {
-                Action::ScrollDown(mouse.expect("Checked mouse"))
-            }
-            Action::ScrollLeft(_) if mouse.is_some() => {
-                Action::ScrollLeft(mouse.expect("Checked mouse"))
-            }
-            Action::ScrollRight(_) if mouse.is_some() => {
-                Action::ScrollRight(mouse.expect("Checked mouse"))
-            }
-            Action::ScrollUp(_) if mouse.is_some() => {
-                Action::ScrollUp(mouse.expect("Checked mouse"))
-            }
-
-            // Other actions remain the same
-            _ => self,
-        }
-    }
-
     fn variants() -> Vec<Self> {
         let pos = Position::default();
+        let button = MouseButton::Left;
 
         let mut variants = vec![
             // Lifetime management
@@ -84,12 +48,8 @@ where
             Action::Select,
             Action::Cancel,
             // Mouse
-            Action::Click(pos),
-            Action::Drag(pos),
-            Action::ScrollDown(pos),
-            Action::ScrollLeft(pos),
-            Action::ScrollRight(pos),
-            Action::ScrollUp(pos),
+            Action::Click { pos, button },
+            Action::Drag { pos, button },
             // Focus
             Action::FocusDown,
             Action::FocusLeft,

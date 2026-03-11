@@ -1,7 +1,8 @@
 use std::time::{Duration, Instant};
 
-use crossterm::event::{Event, KeyCode};
+use crossterm::event::{Event, KeyCode, MouseEvent, MouseEventKind};
 use derive_more::Debug;
+use ratatui::layout::Position as AppPosition;
 
 use crate::{
     Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
@@ -53,6 +54,41 @@ where
         result
     }
 
+    fn normal_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
+        if let Some(mouse) = event.mouse() {
+            self.mouse_event(mouse)
+        } else if event.key().is_some() {
+            self.key_event(event)
+        } else {
+            None
+        }
+    }
+
+    fn mouse_event(&self, mouse: MouseEvent) -> Option<Command<M, A>> {
+        let pos = AppPosition {
+            x: mouse.column,
+            y: mouse.row,
+        };
+
+        let command = match mouse.kind {
+            MouseEventKind::Up(button) => {
+                let action = Action::Click { pos, button };
+                Command::new_action(action)
+            }
+            MouseEventKind::Drag(button) => {
+                let action = Action::Drag { pos, button };
+                Command::new_action(action)
+            }
+            MouseEventKind::ScrollDown => Command::new_motion(Motion::Down),
+            MouseEventKind::ScrollLeft => Command::new_motion(Motion::Left),
+            MouseEventKind::ScrollUp => Command::new_motion(Motion::Up),
+            MouseEventKind::ScrollRight => Command::new_motion(Motion::Right),
+            _ => return None,
+        };
+
+        Some(command)
+    }
+
     fn search_command(&mut self, events: &[AppEvent]) -> Option<Command<M, A>> {
         match self.actions.search(events) {
             // Perform action for known sequence
@@ -97,7 +133,7 @@ where
         }
     }
 
-    fn push_action(&mut self, event: AppEvent) -> Option<Command<M, A>> {
+    fn key_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
@@ -153,12 +189,6 @@ where
     fn reset(&mut self) {
         self.buffer.clear();
         self.repeat.clear();
-    }
-
-    fn normal_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
-        let action = self.push_action(event)?;
-
-        Some(action)
     }
 
     fn insert_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
