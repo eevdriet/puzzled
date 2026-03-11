@@ -89,10 +89,10 @@ impl GridRenderState {
         vp.contains(app_pos).then_some(app_pos)
     }
 
-    pub fn ensure_cursor_visible(&mut self) {
+    pub fn ensure_cursor_visible(&mut self, cursor: Position) {
         let cells = Rect {
-            x: self.cursor.col as u16,
-            y: self.cursor.row as u16,
+            x: cursor.col as u16,
+            y: cursor.row as u16,
             width: 1,
             height: 1,
         };

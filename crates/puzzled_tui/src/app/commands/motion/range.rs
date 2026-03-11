@@ -1,11 +1,13 @@
-use puzzled_core::{Direction, Grid, GridIndexedIter, GridIter, Position, SquareGridRef};
+use puzzled_core::{
+    Direction, Grid, GridIndexedIter, GridIter, Position as CorePosition, SquareGridRef,
+};
 
 use crate::Motion;
 
-pub trait MotionRange<M> {
+pub trait BaseMotionRange<M> {
     type Position;
 
-    fn motion_range(
+    fn base_motion_range(
         &self,
         start: Self::Position,
         count: usize,
@@ -13,20 +15,22 @@ pub trait MotionRange<M> {
     ) -> impl IntoIterator<Item = Self::Position>;
 }
 
-pub trait CustomMotionRange<M> {
+pub trait CustomMotionRange<M, S> {
     type Position;
 
     fn custom_motion_range(
         &self,
         start: Self::Position,
+        count: usize,
         motion: &M,
+        state: &S,
     ) -> impl IntoIterator<Item = Self::Position>;
 }
 
-impl<M, T> MotionRange<M> for Grid<T> {
-    type Position = Position;
+impl<M, T> BaseMotionRange<M> for Grid<T> {
+    type Position = CorePosition;
 
-    fn motion_range(
+    fn base_motion_range(
         &self,
         start: Self::Position,
         count: usize,
@@ -51,10 +55,10 @@ impl<M, T> MotionRange<M> for Grid<T> {
     }
 }
 
-impl<M, T> MotionRange<M> for SquareGridRef<'_, T> {
-    type Position = Position;
+impl<M, T> BaseMotionRange<M> for SquareGridRef<'_, T> {
+    type Position = CorePosition;
 
-    fn motion_range(
+    fn base_motion_range(
         &self,
         start: Self::Position,
         count: usize,
@@ -62,11 +66,11 @@ impl<M, T> MotionRange<M> for SquareGridRef<'_, T> {
     ) -> impl IntoIterator<Item = Self::Position> {
         // Handle non-directed motions normally
         if count == 0 || matches!(motion, Motion::None) {
-            return self.0.motion_range(start, count, motion);
+            return self.0.base_motion_range(start, count, motion);
         }
 
         let Ok(dir) = Direction::try_from(motion) else {
-            return self.0.motion_range(start, count, motion);
+            return self.0.base_motion_range(start, count, motion);
         };
 
         // Otherwise, go to the first filled square in the given direction to perform the range
@@ -84,6 +88,6 @@ impl<M, T> MotionRange<M> for SquareGridRef<'_, T> {
         }
 
         // Now, perform the motion range starting from the found position
-        self.0.motion_range(pos, count, motion)
+        self.0.base_motion_range(pos, count, motion)
     }
 }

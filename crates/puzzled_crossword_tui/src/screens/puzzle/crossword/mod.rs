@@ -35,7 +35,7 @@ impl StatefulWidgetRef for CrosswordWidget {
         // Render the outside block with the puzzle title
         let title = Crossword::title(puzzle.meta());
 
-        let border_style = if focus.current() == &Focus::Crossword {
+        let border_style = if focus.get() == &Focus::Crossword {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default()

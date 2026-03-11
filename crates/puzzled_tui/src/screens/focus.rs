@@ -63,8 +63,12 @@ impl<F> FocusManager<F> {
         }
     }
 
-    pub fn current(&self) -> &F {
+    pub fn get(&self) -> &F {
         &self.curr
+    }
+
+    pub fn set(&mut self, focus: F) {
+        self.curr = focus;
     }
 }
 

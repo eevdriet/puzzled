@@ -122,7 +122,7 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
             }
         }
 
-        match self.state.focus.current() {
+        match self.state.focus.get() {
             Focus::Crossword => self
                 .crossword
                 .on_command(command, resolver, &mut self.state),

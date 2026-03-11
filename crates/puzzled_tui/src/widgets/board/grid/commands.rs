@@ -1,48 +1,8 @@
 use std::fmt::Debug;
 
-use puzzled_core::{Direction, Grid, Position, Solve, SquareGridRef};
+use puzzled_core::{Direction, Grid, Position, SquareGridRef};
 
-use crate::{
-    ActionResolver, Command, GridRenderState, HandleCommand, Motion, MotionRange, Operator,
-};
-
-pub struct SolveBoard<'a, B, S> {
-    board: &'a mut B,
-    state: &'a mut S,
-}
-
-impl<'a, M, A, S, B, Z> HandleCommand<M, A, S> for SolveBoard<'a, B, Z>
-where
-    B: HandleCommand<M, A, S, State = GridRenderState>,
-    Z: Solve<Position = Position>,
-{
-    type State = GridRenderState;
-
-    fn on_command(
-        &mut self,
-        command: Command<M, A>,
-        resolver: ActionResolver<M, A, S>,
-        state: &mut Self::State,
-    ) -> bool {
-        let pos = state.cursor;
-
-        let Some(op) = command.operator() else {
-            return self.board.on_command(command, resolver, state);
-        };
-
-        match op {
-            Operator::Reveal => {
-                self.state.reveal(&pos);
-            }
-            Operator::Check => {
-                self.state.check(&pos);
-            }
-            _ => {}
-        }
-
-        true
-    }
-}
+use crate::{ActionResolver, BaseMotionRange, Command, GridRenderState, HandleCommand};
 
 impl<M, A, S, T> HandleCommand<M, A, S> for Grid<T> {
     type State = GridRenderState;
@@ -60,7 +20,7 @@ impl<M, A, S, T> HandleCommand<M, A, S> for Grid<T> {
         let start = state.cursor;
 
         let positions: Vec<_> = self
-            .motion_range(start, count, motion)
+            .base_motion_range(start, count, motion)
             .into_iter()
             .collect();
 
@@ -70,7 +30,7 @@ impl<M, A, S, T> HandleCommand<M, A, S> for Grid<T> {
         if start != end {
             state.cursor = end;
             state.direction += direction;
-            state.ensure_cursor_visible();
+            state.ensure_cursor_visible(end);
         }
 
         true
@@ -96,7 +56,7 @@ where
         let dir = state.direction;
 
         let positions: Vec<_> = self
-            .motion_range(start, count, motion)
+            .base_motion_range(start, count, motion)
             .into_iter()
             .collect(); // Pass count to motion_range
 
@@ -107,7 +67,10 @@ where
         if (start, dir) != (end, next_dir) {
             state.cursor = end;
             state.direction = next_dir;
-            state.ensure_cursor_visible();
+
+            if let Some(last) = positions.last() {
+                state.ensure_cursor_visible(*last);
+            }
 
             return true;
         }

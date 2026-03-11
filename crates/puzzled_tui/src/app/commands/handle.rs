@@ -1,14 +1,14 @@
-use crate::{ActionResolver, Command, StatefulScreen};
+use crate::{ActionResolver, Command, EventMode, StatefulScreen};
 
 pub enum CommandOutcome<M, A, T> {
     // Handled externally
     Command(Command<M, A>),
+    Mode(EventMode),
 
     // Screen management
     Quit,
     PreviousScreen,
     NextScreen(Box<dyn StatefulScreen<M, A, T>>),
-    ReplaceScreen(Box<dyn StatefulScreen<M, A, T>>),
 }
 
 pub trait HandleCommand<M, A, T> {

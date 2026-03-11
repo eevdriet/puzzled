@@ -133,6 +133,10 @@ where
                             screen.on_command(command, resolver.clone(), &mut self.context);
                         }
 
+                        CommandOutcome::Mode(mode) => {
+                            self.context.mode = mode;
+                        }
+
                         // Completely exit the app
                         CommandOutcome::Quit => {
                             break;
@@ -158,7 +162,6 @@ where
                             next_screen.on_enter(&mut self.context);
                             screens.push_back(next_screen);
                         }
-                        _ => {}
                     }
 
                     // Re-render to communicate the state change

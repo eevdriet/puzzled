@@ -239,11 +239,12 @@ pub(crate) fn parse_key(key: &str) -> Result<Vec<AppEvent>, String> {
 
 const SHIFTED_KEY_CODES: &str = "!@#$%^&*()_+{}|:\"<>?~";
 
-const SPECIAL_KEY_CODES: [(&str, KeyCode); 16] = [
+const SPECIAL_KEY_CODES: [(&str, KeyCode); 17] = [
     (" ", KeyCode::Char(' ')),
     ("space", KeyCode::Char(' ')),
     ("backspace", KeyCode::Backspace),
     ("enter", KeyCode::Enter),
+    ("return", KeyCode::Enter),
     ("left", KeyCode::Left),
     ("right", KeyCode::Right),
     ("up", KeyCode::Up),

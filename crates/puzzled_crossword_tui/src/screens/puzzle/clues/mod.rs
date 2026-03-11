@@ -1,13 +1,13 @@
 mod list;
 
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{ActionResolver, Command, HandleCommand, Motion, RenderSize};
+use puzzled_tui::{Action, ActionResolver, Command, EventMode, HandleCommand, Motion, RenderSize};
 use ratatui::{
-    layout::{Constraint, Layout, Margin, Offset, Size},
+    layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
     style::{Color, Style, Stylize},
     text::Text,
-    widgets::{Block, Borders, StatefulWidgetRef, Tabs, Widget},
+    widgets::{Block, Borders, StatefulWidgetRef, Widget},
 };
 
 use crate::{
@@ -60,28 +60,21 @@ impl StatefulWidgetRef for CluesWidget {
         let selected_style = base_style.fg(Color::Yellow);
         let unselected_style = base_style;
 
-        let border_style = if matches!(state.focus.current(), Focus::Clues) {
+        let border_style = if matches!(state.focus.get(), Focus::Clues) {
             selected_style
         } else {
             unselected_style
         };
 
-        let selected = state.clue_dir.is_some() as usize;
         let title = " Clues ";
-        let tab_area = root.offset(Offset::new(title.len() as i32 + 4, 0));
         let block = Block::new()
-            .borders(Borders::TOP | Borders::LEFT)
+            .borders(Borders::TOP)
             .border_style(border_style)
-            .title(title);
+            .title(title)
+            .title_alignment(HorizontalAlignment::Center);
 
         let area = block.inner(root);
         block.render(root, buf);
-
-        Tabs::new(vec!["Merged", "Separate"])
-            .style(unselected_style)
-            .highlight_style(base_style.fg(Color::Blue))
-            .select(selected)
-            .render(tab_area, buf);
 
         // Render the clue list(s)
         let text_margin = Margin::new(0, 1);
@@ -124,6 +117,16 @@ impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesWidget {
         resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
         state: &mut Self::State,
     ) -> bool {
+        // Go back to the puzzle view
+
+        if let Some(action) = command.action()
+            && matches!(action, Action::Select)
+        {
+            state.focus.set(Focus::Crossword);
+            resolver.set_mode(EventMode::Insert);
+            return true;
+        }
+
         // Switch between the separate lists
         match command.motion() {
             Motion::Right if matches!(state.clue_dir, Some(ClueDirection::Across)) => {
