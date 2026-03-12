@@ -1,7 +1,9 @@
 mod list;
 
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{Action, ActionResolver, Command, EventMode, HandleCommand, Motion, RenderSize};
+use puzzled_tui::{
+    Action, ActionResolver, AppContext, Command, EventMode, HandleCommand, Motion, RenderSize,
+};
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
@@ -111,40 +113,48 @@ impl StatefulWidgetRef for CluesWidget {
 impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesWidget {
     type State = PuzzleScreenState;
 
-    fn on_command(
+    fn handle_command(
         &mut self,
         command: Command<CrosswordMotion, CrosswordAction>,
         resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {
-        // Go back to the puzzle view
-
-        if let Some(action) = command.action()
-            && matches!(action, Action::Select)
-        {
-            state.focus.set(Focus::Crossword);
-            resolver.set_mode(EventMode::Insert);
-            return true;
-        }
-
-        // Switch between the separate lists
-        match command.motion() {
-            Motion::Right if matches!(state.clue_dir, Some(ClueDirection::Across)) => {
+        match command {
+            Command::Action {
+                action: Action::Select,
+                ..
+            } => {
+                state.focus.set(Focus::Crossword);
+                resolver.set_mode(EventMode::Insert);
+                true
+            }
+            Command::Motion {
+                motion: Motion::Right,
+                ..
+            } if matches!(state.clue_dir, Some(ClueDirection::Across)) => {
                 state.clue_dir = Some(ClueDirection::Down);
-                return true;
+                true
             }
-            Motion::Left if matches!(state.clue_dir, Some(ClueDirection::Down)) => {
+            Command::Motion {
+                motion: Motion::Left,
+                ..
+            } if matches!(state.clue_dir, Some(ClueDirection::Down)) => {
                 state.clue_dir = Some(ClueDirection::Across);
-                return true;
+                true
             }
-            _ => {}
-        }
 
-        // Handle commands per selected list
-        match state.clue_dir {
-            Some(ClueDirection::Across) => self.across.on_command(command, resolver, state),
-            Some(ClueDirection::Down) => self.down.on_command(command, resolver, state),
-            None => self.across_down.on_command(command, resolver, state),
+            _ => match state.clue_dir {
+                Some(ClueDirection::Across) => {
+                    self.across.handle_command(command, resolver, ctx, state)
+                }
+                Some(ClueDirection::Down) => {
+                    self.down.handle_command(command, resolver, ctx, state)
+                }
+                None => self
+                    .across_down
+                    .handle_command(command, resolver, ctx, state),
+            },
         }
     }
 }

@@ -1,18 +1,36 @@
-use std::fmt::Display;
+use std::fmt::Debug;
 
 use crossterm::event::MouseButton;
 use ratatui::layout::Position;
 
-use crate::{Action, AppEvent};
+use crate::Action;
 
-pub trait ActionBehavior: Display + Sized {
+pub trait ActionBehavior: Clone + Send + Debug + Sized {
     fn is_mouse(&self) -> bool;
 
     fn is_focus(&self) -> bool {
         false
     }
 
+    fn is_other(&self) -> bool {
+        true
+    }
+
     fn variants() -> Vec<Self>;
+}
+
+impl ActionBehavior for () {
+    fn variants() -> Vec<Self> {
+        vec![]
+    }
+
+    fn is_focus(&self) -> bool {
+        false
+    }
+
+    fn is_mouse(&self) -> bool {
+        false
+    }
 }
 
 impl<A> ActionBehavior for Action<A>
@@ -36,6 +54,10 @@ where
             self,
             Action::FocusLeft | Action::FocusDown | Action::FocusRight | Action::FocusUp
         )
+    }
+
+    fn is_other(&self) -> bool {
+        false
     }
 
     fn variants() -> Vec<Self> {

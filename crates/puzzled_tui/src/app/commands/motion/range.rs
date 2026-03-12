@@ -15,9 +15,7 @@ pub trait BaseMotionRange<M> {
     ) -> impl IntoIterator<Item = Self::Position>;
 }
 
-pub trait CustomMotionRange<M, S> {
-    type Position;
-
+pub trait CustomMotionRange<M, S>: BaseMotionRange<M> {
     fn custom_motion_range(
         &self,
         start: Self::Position,
@@ -89,5 +87,30 @@ impl<M, T> BaseMotionRange<M> for SquareGridRef<'_, T> {
 
         // Now, perform the motion range starting from the found position
         self.0.base_motion_range(pos, count, motion)
+    }
+}
+
+impl<M> BaseMotionRange<M> for () {
+    type Position = ();
+
+    fn base_motion_range(
+        &self,
+        _start: Self::Position,
+        _count: usize,
+        _motion: &Motion<M>,
+    ) -> impl IntoIterator<Item = Self::Position> {
+        std::iter::empty()
+    }
+}
+
+impl<M, S> CustomMotionRange<M, S> for () {
+    fn custom_motion_range(
+        &self,
+        _start: Self::Position,
+        _count: usize,
+        _motion: &M,
+        _state: &S,
+    ) -> impl IntoIterator<Item = Self::Position> {
+        std::iter::empty()
     }
 }

@@ -1,6 +1,6 @@
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{
-    ActionResolver, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize,
+    ActionResolver, AppContext, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize,
 };
 use ratatui::{
     layout::Size,
@@ -69,25 +69,30 @@ impl StatefulWidgetRef for CluesListWidget {
 impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesListWidget {
     type State = PuzzleScreenState;
 
-    fn on_command(
+    fn handle_command(
         &mut self,
         command: Command<CrosswordMotion, CrosswordAction>,
         _resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        _ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {
-        let count = command.count() as u16;
-        let motion = command.motion();
-        let list = state.clue_list(self.dir);
+        match command {
+            Command::Motion { count, motion, .. } => {
+                let count = count as u16;
+                let list = state.clue_list(self.dir);
 
-        match motion {
-            Motion::ColStart => list.select_first(),
-            Motion::ColEnd => list.select_last(),
-            Motion::Down => list.scroll_down_by(count),
-            Motion::Up => list.scroll_up_by(count),
-            _ => return false,
+                match motion {
+                    Motion::ColStart => list.select_first(),
+                    Motion::ColEnd => list.select_last(),
+                    Motion::Down => list.scroll_down_by(count),
+                    Motion::Up => list.scroll_up_by(count),
+                    _ => return false,
+                }
+
+                state.update_cursor_from_clues();
+                true
+            }
+            _ => false,
         }
-
-        state.update_cursor_from_clues();
-        true
     }
 }

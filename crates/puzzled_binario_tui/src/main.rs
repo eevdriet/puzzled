@@ -1,8 +1,8 @@
-mod action;
+mod commands;
 mod screens;
 mod state;
 
-pub use action::*;
+pub use commands::*;
 pub use screens::*;
 pub use state::*;
 

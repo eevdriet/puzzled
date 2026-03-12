@@ -35,8 +35,8 @@ pub struct App<M, A, T> {
 
 impl<M, A, T> App<M, A, T>
 where
-    A: Clone + Send + ActionBehavior + 'static + Debug,
-    M: Clone + Send + 'static,
+    A: ActionBehavior + 'static,
+    M: MotionBehavior + 'static,
 {
     pub fn new(context: AppContext<T>, actions: EventTrie<M, A>) -> Self {
         let (events_tx, events_rx) = unbounded_channel();
@@ -119,7 +119,7 @@ where
 
                 // Handle app event time out
                 _ = tokio::time::sleep(TICK_DURATION) => {
-                    if let Some(command) = self.engine.tick() {
+                    if let Some(command) = self.engine.tick(&self.context.mode) {
                         resolver.fire_command(command);
                         render = true;
                     }

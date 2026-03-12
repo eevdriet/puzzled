@@ -1,5 +1,6 @@
-use crate::{Direction, Grid, GridIter, GridIterMut, Line, LineSegment, Order, Position};
+use crate::{Direction, Grid, GridIter, GridIterMut, Line, Order, Position};
 
+#[derive(Clone, Copy)]
 pub struct GridIndexedIter<'a, T> {
     inner: GridIter<'a, T>,
 }

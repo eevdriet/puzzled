@@ -1,8 +1,10 @@
 mod behavior;
+mod handle;
 
 pub use behavior::*;
+pub use handle::*;
 
-use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+use crossterm::event::MouseButton;
 use derive_more::{Display, Eq};
 use ratatui::layout::Position as AppPosition;
 use serde::Deserialize;
@@ -11,7 +13,7 @@ use crate::EventMode;
 
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
 #[serde(rename_all = "snake_case")]
-pub enum Action<A = ()> {
+pub enum Action<A> {
     // Lifetime management
     Quit,
     Select,

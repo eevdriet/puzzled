@@ -73,6 +73,8 @@ impl StatefulWidgetRef for CrosswordWidget {
             cursor: render.cursor,
             direction: render.direction,
             clues: puzzle.clues(),
+            squares: puzzle.squares(),
+            selection: render.selection,
             opts: render.options,
         };
 

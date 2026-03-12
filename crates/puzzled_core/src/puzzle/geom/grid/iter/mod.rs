@@ -6,7 +6,6 @@ pub use indexed::*;
 
 use crate::{Direction, Grid, Line, LineSegment, Offset, Order, Position};
 
-#[derive(Clone, Copy)]
 pub struct GridIter<'a, T> {
     grid: &'a Grid<T>,
     front: Position,
@@ -143,6 +142,14 @@ impl<'a, T> ExactSizeIterator for GridIter<'a, T> {
         self.remaining
     }
 }
+
+impl<'a, T> Clone for GridIter<'a, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a, T> Copy for GridIter<'a, T> {}
 
 #[doc(hidden)]
 pub struct GridIterMut<'a, T> {

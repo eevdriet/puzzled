@@ -2,7 +2,10 @@ use std::{collections::HashMap, hash::Hash};
 
 use puzzled_core::Direction;
 
-use crate::{Action, ActionResolver, Command, EventMode, HandleCommand};
+use crate::{
+    Action, ActionBehavior, ActionResolver, AppContext, Command, EventMode, HandleBaseAction,
+    HandleCommand, MotionBehavior,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FocusNode<F> {
@@ -107,25 +110,14 @@ where
     }
 }
 
-impl<M, A, T, F> HandleCommand<M, A, T> for FocusManager<F>
+impl<A, F> HandleBaseAction<A, EventMode> for FocusManager<F>
 where
+    A: ActionBehavior,
     F: Eq + Hash + Copy,
 {
-    type State = EventMode;
-
-    fn on_command(
-        &mut self,
-        command: Command<M, A>,
-        _resolver: ActionResolver<M, A, T>,
-        mode: &mut Self::State,
-    ) -> bool {
+    fn handle_base_action(&mut self, action: Action<A>, mode: &mut EventMode) -> bool {
         // Make sure focus can be given up from the current node
         let Some(node) = self.graph.get(&self.curr) else {
-            return false;
-        };
-
-        // Make sure a focus action is given
-        let Some(action) = command.action() else {
             return false;
         };
 

@@ -10,7 +10,7 @@ pub use square::*;
 
 pub use error::Error as GridError;
 
-use crate::{Line, Position};
+use crate::{Line, Position, Size};
 use std::fmt::{self, Debug};
 
 #[derive(Debug, Default)]
@@ -63,6 +63,13 @@ impl<T> Grid<T> {
 
     pub fn size(&self) -> usize {
         self.cols * self.rows
+    }
+
+    pub fn size2(&self) -> Size {
+        Size {
+            cols: self.cols,
+            rows: self.rows,
+        }
     }
 
     /// Reference the underlying data [`Vec`]

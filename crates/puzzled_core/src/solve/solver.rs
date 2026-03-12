@@ -2,7 +2,7 @@ use crate::{Puzzle, Solve};
 
 pub trait Solver<S>
 where
-    S: Solve<Puzzle = Self::Puzzle>,
+    S: Solve,
 {
     type Puzzle: Puzzle;
     type Error;
@@ -12,6 +12,8 @@ where
         puzzle: &Self::Puzzle,
         state: &mut S,
     ) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
+
+    fn try_finalize(&self, state: &S) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
 }
 
 #[derive(Debug, thiserror::Error)]

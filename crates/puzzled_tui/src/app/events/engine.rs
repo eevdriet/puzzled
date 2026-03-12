@@ -1,12 +1,14 @@
-use std::time::{Duration, Instant};
+use std::{
+    fmt::Debug,
+    time::{Duration, Instant},
+};
 
 use crossterm::event::{Event, KeyCode, MouseEvent, MouseEventKind};
-use derive_more::Debug;
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
     Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
-    Operator, TrieEntry,
+    MotionBehavior, Operator, TrieEntry,
 };
 
 #[derive(Debug)]
@@ -19,7 +21,6 @@ pub struct EventEngine<M, A> {
 
     last_insert: Instant,
     timeout: Duration,
-    mode: EventMode,
 }
 
 impl<M, A> EventEngine<M, A> {
@@ -33,35 +34,27 @@ impl<M, A> EventEngine<M, A> {
             pending_operator: None,
             buffer: Vec::new(),
             last_insert: Instant::now(),
-            mode: EventMode::Normal,
         }
     }
 }
 
 impl<M, A> EventEngine<M, A>
 where
-    A: Clone + ActionBehavior,
-    M: Clone,
+    A: ActionBehavior,
+    M: MotionBehavior,
 {
     pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> Option<Command<M, A>> {
-        let result = match mode {
-            EventMode::Normal => self.normal_event(event),
+        tracing::info!("[EVENT] {event:?}");
+
+        let mut result = match mode {
+            EventMode::Normal => self.normal_event(event, mode),
+            EventMode::Visual(_) => self.visual_event(event, mode),
             EventMode::Insert => self.insert_event(event),
             EventMode::Replace => self.replace_event(event),
         };
 
-        self.handle_mode_switch(&result, mode);
+        self.handle_mode_switch(&mut result, mode);
         result
-    }
-
-    fn normal_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
-        if let Some(mouse) = event.mouse() {
-            self.mouse_event(mouse)
-        } else if event.key().is_some() {
-            self.key_event(event)
-        } else {
-            None
-        }
     }
 
     fn mouse_event(&self, mouse: MouseEvent) -> Option<Command<M, A>> {
@@ -89,7 +82,7 @@ where
         Some(command)
     }
 
-    fn search_command(&mut self, events: &[AppEvent]) -> Option<Command<M, A>> {
+    fn search_command(&mut self, events: &[AppEvent], mode: &EventMode) -> Option<Command<M, A>> {
         match self.actions.search(events) {
             // Perform action for known sequence
             EventSearchResult::Exact(entry) | EventSearchResult::ExactPrefix(entry) => {
@@ -99,21 +92,22 @@ where
 
                 match entry {
                     TrieEntry::Motion(motion) => {
-                        let operator = self.pending_operator.take();
-
-                        Some(Command::new(count, motion, operator, None))
+                        let op = self.pending_operator.take();
+                        Some(Command::Motion { count, motion, op })
                     }
                     TrieEntry::Operator(op) => {
-                        if op.requires_motion() {
+                        if !mode.is_visual() && op.requires_motion() {
                             self.pending_operator = Some(op);
                             None
                         } else {
-                            Some(Command::new(count, Motion::None, Some(op), None))
+                            Some(Command::Motion {
+                                count,
+                                motion: Motion::None,
+                                op: Some(op),
+                            })
                         }
                     }
-                    TrieEntry::Action(action) => {
-                        Some(Command::new(count, Motion::None, None, Some(action)))
-                    }
+                    TrieEntry::Action(action) => Some(Command::Action { count, action }),
                 }
             }
 
@@ -133,7 +127,7 @@ where
         }
     }
 
-    fn key_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
+    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
@@ -154,10 +148,10 @@ where
         tracing::debug!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
-        self.search_command(&self.buffer.to_vec())
+        self.search_command(&self.buffer.to_vec(), mode)
     }
 
-    pub fn tick(&mut self) -> Option<Command<M, A>> {
+    pub fn tick(&mut self, mode: &EventMode) -> Option<Command<M, A>> {
         if self.buffer.is_empty() {
             return None;
         }
@@ -168,19 +162,16 @@ where
         }
 
         // After time out, perform the action w.r.t. longest valid action
-        match self.mode {
-            EventMode::Normal => {
-                for idx in (1..=self.buffer.len()).rev() {
-                    let events = self.buffer[..idx].to_vec();
+        if matches!(mode, EventMode::Normal) {
+            for idx in (1..=self.buffer.len()).rev() {
+                let events = self.buffer[..idx].to_vec();
 
-                    if let Some(command) = self.search_command(&events) {
-                        return Some(command);
-                    }
+                if let Some(command) = self.search_command(&events, mode) {
+                    return Some(command);
                 }
-
-                self.reset();
             }
-            _ => {} // _ => self.buffer.pop().map(ActionOrEvent::Event),
+
+            self.reset();
         }
 
         None
@@ -189,6 +180,26 @@ where
     fn reset(&mut self) {
         self.buffer.clear();
         self.repeat.clear();
+    }
+
+    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
+        if let Some(mouse) = event.mouse() {
+            self.mouse_event(mouse)
+        } else if event.key().is_some() {
+            self.key_event(event, mode)
+        } else {
+            None
+        }
+    }
+
+    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
+        if let Some(mouse) = event.mouse() {
+            self.mouse_event(mouse)
+        } else if event.key().is_some() {
+            self.key_event(event, mode)
+        } else {
+            None
+        }
     }
 
     fn insert_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
@@ -213,7 +224,10 @@ where
             KeyCode::Up => Command::new_motion(Motion::Up),
 
             // Modes
-            KeyCode::Esc => Command::new_action(Action::NextMode(EventMode::Normal)),
+            KeyCode::Esc => {
+                let normal = EventMode::Normal;
+                Command::new_action(Action::NextMode(normal))
+            }
 
             _ => return None,
         };
@@ -242,7 +256,14 @@ where
             KeyCode::Up => Command::new_motion(Motion::Up),
 
             // Modes
-            KeyCode::Esc => Command::new_action(Action::NextMode(EventMode::Normal)),
+            KeyCode::Esc => {
+                let normal = EventMode::Normal;
+                Command::new_action(Action::NextMode(normal))
+            }
+            KeyCode::Insert => {
+                let insert = EventMode::Insert;
+                Command::new_action(Action::NextMode(insert))
+            }
 
             _ => return None,
         };
@@ -250,13 +271,37 @@ where
         Some(command)
     }
 
-    fn handle_mode_switch(&mut self, result: &Option<Command<M, A>>, mode: &mut EventMode) {
+    fn handle_mode_switch(&mut self, result: &mut Option<Command<M, A>>, mode: &mut EventMode) {
+        tracing::info!("\tHandling mode switch for result {result:?}");
+
         let Some(command) = result else {
+            tracing::info!("\tNo command");
             return;
         };
 
-        if let Some(Action::NextMode(next_mode)) = command.action() {
-            *mode = *next_mode;
+        match command {
+            // Switch to the next mode explicitly
+            Command::Action {
+                action: Action::NextMode(next_mode),
+                ..
+            } => {
+                tracing::info!("\tExplict next mode");
+                *mode = *next_mode;
+            }
+            // Switch implicitly based on e.g. the operator
+            Command::Motion { op: Some(op), .. } | Command::TextObj { op, .. } => {
+                tracing::info!("\tNext mode from operator {op:?}");
+                let next_mode = match op {
+                    Operator::Change | Operator::ChangeSingle => EventMode::Insert,
+                    _ => EventMode::Normal,
+                };
+
+                *mode = next_mode;
+            }
+
+            _ => {
+                tracing::info!("\tKeeping current mode");
+            }
         }
     }
 }

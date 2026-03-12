@@ -29,7 +29,7 @@ pub trait Puzzle: Sized {
     fn solve_with<'a, S, T>(&'a self, solver: &mut S) -> Result<Self::Solution, S::Error>
     where
         S: Solver<T, Puzzle = Self>,
-        T: Solve<Puzzle = Self> + From<&'a Self>,
+        T: Solve + From<&'a Self>,
     {
         let mut state = T::from(self);
         solver.solve(self, &mut state)
@@ -42,7 +42,7 @@ pub trait Puzzle: Sized {
     ) -> Result<Self::Solution, S::Error>
     where
         S: Solver<T, Puzzle = Self>,
-        T: Solve<Puzzle = Self>,
+        T: Solve,
     {
         solver.solve(self, state)
     }

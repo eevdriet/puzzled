@@ -5,8 +5,8 @@ use puzzled_io::puzzle_config_dir;
 use serde::{Deserialize, de::DeserializeOwned};
 
 use crate::{
-    Action, ActionBehavior, AppEvent, Motion, Operator, RawActionKeys, app::events::parse_key,
-    parse_action_events,
+    Action, ActionBehavior, AppEvent, Motion, Operator, RawActionKeys, SelectionKind,
+    app::events::parse_key, parse_action_events,
 };
 
 use super::EventMode;
@@ -111,12 +111,24 @@ impl<M, A> EventTrie<M, A> {
     }
 
     pub fn insert_mode_switches(&mut self) {
-        self.insert_key("i", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
-        self.insert_key(
-            "<S-r>",
-            TrieEntry::Action(Action::NextMode(EventMode::Replace)),
-        );
-        self.insert_key("a", TrieEntry::Action(Action::NextMode(EventMode::Insert)));
+        let key_modes = [
+            // -> Normal
+            ("<Esc>", EventMode::Normal),
+            // -> Insert
+            ("i", EventMode::Insert),
+            ("a", EventMode::Insert),
+            ("<S-i>", EventMode::Insert),
+            ("<S-A>", EventMode::Insert),
+            // -> Visual
+            ("v", EventMode::Visual(SelectionKind::Cells)),
+            ("<S-v>", EventMode::Visual(SelectionKind::Rows)),
+            ("<C-v>", EventMode::Visual(SelectionKind::Cols)),
+        ];
+
+        for (key, mode) in key_modes {
+            let entry = TrieEntry::Action(Action::NextMode(mode));
+            self.insert_key(key, entry);
+        }
     }
 }
 

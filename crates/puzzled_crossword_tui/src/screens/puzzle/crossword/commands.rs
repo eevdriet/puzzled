@@ -1,32 +1,48 @@
 use puzzled_core::{Direction, Solve, SquareGridRef};
 use puzzled_crossword::Solution;
-use puzzled_tui::{Action, ActionResolver, Command, HandleCommand};
+use puzzled_tui::{
+    Action, ActionResolver, AppContext, Command, HandleBaseAction, HandleBaseMotion, HandleCommand,
+    HandleOperator,
+};
 
 use crate::{AppState, CrosswordAction, CrosswordMotion, CrosswordWidget, PuzzleScreenState};
 
 impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidget {
     type State = PuzzleScreenState;
 
-    fn on_command(
+    fn handle_command(
         &mut self,
         command: Command<CrosswordMotion, CrosswordAction>,
-        resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        _resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        _ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {
-        // Handle general grid commands first
-        let mut grid = SquareGridRef(&state.solve.entries);
-        if grid.on_command(command.clone(), resolver, &mut state.render) {
-            state.update_clues_from_cursor();
-            return true;
+        match command {
+            Command::Motion { count, motion, op } => {
+                let squares = SquareGridRef(state.puzzle.squares());
+                let positions = squares.handle_base_motion(count, motion, &mut state.render);
+
+                if let Some(op) = op {
+                    state
+                        .solve
+                        .handle_operator(op, positions, &mut state.history);
+                }
+
+                true
+            }
+            Command::Action { action, .. } => self.handle_base_action(action, state),
+            _ => false,
         }
+    }
+}
 
-        // Then handle crossword specific input
-        let Some(action) = command.action() else {
-            return false;
-        };
-
+impl HandleBaseAction<CrosswordAction, PuzzleScreenState> for CrosswordWidget {
+    fn handle_base_action(
+        &mut self,
+        action: Action<CrosswordAction>,
+        state: &mut PuzzleScreenState,
+    ) -> bool {
         let pos = state.render.cursor;
-        // let dir = state.render.direction;
         let dir = match state.render.direction {
             Direction::Left | Direction::Right => Direction::Right,
             Direction::Up | Direction::Down => Direction::Down,

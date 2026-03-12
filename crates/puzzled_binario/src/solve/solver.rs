@@ -1,7 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 
 use crate::{Binario, BinarioState, Bit, Bits};
-use puzzled_core::{Grid, Position, Solve, Solver, SolverError};
+use puzzled_core::{Grid, Position, Puzzle, Solve, Solver, SolverError};
 use puzzled_io::TxtPuzzle;
 
 #[derive(Debug, Default)]
@@ -37,7 +37,14 @@ impl Solver<BinarioState> for BinarioSolver {
         );
         let _ = puzzle.save_text_with_state("end3", state);
 
-        state.try_finalize().map_err(SolverError::CannotFinalize)
+        self.try_finalize(state)
+    }
+
+    fn try_finalize(
+        &self,
+        _state: &BinarioState,
+    ) -> Result<<Binario as Puzzle>::Solution, Self::Error> {
+        Err(SolverError::Stuck)
     }
 }
 

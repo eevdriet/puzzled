@@ -1,7 +1,7 @@
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Direction, Entry, Position, Square};
-use puzzled_crossword::{ClueDirection, Clues, Solution};
-use puzzled_tui::{CellRender, GridOptions, RenderSize, TextBlock};
+use puzzled_crossword::{ClueDirection, Clues, Solution, Squares};
+use puzzled_tui::{AsApp, CellRender, GridOptions, RenderSize, Selection, TextBlock};
 
 use ratatui::{
     layout::HorizontalAlignment,
@@ -36,7 +36,9 @@ pub(crate) struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>
 pub struct RenderSquareState<'a> {
     pub cursor: Position,
     pub direction: Direction,
+    pub selection: Selection,
     pub clues: &'a Clues,
+    pub squares: &'a Squares,
     pub opts: GridOptions,
 }
 
@@ -50,14 +52,13 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
         let mut entry_style = base_style;
 
         // Playable v.s. non-playable cells
-        match self.0.as_ref().is_some() {
-            true => {
-                border_style = base_style.fg(Color::DarkGray);
-                clue_style = base_style.fg(Color::White).dim();
-            }
-            false => {
-                border_style = base_style.fg(Color::Black).dim();
-            }
+        let is_playable = self.0.as_ref().is_some();
+
+        if is_playable {
+            border_style = base_style.fg(Color::DarkGray);
+            clue_style = base_style.fg(Color::White).dim();
+        } else {
+            border_style = base_style.fg(Color::Black).dim();
         }
 
         if let Some((across, down)) = state.clues.get_clues(state.cursor) {
@@ -80,8 +81,12 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             clue_style = clue_style.not_dim();
         }
 
+        let size = state.squares.size2();
+
         if pos == state.cursor {
             border_style = base_style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
+        } else if is_playable && state.selection.range(size).contains(pos.as_app()) {
+            border_style = base_style.fg(Color::Green);
         }
 
         let mut block = Block::default()

@@ -4,13 +4,9 @@ mod state;
 pub use solver::*;
 pub use state::*;
 
-use crate::Puzzle;
-
 pub trait Solve {
-    type Puzzle: Puzzle;
     type Value: Clone + Eq;
     type Position;
-    type Error;
 
     fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
     fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
@@ -35,6 +31,4 @@ pub trait Solve {
         self.guess(pos, guess);
         self.check(pos)
     }
-
-    fn try_finalize(&self) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
 }

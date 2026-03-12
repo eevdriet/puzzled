@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use crate::{Entry, Grid, SolutionEntry, Square, Timer};
+use crate::{Entry, Grid, Position, SolutionEntry, Solve, Square, Timer};
 
 #[derive(Debug)]
 pub struct GridState<T> {
@@ -40,14 +40,114 @@ where
     }
 }
 
+impl<T> Solve for GridState<T>
+where
+    T: Clone + Eq,
+{
+    type Value = T;
+    type Position = Position;
+
+    fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+        let Some(solution) = self.solutions.get_mut(*pos) else {
+            return false;
+        };
+
+        *solution = Some(value);
+        true
+    }
+
+    fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+        let Some(entry) = self.entries.get_mut(*pos) else {
+            return false;
+        };
+
+        entry.enter(value);
+        true
+    }
+
+    fn clear(&mut self, pos: &Self::Position) -> bool {
+        let Some(entry) = self.entries.get_mut(*pos) else {
+            return false;
+        };
+
+        entry.clear();
+        true
+    }
+
+    fn reveal(&mut self, pos: &Self::Position) -> bool {
+        let Some(Some(solution)) = self.solutions.get(*pos) else {
+            return false;
+        };
+
+        let Some(entry) = self.entries.get_mut(*pos) else {
+            return false;
+        };
+
+        entry.enter(solution.clone());
+        true
+    }
+
+    fn check(&mut self, pos: &Self::Position) -> Option<bool> {
+        let Some(Some(solution)) = self.solutions.get(*pos) else {
+            return None;
+        };
+
+        let entry = self.entries.get_mut(*pos)?;
+        entry.check(solution)
+    }
+
+    fn reveal_all(&mut self) {
+        for (pos, solution) in self
+            .solutions
+            .iter_indexed()
+            .filter_map(|(pos, sol)| sol.as_ref().map(|sol| (pos, sol.clone())))
+        {
+            if let Some(entry) = self.entries.get_mut(pos) {
+                entry.enter(solution);
+            }
+        }
+    }
+
+    fn check_all(&mut self) {
+        for pos in self.solutions.positions() {
+            if let (Some(Some(solution)), Some(entry)) =
+                (self.solutions.get(pos), self.entries.get_mut(pos))
+            {
+                entry.check(solution);
+            }
+        }
+    }
+
+    fn clear_all(&mut self) {
+        for pos in self.solutions.positions() {
+            if let Some(entry) = self.entries.get_mut(pos) {
+                entry.clear();
+            }
+        }
+    }
+
+    // fn try_finalize(&self) -> Result<<P as Puzzle>::Solution, Self::Error> {
+    //     if self.solutions.iter().any(|cell| cell.is_none()) {
+    //         return Err("Expected all values to be set in the solution".to_string());
+    //     }
+    //
+    //     let values: Vec<_> = self
+    //         .solutions
+    //         .iter()
+    //         .filter_map(|s| s.as_ref())
+    //         .cloned()
+    //         .collect();
+    //
+    //     Ok(Grid::from_vec(values, self.solutions.cols()).expect("Grid should be valid"))
+    // }
+}
+
 #[macro_export]
 macro_rules! impl_solve_for_grid_state {
     ($state:ty, $field:tt, $puzzle:ty, $val:ty) => {
         impl $crate::Solve for $state {
-            type Puzzle = $puzzle;
             type Value = $val;
             type Position = $crate::Position;
-            type Error = String;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
                 let $crate::GridState { solutions, .. } = &mut self.$field;
@@ -158,22 +258,6 @@ macro_rules! impl_solve_for_grid_state {
                     }
                 }
             }
-
-            fn try_finalize(&self) -> Result<$crate::Grid<$val>, Self::Error> {
-                let $crate::GridState { solutions, .. } = &self.$field;
-
-                if solutions.iter().any(|bit| bit.is_none()) {
-                    return Err("Expected all values to be set in the solution".to_string());
-                }
-
-                let values: Vec<_> = solutions
-                    .iter()
-                    .filter_map(|s| s.as_ref())
-                    .cloned()
-                    .collect();
-
-                Ok($crate::Grid::from_vec(values, solutions.cols()).expect("Grid should be valid"))
-            }
         }
     };
 }
@@ -225,14 +309,99 @@ impl<T> SquareGridState<T> {
     }
 }
 
+impl<T> Solve for SquareGridState<T>
+where
+    T: Clone + Eq,
+{
+    type Value = T;
+    type Position = Position;
+
+    fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+        let Some(solution) = self.solutions.get_fill_mut(*pos) else {
+            return false;
+        };
+
+        *solution = Some(value);
+        true
+    }
+
+    fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+        let Some(entry) = self.entries.get_fill_mut(*pos) else {
+            return false;
+        };
+
+        entry.enter(value);
+        true
+    }
+
+    fn clear(&mut self, pos: &Self::Position) -> bool {
+        let Some(entry) = self.entries.get_fill_mut(*pos) else {
+            return false;
+        };
+
+        entry.clear();
+        true
+    }
+
+    fn reveal(&mut self, pos: &Self::Position) -> bool {
+        let Some(Some(solution)) = self.solutions.get_fill(*pos) else {
+            return false;
+        };
+
+        let Some(entry) = self.entries.get_fill_mut(*pos) else {
+            return false;
+        };
+
+        entry.enter(solution.clone());
+        true
+    }
+
+    fn check(&mut self, pos: &Self::Position) -> Option<bool> {
+        let Some(Some(solution)) = self.solutions.get_fill(*pos) else {
+            return None;
+        };
+
+        let entry = self.entries.get_fill_mut(*pos)?;
+        entry.check(solution)
+    }
+
+    fn reveal_all(&mut self) {
+        for (pos, solution) in self
+            .solutions
+            .iter_fills_indexed()
+            .filter_map(|(pos, sol)| sol.as_ref().map(|sol| (pos, sol.clone())))
+        {
+            if let Some(entry) = self.entries.get_fill_mut(pos) {
+                entry.enter(solution);
+            }
+        }
+    }
+
+    fn check_all(&mut self) {
+        for pos in self.solutions.positions() {
+            if let (Some(Some(solution)), Some(entry)) =
+                (self.solutions.get_fill(pos), self.entries.get_fill_mut(pos))
+            {
+                entry.check(solution);
+            }
+        }
+    }
+
+    fn clear_all(&mut self) {
+        for pos in self.solutions.positions() {
+            if let Some(entry) = self.entries.get_fill_mut(pos) {
+                entry.clear();
+            }
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! impl_solve_for_square_grid_state {
     ($state:ty, $puzzle:ty, $ty:ty) => {
         impl $crate::Solve for $state {
-            type Puzzle = $puzzle;
             type Value = $ty;
             type Position = $crate::Position;
-            type Error = $crate::GridError;
 
             fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
                 let Some(solution) = self.solutions.get_fill_mut(*pos) else {
@@ -322,18 +491,6 @@ macro_rules! impl_solve_for_square_grid_state {
                         entry.clear();
                     }
                 }
-            }
-
-            fn try_finalize(&self) -> Result<$crate::Grid<$crate::Square<$ty>>, Self::Error> {
-                let values: Vec<_> = self
-                    .solutions
-                    .iter_fills()
-                    .filter_map(|s| s.as_ref())
-                    .cloned()
-                    .map(|s| $crate::Square::new(s))
-                    .collect();
-
-                $crate::Grid::from_vec(values, self.solutions.cols())
             }
         }
     };
