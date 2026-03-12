@@ -6,10 +6,10 @@ pub use commands::*;
 pub use context::*;
 pub use events::*;
 
-use std::{collections::VecDeque, fmt::Debug, time::Duration};
+use std::{collections::VecDeque, time::Duration};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -113,6 +113,10 @@ where
             tokio::select! {
                 // Handle raw app events
                 Some(event) = self.events_rx.recv() => {
+                    if event.is_resize() {
+                        render = true;
+                    }
+
                     if let Some(command) = self.engine.push(event, &mut self.context.mode) {
                         resolver.fire_command(command);
                         render = true;

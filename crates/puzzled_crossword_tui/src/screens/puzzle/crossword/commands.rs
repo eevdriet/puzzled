@@ -23,15 +23,18 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
     ) -> bool {
         match command {
             Command::Motion { count, motion, op } => {
-                let squares = SquareGridRef(state.puzzle.squares());
-                let positions = squares.handle_base_motion(count, motion, &mut state.render);
+                {
+                    let squares = SquareGridRef(state.puzzle.squares());
+                    let positions = squares.handle_base_motion(count, motion, &mut state.render);
 
-                if let Some(op) = op {
-                    state
-                        .solve
-                        .handle_operator(op, positions, &mut state.history);
+                    if let Some(op) = op {
+                        state
+                            .solve
+                            .handle_operator(op, positions, &mut state.history);
+                    }
                 }
 
+                state.update_clues_from_cursor();
                 true
             }
             Command::Action { action, .. } => self.handle_base_action(action, state),

@@ -87,14 +87,18 @@ impl StatefulWidgetRef for CluesWidget {
             return;
         }
 
-        let [across, down] =
-            Layout::horizontal(vec![Constraint::Fill(1), Constraint::Fill(1)]).areas(area);
+        let [across, _, down] = Layout::horizontal(vec![
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Fill(1),
+        ])
+        .areas(area);
 
         // Render across clues
         let [across_title, across] =
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(across);
 
-        Text::from("Across")
+        Text::from("   Across")
             .fg(Color::Green)
             .render(across_title, buf);
 
@@ -104,7 +108,9 @@ impl StatefulWidgetRef for CluesWidget {
         let [down_title, down] =
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(down);
 
-        Text::from("Down").fg(Color::Blue).render(down_title, buf);
+        Text::from("   Down")
+            .fg(Color::Blue)
+            .render(down_title, buf);
 
         self.down.render_ref(down, buf, state);
     }

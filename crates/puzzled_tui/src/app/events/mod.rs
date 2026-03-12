@@ -4,6 +4,7 @@ mod trie;
 
 use std::{fmt, hash::Hash, ops::Deref};
 
+use derive_more::{Deref, DerefMut};
 pub use engine::*;
 pub use mode::*;
 pub use trie::*;
@@ -13,9 +14,7 @@ use crossterm::event::{
     MouseEventKind,
 };
 
-use crate::Action;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deref, DerefMut)]
 pub struct AppEvent(Event);
 
 impl AppEvent {
@@ -54,14 +53,10 @@ impl AppEvent {
             _ => None,
         }
     }
-}
 
-impl Deref for AppEvent {
-    type Target = Event;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+    // pub fn is_resize(&self) -> bool {
+    //     matches!(self.0, Event::Resize(_, _))
+    // }
 }
 
 impl PartialEq for AppEvent {

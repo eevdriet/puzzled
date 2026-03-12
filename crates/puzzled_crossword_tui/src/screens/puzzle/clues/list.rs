@@ -95,6 +95,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                 }
 
                 state.update_cursor_from_clues();
+                state.update_clues_from_cursor();
                 true
             }
             _ => false,

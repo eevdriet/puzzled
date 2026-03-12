@@ -105,7 +105,7 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         let [clues, _, footer] = Layout::vertical(vec![
             Constraint::Fill(1),
             Constraint::Length(gap),
-            Constraint::Length(10),
+            Constraint::Length(5),
         ])
         .areas(right);
 
