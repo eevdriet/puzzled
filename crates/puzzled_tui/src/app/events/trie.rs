@@ -5,27 +5,28 @@ use puzzled_io::puzzle_config_dir;
 use serde::{Deserialize, de::DeserializeOwned};
 
 use crate::{
-    Action, ActionBehavior, AppEvent, Motion, Operator, RawActionKeys, SelectionKind,
-    app::events::parse_key, parse_action_events,
+    Action, ActionBehavior, AppEvent, Motion, MotionBehavior, Operator, RawActionKeys,
+    SelectionKind, TextObject, TextObjectBehavior, app::events::parse_key, parse_action_events,
 };
 
 use super::EventMode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
 #[serde(untagged)]
-pub enum TrieEntry<M, A> {
+pub enum TrieEntry<A, T, M> {
+    Action(Action<A>),
+    TextObject(TextObject<T>),
     Motion(Motion<M>),
     Operator(Operator),
-    Action(Action<A>),
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrieNode<M, A> {
-    entry: Option<TrieEntry<M, A>>,
-    children: HashMap<AppEvent, EventTrieNode<M, A>>,
+pub struct EventTrieNode<A, T, M> {
+    entry: Option<TrieEntry<A, T, M>>,
+    children: HashMap<AppEvent, EventTrieNode<A, T, M>>,
 }
 
-impl<M, A> Default for EventTrieNode<M, A> {
+impl<A, T, M> Default for EventTrieNode<A, T, M> {
     fn default() -> Self {
         Self {
             entry: None,
@@ -35,7 +36,7 @@ impl<M, A> Default for EventTrieNode<M, A> {
 }
 
 #[derive(Debug)]
-pub enum EventSearchResult<M, A> {
+pub enum EventSearchResult<A, T, M> {
     /// Event search does not lead to an action
     None,
 
@@ -43,34 +44,35 @@ pub enum EventSearchResult<M, A> {
     Prefix,
 
     /// Events trigger an action
-    Exact(TrieEntry<M, A>),
+    Exact(TrieEntry<A, T, M>),
 
     /// Events trigger an action and and prefix
-    ExactPrefix(TrieEntry<M, A>),
+    ExactPrefix(TrieEntry<A, T, M>),
 }
 
-impl<M, A> EventSearchResult<M, A> {
+impl<A, T, M> EventSearchResult<A, T, M> {
     pub fn is_partial(&self) -> bool {
         matches!(self, EventSearchResult::Prefix)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrie<M, A> {
-    root: EventTrieNode<M, A>,
+pub struct EventTrie<A, T, M> {
+    root: EventTrieNode<A, T, M>,
 }
 
-impl<M, A> Default for EventTrie<M, A> {
+impl<A, T, M> Default for EventTrie<A, T, M> {
     fn default() -> Self {
         Self {
-            root: EventTrieNode::<M, A>::default(),
+            root: EventTrieNode::<A, T, M>::default(),
         }
     }
 }
 
-impl<M, A> EventTrie<M, A>
+impl<A, T, M> EventTrie<A, T, M>
 where
     A: Hash + Clone + Eq + DeserializeOwned,
+    T: Hash + Clone + Eq + DeserializeOwned,
     M: Hash + Clone + Eq + DeserializeOwned,
 {
     pub fn from_config<P>() -> io::Result<Self>
@@ -82,7 +84,7 @@ where
             return Ok(EventTrie::default());
         };
 
-        let action_keys: RawActionKeys<M, A> =
+        let action_keys: RawActionKeys<A, T, M> =
             toml::from_str(&contents).map_err(io::Error::other)?;
 
         let trie = parse_action_events(action_keys).map_err(io::Error::other)?;
@@ -90,8 +92,8 @@ where
     }
 }
 
-impl<M, A> EventTrie<M, A> {
-    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<M, A>) -> bool {
+impl<A, T, M> EventTrie<A, T, M> {
+    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<A, T, M>) -> bool {
         let Ok(events) = parse_key(key) else {
             return false;
         };
@@ -100,7 +102,7 @@ impl<M, A> EventTrie<M, A> {
         true
     }
 
-    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<M, A>) {
+    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<A, T, M>) {
         let mut node = &mut self.root;
 
         for event in events {
@@ -132,12 +134,13 @@ impl<M, A> EventTrie<M, A> {
     }
 }
 
-impl<M, A> EventTrie<M, A>
+impl<A, T, M> EventTrie<A, T, M>
 where
     A: Clone,
+    T: Clone,
     M: Clone,
 {
-    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<M, A> {
+    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<A, T, M> {
         if events.is_empty() {
             return EventSearchResult::None;
         }
@@ -179,17 +182,18 @@ where
     }
 }
 
-impl<M, A> EventTrie<M, A>
+impl<A, T, M> EventTrie<A, T, M>
 where
-    A: ActionBehavior + Eq + Hash + Clone,
-    M: Eq + Hash + Clone,
+    A: ActionBehavior + Hash,
+    M: MotionBehavior + Hash,
+    T: TextObjectBehavior + Hash,
 {
-    pub fn action_keys(&self) -> HashMap<TrieEntry<M, A>, Vec<String>> {
+    pub fn action_keys(&self) -> HashMap<TrieEntry<A, T, M>, Vec<String>> {
         // Initialize keys for all action variants
         let mut keys = HashMap::default();
 
         // TODO: add back all variants for motions/operators etc.
-        // for action in Action::<M, A>::variants() {
+        // for action in Action::<A, T, M>::variants() {
         //     keys.entry(action).or_default();
         // }
         //
@@ -201,13 +205,14 @@ where
     }
 }
 
-fn dfs<M, A>(
-    node: &EventTrieNode<M, A>,
-    result: &mut HashMap<TrieEntry<M, A>, Vec<String>>,
+fn dfs<A, T, M>(
+    node: &EventTrieNode<A, T, M>,
+    result: &mut HashMap<TrieEntry<A, T, M>, Vec<String>>,
     current_events: Vec<AppEvent>,
 ) where
     A: Eq + Hash + Clone,
     M: Eq + Hash + Clone,
+    T: Eq + Hash + Clone,
 {
     // If the node has an action, add the current path of events to the result
     if let Some(entry) = &node.entry {

@@ -5,6 +5,7 @@ mod history;
 mod motion;
 mod operator;
 mod resolver;
+mod text_object;
 
 pub use action::*;
 pub use entry::*;
@@ -13,26 +14,27 @@ pub use history::*;
 pub use motion::*;
 pub use operator::*;
 pub use resolver::*;
+pub use text_object::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Command<M, A> {
+pub enum Command<A, T, M> {
     Action {
         count: usize,
         action: Action<A>,
+    },
+    TextObj {
+        count: usize,
+        obj: TextObject<T>,
+        op: Operator,
     },
     Motion {
         count: usize,
         motion: Motion<M>,
         op: Option<Operator>,
     },
-    TextObj {
-        count: usize,
-        a: usize,
-        op: Operator,
-    },
 }
 
-impl<M, A> Command<M, A> {
+impl<A, T, M> Command<A, T, M> {
     pub fn new_action(action: Action<A>) -> Self {
         Self::Action { count: 1, action }
     }

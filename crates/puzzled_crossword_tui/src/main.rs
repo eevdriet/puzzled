@@ -23,11 +23,9 @@ async fn main() -> io::Result<()> {
 
     opts.cell_width = 5;
     opts.cell_height = 3;
-    // opts.inner = Some(ratatui::layout::Size::new(5, 5));
-    // opts.draw_inner_borders = true;
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    let events: EventTrie<CrosswordMotion, CrosswordAction> =
+    let events: EventTrie<CrosswordAction, CrosswordTextObject, CrosswordMotion> =
         EventTrie::from_config::<Crossword>()?;
 
     let state = AppState::default();

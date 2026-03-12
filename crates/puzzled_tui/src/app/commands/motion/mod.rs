@@ -34,9 +34,9 @@ pub enum Motion<M> {
     // Word
     Word,
 
-    // Other (for puzzle specific motions)
+    // Custom (for puzzle specific motions)
     #[serde(untagged)]
-    Other(M),
+    Custom(M),
 }
 
 impl<M> TryFrom<&Motion<M>> for Direction {

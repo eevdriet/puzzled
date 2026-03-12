@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::Motion;
 
-pub trait MotionBehavior: Clone + Debug + Sized {
+pub trait MotionBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
     fn variants() -> Vec<Self>;
 }
 
@@ -36,7 +36,7 @@ where
             // Other (for puzzle specific motions)
         ];
 
-        let other_variants = M::variants().into_iter().map(Motion::Other);
+        let other_variants = M::variants().into_iter().map(Motion::Custom);
         variants.extend(other_variants);
 
         variants

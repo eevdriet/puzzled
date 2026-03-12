@@ -5,7 +5,7 @@ use ratatui::layout::Position;
 
 use crate::Action;
 
-pub trait ActionBehavior: Clone + Send + Debug + Sized {
+pub trait ActionBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
     fn is_mouse(&self) -> bool;
 
     fn is_focus(&self) -> bool {

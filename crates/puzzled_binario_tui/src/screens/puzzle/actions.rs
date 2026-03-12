@@ -1,14 +1,14 @@
-use puzzled_tui::{ActionResolver, AppContext, Command, HandleCommand};
+use puzzled_tui::{AppContext, HandleCommand};
 
-use crate::{AppState, BinarioAction, PuzzleScreen};
+use crate::{AppState, BinarioAction, BinarioCommand, BinarioResolver, PuzzleScreen};
 
-impl HandleCommand<(), BinarioAction, AppState> for PuzzleScreen {
+impl HandleCommand<BinarioAction, (), (), AppState> for PuzzleScreen {
     type State = AppState;
 
     fn handle_command(
         &mut self,
-        _command: Command<(), BinarioAction>,
-        _resolver: ActionResolver<(), BinarioAction, AppState>,
+        _command: BinarioCommand,
+        _resolver: BinarioResolver,
         _ctx: &mut AppContext<AppState>,
         _state: &mut Self::State,
     ) -> bool {

@@ -22,21 +22,25 @@ impl<T> ActionHistory<T> {
         self.undos.push(action);
     }
 
-    pub fn undo(&mut self, state: &mut T) {
-        let Some(mut command) = self.undos.pop() else {
-            return;
-        };
+    pub fn undo(&mut self, count: usize, state: &mut T) {
+        for _ in 0..count {
+            let Some(mut command) = self.undos.pop() else {
+                return;
+            };
 
-        command.undo(state);
-        self.redos.push(command);
+            command.undo(state);
+            self.redos.push(command);
+        }
     }
 
-    pub fn redo(&mut self, state: &mut T) {
-        let Some(mut command) = self.redos.pop() else {
-            return;
-        };
+    pub fn redo(&mut self, count: usize, state: &mut T) {
+        for _ in 0..count {
+            let Some(mut command) = self.redos.pop() else {
+                return;
+            };
 
-        command.undo(state);
-        self.undos.push(command);
+            command.undo(state);
+            self.undos.push(command);
+        }
     }
 }

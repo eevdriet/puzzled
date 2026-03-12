@@ -13,8 +13,8 @@ use ratatui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordMotion, Focus, PuzzleScreenState,
-    screens::puzzle::clues::list::CluesListWidget,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject, Focus, PuzzleScreenState, screens::puzzle::clues::list::CluesListWidget,
 };
 
 pub struct CluesWidget {
@@ -110,13 +110,15 @@ impl StatefulWidgetRef for CluesWidget {
     }
 }
 
-impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesWidget {
+impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for CluesWidget
+{
     type State = PuzzleScreenState;
 
     fn handle_command(
         &mut self,
-        command: Command<CrosswordMotion, CrosswordAction>,
-        resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        command: CrosswordCommand,
+        resolver: CrosswordResolver,
         ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {

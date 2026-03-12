@@ -8,13 +8,13 @@ use ratatui::layout::Position as AppPosition;
 
 use crate::{
     Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
-    MotionBehavior, Operator, TrieEntry,
+    MotionBehavior, Operator, TextObjectBehavior, TrieEntry,
 };
 
 #[derive(Debug)]
-pub struct EventEngine<M, A> {
+pub struct EventEngine<A, T, M> {
     buffer: Vec<AppEvent>,
-    actions: EventTrie<M, A>,
+    actions: EventTrie<A, T, M>,
     pending_operator: Option<Operator>,
 
     repeat: RepeatState,
@@ -23,8 +23,8 @@ pub struct EventEngine<M, A> {
     timeout: Duration,
 }
 
-impl<M, A> EventEngine<M, A> {
-    pub fn new(mut actions: EventTrie<M, A>, timeout: Duration) -> Self {
+impl<A, T, M> EventEngine<A, T, M> {
+    pub fn new(mut actions: EventTrie<A, T, M>, timeout: Duration) -> Self {
         actions.insert_mode_switches();
 
         Self {
@@ -38,12 +38,13 @@ impl<M, A> EventEngine<M, A> {
     }
 }
 
-impl<M, A> EventEngine<M, A>
+impl<A, T, M> EventEngine<A, T, M>
 where
     A: ActionBehavior,
     M: MotionBehavior,
+    T: TextObjectBehavior,
 {
-    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> Option<Command<M, A>> {
+    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> Option<Command<A, T, M>> {
         tracing::info!("[EVENT] {event:?}");
 
         let mut result = match mode {
@@ -57,7 +58,7 @@ where
         result
     }
 
-    fn mouse_event(&self, mouse: MouseEvent) -> Option<Command<M, A>> {
+    fn mouse_event(&self, mouse: MouseEvent) -> Option<Command<A, T, M>> {
         let pos = AppPosition {
             x: mouse.column,
             y: mouse.row,
@@ -82,7 +83,11 @@ where
         Some(command)
     }
 
-    fn search_command(&mut self, events: &[AppEvent], mode: &EventMode) -> Option<Command<M, A>> {
+    fn search_command(
+        &mut self,
+        events: &[AppEvent],
+        mode: &EventMode,
+    ) -> Option<Command<A, T, M>> {
         match self.actions.search(events) {
             // Perform action for known sequence
             EventSearchResult::Exact(entry) | EventSearchResult::ExactPrefix(entry) => {
@@ -91,6 +96,11 @@ where
                 self.reset();
 
                 match entry {
+                    TrieEntry::Action(action) => Some(Command::Action { count, action }),
+                    TrieEntry::TextObject(obj) => {
+                        let op = self.pending_operator.take()?;
+                        Some(Command::TextObj { count, obj, op })
+                    }
                     TrieEntry::Motion(motion) => {
                         let op = self.pending_operator.take();
                         Some(Command::Motion { count, motion, op })
@@ -107,7 +117,6 @@ where
                             })
                         }
                     }
-                    TrieEntry::Action(action) => Some(Command::Action { count, action }),
                 }
             }
 
@@ -127,7 +136,7 @@ where
         }
     }
 
-    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
+    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
@@ -151,7 +160,7 @@ where
         self.search_command(&self.buffer.to_vec(), mode)
     }
 
-    pub fn tick(&mut self, mode: &EventMode) -> Option<Command<M, A>> {
+    pub fn tick(&mut self, mode: &EventMode) -> Option<Command<A, T, M>> {
         if self.buffer.is_empty() {
             return None;
         }
@@ -182,7 +191,7 @@ where
         self.repeat.clear();
     }
 
-    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
+    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
@@ -192,7 +201,7 @@ where
         }
     }
 
-    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<M, A>> {
+    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
@@ -202,7 +211,7 @@ where
         }
     }
 
-    fn insert_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
+    fn insert_event(&mut self, event: AppEvent) -> Option<Command<A, T, M>> {
         let key = event.key()?;
 
         let command = match key.code {
@@ -235,7 +244,7 @@ where
         Some(command)
     }
 
-    fn replace_event(&mut self, event: AppEvent) -> Option<Command<M, A>> {
+    fn replace_event(&mut self, event: AppEvent) -> Option<Command<A, T, M>> {
         let key = event.key()?;
 
         let command = match key.code {
@@ -271,7 +280,7 @@ where
         Some(command)
     }
 
-    fn handle_mode_switch(&mut self, result: &mut Option<Command<M, A>>, mode: &mut EventMode) {
+    fn handle_mode_switch(&mut self, result: &mut Option<Command<A, T, M>>, mode: &mut EventMode) {
         tracing::info!("\tHandling mode switch for result {result:?}");
 
         let Some(command) = result else {

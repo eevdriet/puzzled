@@ -1,19 +1,23 @@
 use puzzled_core::{Direction, Solve, SquareGridRef};
 use puzzled_crossword::Solution;
 use puzzled_tui::{
-    Action, ActionResolver, AppContext, Command, HandleBaseAction, HandleBaseMotion, HandleCommand,
-    HandleOperator,
+    Action, AppContext, Command, HandleBaseAction, HandleBaseMotion, HandleCommand, HandleOperator,
 };
 
-use crate::{AppState, CrosswordAction, CrosswordMotion, CrosswordWidget, PuzzleScreenState};
+use crate::{
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject, CrosswordWidget, PuzzleScreenState,
+};
 
-impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CrosswordWidget {
+impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for CrosswordWidget
+{
     type State = PuzzleScreenState;
 
     fn handle_command(
         &mut self,
-        command: Command<CrosswordMotion, CrosswordAction>,
-        _resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        command: CrosswordCommand,
+        _resolver: CrosswordResolver,
         _ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {

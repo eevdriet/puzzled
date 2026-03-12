@@ -20,7 +20,10 @@ use puzzled_tui::{
     FocusManager, GridRenderState, HandleBaseAction, HandleCommand, RenderSize, StatefulScreen,
 };
 
-use crate::{AppState, CrosswordAction, CrosswordMotion};
+use crate::{
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject,
+};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Focus {
@@ -74,7 +77,9 @@ impl PuzzleScreen {
     }
 }
 
-impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen {
+impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for PuzzleScreen
+{
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut AppContext<AppState>) {
         // Compute sizes
         let gap = 2;
@@ -120,17 +125,17 @@ impl StatefulScreen<CrosswordMotion, CrosswordAction, AppState> for PuzzleScreen
 
     fn on_command(
         &mut self,
-        command: Command<CrosswordMotion, CrosswordAction>,
-        resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        command: CrosswordCommand,
+        resolver: CrosswordResolver,
         ctx: &mut AppContext<AppState>,
     ) -> bool {
-        if let Command::Action { action, .. } = &command {
+        if let Command::Action { action, count } = &command {
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),
                 Action::Quit => resolver.quit(),
-                Action::Undo => self.state.history.undo(&mut self.state.solve),
-                Action::Redo => self.state.history.redo(&mut self.state.solve),
+                Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
+                Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
                 Action::NextMode(mode) => {
                     let selection = &mut self.state.render.selection;
 

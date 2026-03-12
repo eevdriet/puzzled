@@ -2,16 +2,16 @@ use tokio::sync::mpsc;
 
 use crate::{Command, CommandOutcome, EventMode, StatefulScreen};
 
-pub struct ActionResolver<M, A, T> {
-    pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<M, A, T>>,
+pub struct ActionResolver<A, T, M, S> {
+    pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<A, T, M, S>>,
 }
 
-impl<M, A, T> ActionResolver<M, A, T> {
-    pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<M, A, T>>) -> Self {
+impl<A, T, M, S> ActionResolver<A, T, M, S> {
+    pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<A, T, M, S>>) -> Self {
         Self { sender }
     }
 
-    pub fn next_screen(&self, screen: Box<dyn StatefulScreen<M, A, T>>) {
+    pub fn next_screen(&self, screen: Box<dyn StatefulScreen<A, T, M, S>>) {
         self.sender
             .send(CommandOutcome::NextScreen(screen))
             .expect("Should be able to resolve next screen");
@@ -35,14 +35,14 @@ impl<M, A, T> ActionResolver<M, A, T> {
             .expect("Should be able to resolve command");
     }
 
-    pub fn fire_command(&self, command: Command<M, A>) {
+    pub fn fire_command(&self, command: Command<A, T, M>) {
         self.sender
             .send(CommandOutcome::Command(command))
             .expect("Should be able to resolve command");
     }
 }
 
-impl<M, A, T> Clone for ActionResolver<M, A, T> {
+impl<A, T, M, S> Clone for ActionResolver<A, T, M, S> {
     fn clone(&self) -> Self {
         Self {
             sender: self.sender.clone(),

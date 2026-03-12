@@ -9,7 +9,10 @@ use ratatui::{
     widgets::{List, ListItem, StatefulWidget, StatefulWidgetRef},
 };
 
-use crate::{AppState, CrosswordAction, CrosswordMotion, PuzzleScreenState};
+use crate::{
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject, PuzzleScreenState,
+};
 
 pub struct CluesListWidget {
     dir: Option<ClueDirection>,
@@ -66,13 +69,15 @@ impl StatefulWidgetRef for CluesListWidget {
     }
 }
 
-impl HandleCommand<CrosswordMotion, CrosswordAction, AppState> for CluesListWidget {
+impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for CluesListWidget
+{
     type State = PuzzleScreenState;
 
     fn handle_command(
         &mut self,
-        command: Command<CrosswordMotion, CrosswordAction>,
-        _resolver: ActionResolver<CrosswordMotion, CrosswordAction, AppState>,
+        command: CrosswordCommand,
+        _resolver: CrosswordResolver,
         _ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {

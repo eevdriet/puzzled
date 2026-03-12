@@ -11,14 +11,15 @@ pub(crate) enum RawKeySeq {
     Multiple(Vec<String>),
 }
 
-pub(crate) type RawActionKeys<M, A> = HashMap<TrieEntry<M, A>, RawKeySeq>;
+pub(crate) type RawActionKeys<A, T, M> = HashMap<TrieEntry<A, T, M>, RawKeySeq>;
 
-pub(crate) fn parse_action_events<M, A>(
-    action_keys: RawActionKeys<M, A>,
-) -> Result<EventTrie<M, A>, String>
+pub(crate) fn parse_action_events<A, T, M>(
+    action_keys: RawActionKeys<A, T, M>,
+) -> Result<EventTrie<A, T, M>, String>
 where
     A: Clone,
     M: Clone,
+    T: Clone,
 {
     let mut trie = EventTrie::default();
 

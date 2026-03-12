@@ -23,22 +23,23 @@ use crate::StatefulScreen;
 const POLL_DURATION: Duration = Duration::from_millis(30);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
-pub struct App<M, A, T> {
-    context: AppContext<T>,
+pub struct App<A, T, M, S> {
+    context: AppContext<S>,
 
     events_rx: mpsc::UnboundedReceiver<AppEvent>,
 
-    engine: EventEngine<M, A>,
+    engine: EventEngine<A, T, M>,
 
     shutdown: Option<oneshot::Sender<()>>,
 }
 
-impl<M, A, T> App<M, A, T>
+impl<A, T, M, S> App<A, T, M, S>
 where
     A: ActionBehavior + 'static,
+    T: TextObjectBehavior + 'static,
     M: MotionBehavior + 'static,
 {
-    pub fn new(context: AppContext<T>, actions: EventTrie<M, A>) -> Self {
+    pub fn new(context: AppContext<S>, actions: EventTrie<A, T, M>) -> Self {
         let (events_tx, events_rx) = unbounded_channel();
         let events_tx2 = events_tx.clone();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
@@ -74,13 +75,14 @@ where
 
     pub async fn run(
         &mut self,
-        init_screen: Box<dyn StatefulScreen<M, A, T>>,
+        init_screen: Box<dyn StatefulScreen<A, T, M, S>>,
     ) -> std::io::Result<()> {
         let mut terminal = ratatui::init();
         execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
         // Set up screen management and enter the initial screen
-        let mut screens: VecDeque<Box<dyn StatefulScreen<M, A, T>>> = VecDeque::from([init_screen]);
+        let mut screens: VecDeque<Box<dyn StatefulScreen<A, T, M, S>>> =
+            VecDeque::from([init_screen]);
 
         screens
             .back_mut()
@@ -89,7 +91,7 @@ where
 
         // Set up an action resolver
         let (actions_tx, mut actions_rx) = mpsc::unbounded_channel();
-        let resolver = ActionResolver::<M, A, T>::new(actions_tx);
+        let resolver = ActionResolver::<A, T, M, S>::new(actions_tx);
 
         let mut render = true;
 

@@ -8,15 +8,15 @@ use ratatui::{buffer::Buffer, layout::Rect};
 
 use crate::{ActionResolver, AppContext, Command};
 
-pub trait StatefulScreen<M, A, S> {
+pub trait StatefulScreen<A, T, M, S> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<S>);
 
     // Actions
     fn on_command(
         &mut self,
-        _command: Command<M, A>,
-        _resolver: ActionResolver<M, A, S>,
+        _command: Command<A, T, M>,
+        _resolver: ActionResolver<A, T, M, S>,
         _ctx: &mut AppContext<S>,
     ) -> bool {
         false

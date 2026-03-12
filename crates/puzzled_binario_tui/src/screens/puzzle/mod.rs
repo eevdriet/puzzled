@@ -27,7 +27,7 @@ impl PuzzleScreen {
     }
 }
 
-impl StatefulScreen<(), BinarioAction, AppState> for PuzzleScreen {
+impl StatefulScreen<BinarioAction, (), (), AppState> for PuzzleScreen {
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppContext<AppState>) {}
 
     fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
