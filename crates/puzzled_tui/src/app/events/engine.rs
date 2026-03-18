@@ -67,6 +67,10 @@ where
     pub fn push(&mut self, event: AppEvent) -> EventResult<A, T, M> {
         tracing::debug!("[EVENT] {event}");
 
+        if let Some(mouse) = event.mouse() {
+            return self.mouse_event(mouse);
+        }
+
         let result = match self.mode {
             EventMode::Normal => self.normal_event(event),
             EventMode::Visual(_) => self.visual_event(event),
@@ -280,23 +284,11 @@ where
     }
 
     fn normal_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
-        if let Some(mouse) = event.mouse() {
-            self.mouse_event(mouse)
-        } else if event.key().is_some() {
-            self.key_event(event)
-        } else {
-            EventResult::default()
-        }
+        self.key_event(event)
     }
 
     fn visual_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
-        if let Some(mouse) = event.mouse() {
-            self.mouse_event(mouse)
-        } else if event.key().is_some() {
-            self.key_event(event)
-        } else {
-            EventResult::default()
-        }
+        self.key_event(event)
     }
 
     fn insert_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
