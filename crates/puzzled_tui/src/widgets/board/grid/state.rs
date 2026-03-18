@@ -58,8 +58,9 @@ impl GridRenderState {
         let mut col = usize::from(x / cell_w);
 
         // Translate with the current scroll
-        col += self.cursor.col;
-        row += self.cursor.row;
+        let AppPosition { x, y } = self.scroll.offset();
+        col += x as usize;
+        row += y as usize;
 
         tracing::debug!("\t Translated: {row},{col}");
         Some(Position::new(row, col))

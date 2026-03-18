@@ -41,7 +41,7 @@ where
         let next_dir = Direction::try_from(&motion).unwrap_or(state.direction);
 
         // Perform the motion by collecting all covered positions in the grid
-        let iter = grid_motion(self, count, motion, start, next_dir);
+        let iter = grid_motion(self, count, motion, start, next_dir, state);
 
         // If currently going in another direction, change the direction
         if iter.clone().count() <= 2 && ![next_dir, !next_dir].contains(&state.direction) {
@@ -87,7 +87,7 @@ where
         }
 
         // Perform the motion by collecting all covered positions in the grid
-        let iter = grid_motion(self.0, count, motion, pos, next_dir);
+        let iter = grid_motion(self.0, count, motion, pos, next_dir, state);
 
         // If currently going in another direction, change the direction
         if iter.clone().count() <= 2 && ![next_dir, !next_dir].contains(&state.direction) {
@@ -113,12 +113,24 @@ fn grid_motion<'a, T, M>(
     motion: Motion<M>,
     start: Position,
     dir: Direction,
+    state: &GridRenderState,
 ) -> GridIndexedIter<'a, T> {
     let iter_remaining =
         |remaining: usize| GridIter::new_with_remaining(grid, start, dir.into(), remaining);
     let iter_direction = |dir: Direction| grid.iter_segment(start, dir);
 
     let iter = match motion {
+        Motion::Mouse(mouse) => {
+            let app_pos = ratatui::layout::Position {
+                x: mouse.column,
+                y: mouse.row,
+            };
+
+            match state.to_grid(app_pos) {
+                Some(pos) => GridIter::new_single(grid, pos),
+                None => GridIter::new_empty(grid),
+            }
+        }
         Motion::None => iter_remaining(1),
         Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
         Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {

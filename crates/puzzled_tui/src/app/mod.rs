@@ -9,7 +9,7 @@ pub use events::*;
 use std::{collections::VecDeque, time::Duration};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, MouseEventKind},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };

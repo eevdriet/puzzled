@@ -4,6 +4,7 @@ mod range;
 mod selection;
 
 pub use behavior::*;
+use crossterm::event::MouseEvent;
 pub use handle::*;
 pub use range::*;
 pub use selection::*;
@@ -16,6 +17,10 @@ pub enum Motion<M> {
     // No motion
     #[default]
     None,
+
+    // Mouse
+    #[serde(skip)]
+    Mouse(MouseEvent),
 
     // Left-right
     Col(usize),

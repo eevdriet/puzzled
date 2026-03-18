@@ -86,25 +86,9 @@ where
     }
 
     fn mouse_event(&self, mouse: MouseEvent) -> EventResult<A, T, M> {
-        let pos = AppPosition {
-            x: mouse.column,
-            y: mouse.row,
-        };
-
-        let command = match mouse.kind {
-            MouseEventKind::Up(button) => {
-                let action = Action::Click { pos, button };
-                Some(Command::new_action(action))
-            }
-            MouseEventKind::Drag(button) => {
-                let action = Action::Drag { pos, button };
-                Some(Command::new_action(action))
-            }
-            MouseEventKind::ScrollDown => Some(Command::new_motion(Motion::Down)),
-            MouseEventKind::ScrollLeft => Some(Command::new_motion(Motion::Left)),
-            MouseEventKind::ScrollUp => Some(Command::new_motion(Motion::Up)),
-            MouseEventKind::ScrollRight => Some(Command::new_motion(Motion::Right)),
-            _ => None,
+        let command = match &mouse.kind {
+            MouseEventKind::Moved => None,
+            _ => Some(Command::new_motion(Motion::Mouse(mouse))),
         };
 
         EventResult {

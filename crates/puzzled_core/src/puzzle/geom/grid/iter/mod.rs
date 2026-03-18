@@ -52,6 +52,16 @@ impl<'a, T> GridIter<'a, T> {
         }
     }
 
+    pub fn new_single(grid: &'a Grid<T>, single: Position) -> Self {
+        Self {
+            grid,
+            front: single,
+            back: single,
+            offset: Offset::default(),
+            remaining: 1,
+        }
+    }
+
     pub fn new_with_remaining(
         grid: &'a Grid<T>,
         start: Position,

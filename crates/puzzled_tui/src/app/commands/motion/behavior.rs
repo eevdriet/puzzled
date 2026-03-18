@@ -4,6 +4,10 @@ use crate::Motion;
 
 pub trait MotionBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
     fn variants() -> Vec<Self>;
+
+    fn is_mouse(&self) -> bool {
+        false
+    }
 }
 
 impl MotionBehavior for () {
@@ -40,5 +44,12 @@ where
         variants.extend(other_variants);
 
         variants
+    }
+
+    fn is_mouse(&self) -> bool {
+        match self {
+            Motion::Custom(custom) => custom.is_mouse(),
+            motion => motion.is_mouse(),
+        }
     }
 }

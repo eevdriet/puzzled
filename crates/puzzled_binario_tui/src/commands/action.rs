@@ -9,10 +9,6 @@ pub enum BinarioAction {
 }
 
 impl ActionBehavior for BinarioAction {
-    fn is_mouse(&self) -> bool {
-        false
-    }
-
     fn variants() -> Vec<Self> {
         vec![BinarioAction::Random]
     }

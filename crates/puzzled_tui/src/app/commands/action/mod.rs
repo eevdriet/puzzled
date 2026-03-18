@@ -9,8 +9,6 @@ use derive_more::{Display, Eq};
 use ratatui::layout::Position as AppPosition;
 use serde::Deserialize;
 
-use crate::EventMode;
-
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A> {
@@ -20,25 +18,6 @@ pub enum Action<A> {
     Cancel,
 
     // -- Normal -- //
-    // Mouse
-    #[serde(skip)]
-    #[display("{pos}")]
-    Click {
-        #[eq(skip)]
-        pos: AppPosition,
-
-        #[eq(skip)]
-        button: MouseButton,
-    },
-    #[serde(skip)]
-    #[display("{pos}")]
-    Drag {
-        #[eq(skip)]
-        pos: AppPosition,
-
-        #[eq(skip)]
-        button: MouseButton,
-    },
 
     // Focus
     FocusDown,

@@ -9,10 +9,6 @@ pub enum CrosswordAction {
 }
 
 impl ActionBehavior for CrosswordAction {
-    fn is_mouse(&self) -> bool {
-        false
-    }
-
     fn variants() -> Vec<Self> {
         vec![CrosswordAction::RevealClue]
     }
