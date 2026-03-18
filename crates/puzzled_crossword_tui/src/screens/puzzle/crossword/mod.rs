@@ -76,6 +76,7 @@ impl StatefulWidgetRef for CrosswordWidget {
             squares: puzzle.squares(),
             selection: render.selection,
             opts: render.options,
+            mode: state.mode,
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);

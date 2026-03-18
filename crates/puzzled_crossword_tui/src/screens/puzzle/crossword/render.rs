@@ -1,7 +1,7 @@
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Direction, Entry, Position, Square};
 use puzzled_crossword::{ClueDirection, Clues, Solution, Squares};
-use puzzled_tui::{AsApp, CellRender, GridOptions, RenderSize, Selection, TextBlock};
+use puzzled_tui::{AsApp, CellRender, EventMode, GridOptions, RenderSize, Selection, TextBlock};
 
 use ratatui::{
     layout::HorizontalAlignment,
@@ -40,6 +40,7 @@ pub struct RenderSquareState<'a> {
     pub clues: &'a Clues,
     pub squares: &'a Squares,
     pub opts: GridOptions,
+    pub mode: EventMode,
 }
 
 impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
@@ -60,7 +61,9 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             base_style.fg(Color::Black).dim()
         };
 
-        if let Some((across, down)) = state.clues.get_clues(state.cursor) {
+        if !state.mode.is_visual()
+            && let Some((across, down)) = state.clues.get_clues(state.cursor)
+        {
             let clue_dir = ClueDirection::from(state.direction);
             let active_clue_style = border_style.fg(Color::Cyan).bold();
             let alt_clue_style = border_style.fg(Color::White).dim();
@@ -83,7 +86,12 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
         let size = state.squares.size();
 
         if pos == state.cursor {
-            border_style = base_style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
+            border_style = if state.mode.is_visual() {
+                base_style.fg(Color::LightGreen)
+            } else {
+                base_style.fg(Color::Yellow)
+            }
+            .add_modifier(Modifier::BOLD);
         } else if is_playable && state.selection.range(size).contains(pos.as_app()) {
             border_style = base_style.fg(Color::Green);
         }

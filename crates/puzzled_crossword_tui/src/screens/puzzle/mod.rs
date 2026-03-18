@@ -66,6 +66,7 @@ impl PuzzleScreen {
             down: list,
             history: ActionHistory::default(),
             focus,
+            mode: EventMode::Normal,
         };
 
         Self {
@@ -142,6 +143,7 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
                 Action::NextMode(mode) => {
                     let selection = &mut self.state.render.selection;
                     let cursor = self.state.render.cursor;
+                    self.state.mode = *mode;
 
                     match mode {
                         EventMode::Visual(kind) => {
