@@ -144,18 +144,10 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
 
                 // Focus change actions
                 action if action.is_focus() => {
-                    let mut mode = self.state.render.mode;
-
-                    let result = self
+                    return self
                         .state
                         .focus
-                        .handle_base_action(action.clone(), &mut mode);
-
-                    if result && mode != self.state.render.mode {
-                        resolver.set_mode(mode);
-                    }
-
-                    return result;
+                        .handle_command(command, resolver, ctx, &mut ());
                 }
                 _ => {}
             }

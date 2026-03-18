@@ -110,12 +110,28 @@ where
     }
 }
 
-impl<A, F> HandleBaseAction<A, EventMode> for FocusManager<F>
+impl<F, A, T, M, S> HandleCommand<A, T, M, S> for FocusManager<F>
 where
     A: ActionBehavior,
     F: Eq + Hash + Copy,
 {
-    fn handle_base_action(&mut self, action: Action<A>, mode: &mut EventMode) -> bool {
+    type State = ();
+
+    fn handle_command(
+        &mut self,
+        command: Command<A, T, M>,
+        resolver: ActionResolver<A, T, M, S>,
+        _ctx: &mut AppContext<S>,
+        _state: &mut Self::State,
+    ) -> bool {
+        let Command::Action { action, .. } = command else {
+            return false;
+        };
+
+        if !action.is_focus() {
+            return false;
+        }
+
         // Make sure focus can be given up from the current node
         let Some(node) = self.graph.get(&self.curr) else {
             return false;
@@ -140,7 +156,7 @@ where
         if let Some(next_node) = self.graph.get(&next)
             && let Some(next_mode) = next_node.mode
         {
-            *mode = next_mode;
+            resolver.set_mode(next_mode);
         }
 
         true
