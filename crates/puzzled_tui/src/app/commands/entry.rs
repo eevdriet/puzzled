@@ -1,15 +1,16 @@
 use puzzled_core::Solve;
 
-use crate::{ExecuteAction, UndoAction};
+use crate::{ExecuteAction, Operator, UndoAction};
 
 #[derive(Debug)]
 pub struct EntryAction<T, P> {
+    op: Operator,
     changes: Vec<EntryChange<T, P>>,
 }
 
 impl<T, P> EntryAction<T, P> {
-    pub fn new(changes: Vec<EntryChange<T, P>>) -> Self {
-        Self { changes }
+    pub fn new(op: Operator, changes: Vec<EntryChange<T, P>>) -> Self {
+        Self { op, changes }
     }
 }
 
@@ -27,12 +28,29 @@ where
 {
     fn execute(&mut self, state: &mut S) {
         for change in &self.changes {
-            match change.after {
-                Some(ref entry) => {
-                    state.enter(&change.pos, entry.clone());
+            match self.op {
+                // Enter the next entry into the state
+                Operator::Change
+                | Operator::ChangeSingle
+                | Operator::Delete
+                | Operator::DeleteSingle => match change.after {
+                    Some(ref entry) => {
+                        state.enter(&change.pos, entry.clone());
+                    }
+                    None => {
+                        state.clear(&change.pos);
+                    }
+                },
+
+                // Puzzle actions
+                Operator::Reveal | Operator::RevealSingle => {
+                    state.reveal(&change.pos);
                 }
-                None => {
-                    state.clear(&change.pos);
+                Operator::Check | Operator::CheckSingle => {
+                    state.check(&change.pos);
+                }
+                _ => {
+                    continue;
                 }
             }
         }
@@ -46,13 +64,26 @@ where
 {
     fn undo(&mut self, state: &mut S) {
         for change in &self.changes {
-            match change.before {
-                Some(ref entry) => {
-                    state.enter(&change.pos, entry.clone());
+            match self.op {
+                // Enter the previous entry back into the state
+                Operator::Change
+                | Operator::ChangeSingle
+                | Operator::Delete
+                | Operator::DeleteSingle => match change.before {
+                    Some(ref entry) => {
+                        state.enter(&change.pos, entry.clone());
+                    }
+                    None => {
+                        state.clear(&change.pos);
+                    }
+                },
+
+                // Cannot undo reveal/check
+                Operator::Reveal | Operator::Check => {
+                    continue;
                 }
-                None => {
-                    state.clear(&change.pos);
-                }
+
+                _ => continue,
             }
         }
     }

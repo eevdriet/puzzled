@@ -83,7 +83,7 @@ where
             return false;
         };
 
-        entry.enter(solution.clone());
+        entry.reveal(solution.clone());
         true
     }
 
@@ -352,7 +352,7 @@ where
             return false;
         };
 
-        entry.enter(solution.clone());
+        entry.reveal(solution.clone());
         true
     }
 

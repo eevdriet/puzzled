@@ -193,23 +193,21 @@ where
 {
     pub fn check(&mut self, solution: &E) -> Option<bool> {
         // Try to compare the current entry to the solution
-        let state = self.entry().map(|e| e == solution);
+        let is_correct = self.entry().map(|e| e == solution)?;
 
-        if let Some(is_correct) = state {
-            // Set previous correctness style
-            if self.style.contains(CellStyle::INCORRECT) {
-                self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-            }
-
-            // Set current correctness style
-            if is_correct {
-                self.style -= CellStyle::INCORRECT;
-            } else {
-                self.style |= CellStyle::INCORRECT;
-            }
+        // Set previous correctness style
+        if self.style.contains(CellStyle::INCORRECT) {
+            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
         }
 
-        state
+        // Set current correctness style
+        if is_correct {
+            self.style -= CellStyle::INCORRECT;
+        } else {
+            self.style |= CellStyle::INCORRECT;
+        }
+
+        Some(is_correct)
     }
 }
 

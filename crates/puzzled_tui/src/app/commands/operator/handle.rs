@@ -37,7 +37,7 @@ where
             })
             .collect();
 
-        let action = Box::new(EntryAction::new(changes));
+        let action = Box::new(EntryAction::new(op, changes));
         state.execute(action, self);
     }
 }
@@ -67,7 +67,7 @@ where
             })
             .collect();
 
-        let action = Box::new(EntryAction::new(changes));
+        let action = Box::new(EntryAction::new(op, changes));
         state.execute(action, self);
     }
 }
