@@ -1,3 +1,4 @@
+use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{AppContext, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize};
 use ratatui::{
@@ -122,6 +123,11 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                 let list = state.clue_list(self.dir);
 
                 match motion {
+                    Motion::Mouse(mouse) => match mouse.kind {
+                        MouseEventKind::ScrollDown => list.scroll_down_by(count),
+                        MouseEventKind::ScrollUp => list.scroll_up_by(count),
+                        _ => return false,
+                    },
                     Motion::ColStart => list.select_first(),
                     Motion::ColEnd => list.select_last(),
                     Motion::Down => list.scroll_down_by(count),

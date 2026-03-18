@@ -1,5 +1,6 @@
 mod list;
 
+use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{Action, AppContext, Command, EventMode, HandleCommand, Motion, RenderSize};
 use ratatui::{
@@ -135,32 +136,47 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                 resolver.set_mode(EventMode::Insert);
                 true
             }
-            Command::Motion {
-                motion: Motion::Right,
-                ..
-            } if matches!(state.clue_dir, Some(ClueDirection::Across)) => {
-                state.clue_dir = Some(ClueDirection::Down);
-                true
-            }
-            Command::Motion {
-                motion: Motion::Left,
-                ..
-            } if matches!(state.clue_dir, Some(ClueDirection::Down)) => {
-                state.clue_dir = Some(ClueDirection::Across);
-                true
+            Command::Motion { motion, .. } => {
+                let is_across = matches!(state.clue_dir, Some(ClueDirection::Across));
+                let is_down = matches!(state.clue_dir, Some(ClueDirection::Down));
+
+                match motion {
+                    // Across -> down
+                    Motion::Right if is_across => {
+                        state.clue_dir = Some(ClueDirection::Down);
+                        true
+                    }
+                    Motion::Mouse(mouse)
+                        if is_across && mouse.kind == MouseEventKind::ScrollRight =>
+                    {
+                        state.clue_dir = Some(ClueDirection::Down);
+                        true
+                    }
+
+                    // Down -> across
+                    Motion::Left if is_down => {
+                        state.clue_dir = Some(ClueDirection::Across);
+                        true
+                    }
+                    Motion::Mouse(mouse) if is_down && mouse.kind == MouseEventKind::ScrollLeft => {
+                        state.clue_dir = Some(ClueDirection::Across);
+                        true
+                    }
+                    _ => match state.clue_dir {
+                        Some(ClueDirection::Across) => {
+                            self.across.handle_command(command, resolver, ctx, state)
+                        }
+                        Some(ClueDirection::Down) => {
+                            self.down.handle_command(command, resolver, ctx, state)
+                        }
+                        None => self
+                            .across_down
+                            .handle_command(command, resolver, ctx, state),
+                    },
+                }
             }
 
-            _ => match state.clue_dir {
-                Some(ClueDirection::Across) => {
-                    self.across.handle_command(command, resolver, ctx, state)
-                }
-                Some(ClueDirection::Down) => {
-                    self.down.handle_command(command, resolver, ctx, state)
-                }
-                None => self
-                    .across_down
-                    .handle_command(command, resolver, ctx, state),
-            },
+            _ => false,
         }
     }
 }
