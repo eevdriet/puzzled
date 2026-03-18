@@ -16,8 +16,8 @@ use ratatui::{
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    Action, ActionBehavior, ActionHistory, ActionResolver, AppContext, Command, EventMode,
-    FocusManager, GridRenderState, HandleBaseAction, HandleCommand, RenderSize, StatefulScreen,
+    Action, ActionBehavior, ActionHistory, AppContext, Command, EventMode, FocusManager,
+    GridRenderState, HandleBaseAction, HandleCommand, RenderSize, StatefulScreen,
 };
 
 use crate::{
@@ -102,10 +102,13 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         ])
         .areas(area);
 
-        let [clues, _, footer] = Layout::vertical(vec![
-            Constraint::Fill(1),
+        let footer_height = 5;
+        let clues_height = clues_size.height.min(right.height - footer_height);
+        let [clues, _, footer, _] = Layout::vertical(vec![
+            Constraint::Length(clues_height),
             Constraint::Length(gap),
-            Constraint::Length(5),
+            Constraint::Length(footer_height),
+            Constraint::Min(0),
         ])
         .areas(right);
 
@@ -138,10 +141,12 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
                 Action::NextMode(mode) => {
                     let selection = &mut self.state.render.selection;
+                    let cursor = self.state.render.cursor;
 
                     match mode {
                         EventMode::Visual(kind) => {
                             selection.set_kind(*kind);
+                            selection.set(cursor, cursor);
                         }
                         _ => {
                             if let Some(start) = selection.start() {

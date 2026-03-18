@@ -32,6 +32,7 @@ pub enum Command<A, T, M> {
         motion: Motion<M>,
         op: Option<Operator>,
     },
+    Operator(Operator),
 }
 
 impl<A, T, M> Command<A, T, M> {
@@ -52,6 +53,7 @@ impl<A, T, M> Command<A, T, M> {
             Self::Action { count, .. } => *count,
             Self::Motion { count, .. } => *count,
             Self::TextObj { count, .. } => *count,
+            Self::Operator(_) => 1,
         }
     }
 }

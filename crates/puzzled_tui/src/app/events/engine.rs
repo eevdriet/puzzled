@@ -106,7 +106,9 @@ where
                         Some(Command::Motion { count, motion, op })
                     }
                     TrieEntry::Operator(op) => {
-                        if !mode.is_visual() && op.requires_motion() {
+                        if mode.is_visual() {
+                            Some(Command::Operator(op))
+                        } else if op.requires_motion() {
                             self.pending_operator = Some(op);
                             None
                         } else {

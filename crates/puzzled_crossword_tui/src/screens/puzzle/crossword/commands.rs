@@ -1,7 +1,8 @@
 use puzzled_core::{Direction, Solve, SquareGridRef};
 use puzzled_crossword::Solution;
 use puzzled_tui::{
-    Action, AppContext, Command, HandleBaseAction, HandleBaseMotion, HandleCommand, HandleOperator,
+    Action, AppContext, AsCore, Command, EventMode, HandleBaseAction, HandleBaseMotion,
+    HandleCommand, HandleOperator,
 };
 
 use crate::{
@@ -17,11 +18,52 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
     fn handle_command(
         &mut self,
         command: CrosswordCommand,
-        _resolver: CrosswordResolver,
-        _ctx: &mut AppContext<AppState>,
+        resolver: CrosswordResolver,
+        ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {
         match command {
+            Command::Operator(op) => {
+                if ctx.mode.is_visual() {
+                    let size = state.puzzle.squares().size2();
+                    let positions = state
+                        .render
+                        .selection
+                        .range(size)
+                        .positions()
+                        .map(|pos| pos.as_core());
+
+                    state
+                        .solve
+                        .handle_operator(op, positions, &mut state.history);
+
+                    let normal_command = Command::new_action(Action::NextMode(EventMode::Normal));
+                    resolver.fire_command(normal_command);
+
+                    true
+                } else if !op.requires_motion() {
+                    let positions = vec![state.render.cursor];
+
+                    state
+                        .solve
+                        .handle_operator(op, positions, &mut state.history);
+                    true
+                } else {
+                    false
+                }
+            }
+            Command::Motion { count, motion, op } if ctx.mode.is_visual() => {
+                assert!(op.is_none());
+
+                let squares = SquareGridRef(state.puzzle.squares());
+                let positions = squares.handle_base_motion(count, motion, &mut state.render);
+
+                if let Some(end) = positions.into_iter().last() {
+                    state.render.selection.update(end);
+                }
+
+                true
+            }
             Command::Motion { count, motion, op } => {
                 {
                     let squares = SquareGridRef(state.puzzle.squares());
