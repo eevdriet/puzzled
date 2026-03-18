@@ -1,7 +1,5 @@
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{
-    ActionResolver, AppContext, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize,
-};
+use puzzled_tui::{AppContext, Command, HandleCommand, ListRender, ListWidget, Motion, RenderSize};
 use ratatui::{
     layout::Size,
     prelude::{Buffer, Rect},
@@ -26,24 +24,53 @@ impl CluesListWidget {
 
 impl RenderSize<PuzzleScreenState> for CluesListWidget {
     fn render_size(&self, state: &PuzzleScreenState) -> Size {
-        ListWidget::new(self).render_size(state)
+        let render_state = ListRenderState {
+            state,
+            offset: 0,
+            visible: 0,
+        };
+
+        ListWidget::new(self).render_size(&render_state)
     }
 }
 
-impl ListRender for CluesListWidget {
-    type State = PuzzleScreenState;
+pub struct ListRenderState<'a> {
+    state: &'a PuzzleScreenState,
+    offset: usize,
+    visible: usize,
+}
+
+impl<'a> ListRender<'a> for CluesListWidget {
+    type State = ListRenderState<'a>;
 
     fn render_items(
         &self,
         state: &Self::State,
     ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
-        state.clues(self.dir).map(|clue| {
-            let clue_text = match self.dir.is_some() {
-                true => format!("{:>2} {}", clue.num(), clue.text()),
-                false => format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text()),
-            };
-            ListItem::new(clue_text)
-        })
+        let ListRenderState {
+            state,
+            offset,
+            visible,
+        } = state;
+
+        let count = state.clues(self.dir).count();
+        let other = if offset + visible >= count {
+            vec![]
+        } else {
+            vec![ListItem::new("...")]
+        }
+        .into_iter();
+
+        state
+            .clues(self.dir)
+            .map(|clue| {
+                let clue_text = match self.dir.is_some() {
+                    true => format!("{:>2} {}", clue.num(), clue.text()),
+                    false => format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text()),
+                };
+                ListItem::new(clue_text)
+            })
+            .chain(other)
     }
 }
 
@@ -51,7 +78,15 @@ impl StatefulWidgetRef for CluesListWidget {
     type State = PuzzleScreenState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let items = self.render_items(state);
+        let visible = area.height as usize;
+        let offset = state.clue_list(self.dir).offset();
+        let render_state = ListRenderState {
+            state,
+            visible,
+            offset,
+        };
+
+        let items = self.render_items(&render_state);
 
         let base_style = Style::default();
         let selected_style = base_style.fg(Color::Yellow);

@@ -1,9 +1,7 @@
 mod list;
 
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{
-    Action, ActionResolver, AppContext, Command, EventMode, HandleCommand, Motion, RenderSize,
-};
+use puzzled_tui::{Action, AppContext, Command, EventMode, HandleCommand, Motion, RenderSize};
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
@@ -70,7 +68,7 @@ impl StatefulWidgetRef for CluesWidget {
 
         let title = " Clues ";
         let block = Block::new()
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::BOTTOM)
             .border_style(border_style)
             .title(title)
             .title_alignment(HorizontalAlignment::Center);

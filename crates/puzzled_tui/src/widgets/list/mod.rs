@@ -4,7 +4,7 @@ use ratatui::widgets::{List, ListItem, ListState, StatefulWidgetRef, Widget};
 
 use crate::RenderSize;
 
-pub trait ListRender {
+pub trait ListRender<'a> {
     type State;
 
     fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>>;
@@ -27,7 +27,7 @@ pub struct ListContext<S> {
 
 impl<'a, R> StatefulWidgetRef for ListWidget<'a, R>
 where
-    R: ListRender,
+    R: ListRender<'a>,
 {
     type State = ListContext<R::State>;
 
@@ -39,7 +39,7 @@ where
 
 impl<'a, R> RenderSize<R::State> for ListWidget<'a, R>
 where
-    R: ListRender,
+    R: ListRender<'a>,
 {
     fn render_size(&self, state: &R::State) -> ratatui::prelude::Size {
         self.render

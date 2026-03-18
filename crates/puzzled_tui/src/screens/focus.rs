@@ -3,8 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 use puzzled_core::Direction;
 
 use crate::{
-    Action, ActionBehavior, ActionResolver, AppContext, Command, EventMode, HandleBaseAction,
-    HandleCommand, MotionBehavior,
+    Action, ActionBehavior, ActionResolver, AppContext, Command, EventMode, HandleCommand,
 };
 
 #[derive(Debug, Clone, Copy)]
