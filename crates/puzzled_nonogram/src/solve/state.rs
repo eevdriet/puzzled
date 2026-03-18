@@ -4,7 +4,7 @@ use bitvec::{bitvec, vec::BitVec};
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Timer, impl_solve_for_grid_state};
 
-use crate::{Fill, LineConstraint, LineValidation, Nonogram};
+use crate::{Fill, LineMaskConstraint, LineValidation, Nonogram};
 
 pub(crate) type LineMap<T> = BTreeMap<Line, T>;
 pub(crate) type LineMask = BitVec;
@@ -18,7 +18,7 @@ pub struct NonogramState {
     pub(crate) frontier: VecDeque<Line>,
 
     pub(crate) validations: LineMap<LineValidation>,
-    pub(crate) constraints: LineMap<BTreeMap<Fill, LineConstraint>>,
+    pub(crate) constraints: LineMap<BTreeMap<Fill, LineMaskConstraint>>,
     pub(crate) masks: LineMap<BTreeMap<Fill, LineMask>>,
 }
 
@@ -133,7 +133,7 @@ impl NonogramState {
         // Note the .filter to avoid fills that have been previously been set but not currently
         for (&fill, mask) in masks.iter().filter(|(_, mask)| mask.any()) {
             // Invalidate right away if rule doesn't include current fill
-            let Some(LineConstraint { required, optional }) = constraints.get(&fill) else {
+            let Some(LineMaskConstraint { required, optional }) = constraints.get(&fill) else {
                 tracing::info!("Constraint not found for {fill:?} on {line:?}");
                 return LineValidation::InvalidFill(fill);
             };

@@ -61,11 +61,11 @@ impl<T> Grid<T> {
         self.rows
     }
 
-    pub fn size(&self) -> usize {
+    pub fn area(&self) -> usize {
         self.cols * self.rows
     }
 
-    pub fn size2(&self) -> Size {
+    pub fn size(&self) -> Size {
         Size {
             cols: self.cols,
             rows: self.rows,
@@ -193,7 +193,7 @@ where
     T: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let size = self.size();
+        let size = self.area();
         let cols = self.cols();
 
         let mut max_widths = vec![0; cols];

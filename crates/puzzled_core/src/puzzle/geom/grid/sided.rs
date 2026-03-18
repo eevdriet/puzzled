@@ -89,7 +89,7 @@ where
     U: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let size = self.grid.size();
+        let size = self.grid.area();
         let rows = self.grid.rows();
         let cols = self.grid.cols();
 

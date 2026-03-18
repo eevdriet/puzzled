@@ -1,10 +1,12 @@
 mod cell;
+mod constraints;
 mod geom;
 mod metadata;
 mod square;
 mod style;
 
 pub use cell::*;
+pub use constraints::*;
 pub use geom::*;
 pub use metadata::*;
 pub use square::*;

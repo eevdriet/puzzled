@@ -200,7 +200,7 @@ impl FooterWidget {
             })
             .count() as u16;
 
-        let fill_perc = fill_count as f64 / state.puzzle.puzzle.fills().size() as f64;
+        let fill_perc = fill_count as f64 / state.puzzle.puzzle.fills().area() as f64;
 
         // let gauge = Gauge::default().ratio(fill_perc);
         let gauge = LineGauge::default()

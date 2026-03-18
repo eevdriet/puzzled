@@ -47,19 +47,18 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
         // Determine the styles
         let base_style = Style::default();
 
-        let mut border_style = base_style;
         let mut clue_style = base_style;
-        let mut entry_style = base_style;
 
         // Playable v.s. non-playable cells
         let is_playable = self.0.as_ref().is_some();
 
-        if is_playable {
-            border_style = base_style.fg(Color::DarkGray);
+        let mut border_style = if is_playable {
             clue_style = base_style.fg(Color::White).dim();
+
+            base_style.fg(Color::DarkGray)
         } else {
-            border_style = base_style.fg(Color::Black).dim();
-        }
+            base_style.fg(Color::Black).dim()
+        };
 
         if let Some((across, down)) = state.clues.get_clues(state.cursor) {
             let clue_dir = ClueDirection::from(state.direction);
@@ -81,7 +80,7 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             clue_style = clue_style.not_dim();
         }
 
-        let size = state.squares.size2();
+        let size = state.squares.size();
 
         if pos == state.cursor {
             border_style = base_style.fg(Color::Yellow).add_modifier(Modifier::BOLD);

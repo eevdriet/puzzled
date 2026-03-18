@@ -2,7 +2,7 @@ use puzzled_core::{Direction, Solve, SquareGridRef};
 use puzzled_crossword::Solution;
 use puzzled_tui::{
     Action, AppContext, AsCore, Command, EventMode, HandleBaseAction, HandleBaseMotion,
-    HandleCommand, HandleOperator,
+    HandleCommand, HandleOperator, Operator,
 };
 
 use crate::{
@@ -25,7 +25,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
         match command {
             Command::Operator(op) => {
                 if ctx.mode.is_visual() {
-                    let size = state.puzzle.squares().size2();
+                    let size = state.puzzle.squares().size();
                     let positions = state
                         .render
                         .selection
@@ -37,7 +37,11 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                         .solve
                         .handle_operator(op, positions, &mut state.history);
 
-                    let normal_command = Command::new_action(Action::NextMode(EventMode::Normal));
+                    let mode = match op {
+                        Operator::Change => EventMode::Insert,
+                        _ => EventMode::Normal,
+                    };
+                    let normal_command = Command::new_action(Action::NextMode(mode));
                     resolver.fire_command(normal_command);
 
                     true

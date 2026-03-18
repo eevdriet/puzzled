@@ -5,7 +5,7 @@ use bitvec::prelude::*;
 use crate::{Fill, Line, LineMask, Nonogram, NonogramState, Run};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LineConstraint {
+pub struct LineMaskConstraint {
     pub required: LineMask,
     pub optional: LineMask,
 }
@@ -42,14 +42,14 @@ impl NonogramState {
             optional_cross &= !required.clone();
 
             // Register the must be filled cells for the color
-            let constraint = LineConstraint { required, optional };
+            let constraint = LineMaskConstraint { required, optional };
             tracing::info!("{constraint:?} created for {color:?} on {line:?}");
 
             constraints.insert(color, constraint);
         }
 
         // Finally register the must be crossed out cells
-        let constraint = LineConstraint {
+        let constraint = LineMaskConstraint {
             required: required_cross,
             optional: optional_cross,
         };
