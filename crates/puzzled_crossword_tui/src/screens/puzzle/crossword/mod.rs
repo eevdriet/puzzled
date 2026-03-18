@@ -24,6 +24,8 @@ impl StatefulWidgetRef for CrosswordWidget {
     type State = PuzzleScreenState;
 
     fn render_ref(&self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let mode = state.render.mode;
+
         let PuzzleScreenState {
             puzzle,
             solve,
@@ -76,7 +78,7 @@ impl StatefulWidgetRef for CrosswordWidget {
             squares: puzzle.squares(),
             selection: render.selection,
             opts: render.options,
-            mode: state.mode,
+            mode,
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);

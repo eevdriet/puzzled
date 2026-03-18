@@ -53,7 +53,7 @@ impl EventEngine {
     }
 
     pub fn push(&mut self, event: AppEvent) -> Option<ActionInput> {
-        tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
+        tracing::debug!("[EVENT] {event} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
         // If we are waiting for an operand, consume this event directly

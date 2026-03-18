@@ -19,12 +19,12 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
         &mut self,
         command: CrosswordCommand,
         resolver: CrosswordResolver,
-        ctx: &mut AppContext<AppState>,
+        _ctx: &mut AppContext<AppState>,
         state: &mut Self::State,
     ) -> bool {
         match command {
             Command::Operator(op) => {
-                if ctx.mode.is_visual() {
+                if state.render.mode.is_visual() {
                     let size = state.puzzle.squares().size();
                     let positions = state
                         .render
@@ -55,7 +55,8 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                     false
                 }
             }
-            Command::Motion { count, motion, op } if ctx.mode.is_visual() => {
+            Command::Motion { count, motion, op } if state.render.mode.is_visual() => {
+                tracing::info!("Visual motion: {motion:?}");
                 assert!(op.is_none());
 
                 let squares = SquareGridRef(state.puzzle.squares());
@@ -68,6 +69,8 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                 true
             }
             Command::Motion { count, motion, op } => {
+                tracing::info!("Other motion: {motion:?}");
+
                 {
                     let squares = SquareGridRef(state.puzzle.squares());
                     let positions = squares.handle_base_motion(count, motion, &mut state.render);

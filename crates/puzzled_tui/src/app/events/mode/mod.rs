@@ -1,11 +1,17 @@
+mod handle;
+
+pub use handle::*;
+
 use derive_more::Display;
 use serde::Deserialize;
 
-use crate::SelectionKind;
+use crate::{ActionResolver, AppContext, SelectionKind};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Display, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Display, Hash)]
 pub enum EventMode {
+    #[default]
     Normal,
+
     Insert,
     Replace,
     Visual(SelectionKind),

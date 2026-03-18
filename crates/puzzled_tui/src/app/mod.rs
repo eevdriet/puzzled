@@ -117,31 +117,29 @@ where
                         render = true;
                     }
 
-                    let EventResult { command, next_mode } = self.engine.push(event, &mut self.context.mode);
+                    let EventResult { command, next_mode } = self.engine.push(event);
 
                     if let Some(command) = command {
-                        resolver.fire_command(command);
+                        screen.on_command(command, resolver.clone(), &mut self.context);
                         render = true;
                     }
 
                     if let Some(mode) = next_mode {
-                        resolver.set_mode(mode);
+                        screen.on_mode(mode, resolver.clone(), &mut self.context);
                         render = true;
                     }
                 }
 
                 // Handle app event time out
                 _ = tokio::time::sleep(TICK_DURATION) => {
-                    let EventResult { command, next_mode } = self.engine.tick(&mut self.context.mode);
+                    let EventResult { command, next_mode } = self.engine.tick();
 
                     if let Some(command) = command {
                         resolver.fire_command(command);
-                        render = true;
                     }
 
                     if let Some(mode) = next_mode {
                         resolver.set_mode(mode);
-                        render = true;
                     }
                 }
 
@@ -154,7 +152,7 @@ where
                         }
 
                         CommandOutcome::Mode(mode) => {
-                            self.context.mode = mode;
+                            self.engine.set_mode(mode);
                             screen.on_mode(mode, resolver.clone(), &mut self.context);
                         }
 

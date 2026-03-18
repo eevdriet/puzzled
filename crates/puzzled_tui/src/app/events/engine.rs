@@ -13,6 +13,8 @@ use crate::{
 
 #[derive(Debug)]
 pub struct EventEngine<A, T, M> {
+    mode: EventMode,
+
     buffer: Vec<AppEvent>,
     actions: EventTrie<A, T, M>,
     pending_operator: Option<Operator>,
@@ -41,6 +43,7 @@ impl<A, T, M> Default for EventResult<A, T, M> {
 impl<A, T, M> EventEngine<A, T, M> {
     pub fn new(actions: EventTrie<A, T, M>, timeout: Duration) -> Self {
         Self {
+            mode: EventMode::default(),
             timeout,
             actions,
             repeat: RepeatState::default(),
@@ -48,6 +51,10 @@ impl<A, T, M> EventEngine<A, T, M> {
             buffer: Vec::new(),
             last_insert: Instant::now(),
         }
+    }
+
+    pub fn set_mode(&mut self, mode: EventMode) {
+        self.mode = mode;
     }
 }
 
@@ -57,15 +64,21 @@ where
     M: MotionBehavior,
     T: TextObjectBehavior,
 {
-    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> EventResult<A, T, M> {
-        tracing::info!("[EVENT] {event:?}");
+    pub fn push(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+        tracing::debug!("[EVENT] {event}");
 
-        match mode {
-            EventMode::Normal => self.normal_event(event, mode),
-            EventMode::Visual(_) => self.visual_event(event, mode),
+        let result = match self.mode {
+            EventMode::Normal => self.normal_event(event),
+            EventMode::Visual(_) => self.visual_event(event),
             EventMode::Insert => self.insert_event(event),
             EventMode::Replace => self.replace_event(event),
+        };
+
+        if let Some(mode) = result.next_mode {
+            self.mode = mode;
         }
+
+        result
     }
 
     fn mouse_event(&self, mouse: MouseEvent) -> EventResult<A, T, M> {
@@ -153,13 +166,15 @@ where
         }
     }
 
-    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
-        tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
+    fn key_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+        tracing::debug!("[EVENT] {event} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
         // Check for mode switching keys
         if let Event::Key(key) = *event {
-            let next_mode = match (mode, key.code, key.modifiers) {
+            tracing::info!("Key event: {key:?}");
+
+            let next_mode = match (self.mode, key.code, key.modifiers) {
                 // -> Normal
                 (mode, KeyCode::Esc, _) if !matches!(mode, EventMode::Normal) => {
                     Some(EventMode::Normal)
@@ -168,15 +183,18 @@ where
                 // -> Insert
                 (
                     EventMode::Normal,
-                    KeyCode::Char('i') | KeyCode::Char('a'),
-                    KeyModifiers::NONE | KeyModifiers::SHIFT,
+                    KeyCode::Char('i')
+                    | KeyCode::Char('a')
+                    | KeyCode::Char('I')
+                    | KeyCode::Char('A'),
+                    _,
                 ) => Some(EventMode::Insert),
 
                 // -> Visual
                 (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::NONE) => {
                     Some(EventMode::Visual(SelectionKind::Cells))
                 }
-                (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::SHIFT) => {
+                (EventMode::Normal, KeyCode::Char('V'), KeyModifiers::SHIFT) => {
                     Some(EventMode::Visual(SelectionKind::Rows))
                 }
                 (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::CONTROL) => {
@@ -210,13 +228,14 @@ where
         tracing::debug!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
-        let command = self.search_command(&self.buffer.to_vec(), mode);
+        let curr_mode = self.mode;
+        let command = self.search_command(&self.buffer.to_vec(), &curr_mode);
         let next_mode = self.handle_mode_switch(&command);
 
         EventResult { command, next_mode }
     }
 
-    pub fn tick(&mut self, mode: &EventMode) -> EventResult<A, T, M> {
+    pub fn tick(&mut self) -> EventResult<A, T, M> {
         if self.buffer.is_empty() {
             return EventResult::default();
         }
@@ -229,12 +248,13 @@ where
         // After time out, perform the action w.r.t. longest valid action
         let command = {
             let mut result = None;
+            let curr_mode = self.mode;
 
-            if matches!(mode, EventMode::Normal) {
+            if matches!(curr_mode, EventMode::Normal) {
                 for idx in (1..=self.buffer.len()).rev() {
                     let events = self.buffer[..idx].to_vec();
 
-                    if let Some(command) = self.search_command(&events, mode) {
+                    if let Some(command) = self.search_command(&events, &curr_mode) {
                         result = Some(command);
                     }
                 }
@@ -259,21 +279,21 @@ where
         self.pending_operator = None;
     }
 
-    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
+    fn normal_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
-            self.key_event(event, mode)
+            self.key_event(event)
         } else {
             EventResult::default()
         }
     }
 
-    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
+    fn visual_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
-            self.key_event(event, mode)
+            self.key_event(event)
         } else {
             EventResult::default()
         }
@@ -364,7 +384,7 @@ where
             return None;
         };
 
-        match command {
+        let mode = match command {
             // Switch to the next mode explicitly
             // Switch implicitly based on e.g. the operator
             Command::Operator(op)
@@ -380,7 +400,10 @@ where
             }
 
             _ => None,
-        }
+        };
+
+        tracing::info!("\tNext mode: {mode:?}");
+        mode
     }
 }
 

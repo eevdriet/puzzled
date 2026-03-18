@@ -17,7 +17,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppContext, Command, EventMode, FocusManager,
-    GridRenderState, HandleBaseAction, HandleCommand, RenderSize, StatefulScreen,
+    GridRenderState, HandleBaseAction, HandleCommand, HandleMode, RenderSize, StatefulScreen,
 };
 
 use crate::{
@@ -66,7 +66,6 @@ impl PuzzleScreen {
             down: list,
             history: ActionHistory::default(),
             focus,
-            mode: EventMode::Normal,
         };
 
         Self {
@@ -123,7 +122,9 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         self.crossword.render_ref(crossword, buf, &mut self.state);
         self.clues.render_ref(clues, buf, &mut self.state);
 
-        let mut footer_state = FooterState { mode: state.mode };
+        let mut footer_state = FooterState {
+            mode: self.state.render.mode,
+        };
         self.footer.render_ref(footer, buf, &mut footer_state);
     }
 
@@ -143,10 +144,18 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
 
                 // Focus change actions
                 action if action.is_focus() => {
-                    return self
+                    let mut mode = self.state.render.mode;
+
+                    let result = self
                         .state
                         .focus
-                        .handle_base_action(action.clone(), &mut ctx.mode);
+                        .handle_base_action(action.clone(), &mut mode);
+
+                    if result && mode != self.state.render.mode {
+                        resolver.set_mode(mode);
+                    }
+
+                    return result;
                 }
                 _ => {}
             }
@@ -169,33 +178,16 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
     fn on_mode(
         &mut self,
         mode: EventMode,
-        _resolver: puzzled_tui::ActionResolver<
+        resolver: puzzled_tui::ActionResolver<
             CrosswordAction,
             CrosswordTextObject,
             CrosswordMotion,
             AppState,
         >,
-        _ctx: &mut AppContext<AppState>,
+        ctx: &mut AppContext<AppState>,
     ) -> bool {
-        let selection = &mut self.state.render.selection;
-        let cursor = self.state.render.cursor;
-        self.state.mode = mode;
-
-        match mode {
-            EventMode::Visual(kind) => {
-                selection.set_kind(kind);
-                selection.set(cursor, cursor);
-            }
-            _ => {
-                if let Some(start) = selection.start() {
-                    self.state.render.cursor = start;
-                }
-
-                selection.reset();
-            }
-        }
-
-        true
+        let solutions = &mut self.state.solve.solutions;
+        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
     }
 
     fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {

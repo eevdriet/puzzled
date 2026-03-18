@@ -2,7 +2,7 @@ use puzzled_core::{Direction, Position};
 use ratatui::layout::{Position as AppPosition, Rect};
 use tui_scrollview::ScrollViewState;
 
-use crate::{GridOptions, Selection};
+use crate::{EventMode, GridOptions, Selection};
 
 #[derive(Debug, Default)]
 pub struct GridRenderState {
@@ -13,6 +13,7 @@ pub struct GridRenderState {
 
     /// Current selection in the grid
     pub selection: Selection,
+    pub mode: EventMode,
 
     /// Offset of the grid with its top-left most cell
     pub cursor: Position,
