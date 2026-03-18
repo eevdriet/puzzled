@@ -3,12 +3,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::event::{Event, KeyCode, MouseEvent, MouseEventKind};
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEvent, MouseEventKind};
 use ratatui::layout::Position as AppPosition;
 
 use crate::{
     Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
-    MotionBehavior, Operator, TextObjectBehavior, TrieEntry,
+    MotionBehavior, Operator, SelectionKind, TextObjectBehavior, TrieEntry,
 };
 
 #[derive(Debug)]
@@ -23,10 +23,23 @@ pub struct EventEngine<A, T, M> {
     timeout: Duration,
 }
 
-impl<A, T, M> EventEngine<A, T, M> {
-    pub fn new(mut actions: EventTrie<A, T, M>, timeout: Duration) -> Self {
-        actions.insert_mode_switches();
+#[derive(Debug)]
+pub struct EventResult<A, T, M> {
+    pub command: Option<Command<A, T, M>>,
+    pub next_mode: Option<EventMode>,
+}
 
+impl<A, T, M> Default for EventResult<A, T, M> {
+    fn default() -> Self {
+        Self {
+            command: None,
+            next_mode: None,
+        }
+    }
+}
+
+impl<A, T, M> EventEngine<A, T, M> {
+    pub fn new(actions: EventTrie<A, T, M>, timeout: Duration) -> Self {
         Self {
             timeout,
             actions,
@@ -44,21 +57,18 @@ where
     M: MotionBehavior,
     T: TextObjectBehavior,
 {
-    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> Option<Command<A, T, M>> {
+    pub fn push(&mut self, event: AppEvent, mode: &mut EventMode) -> EventResult<A, T, M> {
         tracing::info!("[EVENT] {event:?}");
 
-        let mut result = match mode {
+        match mode {
             EventMode::Normal => self.normal_event(event, mode),
             EventMode::Visual(_) => self.visual_event(event, mode),
             EventMode::Insert => self.insert_event(event),
             EventMode::Replace => self.replace_event(event),
-        };
-
-        self.handle_mode_switch(&mut result, mode);
-        result
+        }
     }
 
-    fn mouse_event(&self, mouse: MouseEvent) -> Option<Command<A, T, M>> {
+    fn mouse_event(&self, mouse: MouseEvent) -> EventResult<A, T, M> {
         let pos = AppPosition {
             x: mouse.column,
             y: mouse.row,
@@ -67,20 +77,23 @@ where
         let command = match mouse.kind {
             MouseEventKind::Up(button) => {
                 let action = Action::Click { pos, button };
-                Command::new_action(action)
+                Some(Command::new_action(action))
             }
             MouseEventKind::Drag(button) => {
                 let action = Action::Drag { pos, button };
-                Command::new_action(action)
+                Some(Command::new_action(action))
             }
-            MouseEventKind::ScrollDown => Command::new_motion(Motion::Down),
-            MouseEventKind::ScrollLeft => Command::new_motion(Motion::Left),
-            MouseEventKind::ScrollUp => Command::new_motion(Motion::Up),
-            MouseEventKind::ScrollRight => Command::new_motion(Motion::Right),
-            _ => return None,
+            MouseEventKind::ScrollDown => Some(Command::new_motion(Motion::Down)),
+            MouseEventKind::ScrollLeft => Some(Command::new_motion(Motion::Left)),
+            MouseEventKind::ScrollUp => Some(Command::new_motion(Motion::Up)),
+            MouseEventKind::ScrollRight => Some(Command::new_motion(Motion::Right)),
+            _ => None,
         };
 
-        Some(command)
+        EventResult {
+            command,
+            next_mode: None,
+        }
     }
 
     fn search_command(
@@ -90,37 +103,20 @@ where
     ) -> Option<Command<A, T, M>> {
         match self.actions.search(events) {
             // Perform action for known sequence
-            EventSearchResult::Exact(entry) | EventSearchResult::ExactPrefix(entry) => {
-                let count = self.repeat.count().unwrap_or(1);
-                // let events: Vec<_> = self.buffer.drain(..).collect();
-                self.reset();
+            EventSearchResult::Exact(entry) => self.entry_command(entry),
 
-                match entry {
-                    TrieEntry::Action(action) => Some(Command::Action { count, action }),
-                    TrieEntry::TextObject(obj) => {
-                        let op = self.pending_operator.take()?;
-                        Some(Command::TextObj { count, obj, op })
-                    }
-                    TrieEntry::Motion(motion) => {
-                        let op = self.pending_operator.take();
-                        Some(Command::Motion { count, motion, op })
-                    }
-                    TrieEntry::Operator(op) => {
-                        if mode.is_visual() {
-                            Some(Command::Operator(op))
-                        } else if op.requires_motion() {
-                            self.pending_operator = Some(op);
-                            None
-                        } else {
-                            Some(Command::Motion {
-                                count,
-                                motion: Motion::None,
-                                op: Some(op),
-                            })
-                        }
+            EventSearchResult::ExactPrefix(entry) => match entry {
+                TrieEntry::Operator(op) => {
+                    if mode.is_visual() || !op.requires_motion() {
+                        self.entry_command(entry)
+                    } else {
+                        tracing::info!("Setting pending operator: {op:?}");
+                        self.pending_operator = Some(op);
+                        None
                     }
                 }
-            }
+                _ => None,
+            },
 
             // Clear previous keys for unknown sequence but keep repeat
             EventSearchResult::None => {
@@ -138,9 +134,64 @@ where
         }
     }
 
-    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
+    fn entry_command(&mut self, entry: TrieEntry<A, T, M>) -> Option<Command<A, T, M>> {
+        tracing::info!("Entry {entry:?} with {self:?}");
+        let count = self.repeat.count().unwrap_or(1);
+        self.reset();
+
+        match entry {
+            TrieEntry::Action(action) => Some(Command::Action { count, action }),
+            TrieEntry::TextObject(obj) => {
+                let op = self.pending_operator.take()?;
+                Some(Command::TextObj { count, obj, op })
+            }
+            TrieEntry::Motion(motion) => {
+                let op = self.pending_operator.take();
+                Some(Command::Motion { count, motion, op })
+            }
+            TrieEntry::Operator(op) => Some(Command::Operator(op)),
+        }
+    }
+
+    fn key_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
         tracing::debug!("[EVENT] {event:?} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
+
+        // Check for mode switching keys
+        if let Event::Key(key) = *event {
+            let next_mode = match (mode, key.code, key.modifiers) {
+                // -> Normal
+                (mode, KeyCode::Esc, _) if !matches!(mode, EventMode::Normal) => {
+                    Some(EventMode::Normal)
+                }
+
+                // -> Insert
+                (
+                    EventMode::Normal,
+                    KeyCode::Char('i') | KeyCode::Char('a'),
+                    KeyModifiers::NONE | KeyModifiers::SHIFT,
+                ) => Some(EventMode::Insert),
+
+                // -> Visual
+                (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::NONE) => {
+                    Some(EventMode::Visual(SelectionKind::Cells))
+                }
+                (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::SHIFT) => {
+                    Some(EventMode::Visual(SelectionKind::Rows))
+                }
+                (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::CONTROL) => {
+                    Some(EventMode::Visual(SelectionKind::Cols))
+                }
+                _ => None,
+            };
+
+            if next_mode.is_some() {
+                return EventResult {
+                    command: None,
+                    next_mode,
+                };
+            }
+        }
 
         // Intercept leading digits (note: 0 is not a command if following another digit)
         if let Event::Key(key) = *event
@@ -153,166 +204,182 @@ where
             let digit = ch as u8;
             self.repeat.push_digit(digit);
 
-            return None;
+            return EventResult::default();
         }
 
         tracing::debug!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
-        self.search_command(&self.buffer.to_vec(), mode)
+        let command = self.search_command(&self.buffer.to_vec(), mode);
+        let next_mode = self.handle_mode_switch(&command);
+
+        EventResult { command, next_mode }
     }
 
-    pub fn tick(&mut self, mode: &EventMode) -> Option<Command<A, T, M>> {
+    pub fn tick(&mut self, mode: &EventMode) -> EventResult<A, T, M> {
         if self.buffer.is_empty() {
-            return None;
+            return EventResult::default();
         }
 
         // Before time out, wait for additional events to handle
         if self.last_insert.elapsed() < self.timeout {
-            return None;
+            return EventResult::default();
         }
 
         // After time out, perform the action w.r.t. longest valid action
-        if matches!(mode, EventMode::Normal) {
-            for idx in (1..=self.buffer.len()).rev() {
-                let events = self.buffer[..idx].to_vec();
+        let command = {
+            let mut result = None;
 
-                if let Some(command) = self.search_command(&events, mode) {
-                    return Some(command);
+            if matches!(mode, EventMode::Normal) {
+                for idx in (1..=self.buffer.len()).rev() {
+                    let events = self.buffer[..idx].to_vec();
+
+                    if let Some(command) = self.search_command(&events, mode) {
+                        result = Some(command);
+                    }
+                }
+
+                if result.is_none() {
+                    self.reset();
                 }
             }
 
-            self.reset();
-        }
+            result
+        };
 
-        None
+        EventResult {
+            command,
+            next_mode: None,
+        }
     }
 
     fn reset(&mut self) {
         self.buffer.clear();
         self.repeat.clear();
+        self.pending_operator = None;
     }
 
-    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
+    fn normal_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
             self.key_event(event, mode)
         } else {
-            None
+            EventResult::default()
         }
     }
 
-    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> Option<Command<A, T, M>> {
+    fn visual_event(&mut self, event: AppEvent, mode: &EventMode) -> EventResult<A, T, M> {
         if let Some(mouse) = event.mouse() {
             self.mouse_event(mouse)
         } else if event.key().is_some() {
             self.key_event(event, mode)
         } else {
-            None
+            EventResult::default()
         }
     }
 
-    fn insert_event(&mut self, event: AppEvent) -> Option<Command<A, T, M>> {
-        let key = event.key()?;
-
-        let command = match key.code {
-            // Insert
-            KeyCode::Char(char) => Command::new_action(Action::Insert(char)),
-
-            // Delete
-            KeyCode::Backspace => Command::new_action(Action::DeleteLeft),
-            KeyCode::Delete => Command::new_action(Action::DeleteRight),
-
-            // Movements
-            KeyCode::Down => Command::new_motion(Motion::Down),
-            KeyCode::End => Command::new_motion(Motion::RowEnd),
-            KeyCode::Home => Command::new_motion(Motion::RowStart),
-            KeyCode::Left => Command::new_motion(Motion::Left),
-            KeyCode::PageDown => Command::new_motion(Motion::ColEnd),
-            KeyCode::PageUp => Command::new_motion(Motion::ColStart),
-            KeyCode::Right => Command::new_motion(Motion::Right),
-            KeyCode::Up => Command::new_motion(Motion::Up),
-
-            // Modes
-            KeyCode::Esc => {
-                let normal = EventMode::Normal;
-                Command::new_action(Action::NextMode(normal))
-            }
-
-            _ => return None,
+    fn insert_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+        let Some(key) = event.key() else {
+            return EventResult::default();
         };
 
-        Some(command)
-    }
-
-    fn replace_event(&mut self, event: AppEvent) -> Option<Command<A, T, M>> {
-        let key = event.key()?;
+        let mut next_mode = None;
 
         let command = match key.code {
             // Insert
-            KeyCode::Char(char) => Command::new_action(Action::Insert(char)),
+            KeyCode::Char(char) => Some(Command::new_action(Action::Insert(char))),
 
             // Delete
-            KeyCode::Delete => Command::new_action(Action::DeleteRight),
+            KeyCode::Backspace => Some(Command::new_action(Action::DeleteLeft)),
+            KeyCode::Delete => Some(Command::new_action(Action::DeleteRight)),
 
             // Movements
-            KeyCode::Down => Command::new_motion(Motion::Down),
-            KeyCode::End => Command::new_motion(Motion::RowEnd),
-            KeyCode::Home => Command::new_motion(Motion::RowStart),
-            KeyCode::Left | KeyCode::Backspace => Command::new_motion(Motion::Left),
-            KeyCode::PageDown => Command::new_motion(Motion::ColEnd),
-            KeyCode::PageUp => Command::new_motion(Motion::ColStart),
-            KeyCode::Right => Command::new_motion(Motion::Right),
-            KeyCode::Up => Command::new_motion(Motion::Up),
+            KeyCode::Down => Some(Command::new_motion(Motion::Down)),
+            KeyCode::End => Some(Command::new_motion(Motion::RowEnd)),
+            KeyCode::Home => Some(Command::new_motion(Motion::RowStart)),
+            KeyCode::Left => Some(Command::new_motion(Motion::Left)),
+            KeyCode::PageDown => Some(Command::new_motion(Motion::ColEnd)),
+            KeyCode::PageUp => Some(Command::new_motion(Motion::ColStart)),
+            KeyCode::Right => Some(Command::new_motion(Motion::Right)),
+            KeyCode::Up => Some(Command::new_motion(Motion::Up)),
 
             // Modes
             KeyCode::Esc => {
-                let normal = EventMode::Normal;
-                Command::new_action(Action::NextMode(normal))
+                next_mode = Some(EventMode::Normal);
+                None
+            }
+
+            _ => None,
+        };
+
+        EventResult { command, next_mode }
+    }
+
+    fn replace_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+        let Some(key) = event.key() else {
+            return EventResult::default();
+        };
+
+        let mut next_mode = None;
+
+        let command = match key.code {
+            // Insert
+            KeyCode::Char(char) => Some(Command::new_action(Action::Insert(char))),
+
+            // Delete
+            KeyCode::Delete => Some(Command::new_action(Action::DeleteRight)),
+
+            // Movements
+            KeyCode::Down => Some(Command::new_motion(Motion::Down)),
+            KeyCode::End => Some(Command::new_motion(Motion::RowEnd)),
+            KeyCode::Home => Some(Command::new_motion(Motion::RowStart)),
+            KeyCode::Left | KeyCode::Backspace => Some(Command::new_motion(Motion::Left)),
+            KeyCode::PageDown => Some(Command::new_motion(Motion::ColEnd)),
+            KeyCode::PageUp => Some(Command::new_motion(Motion::ColStart)),
+            KeyCode::Right => Some(Command::new_motion(Motion::Right)),
+            KeyCode::Up => Some(Command::new_motion(Motion::Up)),
+
+            // Modes
+            KeyCode::Esc => {
+                next_mode = Some(EventMode::Normal);
+                None
             }
             KeyCode::Insert => {
-                let insert = EventMode::Insert;
-                Command::new_action(Action::NextMode(insert))
+                next_mode = Some(EventMode::Insert);
+                None
             }
 
-            _ => return None,
+            _ => None,
         };
 
-        Some(command)
+        EventResult { command, next_mode }
     }
 
-    fn handle_mode_switch(&mut self, result: &mut Option<Command<A, T, M>>, mode: &mut EventMode) {
-        tracing::info!("\tHandling mode switch for result {result:?}");
+    fn handle_mode_switch(&mut self, command: &Option<Command<A, T, M>>) -> Option<EventMode> {
+        tracing::info!("\tHandling mode switch for result {command:?}");
 
-        let Some(command) = result else {
+        let Some(command) = command else {
             tracing::info!("\tNo command");
-            return;
+            return None;
         };
 
         match command {
             // Switch to the next mode explicitly
-            Command::Action {
-                action: Action::NextMode(next_mode),
-                ..
-            } => {
-                tracing::info!("\tExplict next mode");
-                *mode = *next_mode;
-            }
             // Switch implicitly based on e.g. the operator
-            Command::Motion { op: Some(op), .. } | Command::TextObj { op, .. } => {
+            Command::Operator(op)
+            | Command::Motion { op: Some(op), .. }
+            | Command::TextObj { op, .. } => {
                 tracing::info!("\tNext mode from operator {op:?}");
                 let next_mode = match op {
                     Operator::Change | Operator::ChangeSingle => EventMode::Insert,
                     _ => EventMode::Normal,
                 };
 
-                *mode = next_mode;
+                Some(next_mode)
             }
 
-            _ => {
-                tracing::info!("\tKeeping current mode");
-            }
+            _ => None,
         }
     }
 }

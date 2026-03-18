@@ -111,27 +111,6 @@ impl<A, T, M> EventTrie<A, T, M> {
 
         node.entry = Some(entry);
     }
-
-    pub fn insert_mode_switches(&mut self) {
-        let key_modes = [
-            // -> Normal
-            ("<Esc>", EventMode::Normal),
-            // -> Insert
-            ("i", EventMode::Insert),
-            ("a", EventMode::Insert),
-            ("<S-i>", EventMode::Insert),
-            ("<S-A>", EventMode::Insert),
-            // -> Visual
-            ("v", EventMode::Visual(SelectionKind::Cells)),
-            ("<S-v>", EventMode::Visual(SelectionKind::Rows)),
-            ("<C-v>", EventMode::Visual(SelectionKind::Cols)),
-        ];
-
-        for (key, mode) in key_modes {
-            let entry = TrieEntry::Action(Action::NextMode(mode));
-            self.insert_key(key, entry);
-        }
-    }
 }
 
 impl<A, T, M> EventTrie<A, T, M>

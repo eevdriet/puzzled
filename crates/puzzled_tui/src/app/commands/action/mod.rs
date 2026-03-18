@@ -19,10 +19,6 @@ pub enum Action<A> {
     Select,
     Cancel,
 
-    // Mode management
-    #[serde(skip)]
-    NextMode(EventMode),
-
     // -- Normal -- //
     // Mouse
     #[serde(skip)]

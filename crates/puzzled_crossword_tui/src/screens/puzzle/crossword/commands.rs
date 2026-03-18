@@ -41,8 +41,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                         Operator::Change => EventMode::Insert,
                         _ => EventMode::Normal,
                     };
-                    let normal_command = Command::new_action(Action::NextMode(mode));
-                    resolver.fire_command(normal_command);
+                    resolver.set_mode(mode);
 
                     true
                 } else if !op.requires_motion() {

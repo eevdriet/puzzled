@@ -117,16 +117,30 @@ where
                         render = true;
                     }
 
-                    if let Some(command) = self.engine.push(event, &mut self.context.mode) {
+                    let EventResult { command, next_mode } = self.engine.push(event, &mut self.context.mode);
+
+                    if let Some(command) = command {
                         resolver.fire_command(command);
+                        render = true;
+                    }
+
+                    if let Some(mode) = next_mode {
+                        resolver.set_mode(mode);
                         render = true;
                     }
                 }
 
                 // Handle app event time out
                 _ = tokio::time::sleep(TICK_DURATION) => {
-                    if let Some(command) = self.engine.tick(&self.context.mode) {
+                    let EventResult { command, next_mode } = self.engine.tick(&mut self.context.mode);
+
+                    if let Some(command) = command {
                         resolver.fire_command(command);
+                        render = true;
+                    }
+
+                    if let Some(mode) = next_mode {
+                        resolver.set_mode(mode);
                         render = true;
                     }
                 }
@@ -141,6 +155,7 @@ where
 
                         CommandOutcome::Mode(mode) => {
                             self.context.mode = mode;
+                            screen.on_mode(mode, resolver.clone(), &mut self.context);
                         }
 
                         // Completely exit the app

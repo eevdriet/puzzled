@@ -87,8 +87,6 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
 
         // Cell style
         if let Some(cell) = self.0.as_ref() {
-            tracing::info!("Cell style: {}", cell.style());
-
             if cell.is_revealed() {
                 border_style = border_style.fg(Color::Blue);
             } else if cell.is_incorrect() {

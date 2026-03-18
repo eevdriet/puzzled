@@ -140,25 +140,6 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
                 Action::Quit => resolver.quit(),
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
-                Action::NextMode(mode) => {
-                    let selection = &mut self.state.render.selection;
-                    let cursor = self.state.render.cursor;
-                    self.state.mode = *mode;
-
-                    match mode {
-                        EventMode::Visual(kind) => {
-                            selection.set_kind(*kind);
-                            selection.set(cursor, cursor);
-                        }
-                        _ => {
-                            if let Some(start) = selection.start() {
-                                self.state.render.cursor = start;
-                            }
-
-                            selection.reset();
-                        }
-                    }
-                }
 
                 // Focus change actions
                 action if action.is_focus() => {
@@ -183,6 +164,38 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
                 .crossword
                 .handle_command(command, resolver, ctx, &mut self.state),
         }
+    }
+
+    fn on_mode(
+        &mut self,
+        mode: EventMode,
+        _resolver: puzzled_tui::ActionResolver<
+            CrosswordAction,
+            CrosswordTextObject,
+            CrosswordMotion,
+            AppState,
+        >,
+        _ctx: &mut AppContext<AppState>,
+    ) -> bool {
+        let selection = &mut self.state.render.selection;
+        let cursor = self.state.render.cursor;
+        self.state.mode = mode;
+
+        match mode {
+            EventMode::Visual(kind) => {
+                selection.set_kind(kind);
+                selection.set(cursor, cursor);
+            }
+            _ => {
+                if let Some(start) = selection.start() {
+                    self.state.render.cursor = start;
+                }
+
+                selection.reset();
+            }
+        }
+
+        true
     }
 
     fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
