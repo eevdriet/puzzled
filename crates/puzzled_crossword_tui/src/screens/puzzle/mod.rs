@@ -107,9 +107,8 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
 
         let footer_height = 5;
         let clues_height = clues_size.height.min(right.height - footer_height);
-        let [clues, _, footer, _] = Layout::vertical(vec![
+        let [clues, footer, _] = Layout::vertical(vec![
             Constraint::Length(clues_height),
-            Constraint::Length(gap),
             Constraint::Length(footer_height),
             Constraint::Min(0),
         ])
