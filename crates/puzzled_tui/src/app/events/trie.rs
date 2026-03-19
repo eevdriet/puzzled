@@ -5,11 +5,9 @@ use puzzled_io::puzzle_config_dir;
 use serde::{Deserialize, de::DeserializeOwned};
 
 use crate::{
-    Action, ActionBehavior, AppEvent, Motion, MotionBehavior, Operator, RawActionKeys,
-    SelectionKind, TextObject, TextObjectBehavior, app::events::parse_key, parse_action_events,
+    Action, ActionBehavior, AppEvent, Motion, MotionBehavior, Operator, RawActionKeys, TextObject,
+    TextObjectBehavior, app::events::parse_key, parse_action_events,
 };
-
-use super::EventMode;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
 #[serde(untagged)]

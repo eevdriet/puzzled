@@ -1,6 +1,6 @@
 use tokio::sync::mpsc;
 
-use crate::{Command, CommandOutcome, EventMode, StatefulScreen};
+use crate::{Command, CommandOutcome, EventMode, Popup, StatefulScreen};
 
 pub struct ActionResolver<A, T, M, S> {
     pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<A, T, M, S>>,
@@ -21,6 +21,18 @@ impl<A, T, M, S> ActionResolver<A, T, M, S> {
         self.sender
             .send(CommandOutcome::PreviousScreen)
             .expect("Should be able to resolve previous screen");
+    }
+
+    pub fn open_popup(&self, popup: Box<dyn Popup<A, T, M, S>>) {
+        self.sender
+            .send(CommandOutcome::OpenPopup(popup))
+            .expect("Should be able to resolve next screen");
+    }
+
+    pub fn close_popup(&self) {
+        self.sender
+            .send(CommandOutcome::ClosePopup)
+            .expect("Should be able to resolve next screen");
     }
 
     pub fn quit(&self) {

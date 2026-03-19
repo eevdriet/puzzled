@@ -208,7 +208,9 @@ where
 
             let next_mode = match (self.mode, key.code, key.modifiers) {
                 // -> Normal
-                (_, KeyCode::Esc, _) => Some(EventMode::Normal),
+                (mode, KeyCode::Esc, _) if !matches!(mode, EventMode::Normal) => {
+                    Some(EventMode::Normal)
+                }
 
                 // -> Insert
                 (

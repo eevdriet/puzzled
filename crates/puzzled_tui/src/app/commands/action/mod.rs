@@ -4,12 +4,10 @@ mod handle;
 pub use behavior::*;
 pub use handle::*;
 
-use crossterm::event::MouseButton;
 use derive_more::{Display, Eq};
-use ratatui::layout::Position as AppPosition;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A> {
     // Lifetime management
@@ -39,6 +37,8 @@ pub enum Action<A> {
     // -- Command -- //
     Undo,
     Redo,
+
+    ShowHelp,
 
     // Other (for puzzle specific actions)
     #[serde(untagged)]

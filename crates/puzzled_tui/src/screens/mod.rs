@@ -12,6 +12,10 @@ pub trait StatefulScreen<A, T, M, S> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<S>);
 
+    fn on_tick(&self, _ctx: &AppContext<S>) -> bool {
+        false
+    }
+
     // Actions
     fn on_command(
         &mut self,

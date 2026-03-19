@@ -1,11 +1,13 @@
 mod clues;
 mod crossword;
 mod footer;
+mod hello;
 mod state;
 
 pub use clues::*;
 pub use crossword::*;
 pub use footer::*;
+pub use hello::*;
 pub use state::*;
 
 use ratatui::{
@@ -17,7 +19,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppContext, Command, EventMode, FocusManager,
-    GridRenderState, HandleBaseAction, HandleCommand, HandleMode, RenderSize, StatefulScreen,
+    GridRenderState, HandleCommand, HandleMode, RenderSize, StatefulScreen,
 };
 
 use crate::{
@@ -66,6 +68,7 @@ impl PuzzleScreen {
             down: list,
             history: ActionHistory::default(),
             focus,
+            is_paused: false,
         };
 
         Self {
@@ -80,7 +83,7 @@ impl PuzzleScreen {
 impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
     for PuzzleScreen
 {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut AppContext<AppState>) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<AppState>) {
         // Compute sizes
         let gap = 2;
 
@@ -124,8 +127,13 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
 
         let mut footer_state = FooterState {
             mode: self.state.render.mode,
+            timer: self.state.solve.timer,
         };
         self.footer.render_ref(footer, buf, &mut footer_state);
+    }
+
+    fn on_tick(&self, _ctx: &AppContext<AppState>) -> bool {
+        true
     }
 
     fn on_command(
@@ -138,6 +146,10 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),
+                Action::ShowHelp => {
+                    let popup = Box::new(HelloPopup);
+                    resolver.open_popup(popup);
+                }
                 Action::Quit => resolver.quit(),
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
@@ -182,11 +194,17 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
     }
 
+    fn on_enter(&mut self, _ctx: &mut AppContext<AppState>) {
+        self.state.solve.timer.start();
+    }
+
     fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
         self.state.solve.timer.pause();
+        self.state.is_paused = true;
     }
 
     fn on_resume(&mut self, _ctx: &mut AppContext<AppState>) {
         self.state.solve.timer.start();
+        self.state.is_paused = false;
     }
 }

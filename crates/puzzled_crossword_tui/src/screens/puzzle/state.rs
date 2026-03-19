@@ -19,6 +19,7 @@ pub struct PuzzleScreenState {
 
     // UI state
     pub focus: FocusManager<Focus>,
+    pub is_paused: bool,
 
     // Other
     pub history: ActionHistory<SquareGridState<Solution>>,

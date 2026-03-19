@@ -60,7 +60,9 @@ impl StatefulWidgetRef for CrosswordWidget {
         let clues = puzzle.clues();
         let clue_dir = ClueDirection::from(render.direction);
 
-        if let Some(clue) = clues.get_clue(render.cursor, clue_dir) {
+        if !state.is_paused
+            && let Some(clue) = clues.get_clue(render.cursor, clue_dir)
+        {
             let clue_text = format!("{}{}  {}", clue.num(), clue.direction(), clue.text());
 
             Text::from(clue_text)
