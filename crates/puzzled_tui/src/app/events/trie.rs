@@ -226,6 +226,19 @@ impl<A, T, M> KeyMap<A, T, M> {
     }
 }
 
+impl<A, T, M> Clone for KeyMap<A, T, M>
+where
+    A: Clone,
+    T: Clone,
+    M: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            keys: self.keys.clone(),
+        }
+    }
+}
+
 impl<A, T, M> EventTrie<A, T, M>
 where
     A: ActionBehavior + Hash,

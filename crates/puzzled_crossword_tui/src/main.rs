@@ -24,10 +24,10 @@ async fn main() -> io::Result<()> {
     opts.cell_width = 5;
     opts.cell_height = 3;
 
-    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events: EventTrie<CrosswordAction, CrosswordTextObject, CrosswordMotion> =
         EventTrie::from_config::<Crossword>()?;
     let keys = events.action_keys();
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state, keys.clone());
 
     let state = AppState::default();
     let ctx = AppContext::new(state, keys);

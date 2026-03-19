@@ -9,13 +9,7 @@ use crate::{Action, ActionResolver, AppContext, Command};
 pub trait Popup<A, T, M, S> {
     type State;
 
-    fn render(
-        &mut self,
-        area: Rect,
-        buf: &mut Buffer,
-        ctx: &mut AppContext<A, T, M, S>,
-        state: &mut Self::State,
-    );
+    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 
     fn on_command(
         &mut self,

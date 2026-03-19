@@ -121,40 +121,69 @@ impl Hash for AppEvent {
 
 impl fmt::Display for AppEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self.0 {
-                Event::Key(key) => {
-                    match key.code {
-                        KeyCode::Left => "←".to_string(),
-                        KeyCode::Backspace => "← BS".to_string(),
-                        KeyCode::Right => "→".to_string(),
-                        KeyCode::Up => "↑".to_string(),
-                        KeyCode::Down => "↓".to_string(),
-                        KeyCode::Enter => "↵".to_string(),
-                        KeyCode::Tab => "↹".to_string(),
-                        code => code.to_string(),
-                    }
-                }
-                Event::Mouse(mouse) => {
-                    let button = match mouse.kind {
-                        MouseEventKind::Down(button)
-                        | MouseEventKind::Up(button)
-                        | MouseEventKind::Drag(button) => button,
-                        _ => return Err(fmt::Error),
-                    };
-
-                    match button {
-                        MouseButton::Left => "mouse1",
-                        MouseButton::Middle => "mouse2",
-                        MouseButton::Right => "mouse3",
-                    }
-                    .to_string()
-                }
-                _ => "".to_string(),
+        // Display code
+        let (code, mods) = match self.0 {
+            Event::Key(key) => {
+                let mods = key.modifiers;
+                let code = match key.code {
+                    KeyCode::Left => "←".to_string(),
+                    KeyCode::Backspace => "← BS".to_string(),
+                    KeyCode::Right => "→".to_string(),
+                    KeyCode::Up => "↑".to_string(),
+                    KeyCode::Down => "↓".to_string(),
+                    KeyCode::Enter => "↵".to_string(),
+                    KeyCode::Tab => "↹".to_string(),
+                    code => code.to_string(),
+                };
+                (code, mods)
             }
-        )
+            Event::Mouse(mouse) => {
+                let mods = mouse.modifiers;
+                let button = match mouse.kind {
+                    MouseEventKind::Down(button)
+                    | MouseEventKind::Up(button)
+                    | MouseEventKind::Drag(button) => button,
+                    _ => return Err(fmt::Error),
+                };
+
+                let code = match button {
+                    MouseButton::Left => "mouse1",
+                    MouseButton::Middle => "mouse2",
+                    MouseButton::Right => "mouse3",
+                }
+                .to_string();
+
+                (code, mods)
+            }
+            _ => {
+                return Err(fmt::Error);
+            }
+        };
+
+        let mut event = code.to_string();
+
+        // Display modifiers
+        let mut has_mod = false;
+
+        if mods.contains(KeyModifiers::ALT) {
+            event = format!("A-{event}");
+            has_mod = true;
+        }
+        if mods.contains(KeyModifiers::SHIFT) {
+            event = format!("S-{event}");
+            has_mod = true;
+        }
+        if mods.contains(KeyModifiers::CONTROL) {
+            event = format!("C-{event}");
+            has_mod = true;
+        }
+
+        if has_mod {
+            event = format!("<{event}>");
+        }
+
+        // Result
+        write!(f, "{event}")
     }
 }
 

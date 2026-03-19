@@ -19,11 +19,11 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
-    HandleCommand, HandleMode, KeysPopupState, Popup, RenderSize, StatefulScreen,
+    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, StatefulScreen,
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordKeys, CrosswordMotion,
     CrosswordResolver, CrosswordTextObject,
 };
 
@@ -43,8 +43,10 @@ pub struct PuzzleScreen {
     // Widgets
     crossword: CrosswordWidget,
     clues: CluesWidget,
+
     // Popups
     popup: bool,
+    keys: KeysPopup<CrosswordAction, CrosswordTextObject, CrosswordMotion>,
 }
 
 impl PuzzleScreen {
@@ -52,6 +54,7 @@ impl PuzzleScreen {
         puzzle: Crossword,
         solve_state: CrosswordState,
         render_state: GridRenderState,
+        keys: CrosswordKeys,
     ) -> Self {
         let mut focus = FocusManager::from_mode_nodes([(Focus::Clues, EventMode::Normal)]);
 
@@ -72,11 +75,14 @@ impl PuzzleScreen {
             is_paused: false,
         };
 
+        let keys = KeysPopup::new(keys).all_actions(&());
+
         Self {
             state,
             popup: false,
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
+            keys,
         }
     }
 }
@@ -133,7 +139,14 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         FooterWidget { keys: &ctx.keys }.render_ref(footer, buf, &mut footer_state);
 
         if self.popup {
-            HelloPopup.render(area, buf, ctx, &mut ());
+            let mut state = KeysPopupState::default();
+
+            Popup::<CrosswordAction, CrosswordTextObject, CrosswordMotion, CrosswordState>::render(
+                &mut self.keys,
+                area,
+                buf,
+                &mut state,
+            );
         }
     }
 
@@ -147,6 +160,10 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         resolver: CrosswordResolver,
         ctx: &mut CrosswordContext,
     ) -> bool {
+        if self.popup {
+            return self.keys.on_command(command, resolver, ctx);
+        }
+
         if let Command::Action { action, count } = &command {
             match action {
                 // Lifetime actions
