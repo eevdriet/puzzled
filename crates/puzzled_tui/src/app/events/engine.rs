@@ -3,8 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEvent, MouseEventKind};
-use ratatui::layout::Position as AppPosition;
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
 use crate::{
     Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
@@ -22,20 +21,37 @@ pub struct EventEngine<A, T, M> {
     repeat: RepeatState,
 
     last_insert: Instant,
+    is_dragging: bool,
     timeout: Duration,
 }
 
 #[derive(Debug)]
+pub enum EventEffect<A, T, M> {
+    Command(Command<A, T, M>),
+    Mode(EventMode),
+}
+
+#[derive(Debug)]
 pub struct EventResult<A, T, M> {
-    pub command: Option<Command<A, T, M>>,
-    pub next_mode: Option<EventMode>,
+    pub effects: Vec<EventEffect<A, T, M>>,
+}
+
+impl<A, T, M> EventResult<A, T, M> {
+    pub fn next_mode(&self) -> Option<EventMode> {
+        for effect in self.effects.iter().rev() {
+            if let EventEffect::Mode(mode) = effect {
+                return Some(*mode);
+            }
+        }
+
+        None
+    }
 }
 
 impl<A, T, M> Default for EventResult<A, T, M> {
     fn default() -> Self {
         Self {
-            command: None,
-            next_mode: None,
+            effects: Vec::new(),
         }
     }
 }
@@ -49,6 +65,7 @@ impl<A, T, M> EventEngine<A, T, M> {
             repeat: RepeatState::default(),
             pending_operator: None,
             buffer: Vec::new(),
+            is_dragging: false,
             last_insert: Instant::now(),
         }
     }
@@ -78,23 +95,50 @@ where
             EventMode::Replace => self.replace_event(event),
         };
 
-        if let Some(mode) = result.next_mode {
+        if let Some(mode) = result.next_mode() {
             self.mode = mode;
         }
 
         result
     }
 
-    fn mouse_event(&self, mouse: MouseEvent) -> EventResult<A, T, M> {
-        let command = match &mouse.kind {
-            MouseEventKind::Moved => None,
-            _ => Some(Command::new_motion(Motion::Mouse(mouse))),
-        };
+    fn mouse_event(&mut self, mouse: MouseEvent) -> EventResult<A, T, M> {
+        let mut effects = Vec::new();
 
-        EventResult {
-            command,
-            next_mode: None,
+        match mouse.kind {
+            // Start visual selection on mouse drag
+            MouseEventKind::Drag(MouseButton::Left) => {
+                self.is_dragging = true;
+
+                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                    mouse,
+                ))));
+                effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
+            }
+
+            // Stop dragging when mouse released
+            MouseEventKind::Up(MouseButton::Left) if self.is_dragging => {
+                self.is_dragging = false;
+            }
+
+            // Return to normal mode on another mouse click
+            MouseEventKind::Up(MouseButton::Left) if !self.is_dragging => {
+                effects.push(EventEffect::Mode(EventMode::Normal));
+                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                    mouse,
+                ))));
+            }
+
+            // Pass through other mouse events normally
+            kind if !matches!(kind, MouseEventKind::Moved) => {
+                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                    mouse,
+                ))));
+            }
+            _ => {}
         }
+
+        EventResult { effects }
     }
 
     fn search_command(
@@ -164,9 +208,7 @@ where
 
             let next_mode = match (self.mode, key.code, key.modifiers) {
                 // -> Normal
-                (mode, KeyCode::Esc, _) if !matches!(mode, EventMode::Normal) => {
-                    Some(EventMode::Normal)
-                }
+                (_, KeyCode::Esc, _) => Some(EventMode::Normal),
 
                 // -> Insert
                 (
@@ -191,10 +233,9 @@ where
                 _ => None,
             };
 
-            if next_mode.is_some() {
+            if let Some(mode) = next_mode {
                 return EventResult {
-                    command: None,
-                    next_mode,
+                    effects: vec![EventEffect::Mode(mode)],
                 };
             }
         }
@@ -217,10 +258,18 @@ where
         self.buffer.push(event.clone());
 
         let curr_mode = self.mode;
-        let command = self.search_command(&self.buffer.to_vec(), &curr_mode);
-        let next_mode = self.handle_mode_switch(&command);
+        let mut effects = Vec::new();
 
-        EventResult { command, next_mode }
+        if let Some(command) = self.search_command(&self.buffer.to_vec(), &curr_mode) {
+            let next_mode = self.handle_mode_switch(&command);
+            effects.push(EventEffect::Command(command));
+
+            if let Some(mode) = next_mode {
+                effects.push(EventEffect::Mode(mode));
+            }
+        }
+
+        EventResult { effects }
     }
 
     pub fn tick(&mut self) -> EventResult<A, T, M> {
@@ -256,8 +305,10 @@ where
         };
 
         EventResult {
-            command,
-            next_mode: None,
+            effects: match command {
+                Some(command) => vec![EventEffect::Command(command)],
+                _ => vec![],
+            },
         }
     }
 
@@ -280,36 +331,33 @@ where
             return EventResult::default();
         };
 
-        let mut next_mode = None;
-
-        let command = match key.code {
+        let effect = match key.code {
             // Insert
-            KeyCode::Char(char) => Some(Command::new_action(Action::Insert(char))),
+            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Insert(char))),
 
             // Delete
-            KeyCode::Backspace => Some(Command::new_action(Action::DeleteLeft)),
-            KeyCode::Delete => Some(Command::new_action(Action::DeleteRight)),
+            KeyCode::Backspace => EventEffect::Command(Command::new_action(Action::DeleteLeft)),
+            KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
 
             // Movements
-            KeyCode::Down => Some(Command::new_motion(Motion::Down)),
-            KeyCode::End => Some(Command::new_motion(Motion::RowEnd)),
-            KeyCode::Home => Some(Command::new_motion(Motion::RowStart)),
-            KeyCode::Left => Some(Command::new_motion(Motion::Left)),
-            KeyCode::PageDown => Some(Command::new_motion(Motion::ColEnd)),
-            KeyCode::PageUp => Some(Command::new_motion(Motion::ColStart)),
-            KeyCode::Right => Some(Command::new_motion(Motion::Right)),
-            KeyCode::Up => Some(Command::new_motion(Motion::Up)),
+            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down)),
+            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd)),
+            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart)),
+            KeyCode::Left => EventEffect::Command(Command::new_motion(Motion::Left)),
+            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd)),
+            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart)),
+            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right)),
+            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up)),
 
             // Modes
-            KeyCode::Esc => {
-                next_mode = Some(EventMode::Normal);
-                None
-            }
+            KeyCode::Esc => EventEffect::Mode(EventMode::Normal),
 
-            _ => None,
+            _ => return EventResult::default(),
         };
 
-        EventResult { command, next_mode }
+        EventResult {
+            effects: vec![effect],
+        }
     }
 
     fn replace_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
@@ -317,48 +365,39 @@ where
             return EventResult::default();
         };
 
-        let mut next_mode = None;
-
-        let command = match key.code {
+        let effect = match key.code {
             // Insert
-            KeyCode::Char(char) => Some(Command::new_action(Action::Insert(char))),
+            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Insert(char))),
 
             // Delete
-            KeyCode::Delete => Some(Command::new_action(Action::DeleteRight)),
+            KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
 
             // Movements
-            KeyCode::Down => Some(Command::new_motion(Motion::Down)),
-            KeyCode::End => Some(Command::new_motion(Motion::RowEnd)),
-            KeyCode::Home => Some(Command::new_motion(Motion::RowStart)),
-            KeyCode::Left | KeyCode::Backspace => Some(Command::new_motion(Motion::Left)),
-            KeyCode::PageDown => Some(Command::new_motion(Motion::ColEnd)),
-            KeyCode::PageUp => Some(Command::new_motion(Motion::ColStart)),
-            KeyCode::Right => Some(Command::new_motion(Motion::Right)),
-            KeyCode::Up => Some(Command::new_motion(Motion::Up)),
+            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down)),
+            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd)),
+            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart)),
+            KeyCode::Left | KeyCode::Backspace => {
+                EventEffect::Command(Command::new_motion(Motion::Left))
+            }
+            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd)),
+            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart)),
+            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right)),
+            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up)),
 
             // Modes
-            KeyCode::Esc => {
-                next_mode = Some(EventMode::Normal);
-                None
-            }
-            KeyCode::Insert => {
-                next_mode = Some(EventMode::Insert);
-                None
-            }
+            KeyCode::Esc => EventEffect::Mode(EventMode::Normal),
+            KeyCode::Insert => EventEffect::Mode(EventMode::Insert),
 
-            _ => None,
+            _ => return EventResult::default(),
         };
 
-        EventResult { command, next_mode }
+        EventResult {
+            effects: vec![effect],
+        }
     }
 
-    fn handle_mode_switch(&mut self, command: &Option<Command<A, T, M>>) -> Option<EventMode> {
+    fn handle_mode_switch(&mut self, command: &Command<A, T, M>) -> Option<EventMode> {
         tracing::info!("\tHandling mode switch for result {command:?}");
-
-        let Some(command) = command else {
-            tracing::info!("\tNo command");
-            return None;
-        };
 
         let mode = match command {
             // Switch to the next mode explicitly

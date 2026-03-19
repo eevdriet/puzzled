@@ -116,29 +116,37 @@ where
                         render = true;
                     }
 
-                    let EventResult { command, next_mode } = self.engine.push(event);
-
-                    if let Some(command) = command {
-                        screen.on_command(command, resolver.clone(), &mut self.context);
-                        render = true;
-                    }
-
-                    if let Some(mode) = next_mode {
-                        screen.on_mode(mode, resolver.clone(), &mut self.context);
-                        render = true;
+                    for effect in self.engine.push(event).effects {
+                        match effect {
+                            EventEffect::Command(command) => {
+                                resolver.fire_command(command);
+                                // screen.on_command(command, resolver.clone(), &mut self.context);
+                                // render = true;
+                            }
+                            EventEffect::Mode(mode) => {
+                                resolver.set_mode(mode);
+                                // screen.on_mode(mode, resolver.clone(), &mut self.context);
+                                // render = true;
+                            }
+                        }
                     }
                 }
 
                 // Handle app event time out
                 _ = tokio::time::sleep(TICK_DURATION) => {
-                    let EventResult { command, next_mode } = self.engine.tick();
-
-                    if let Some(command) = command {
-                        resolver.fire_command(command);
-                    }
-
-                    if let Some(mode) = next_mode {
-                        resolver.set_mode(mode);
+                    for effect in self.engine.tick().effects {
+                        match effect {
+                            EventEffect::Command(command) => {
+                                resolver.fire_command(command);
+                                // screen.on_command(command, resolver.clone(), &mut self.context);
+                                // render = true;
+                            }
+                            EventEffect::Mode(mode) => {
+                                resolver.set_mode(mode);
+                                // screen.on_mode(mode, resolver.clone(), &mut self.context);
+                                // render = true;
+                            }
+                        }
                     }
                 }
 
