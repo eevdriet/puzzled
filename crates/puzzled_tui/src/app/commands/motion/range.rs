@@ -41,7 +41,6 @@ impl<M, T> BaseMotionRange<M> for Grid<T> {
         let iter_direction = |dir: Direction| self.iter_segment(start, dir);
 
         let iter = match motion {
-            Motion::None => iter_remaining(1),
             Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
             Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {
                 iter_direction(dir)
@@ -63,7 +62,7 @@ impl<M, T> BaseMotionRange<M> for SquareGridRef<'_, T> {
         motion: &Motion<M>,
     ) -> impl IntoIterator<Item = Self::Position> {
         // Handle non-directed motions normally
-        if count == 0 || matches!(motion, Motion::None) {
+        if count == 0 {
             return self.0.base_motion_range(start, count, motion);
         }
 

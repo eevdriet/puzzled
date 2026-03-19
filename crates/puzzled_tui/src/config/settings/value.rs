@@ -540,7 +540,7 @@ impl<A, T, M, S> HandleCommand<A, T, M, S> for SettingValue {
         &mut self,
         _command: Command<A, T, M>,
         _resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool {
         // match self {

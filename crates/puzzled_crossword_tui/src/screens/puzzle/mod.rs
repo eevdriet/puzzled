@@ -23,8 +23,8 @@ use puzzled_tui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
-    CrosswordTextObject,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
+    CrosswordResolver, CrosswordTextObject,
 };
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
@@ -43,7 +43,6 @@ pub struct PuzzleScreen {
     // Widgets
     crossword: CrosswordWidget,
     clues: CluesWidget,
-    footer: FooterWidget,
 }
 
 impl PuzzleScreen {
@@ -75,7 +74,6 @@ impl PuzzleScreen {
             state,
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
-            footer: FooterWidget,
         }
     }
 }
@@ -83,7 +81,7 @@ impl PuzzleScreen {
 impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
     for PuzzleScreen
 {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<AppState>) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut CrosswordContext) {
         // Compute sizes
         let gap = 2;
 
@@ -128,10 +126,11 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
             mode: self.state.render.mode,
             timer: self.state.solve.timer,
         };
-        self.footer.render_ref(footer, buf, &mut footer_state);
+
+        FooterWidget { keys: &ctx.keys }.render_ref(footer, buf, &mut footer_state);
     }
 
-    fn on_tick(&self, _ctx: &AppContext<AppState>) -> bool {
+    fn on_tick(&self, _ctx: &CrosswordContext) -> bool {
         true
     }
 
@@ -139,7 +138,7 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         &mut self,
         command: CrosswordCommand,
         resolver: CrosswordResolver,
-        ctx: &mut AppContext<AppState>,
+        ctx: &mut CrosswordContext,
     ) -> bool {
         if let Command::Action { action, count } = &command {
             match action {
@@ -187,22 +186,22 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
             CrosswordMotion,
             AppState,
         >,
-        ctx: &mut AppContext<AppState>,
+        ctx: &mut CrosswordContext,
     ) -> bool {
         let solutions = &mut self.state.solve.solutions;
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
     }
 
-    fn on_enter(&mut self, _ctx: &mut AppContext<AppState>) {
+    fn on_enter(&mut self, _ctx: &mut CrosswordContext) {
         self.state.solve.timer.start();
     }
 
-    fn on_pause(&mut self, _ctx: &mut AppContext<AppState>) {
+    fn on_pause(&mut self, _ctx: &mut CrosswordContext) {
         self.state.solve.timer.pause();
         self.state.is_paused = true;
     }
 
-    fn on_resume(&mut self, _ctx: &mut AppContext<AppState>) {
+    fn on_resume(&mut self, _ctx: &mut CrosswordContext) {
         self.state.solve.timer.start();
         self.state.is_paused = false;
     }

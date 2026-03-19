@@ -1,21 +1,25 @@
 use puzzled_core::Timer;
-use puzzled_tui::{EventMode, TimerWidget};
+use puzzled_tui::{Action, EventMode, Motion, TimerWidget, TrieEntry};
 use ratatui::{
     layout::Margin,
     prelude::{Buffer, Rect},
     style::{Color, Style},
-    text::{Line, Span, Text},
+    text::{Line, Span},
     widgets::{StatefulWidgetRef, Widget},
 };
 
-pub struct FooterWidget;
+use crate::CrosswordKeys;
+
+pub struct FooterWidget<'a> {
+    pub keys: &'a CrosswordKeys,
+}
 
 pub struct FooterState {
     pub mode: EventMode,
     pub timer: Timer,
 }
 
-impl StatefulWidgetRef for FooterWidget {
+impl<'a> StatefulWidgetRef for FooterWidget<'a> {
     type State = FooterState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -23,7 +27,19 @@ impl StatefulWidgetRef for FooterWidget {
 
         Line::from(vec![
             Span::styled("Help: ", base.fg(Color::Gray)),
-            Span::styled("?", base.fg(Color::Yellow)),
+            Span::styled(
+                self.keys
+                    .get_merged(&TrieEntry::Action(Action::ShowHelp))
+                    .unwrap_or_default(),
+                base.fg(Color::Yellow),
+            ),
+            Span::styled(" | Move left: ", base.fg(Color::Gray)),
+            Span::styled(
+                self.keys
+                    .get_merged(&TrieEntry::Motion(Motion::Left))
+                    .unwrap_or_default(),
+                base.fg(Color::Yellow),
+            ),
         ])
         .render(area, buf);
 

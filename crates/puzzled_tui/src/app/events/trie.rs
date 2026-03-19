@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fmt::Debug, hash::Hash, io};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Debug,
+    hash::Hash,
+    io,
+};
 
 use puzzled_core::Puzzle;
 use puzzled_io::puzzle_config_dir;
@@ -16,6 +21,41 @@ pub enum TrieEntry<A, T, M> {
     TextObject(TextObject<T>),
     Motion(Motion<M>),
     Operator(Operator),
+}
+
+impl<A, T, M> Ord for TrieEntry<A, T, M>
+where
+    A: ActionBehavior,
+    T: TextObjectBehavior,
+    M: MotionBehavior,
+{
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let order = |entry: &TrieEntry<A, T, M>| match entry {
+            TrieEntry::Action(_) => 0,
+            TrieEntry::TextObject(_) => 1,
+            TrieEntry::Motion(_) => 2,
+            TrieEntry::Operator(_) => 3,
+        };
+
+        match (self, other) {
+            (TrieEntry::Action(lhs), TrieEntry::Action(rhs)) => lhs.cmp(rhs),
+            (TrieEntry::TextObject(lhs), TrieEntry::TextObject(rhs)) => lhs.cmp(rhs),
+            (TrieEntry::Motion(lhs), TrieEntry::Motion(rhs)) => lhs.cmp(rhs),
+            (TrieEntry::Operator(lhs), TrieEntry::Operator(rhs)) => lhs.cmp(rhs),
+            (lhs, rhs) => order(lhs).cmp(&order(rhs)),
+        }
+    }
+}
+
+impl<A, T, M> PartialOrd for TrieEntry<A, T, M>
+where
+    A: ActionBehavior,
+    T: TextObjectBehavior,
+    M: MotionBehavior,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -159,15 +199,42 @@ where
     }
 }
 
+pub struct Keys<A, T, M> {
+    keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>,
+}
+
+impl<A, T, M> Keys<A, T, M> {
+    pub fn new(keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>) -> Self {
+        Self { keys }
+    }
+
+    pub fn get_merged(&self, entry: &TrieEntry<A, T, M>) -> Option<String>
+    where
+        A: ActionBehavior,
+        T: TextObjectBehavior,
+        M: MotionBehavior,
+    {
+        let keys = self.keys.get(entry)?;
+        let mut iter = keys.iter();
+
+        let first = iter.next()?.clone();
+        Some(iter.fold(first, |acc, item| format!("{acc} / {item}")))
+    }
+
+    pub fn keys(&self) -> &BTreeMap<TrieEntry<A, T, M>, Vec<String>> {
+        &self.keys
+    }
+}
+
 impl<A, T, M> EventTrie<A, T, M>
 where
     A: ActionBehavior + Hash,
     M: MotionBehavior + Hash,
     T: TextObjectBehavior + Hash,
 {
-    pub fn action_keys(&self) -> HashMap<TrieEntry<A, T, M>, Vec<String>> {
+    pub fn action_keys(&self) -> Keys<A, T, M> {
         // Initialize keys for all action variants
-        let mut keys = HashMap::default();
+        let mut keys = BTreeMap::default();
 
         // TODO: add back all variants for motions/operators etc.
         // for action in Action::<A, T, M>::variants() {
@@ -178,18 +245,18 @@ where
         // Perform a DFS to find all actions for which keys are defined
         dfs(&self.root, &mut keys, vec![]);
 
-        keys
+        Keys { keys }
     }
 }
 
 fn dfs<A, T, M>(
     node: &EventTrieNode<A, T, M>,
-    result: &mut HashMap<TrieEntry<A, T, M>, Vec<String>>,
+    result: &mut BTreeMap<TrieEntry<A, T, M>, Vec<String>>,
     current_events: Vec<AppEvent>,
 ) where
-    A: Eq + Hash + Clone,
-    M: Eq + Hash + Clone,
-    T: Eq + Hash + Clone,
+    A: ActionBehavior,
+    M: MotionBehavior,
+    T: TextObjectBehavior,
 {
     // If the node has an action, add the current path of events to the result
     if let Some(entry) = &node.entry {

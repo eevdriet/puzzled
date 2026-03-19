@@ -120,7 +120,7 @@ where
         &mut self,
         command: Command<A, T, M>,
         resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool {
         let Command::Action { action, .. } = command else {

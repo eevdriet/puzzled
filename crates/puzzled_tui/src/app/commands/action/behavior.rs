@@ -1,11 +1,8 @@
 use std::fmt::Debug;
 
-use crossterm::event::MouseButton;
-use ratatui::layout::Position;
-
 use crate::Action;
 
-pub trait ActionBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
+pub trait ActionBehavior: Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized {
     fn is_focus(&self) -> bool {
         false
     }

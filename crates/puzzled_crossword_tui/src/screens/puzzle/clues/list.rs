@@ -9,8 +9,8 @@ use ratatui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
-    CrosswordTextObject, PuzzleScreenState,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
+    CrosswordResolver, CrosswordTextObject, PuzzleScreenState,
 };
 
 pub struct CluesListWidget {
@@ -114,7 +114,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
         &mut self,
         command: CrosswordCommand,
         _resolver: CrosswordResolver,
-        _ctx: &mut AppContext<AppState>,
+        _ctx: &mut CrosswordContext,
         state: &mut Self::State,
     ) -> bool {
         match command {

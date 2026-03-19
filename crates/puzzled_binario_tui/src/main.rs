@@ -26,12 +26,10 @@ async fn main() -> io::Result<()> {
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events: EventTrie<BinarioAction, (), ()> = EventTrie::from_config::<Binario>()?;
-
-    // let action_keys = events.action_keys();
-    // dbg!(action_keys);
+    let keys = events.action_keys();
 
     let state = AppState {};
-    let context = AppContext::new(state);
+    let context = AppContext::new(state, keys);
     let mut app = App::new(context, events);
 
     app.run(Box::new(screen)).await?;

@@ -27,9 +27,10 @@ async fn main() -> io::Result<()> {
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     let events: EventTrie<CrosswordAction, CrosswordTextObject, CrosswordMotion> =
         EventTrie::from_config::<Crossword>()?;
+    let keys = events.action_keys();
 
     let state = AppState::default();
-    let ctx = AppContext::new(state);
+    let ctx = AppContext::new(state, keys);
 
     let mut app = App::new(ctx, events);
 

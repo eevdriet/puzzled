@@ -10,9 +10,9 @@ use crate::{ActionResolver, AppContext, Command, EventMode};
 
 pub trait StatefulScreen<A, T, M, S> {
     // Rendering
-    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<S>);
+    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<A, T, M, S>);
 
-    fn on_tick(&self, _ctx: &AppContext<S>) -> bool {
+    fn on_tick(&self, _ctx: &AppContext<A, T, M, S>) -> bool {
         false
     }
 
@@ -21,7 +21,7 @@ pub trait StatefulScreen<A, T, M, S> {
         &mut self,
         _command: Command<A, T, M>,
         _resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
     ) -> bool {
         false
     }
@@ -30,14 +30,14 @@ pub trait StatefulScreen<A, T, M, S> {
         &mut self,
         _mode: EventMode,
         _resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
     ) -> bool {
         false
     }
 
     // Lifetime events
-    fn on_enter(&mut self, _ctx: &mut AppContext<S>) {}
-    fn on_exit(&mut self, _ctx: &mut AppContext<S>) {}
-    fn on_pause(&mut self, _ctx: &mut AppContext<S>) {}
-    fn on_resume(&mut self, _ctx: &mut AppContext<S>) {}
+    fn on_enter(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_exit(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_pause(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_resume(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
 }

@@ -2,7 +2,7 @@ use derive_more::{Display, Eq};
 use puzzled_tui::TextObjectBehavior;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum CrosswordTextObject {
     Clue(

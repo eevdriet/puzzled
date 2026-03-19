@@ -25,7 +25,7 @@ const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<A, T, M, S> {
-    context: AppContext<S>,
+    context: AppContext<A, T, M, S>,
 
     events_rx: mpsc::UnboundedReceiver<AppEvent>,
 
@@ -40,7 +40,7 @@ where
     T: TextObjectBehavior + 'static,
     M: MotionBehavior + 'static,
 {
-    pub fn new(context: AppContext<S>, actions: EventTrie<A, T, M>) -> Self {
+    pub fn new(context: AppContext<A, T, M, S>, actions: EventTrie<A, T, M>) -> Self {
         let (events_tx, events_rx) = unbounded_channel();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 

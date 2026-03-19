@@ -1,6 +1,8 @@
-use puzzled_tui::{AppContext, HandleCommand};
+use puzzled_tui::HandleCommand;
 
-use crate::{AppState, BinarioAction, BinarioCommand, BinarioResolver, PuzzleScreen};
+use crate::{
+    AppState, BinarioAction, BinarioCommand, BinarioContext, BinarioResolver, PuzzleScreen,
+};
 
 impl HandleCommand<BinarioAction, (), (), AppState> for PuzzleScreen {
     type State = AppState;
@@ -9,7 +11,7 @@ impl HandleCommand<BinarioAction, (), (), AppState> for PuzzleScreen {
         &mut self,
         _command: BinarioCommand,
         _resolver: BinarioResolver,
-        _ctx: &mut AppContext<AppState>,
+        _ctx: &mut BinarioContext,
         _state: &mut Self::State,
     ) -> bool {
         false

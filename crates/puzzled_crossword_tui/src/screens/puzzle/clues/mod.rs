@@ -12,8 +12,9 @@ use ratatui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
-    CrosswordTextObject, Focus, PuzzleScreenState, screens::puzzle::clues::list::CluesListWidget,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
+    CrosswordResolver, CrosswordTextObject, Focus, PuzzleScreenState,
+    screens::puzzle::clues::list::CluesListWidget,
 };
 
 pub struct CluesWidget {
@@ -77,6 +78,11 @@ impl StatefulWidgetRef for CluesWidget {
         let area = block.inner(root);
         block.render(root, buf);
 
+        // Do not render clue lists when paused
+        if state.is_paused {
+            return;
+        }
+
         // Render the clue list(s)
         let text_margin = Margin::new(0, 1);
 
@@ -124,7 +130,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
         &mut self,
         command: CrosswordCommand,
         resolver: CrosswordResolver,
-        ctx: &mut AppContext<AppState>,
+        ctx: &mut CrosswordContext,
         state: &mut Self::State,
     ) -> bool {
         match command {

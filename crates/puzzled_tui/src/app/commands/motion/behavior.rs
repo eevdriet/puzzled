@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::Motion;
 
-pub trait MotionBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
+pub trait MotionBehavior: Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized {
     fn variants() -> Vec<Self>;
 
     fn is_mouse(&self) -> bool {
@@ -22,7 +22,6 @@ where
 {
     fn variants() -> Vec<Self> {
         let mut variants = vec![
-            Motion::None,
             // Left-right
             Motion::Col(0),
             Motion::Left,

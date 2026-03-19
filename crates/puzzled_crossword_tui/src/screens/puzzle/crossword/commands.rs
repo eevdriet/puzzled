@@ -6,8 +6,8 @@ use puzzled_tui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
-    CrosswordTextObject, CrosswordWidget, PuzzleScreenState,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
+    CrosswordResolver, CrosswordTextObject, CrosswordWidget, PuzzleScreenState,
 };
 
 impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
@@ -19,7 +19,7 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
         &mut self,
         command: CrosswordCommand,
         resolver: CrosswordResolver,
-        _ctx: &mut AppContext<AppState>,
+        _ctx: &mut CrosswordContext,
         state: &mut Self::State,
     ) -> bool {
         match command {

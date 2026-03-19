@@ -2,7 +2,9 @@ use std::fmt::Debug;
 
 use crate::TextObject;
 
-pub trait TextObjectBehavior: Clone + PartialEq + Eq + Send + Debug + Sized {
+pub trait TextObjectBehavior:
+    Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized
+{
     fn variants() -> Vec<Self>;
 }
 

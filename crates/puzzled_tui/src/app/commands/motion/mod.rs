@@ -4,20 +4,17 @@ mod range;
 mod selection;
 
 pub use behavior::*;
-use crossterm::event::MouseEvent;
 pub use handle::*;
 pub use range::*;
 pub use selection::*;
 
+use crossterm::event::MouseEvent;
 use puzzled_core::Direction;
 use serde::Deserialize;
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Motion<M> {
-    // No motion
-    #[default]
-    None,
-
     // Mouse
     #[serde(skip)]
     Mouse(MouseEvent),
@@ -42,6 +39,34 @@ pub enum Motion<M> {
     // Custom (for puzzle specific motions)
     #[serde(untagged)]
     Custom(M),
+}
+
+impl<M> Ord for Motion<M>
+where
+    M: MotionBehavior,
+{
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let variants = Self::variants();
+        let lhs = variants
+            .iter()
+            .position(|m| m == self)
+            .expect("All variants should be included");
+        let rhs = variants
+            .iter()
+            .position(|m| m == other)
+            .expect("All variants should be included");
+
+        lhs.cmp(&rhs)
+    }
+}
+
+impl<M> PartialOrd for Motion<M>
+where
+    M: MotionBehavior,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl<M> TryFrom<&Motion<M>> for Direction {

@@ -131,7 +131,6 @@ fn grid_motion<'a, T, M>(
                 None => GridIter::new_empty(grid),
             }
         }
-        Motion::None => iter_remaining(1),
         Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
         Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {
             iter_direction(dir)

@@ -9,7 +9,7 @@ pub trait HandleMode<A, T, M, S> {
         &mut self,
         _mode: EventMode,
         _resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool;
 }
@@ -21,7 +21,7 @@ impl<C, A, T, M, S> HandleMode<A, T, M, S> for Grid<C> {
         &mut self,
         mode: EventMode,
         _resolver: ActionResolver<A, T, M, S>,
-        _ctx: &mut AppContext<S>,
+        _ctx: &mut AppContext<A, T, M, S>,
         state: &mut Self::State,
     ) -> bool {
         tracing::info!("Changing grid mode {} -> {}", state.mode, mode);
