@@ -1,6 +1,8 @@
+mod clue;
 mod commands;
 mod render;
 
+pub(crate) use clue::*;
 pub(crate) use render::*;
 
 use puzzled_core::Puzzle;
@@ -11,8 +13,9 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout},
     prelude::{Buffer, Rect},
     style::{Color, Style},
-    text::Text,
-    widgets::{Block, BorderType, Borders, StatefulWidget, StatefulWidgetRef, Widget},
+    widgets::{
+        Block, BorderType, Borders, Paragraph, StatefulWidget, StatefulWidgetRef, Widget, Wrap,
+    },
 };
 
 use crate::{Focus, PuzzleScreenState};
@@ -54,20 +57,21 @@ impl StatefulWidgetRef for CrosswordWidget {
         block.render(root, buf);
 
         // Render the active clue
-        let [clue_area, grid_area] =
-            Layout::vertical(vec![Constraint::Length(2), Constraint::Min(0)]).areas(area);
-
         let clues = puzzle.clues();
+        let clues_size = CluesSizeWidget { clues }.render_size(&area);
+
+        let [clue_area, grid_area] = Layout::vertical(vec![
+            Constraint::Length(clues_size.height),
+            Constraint::Min(0),
+        ])
+        .areas(area);
+
         let clue_dir = ClueDirection::from(render.direction);
 
         if !state.is_paused
             && let Some(clue) = clues.get_clue(render.cursor, clue_dir)
         {
-            let clue_text = format!("{}{}  {}", clue.num(), clue.direction(), clue.text());
-
-            Text::from(clue_text)
-                .style(Style::default().fg(Color::White).bold())
-                .render(clue_area, buf);
+            ClueWidget { clue }.render(clue_area, buf);
         }
 
         // Set up the squares grid
