@@ -18,8 +18,8 @@ use ratatui::{
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    Action, ActionBehavior, ActionHistory, AppContext, Command, EventMode, FocusManager,
-    GridRenderState, HandleCommand, HandleMode, RenderSize, StatefulScreen,
+    Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
+    HandleCommand, HandleMode, KeysPopupState, Popup, RenderSize, StatefulScreen,
 };
 
 use crate::{
@@ -43,6 +43,8 @@ pub struct PuzzleScreen {
     // Widgets
     crossword: CrosswordWidget,
     clues: CluesWidget,
+    // Popups
+    popup: bool,
 }
 
 impl PuzzleScreen {
@@ -72,6 +74,7 @@ impl PuzzleScreen {
 
         Self {
             state,
+            popup: false,
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
         }
@@ -128,6 +131,10 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         };
 
         FooterWidget { keys: &ctx.keys }.render_ref(footer, buf, &mut footer_state);
+
+        if self.popup {
+            HelloPopup.render(area, buf, ctx, &mut ());
+        }
     }
 
     fn on_tick(&self, _ctx: &CrosswordContext) -> bool {
@@ -144,10 +151,7 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),
-                Action::ShowHelp => {
-                    let popup = Box::new(HelloPopup);
-                    resolver.open_popup(popup);
-                }
+                Action::ShowHelp => resolver.open_popup(),
                 Action::Quit => resolver.quit(),
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
@@ -190,6 +194,14 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
     ) -> bool {
         let solutions = &mut self.state.solve.solutions;
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+    }
+
+    fn on_popup_open(&mut self, _ctx: &mut CrosswordContext) {
+        self.popup = true;
+    }
+
+    fn on_popup_close(&mut self, _ctx: &mut CrosswordContext) {
+        self.popup = false;
     }
 
     fn on_enter(&mut self, _ctx: &mut CrosswordContext) {

@@ -36,6 +36,9 @@ pub trait StatefulScreen<A, T, M, S> {
     }
 
     // Lifetime events
+    fn on_popup_open(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_popup_close(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+
     fn on_enter(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
     fn on_exit(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
     fn on_pause(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}

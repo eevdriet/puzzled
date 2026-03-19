@@ -1,12 +1,21 @@
-mod commands;
+mod keys;
 
-pub use commands::*;
+pub use keys::*;
+
 use ratatui::{buffer::Buffer, layout::Rect};
 
 use crate::{Action, ActionResolver, AppContext, Command};
 
 pub trait Popup<A, T, M, S> {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<A, T, M, S>);
+    type State;
+
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<A, T, M, S>,
+        state: &mut Self::State,
+    );
 
     fn on_command(
         &mut self,

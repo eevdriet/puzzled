@@ -8,7 +8,15 @@ use ratatui::{
 pub struct HelloPopup;
 
 impl<A, T, M, S> Popup<A, T, M, S> for HelloPopup {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, _ctx: &mut AppContext<A, T, M, S>) {
+    type State = ();
+
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        _ctx: &mut AppContext<A, T, M, S>,
+        _state: &mut Self::State,
+    ) {
         let size = Size::new(10, 10);
         let inner = align_area(
             area,

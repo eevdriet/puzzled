@@ -199,11 +199,11 @@ where
     }
 }
 
-pub struct Keys<A, T, M> {
+pub struct KeyMap<A, T, M> {
     keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>,
 }
 
-impl<A, T, M> Keys<A, T, M> {
+impl<A, T, M> KeyMap<A, T, M> {
     pub fn new(keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>) -> Self {
         Self { keys }
     }
@@ -232,7 +232,7 @@ where
     M: MotionBehavior + Hash,
     T: TextObjectBehavior + Hash,
 {
-    pub fn action_keys(&self) -> Keys<A, T, M> {
+    pub fn action_keys(&self) -> KeyMap<A, T, M> {
         // Initialize keys for all action variants
         let mut keys = BTreeMap::default();
 
@@ -245,7 +245,7 @@ where
         // Perform a DFS to find all actions for which keys are defined
         dfs(&self.root, &mut keys, vec![]);
 
-        Keys { keys }
+        KeyMap { keys }
     }
 }
 

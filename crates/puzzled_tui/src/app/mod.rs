@@ -5,7 +5,6 @@ mod events;
 pub use commands::*;
 pub use context::*;
 pub use events::*;
-use ratatui::widgets::Clear;
 
 use std::{collections::VecDeque, time::Duration};
 
@@ -19,7 +18,7 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::{Popup, StatefulScreen};
+use crate::StatefulScreen;
 
 const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
@@ -83,7 +82,6 @@ where
         // Set up screen management and enter the initial screen
         let mut screens: VecDeque<Box<dyn StatefulScreen<A, T, M, S>>> =
             VecDeque::from([init_screen]);
-        let mut popups: VecDeque<Box<dyn Popup<A, T, M, S>>> = VecDeque::new();
 
         screens
             .back_mut()
@@ -105,10 +103,6 @@ where
             if render {
                 terminal.draw(|frame| {
                     screen.render(frame.area(), frame.buffer_mut(), &mut self.context);
-
-                    if let Some(popup) = popups.back_mut() {
-                        popup.render(frame.area(), frame.buffer_mut(), &mut self.context);
-                    }
                 })?;
 
                 render = false;
@@ -157,12 +151,7 @@ where
                     match outcome {
                         // Handle actions
                         CommandOutcome::Command(command) => {
-                            if let Some(popup) = popups.back_mut() {
-                                popup.on_command(command, resolver.clone(), &mut self.context);
-                            }
-                            else {
-                                screen.on_command(command, resolver.clone(), &mut self.context);
-                            }
+                            screen.on_command(command, resolver.clone(), &mut self.context);
                         }
 
                         CommandOutcome::Mode(mode) => {
@@ -197,14 +186,14 @@ where
                         }
 
                         // Render a popup over the current screen
-                        CommandOutcome::OpenPopup(popup) => {
+                        CommandOutcome::OpenPopup => {
                             screen.on_pause(&mut self.context);
-                            popups.push_back(popup);
+                            screen.on_popup_open(&mut self.context);
                         }
 
                         // Close the rendered popup
                         CommandOutcome::ClosePopup => {
-                            popups.pop_front();
+                            screen.on_popup_close(&mut self.context);
                             screen.on_resume(&mut self.context);
                         }
                     }

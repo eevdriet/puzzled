@@ -1,11 +1,11 @@
 use puzzled_core::Timer;
-use puzzled_tui::{Action, EventMode, Motion, TimerWidget, TrieEntry};
+use puzzled_tui::{Action, EventMode, KeyLineWidget, Motion, Operator, TimerWidget, TrieEntry};
 use ratatui::{
     layout::Margin,
     prelude::{Buffer, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{StatefulWidgetRef, Widget},
+    widgets::{StatefulWidgetRef, Widget, WidgetRef},
 };
 
 use crate::CrosswordKeys;
@@ -23,25 +23,12 @@ impl<'a> StatefulWidgetRef for FooterWidget<'a> {
     type State = FooterState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let base = Style::default();
-
-        Line::from(vec![
-            Span::styled("Help: ", base.fg(Color::Gray)),
-            Span::styled(
-                self.keys
-                    .get_merged(&TrieEntry::Action(Action::ShowHelp))
-                    .unwrap_or_default(),
-                base.fg(Color::Yellow),
-            ),
-            Span::styled(" | Move left: ", base.fg(Color::Gray)),
-            Span::styled(
-                self.keys
-                    .get_merged(&TrieEntry::Motion(Motion::Left))
-                    .unwrap_or_default(),
-                base.fg(Color::Yellow),
-            ),
-        ])
-        .render(area, buf);
+        let keys = vec![
+            ("Help", TrieEntry::Action(Action::ShowHelp)),
+            ("Reveal", TrieEntry::Operator(Operator::Reveal)),
+            ("Check", TrieEntry::Operator(Operator::Check)),
+        ];
+        KeyLineWidget::new(keys, self.keys).render_ref(area, buf);
 
         let timer = TimerWidget { timer: state.timer };
         timer.render(area.inner(Margin::new(0, 1)), buf);

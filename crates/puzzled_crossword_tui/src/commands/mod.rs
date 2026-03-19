@@ -4,7 +4,7 @@ mod text_obj;
 
 pub use action::*;
 pub use motion::*;
-use puzzled_tui::{ActionResolver, AppContext, Command, Keys};
+use puzzled_tui::{ActionResolver, AppContext, Command, KeyMap};
 pub use text_obj::*;
 
 use crate::AppState;
@@ -14,4 +14,4 @@ pub type CrosswordResolver =
     ActionResolver<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>;
 pub type CrosswordContext =
     AppContext<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>;
-pub type CrosswordKeys = Keys<CrosswordAction, CrosswordTextObject, CrosswordMotion>;
+pub type CrosswordKeys = KeyMap<CrosswordAction, CrosswordTextObject, CrosswordMotion>;

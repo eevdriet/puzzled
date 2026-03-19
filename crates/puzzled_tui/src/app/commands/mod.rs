@@ -1,4 +1,5 @@
 mod action;
+mod description;
 mod entry;
 mod handle;
 mod history;
@@ -8,6 +9,7 @@ mod resolver;
 mod text_object;
 
 pub use action::*;
+pub use description::*;
 pub use entry::*;
 pub use handle::*;
 pub use history::*;

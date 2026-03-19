@@ -1,8 +1,10 @@
 use std::fmt::Debug;
 
-use crate::Action;
+use crate::{Action, Describe};
 
-pub trait ActionBehavior: Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized {
+pub trait ActionBehavior:
+    Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized + Describe
+{
     fn is_focus(&self) -> bool {
         false
     }
@@ -21,6 +23,36 @@ impl ActionBehavior for () {
 
     fn is_focus(&self) -> bool {
         false
+    }
+}
+
+impl<A> Describe for Action<A>
+where
+    A: Describe,
+{
+    fn describe(&self) -> Option<String> {
+        Some(
+            match self {
+                Action::Quit => "Quit the application",
+                Action::Select => "Select the active item",
+                Action::Cancel => "Cancel the active item",
+                // Focus
+                Action::FocusDown => "Focus the widget beneath the active one",
+                Action::FocusLeft => "Focus the widget to the left of the active one",
+                Action::FocusRight => "Focus the widget to the right of the active one",
+                Action::FocusUp => "Focus the widget above the active one",
+
+                // Viewport
+                Action::BottomViewport => "Scroll to the bottom of the viewport",
+                Action::CenterViewport => "Scroll to the center of the viewport",
+                Action::TopViewport => "Scroll to the top of the viewport",
+                // Commands
+                Action::Undo => "Undo the last action",
+                Action::Redo => "Redo the last action",
+                _ => "",
+            }
+            .to_string(),
+        )
     }
 }
 
