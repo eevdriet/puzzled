@@ -38,6 +38,14 @@ impl GridRenderState {
         let mut x = app_pos.x.checked_sub(vp.x)?;
         let mut y = app_pos.y.checked_sub(vp.y)?;
 
+        // Translate with the current scroll
+        let AppPosition {
+            x: x_offset,
+            y: y_offset,
+        } = self.scroll.offset();
+        x += x_offset;
+        y += y_offset;
+
         // Remove inner cell borders if set
         let cell_w = opts.cell_width;
         let cell_h = opts.cell_height;
@@ -54,13 +62,8 @@ impl GridRenderState {
         }
 
         // Adjust for variable cell size
-        let mut row = usize::from(y / cell_h);
-        let mut col = usize::from(x / cell_w);
-
-        // Translate with the current scroll
-        let AppPosition { x, y } = self.scroll.offset();
-        col += x as usize;
-        row += y as usize;
+        let row = usize::from(y / cell_h);
+        let col = usize::from(x / cell_w);
 
         tracing::debug!("\t Translated: {row},{col}");
         Some(Position::new(row, col))

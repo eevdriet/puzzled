@@ -9,7 +9,7 @@ pub use events::*;
 use std::{collections::VecDeque, time::Duration};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, MouseEventKind},
+    event::{self, DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -20,7 +20,7 @@ use tokio::sync::{
 
 use crate::StatefulScreen;
 
-const POLL_DURATION: Duration = Duration::from_millis(30);
+const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<A, T, M, S> {
@@ -41,7 +41,6 @@ where
 {
     pub fn new(context: AppContext<S>, actions: EventTrie<A, T, M>) -> Self {
         let (events_tx, events_rx) = unbounded_channel();
-        let events_tx2 = events_tx.clone();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 
         tokio::spawn(async move {
@@ -52,10 +51,10 @@ where
                     }
 
                     _ = tokio::time::sleep(POLL_DURATION) => {
-                        if let Ok(poll) = event::poll(Duration::ZERO) && poll &&
+                        while let Ok(true) = event::poll(Duration::ZERO) &&
                             let Ok(event) = event::read()
                         {
-                            let _ = events_tx2.send(AppEvent::new(event));
+                            let _ = events_tx.send(AppEvent::new(event));
                         }
                     }
                 }
