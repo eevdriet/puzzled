@@ -18,7 +18,7 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::StatefulScreen;
+use crate::Screen;
 
 const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
@@ -72,16 +72,12 @@ where
         }
     }
 
-    pub async fn run(
-        &mut self,
-        init_screen: Box<dyn StatefulScreen<A, T, M, S>>,
-    ) -> std::io::Result<()> {
+    pub async fn run(&mut self, init_screen: Box<dyn Screen<A, T, M, S>>) -> std::io::Result<()> {
         let mut terminal = ratatui::init();
         execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
         // Set up screen management and enter the initial screen
-        let mut screens: VecDeque<Box<dyn StatefulScreen<A, T, M, S>>> =
-            VecDeque::from([init_screen]);
+        let mut screens: VecDeque<Box<dyn Screen<A, T, M, S>>> = VecDeque::from([init_screen]);
 
         screens
             .back_mut()
@@ -90,7 +86,7 @@ where
 
         // Set up an action resolver
         let (actions_tx, mut actions_rx) = mpsc::unbounded_channel();
-        let resolver = ActionResolver::<A, T, M, S>::new(actions_tx);
+        let resolver = AppResolver::<A, T, M, S>::new(actions_tx);
 
         let mut render = true;
 

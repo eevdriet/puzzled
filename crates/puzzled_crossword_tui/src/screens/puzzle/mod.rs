@@ -19,7 +19,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
-    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, StatefulScreen,
+    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, Screen,
 };
 
 use crate::{
@@ -87,9 +87,7 @@ impl PuzzleScreen {
     }
 }
 
-impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
-    for PuzzleScreen
-{
+impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for PuzzleScreen {
     fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut CrosswordContext) {
         // Compute sizes
         let gap = 2;
@@ -205,7 +203,7 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
     fn on_mode(
         &mut self,
         mode: EventMode,
-        resolver: puzzled_tui::ActionResolver<
+        resolver: puzzled_tui::AppResolver<
             CrosswordAction,
             CrosswordTextObject,
             CrosswordMotion,

@@ -2,9 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use puzzled_core::Direction;
 
-use crate::{
-    Action, ActionBehavior, ActionResolver, AppContext, Command, EventMode, HandleCommand,
-};
+use crate::{Action, ActionBehavior, AppContext, AppResolver, Command, EventMode, HandleCommand};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FocusNode<F> {
@@ -119,7 +117,7 @@ where
     fn handle_command(
         &mut self,
         command: Command<A, T, M>,
-        resolver: ActionResolver<A, T, M, S>,
+        resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool {

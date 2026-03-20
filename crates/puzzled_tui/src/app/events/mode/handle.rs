@@ -1,6 +1,6 @@
 use puzzled_core::Grid;
 
-use crate::{ActionResolver, AppContext, EventMode, GridRenderState};
+use crate::{AppContext, AppResolver, EventMode, GridRenderState};
 
 pub trait HandleMode<A, T, M, S> {
     type State;
@@ -8,7 +8,7 @@ pub trait HandleMode<A, T, M, S> {
     fn handle_mode(
         &mut self,
         _mode: EventMode,
-        _resolver: ActionResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool;
@@ -20,7 +20,7 @@ impl<C, A, T, M, S> HandleMode<A, T, M, S> for Grid<C> {
     fn handle_mode(
         &mut self,
         mode: EventMode,
-        _resolver: ActionResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
         state: &mut Self::State,
     ) -> bool {

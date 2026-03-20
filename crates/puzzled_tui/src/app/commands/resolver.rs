@@ -1,17 +1,17 @@
 use tokio::sync::mpsc;
 
-use crate::{Command, CommandOutcome, EventMode, StatefulScreen};
+use crate::{Command, CommandOutcome, EventMode, Screen};
 
-pub struct ActionResolver<A, T, M, S> {
+pub struct AppResolver<A, T, M, S> {
     pub(crate) sender: mpsc::UnboundedSender<CommandOutcome<A, T, M, S>>,
 }
 
-impl<A, T, M, S> ActionResolver<A, T, M, S> {
+impl<A, T, M, S> AppResolver<A, T, M, S> {
     pub(crate) fn new(sender: mpsc::UnboundedSender<CommandOutcome<A, T, M, S>>) -> Self {
         Self { sender }
     }
 
-    pub fn next_screen(&self, screen: Box<dyn StatefulScreen<A, T, M, S>>) {
+    pub fn next_screen(&self, screen: Box<dyn Screen<A, T, M, S>>) {
         self.sender
             .send(CommandOutcome::NextScreen(screen))
             .expect("Should be able to resolve next screen");
@@ -54,7 +54,7 @@ impl<A, T, M, S> ActionResolver<A, T, M, S> {
     }
 }
 
-impl<A, T, M, S> Clone for ActionResolver<A, T, M, S> {
+impl<A, T, M, S> Clone for AppResolver<A, T, M, S> {
     fn clone(&self) -> Self {
         Self {
             sender: self.sender.clone(),

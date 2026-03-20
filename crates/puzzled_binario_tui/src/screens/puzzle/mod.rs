@@ -2,7 +2,7 @@ mod actions;
 mod render;
 
 use puzzled_binario::{Binario, BinarioState};
-use puzzled_tui::{ActionHistory, GridRenderState, StatefulScreen};
+use puzzled_tui::{ActionHistory, GridRenderState, Screen};
 use ratatui::prelude::{Buffer, Rect};
 
 use crate::{AppState, BinarioAction, BinarioContext};
@@ -27,7 +27,7 @@ impl PuzzleScreen {
     }
 }
 
-impl StatefulScreen<BinarioAction, (), (), AppState> for PuzzleScreen {
+impl Screen<BinarioAction, (), (), AppState> for PuzzleScreen {
     fn render(&mut self, _area: Rect, _buf: &mut Buffer, _state: &mut BinarioContext) {}
 
     fn on_pause(&mut self, _ctx: &mut BinarioContext) {

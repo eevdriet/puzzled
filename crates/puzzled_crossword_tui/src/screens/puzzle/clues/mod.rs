@@ -145,22 +145,26 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                     // Across -> down
                     Motion::Right if is_across => {
                         state.clue_dir = Some(ClueDirection::Down);
+                        state.update_cursor_from_clues();
                         true
                     }
                     Motion::Mouse(mouse)
                         if is_across && mouse.kind == MouseEventKind::ScrollRight =>
                     {
                         state.clue_dir = Some(ClueDirection::Down);
+                        state.update_cursor_from_clues();
                         true
                     }
 
                     // Down -> across
                     Motion::Left if is_down => {
                         state.clue_dir = Some(ClueDirection::Across);
+                        state.update_cursor_from_clues();
                         true
                     }
                     Motion::Mouse(mouse) if is_down && mouse.kind == MouseEventKind::ScrollLeft => {
                         state.clue_dir = Some(ClueDirection::Across);
+                        state.update_cursor_from_clues();
                         true
                     }
                     _ => match state.clue_dir {

@@ -1,4 +1,4 @@
-use crate::{ActionResolver, AppContext, Command, EventMode, StatefulScreen};
+use crate::{AppContext, AppResolver, Command, EventMode, Screen};
 
 pub enum CommandOutcome<A, T, M, S> {
     // Handled externally
@@ -8,7 +8,7 @@ pub enum CommandOutcome<A, T, M, S> {
     // Screen management
     Quit,
     PreviousScreen,
-    NextScreen(Box<dyn StatefulScreen<A, T, M, S>>),
+    NextScreen(Box<dyn Screen<A, T, M, S>>),
 
     // Popup management
     OpenPopup,
@@ -21,7 +21,7 @@ pub trait HandleCommand<A, T, M, S> {
     fn handle_command(
         &mut self,
         _command: Command<A, T, M>,
-        _resolver: ActionResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool;

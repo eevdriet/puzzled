@@ -6,9 +6,9 @@ pub use focus::*;
 
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{ActionResolver, AppContext, Command, EventMode};
+use crate::{AppContext, AppResolver, Command, EventMode};
 
-pub trait StatefulScreen<A, T, M, S> {
+pub trait Screen<A, T, M, S> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<A, T, M, S>);
 
@@ -20,7 +20,7 @@ pub trait StatefulScreen<A, T, M, S> {
     fn on_command(
         &mut self,
         _command: Command<A, T, M>,
-        _resolver: ActionResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
     ) -> bool {
         false
@@ -29,7 +29,7 @@ pub trait StatefulScreen<A, T, M, S> {
     fn on_mode(
         &mut self,
         _mode: EventMode,
-        _resolver: ActionResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
     ) -> bool {
         false
