@@ -2,19 +2,17 @@ use std::{collections::HashMap, hash::Hash};
 
 use puzzled_core::Direction;
 
-use crate::{Action, ActionBehavior, AppContext, AppResolver, Command, EventMode, HandleCommand};
+use crate::{Action, ActionBehavior, AppContext, AppResolver, Command, HandleCommand};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FocusNode<F> {
     links: [Option<F>; 4],
-    mode: Option<EventMode>,
 }
 
 impl<F> Default for FocusNode<F> {
     fn default() -> Self {
         Self {
             links: [None, None, None, None],
-            mode: None,
         }
     }
 }
@@ -41,25 +39,6 @@ impl<F> FocusManager<F> {
         Self {
             curr,
             graph: HashMap::new(),
-        }
-    }
-
-    pub fn from_mode_nodes<M>(nodes: M) -> Self
-    where
-        F: Default + Eq + Hash,
-        M: Into<HashMap<F, EventMode>>,
-    {
-        let mut graph = HashMap::default();
-        let nodes = nodes.into();
-
-        for (focus, mode) in nodes {
-            let node: &mut FocusNode<F> = graph.entry(focus).or_default();
-            node.mode = Some(mode);
-        }
-
-        Self {
-            curr: F::default(),
-            graph,
         }
     }
 
@@ -117,7 +96,7 @@ where
     fn handle_command(
         &mut self,
         command: Command<A, T, M>,
-        resolver: AppResolver<A, T, M, S>,
+        _resolver: AppResolver<A, T, M, S>,
         _ctx: &mut AppContext<A, T, M, S>,
         _state: &mut Self::State,
     ) -> bool {
@@ -148,14 +127,6 @@ where
         };
 
         self.curr = next;
-
-        // Also set the entering mode if one is defined
-        if let Some(next_node) = self.graph.get(&next)
-            && let Some(next_mode) = next_node.mode
-        {
-            resolver.set_mode(next_mode);
-        }
-
         true
     }
 }

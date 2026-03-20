@@ -13,13 +13,13 @@ pub use state::*;
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect},
-    widgets::{ListState, StatefulWidgetRef},
+    widgets::ListState,
 };
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
-    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, Screen, Widget,
+    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, Screen, Widget,
 };
 
 use crate::{
@@ -56,7 +56,7 @@ impl PuzzleScreen {
         render_state: GridRenderState,
         keys: CrosswordKeys,
     ) -> Self {
-        let mut focus = FocusManager::from_mode_nodes([(Focus::Clues, EventMode::Normal)]);
+        let mut focus = FocusManager::default();
 
         focus.link_right(Focus::Crossword, &[Focus::Clues]);
         focus.link_below(Focus::Footer, &[Focus::Clues]);

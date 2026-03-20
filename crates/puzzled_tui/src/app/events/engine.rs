@@ -81,14 +81,20 @@ where
     M: MotionBehavior,
     T: TextObjectBehavior,
 {
-    pub fn push(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    pub fn push(
+        &mut self,
+        event: AppEvent,
+        override_mode: Option<EventMode>,
+    ) -> EventResult<A, T, M> {
+        let mode = override_mode.unwrap_or(self.mode);
+
         tracing::debug!("[EVENT] {event}");
 
         if let Some(mouse) = event.mouse() {
             return self.mouse_event(mouse);
         }
 
-        let result = match self.mode {
+        let result = match mode {
             EventMode::Normal => self.normal_event(event),
             EventMode::Visual(_) => self.visual_event(event),
             EventMode::Insert => self.insert_event(event),
@@ -274,7 +280,9 @@ where
         EventResult { effects }
     }
 
-    pub fn tick(&mut self) -> EventResult<A, T, M> {
+    pub fn tick(&mut self, override_mode: Option<EventMode>) -> EventResult<A, T, M> {
+        let mode = override_mode.unwrap_or(self.mode);
+
         if self.buffer.is_empty() {
             return EventResult::default();
         }
@@ -287,13 +295,12 @@ where
         // After time out, perform the action w.r.t. longest valid action
         let command = {
             let mut result = None;
-            let curr_mode = self.mode;
 
-            if matches!(curr_mode, EventMode::Normal) {
+            if matches!(mode, EventMode::Normal) {
                 for idx in (1..=self.buffer.len()).rev() {
                     let events = self.buffer[..idx].to_vec();
 
-                    if let Some(command) = self.search_command(&events, &curr_mode) {
+                    if let Some(command) = self.search_command(&events, &mode) {
                         result = Some(command);
                     }
                 }

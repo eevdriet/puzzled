@@ -94,6 +94,7 @@ where
             let screen = screens
                 .back_mut()
                 .expect("Should have a screen on the screen stack");
+            let override_mode = screen.override_mode();
 
             // Get the current screen and render its contents
             if render {
@@ -112,7 +113,7 @@ where
                         render = true;
                     }
 
-                    for effect in self.engine.push(event).effects {
+                    for effect in self.engine.push(event, override_mode).effects {
                         match effect {
                             EventEffect::Command(command) => {
                                 resolver.fire_command(command);
@@ -126,7 +127,7 @@ where
 
                 // Handle app event time out
                 _ = tokio::time::sleep(TICK_DURATION) => {
-                    for effect in self.engine.tick().effects {
+                    for effect in self.engine.tick(override_mode).effects {
                         match effect {
                             EventEffect::Command(command) => {
                                 resolver.fire_command(command);
