@@ -13,9 +13,7 @@ use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout},
     prelude::{Buffer, Rect},
     style::{Color, Style},
-    widgets::{
-        Block, BorderType, Borders, Paragraph, StatefulWidget, StatefulWidgetRef, Widget, Wrap,
-    },
+    widgets::{Block, BorderType, Borders, StatefulWidget, StatefulWidgetRef, Widget},
 };
 
 use crate::{Focus, PuzzleScreenState};
@@ -68,10 +66,9 @@ impl StatefulWidgetRef for CrosswordWidget {
 
         let clue_dir = ClueDirection::from(render.direction);
 
-        if !state.is_paused
-            && let Some(clue) = clues.get_clue(render.cursor, clue_dir)
-        {
-            ClueWidget { clue }.render(clue_area, buf);
+        if let Some(clue) = clues.get_clue(render.cursor, clue_dir) {
+            let mut is_paused = state.is_paused;
+            ClueWidget { clue }.render(clue_area, buf, &mut is_paused);
         }
 
         // Set up the squares grid

@@ -97,6 +97,10 @@ impl StatefulScreen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSt
         let crossword_size = self.crossword.render_size(&self.state);
         let clues_size = self.clues.render_size(&self.state);
 
+        tracing::info!("Sizes while paused?: {}", self.state.is_paused);
+        tracing::info!("\tCrossword: {crossword_size}");
+        tracing::info!("\tClues: {clues_size}");
+
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 
         let [area] = Layout::horizontal(vec![Constraint::Length(width)]).areas(root);

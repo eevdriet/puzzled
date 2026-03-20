@@ -29,6 +29,7 @@ impl RenderSize<PuzzleScreenState> for CluesListWidget {
             state,
             offset: 0,
             visible: 0,
+            is_paused: false,
         };
 
         ListWidget::new(self).render_size(&render_state)
@@ -39,6 +40,7 @@ pub struct ListRenderState<'a> {
     state: &'a PuzzleScreenState,
     offset: usize,
     visible: usize,
+    is_paused: bool,
 }
 
 impl<'a> ListRender<'a> for CluesListWidget {
@@ -49,12 +51,13 @@ impl<'a> ListRender<'a> for CluesListWidget {
         state: &Self::State,
     ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
         let ListRenderState {
-            state,
+            state: screen_state,
             offset,
             visible,
+            is_paused,
         } = state;
 
-        let count = state.clues(self.dir).count();
+        let count = screen_state.clues(self.dir).count();
         let other = if offset + visible >= count {
             vec![]
         } else {
@@ -62,12 +65,15 @@ impl<'a> ListRender<'a> for CluesListWidget {
         }
         .into_iter();
 
-        state
+        screen_state
             .clues(self.dir)
             .map(|clue| {
-                let clue_text = match self.dir.is_some() {
-                    true => format!("{:>2} {}", clue.num(), clue.text()),
-                    false => format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text()),
+                let clue_text = match (*is_paused, self.dir.is_some()) {
+                    (true, _) => format!("{:>2} ...", clue.num()),
+                    (false, true) => format!("{:>2} {}", clue.num(), clue.text()),
+                    (false, false) => {
+                        format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text())
+                    }
                 };
                 ListItem::new(clue_text)
             })
@@ -85,6 +91,7 @@ impl StatefulWidgetRef for CluesListWidget {
             state,
             visible,
             offset,
+            is_paused: state.is_paused,
         };
 
         let items = self.render_items(&render_state);

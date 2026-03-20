@@ -2,7 +2,7 @@ mod list;
 
 use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{Action, AppContext, Command, EventMode, HandleCommand, Motion, RenderSize};
+use puzzled_tui::{Action, Command, EventMode, HandleCommand, Motion, RenderSize};
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
@@ -77,11 +77,6 @@ impl StatefulWidgetRef for CluesWidget {
 
         let area = block.inner(root);
         block.render(root, buf);
-
-        // Do not render clue lists when paused
-        if state.is_paused {
-            return;
-        }
 
         // Render the clue list(s)
         let text_margin = Margin::new(0, 1);

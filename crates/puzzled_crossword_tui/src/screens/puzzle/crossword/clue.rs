@@ -5,7 +5,7 @@ use ratatui::{
     prelude::Size,
     style::{Color, Style},
     text::Text,
-    widgets::{Paragraph, Widget, Wrap},
+    widgets::{Paragraph, StatefulWidget, Widget, Wrap},
 };
 
 pub struct ClueWidget<'a> {
@@ -37,22 +37,29 @@ impl<'a> RenderSize<Rect> for CluesSizeWidget<'a> {
     }
 }
 
-impl<'a> Widget for ClueWidget<'a> {
-    fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer)
+impl<'a> StatefulWidget for ClueWidget<'a> {
+    type State = bool;
+
+    fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer, is_paused: &mut Self::State)
     where
         Self: Sized,
     {
         let base = Style::default();
 
         // Clue identifier
-        let clue_text = format!("{}{}  ", self.clue.num(), self.clue.direction(),);
-        let x_offset = clue_text.len() as u16;
-        Text::styled(clue_text, base.fg(Color::White).bold()).render(area, buf);
+        let id_text = format!("{}{}  ", self.clue.num(), self.clue.direction(),);
+        let x_offset = id_text.len() as u16;
+        Text::styled(id_text, base.fg(Color::White).bold()).render(area, buf);
 
         // Clue text
+        let clue_text = if *is_paused {
+            &"...".to_string()
+        } else {
+            self.clue.text()
+        };
         let clue_area = area.inner(Margin::new(x_offset, 0));
 
-        Paragraph::new(self.clue.text().clone())
+        Paragraph::new(clue_text.clone())
             .style(base.fg(Color::White).bold())
             .wrap(Wrap { trim: true })
             .render(clue_area, buf);
