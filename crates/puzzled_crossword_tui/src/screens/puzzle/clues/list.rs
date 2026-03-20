@@ -1,8 +1,6 @@
 use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{
-    Command, EventMode, ListRender, ListWidget, Motion, RenderSize, Widget as AppWidget,
-};
+use puzzled_tui::{Command, EventMode, Motion, Widget as AppWidget};
 use ratatui::{
     layout::Size,
     prelude::{Buffer, Rect},
@@ -33,14 +31,28 @@ impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let visible = area.height as usize;
         let offset = state.clue_list(self.dir).offset();
-        let render_state = ListRenderState {
-            state,
-            visible,
-            offset,
-            is_paused: state.is_paused,
-        };
 
-        let items = self.render_items(&render_state);
+        let count = state.clues(self.dir).count();
+        let other = if offset + visible >= count {
+            vec![]
+        } else {
+            vec![ListItem::new("...")]
+        }
+        .into_iter();
+
+        let items = state
+            .clues(self.dir)
+            .map(|clue| {
+                let clue_text = match (state.is_paused, self.dir.is_some()) {
+                    (true, _) => format!("{:>2} ...", clue.num()),
+                    (false, true) => format!("{:>2} {}", clue.num(), clue.text()),
+                    (false, false) => {
+                        format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text())
+                    }
+                };
+                ListItem::new(clue_text)
+            })
+            .chain(other);
 
         let base_style = Style::default();
         let selected_style = base_style.fg(Color::Yellow);
@@ -58,14 +70,24 @@ impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
     }
 
     fn render_size(&self, state: &Self::State) -> Size {
-        let render_state = ListRenderState {
-            state,
-            offset: 0,
-            visible: 0,
-            is_paused: false,
-        };
+        state
+            .clues(self.dir)
+            .map(|clue| {
+                let clue_text = match (state.is_paused, self.dir.is_some()) {
+                    (true, _) => format!("{:>2} ...", clue.num()),
+                    (false, true) => format!("{:>2} {}", clue.num(), clue.text()),
+                    (false, false) => {
+                        format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text())
+                    }
+                };
+                ListItem::new(clue_text)
+            })
+            .fold(Size::ZERO, |mut size, item| {
+                size.width = size.width.max(item.width() as u16);
+                size.height += item.height() as u16;
 
-        ListWidget::new(self).render_size(&render_state)
+                size
+            })
     }
 
     fn override_mode(&self) -> Option<EventMode> {
@@ -102,50 +124,5 @@ impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
             }
             _ => false,
         }
-    }
-}
-
-pub struct ListRenderState<'a> {
-    state: &'a PuzzleScreenState,
-    offset: usize,
-    visible: usize,
-    is_paused: bool,
-}
-
-impl<'a> ListRender<'a> for CluesListWidget {
-    type State = ListRenderState<'a>;
-
-    fn render_items(
-        &self,
-        state: &Self::State,
-    ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
-        let ListRenderState {
-            state: screen_state,
-            offset,
-            visible,
-            is_paused,
-        } = state;
-
-        let count = screen_state.clues(self.dir).count();
-        let other = if offset + visible >= count {
-            vec![]
-        } else {
-            vec![ListItem::new("...")]
-        }
-        .into_iter();
-
-        screen_state
-            .clues(self.dir)
-            .map(|clue| {
-                let clue_text = match (*is_paused, self.dir.is_some()) {
-                    (true, _) => format!("{:>2} ...", clue.num()),
-                    (false, true) => format!("{:>2} {}", clue.num(), clue.text()),
-                    (false, false) => {
-                        format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text())
-                    }
-                };
-                ListItem::new(clue_text)
-            })
-            .chain(other)
     }
 }

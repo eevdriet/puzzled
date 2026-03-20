@@ -30,6 +30,10 @@ pub trait Widget<A, T, M, S> {
 
     fn render_size(&self, state: &Self::State) -> Size;
 
+    fn on_tick(&self, _state: &Self::State) -> bool {
+        false
+    }
+
     // Commands
     fn on_command(
         &mut self,
