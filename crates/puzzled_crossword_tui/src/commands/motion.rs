@@ -1,10 +1,8 @@
 use derive_more::{Display, Eq};
 use puzzled_core::Grid;
 use puzzled_crossword::{Clue, ClueDirection, ClueId};
-use puzzled_tui::MotionBehavior;
+use puzzled_tui::{Describe, MotionBehavior};
 use serde::Deserialize;
-
-use crate::PuzzleScreenState;
 
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
@@ -14,6 +12,12 @@ pub enum CrosswordMotion {
         #[eq(skip)]
         u8,
     ),
+}
+
+impl Describe for CrosswordMotion {
+    fn describe(&self) -> Option<String> {
+        None
+    }
 }
 
 // impl<T> CustomMotionRange<CrosswordMotion, PuzzleScreenState> for Grid<T> {

@@ -4,18 +4,18 @@ pub use keys::*;
 
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{Action, AppContext, AppResolver, Command};
+use crate::{Action, AppCommand, AppContext, AppResolver, AppTypes, Command};
 
-pub trait Popup<A, T, M, S> {
+pub trait Popup<A: AppTypes> {
     type State;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 
     fn on_command(
         &mut self,
-        command: Command<A, T, M>,
-        resolver: AppResolver<A, T, M, S>,
-        _ctx: &mut AppContext<A, T, M, S>,
+        command: AppCommand<A>,
+        resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
     ) -> bool {
         if let Command::Action { action, .. } = command {
             match action {

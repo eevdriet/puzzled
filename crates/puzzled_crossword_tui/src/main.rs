@@ -16,8 +16,7 @@ use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 async fn main() -> io::Result<()> {
     init_logging(false);
 
-    let events: EventTrie<CrosswordAction, CrosswordTextObject, CrosswordMotion> =
-        EventTrie::from_config::<Crossword>()?;
+    let events: EventTrie<CrosswordApp> = EventTrie::from_config::<Crossword>()?;
     let keys = events.action_keys();
 
     let state = AppState::default();
@@ -40,8 +39,7 @@ fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
     opts.cell_width = 5;
     opts.cell_height = 3;
 
-    let events: EventTrie<CrosswordAction, CrosswordTextObject, CrosswordMotion> =
-        EventTrie::from_config::<Crossword>()?;
+    let events: EventTrie<CrosswordApp> = EventTrie::from_config::<Crossword>()?;
     let keys = events.action_keys();
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state, keys.clone());
 

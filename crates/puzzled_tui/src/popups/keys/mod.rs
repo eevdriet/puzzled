@@ -4,15 +4,15 @@ mod render;
 use ratatui::widgets::TableState;
 
 use crate::{
-    Action, ActionBehavior, Description, KeyMap, Motion, MotionBehavior, TextObject,
+    Action, ActionBehavior, AppTypes, Description, KeyMap, Motion, MotionBehavior, TextObject,
     TextObjectBehavior,
 };
 
-pub struct KeysPopup<A, T, M> {
-    actions: Vec<(String, String, Action<A>)>,
-    text_objects: Vec<(String, String, TextObject<T>)>,
-    motions: Vec<(String, String, Motion<M>)>,
-    map: KeyMap<A, T, M>,
+pub struct KeysPopup<A: AppTypes> {
+    actions: Vec<(String, String, Action<A::Action>)>,
+    text_objects: Vec<(String, String, TextObject<A::TextObject>)>,
+    motions: Vec<(String, String, Motion<A::Motion>)>,
+    map: KeyMap<A>,
 }
 
 #[derive(Debug, Default)]
@@ -21,8 +21,8 @@ pub struct KeysPopupState {
     pub table: TableState,
 }
 
-impl<A, T, M> KeysPopup<A, T, M> {
-    pub fn new(map: KeyMap<A, T, M>) -> Self {
+impl<A: AppTypes> KeysPopup<A> {
+    pub fn new(map: KeyMap<A>) -> Self {
         Self {
             map,
             actions: Vec::default(),
@@ -31,7 +31,7 @@ impl<A, T, M> KeysPopup<A, T, M> {
         }
     }
 
-    pub fn action<D>(mut self, name: D, desc: D, action: Action<A>) -> Self
+    pub fn action<D>(mut self, name: D, desc: D, action: Action<A::Action>) -> Self
     where
         D: Into<String>,
     {
@@ -39,7 +39,7 @@ impl<A, T, M> KeysPopup<A, T, M> {
         self
     }
 
-    pub fn actions<D>(mut self, actions: Vec<(D, D, Action<A>)>) -> Self
+    pub fn actions<D>(mut self, actions: Vec<(D, D, Action<A::Action>)>) -> Self
     where
         D: Into<String>,
     {
@@ -53,17 +53,16 @@ impl<A, T, M> KeysPopup<A, T, M> {
 
     pub fn all_actions<S>(mut self, state: &S) -> Self
     where
-        A: ActionBehavior,
-        Action<A>: Description<S>,
+        Action<A::Action>: Description<S>,
     {
-        self.actions = Action::<A>::variants()
+        self.actions = Action::<A::Action>::variants()
             .into_iter()
             .filter_map(|action| Some((format!("{action:?}"), action.description(state)?, action)))
             .collect();
         self
     }
 
-    pub fn motion<D>(mut self, name: D, desc: D, motion: Motion<M>) -> Self
+    pub fn motion<D>(mut self, name: D, desc: D, motion: Motion<A::Motion>) -> Self
     where
         D: Into<String>,
     {
@@ -71,7 +70,7 @@ impl<A, T, M> KeysPopup<A, T, M> {
         self
     }
 
-    pub fn motions<D>(mut self, motions: Vec<(D, D, Motion<M>)>) -> Self
+    pub fn motions<D>(mut self, motions: Vec<(D, D, Motion<A::Motion>)>) -> Self
     where
         D: Into<String>,
     {
@@ -85,17 +84,21 @@ impl<A, T, M> KeysPopup<A, T, M> {
 
     pub fn all_motions<S>(mut self, state: &S) -> Self
     where
-        M: MotionBehavior,
-        Motion<M>: Description<S>,
+        Motion<A::Motion>: Description<S>,
     {
-        self.motions = Motion::<M>::variants()
+        self.motions = Motion::<A::Motion>::variants()
             .into_iter()
             .filter_map(|motion| Some((format!("{motion:?}"), motion.description(state)?, motion)))
             .collect();
         self
     }
 
-    pub fn text_object<D>(mut self, name: D, desc: D, text_object: TextObject<T>) -> Self
+    pub fn text_object<D>(
+        mut self,
+        name: D,
+        desc: D,
+        text_object: TextObject<A::TextObject>,
+    ) -> Self
     where
         D: Into<String>,
     {
@@ -104,7 +107,7 @@ impl<A, T, M> KeysPopup<A, T, M> {
         self
     }
 
-    pub fn text_objects<D>(mut self, text_objects: Vec<(D, D, TextObject<T>)>) -> Self
+    pub fn text_objects<D>(mut self, text_objects: Vec<(D, D, TextObject<A::TextObject>)>) -> Self
     where
         D: Into<String>,
     {
@@ -118,10 +121,9 @@ impl<A, T, M> KeysPopup<A, T, M> {
 
     pub fn all_text_objects<S>(mut self, state: &S) -> Self
     where
-        T: TextObjectBehavior,
-        TextObject<T>: Description<S>,
+        TextObject<A::TextObject>: Description<S>,
     {
-        self.text_objects = TextObject::<T>::variants()
+        self.text_objects = TextObject::<A::TextObject>::variants()
             .into_iter()
             .filter_map(|text_obj| {
                 Some((

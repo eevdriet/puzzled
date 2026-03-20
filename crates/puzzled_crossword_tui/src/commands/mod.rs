@@ -4,14 +4,16 @@ mod text_obj;
 
 pub use action::*;
 pub use motion::*;
-use puzzled_tui::{AppContext, AppResolver, Command, KeyMap};
+use puzzled_tui::{AppContext, AppResolver, AppTypes, Command, KeyMap};
 pub use text_obj::*;
 
 use crate::AppState;
 
-pub type CrosswordCommand = Command<CrosswordAction, CrosswordTextObject, CrosswordMotion>;
-pub type CrosswordResolver =
-    AppResolver<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>;
-pub type CrosswordContext =
-    AppContext<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>;
-pub type CrosswordKeys = KeyMap<CrosswordAction, CrosswordTextObject, CrosswordMotion>;
+pub struct CrosswordApp;
+
+impl AppTypes for CrosswordApp {
+    type Action = CrosswordAction;
+    type TextObject = CrosswordTextObject;
+    type Motion = CrosswordMotion;
+    type State = AppState;
+}

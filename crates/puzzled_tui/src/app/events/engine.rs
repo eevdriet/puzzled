@@ -6,16 +6,16 @@ use std::{
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
 use crate::{
-    Action, ActionBehavior, AppEvent, Command, EventMode, EventSearchResult, EventTrie, Motion,
-    MotionBehavior, Operator, SelectionKind, TextObjectBehavior, TrieEntry,
+    Action, AppCommand, AppEvent, AppTrieEntry, AppTypes, Command, EventMode, EventSearchResult,
+    EventTrie, Motion, Operator, SelectionKind, TrieEntry,
 };
 
 #[derive(Debug)]
-pub struct EventEngine<A, T, M> {
+pub struct EventEngine<A: AppTypes> {
     mode: EventMode,
 
     buffer: Vec<AppEvent>,
-    actions: EventTrie<A, T, M>,
+    actions: EventTrie<A>,
     pending_operator: Option<Operator>,
 
     repeat: RepeatState,
@@ -26,17 +26,17 @@ pub struct EventEngine<A, T, M> {
 }
 
 #[derive(Debug)]
-pub enum EventEffect<A, T, M> {
-    Command(Command<A, T, M>),
+pub enum EventEffect<A: AppTypes> {
+    Command(AppCommand<A>),
     Mode(EventMode),
 }
 
 #[derive(Debug)]
-pub struct EventResult<A, T, M> {
-    pub effects: Vec<EventEffect<A, T, M>>,
+pub struct EventResult<A: AppTypes> {
+    pub effects: Vec<EventEffect<A>>,
 }
 
-impl<A, T, M> EventResult<A, T, M> {
+impl<A: AppTypes> EventResult<A> {
     pub fn next_mode(&self) -> Option<EventMode> {
         for effect in self.effects.iter().rev() {
             if let EventEffect::Mode(mode) = effect {
@@ -48,7 +48,7 @@ impl<A, T, M> EventResult<A, T, M> {
     }
 }
 
-impl<A, T, M> Default for EventResult<A, T, M> {
+impl<A: AppTypes> Default for EventResult<A> {
     fn default() -> Self {
         Self {
             effects: Vec::new(),
@@ -56,8 +56,8 @@ impl<A, T, M> Default for EventResult<A, T, M> {
     }
 }
 
-impl<A, T, M> EventEngine<A, T, M> {
-    pub fn new(actions: EventTrie<A, T, M>, timeout: Duration) -> Self {
+impl<A: AppTypes> EventEngine<A> {
+    pub fn new(actions: EventTrie<A>, timeout: Duration) -> Self {
         Self {
             mode: EventMode::default(),
             timeout,
@@ -75,17 +75,8 @@ impl<A, T, M> EventEngine<A, T, M> {
     }
 }
 
-impl<A, T, M> EventEngine<A, T, M>
-where
-    A: ActionBehavior,
-    M: MotionBehavior,
-    T: TextObjectBehavior,
-{
-    pub fn push(
-        &mut self,
-        event: AppEvent,
-        override_mode: Option<EventMode>,
-    ) -> EventResult<A, T, M> {
+impl<A: AppTypes> EventEngine<A> {
+    pub fn push(&mut self, event: AppEvent, override_mode: Option<EventMode>) -> EventResult<A> {
         let mode = override_mode.unwrap_or(self.mode);
 
         tracing::debug!("[EVENT] {event}");
@@ -108,7 +99,7 @@ where
         result
     }
 
-    fn mouse_event(&mut self, mouse: MouseEvent) -> EventResult<A, T, M> {
+    fn mouse_event(&mut self, mouse: MouseEvent) -> EventResult<A> {
         let mut effects = Vec::new();
 
         match mouse.kind {
@@ -147,11 +138,7 @@ where
         EventResult { effects }
     }
 
-    fn search_command(
-        &mut self,
-        events: &[AppEvent],
-        mode: &EventMode,
-    ) -> Option<Command<A, T, M>> {
+    fn search_command(&mut self, events: &[AppEvent], mode: &EventMode) -> Option<AppCommand<A>> {
         match self.actions.search(events) {
             // Perform action for known sequence
             EventSearchResult::Exact(entry) => self.entry_command(entry),
@@ -185,8 +172,8 @@ where
         }
     }
 
-    fn entry_command(&mut self, entry: TrieEntry<A, T, M>) -> Option<Command<A, T, M>> {
-        tracing::info!("Entry {entry:?} with {self:?}");
+    fn entry_command(&mut self, entry: AppTrieEntry<A>) -> Option<AppCommand<A>> {
+        tracing::info!("Entry {entry:?}");
         let count = self.repeat.count().unwrap_or(1);
         self.reset();
 
@@ -204,7 +191,7 @@ where
         }
     }
 
-    fn key_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    fn key_event(&mut self, event: AppEvent) -> EventResult<A> {
         tracing::debug!("[EVENT] {event} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
@@ -280,7 +267,7 @@ where
         EventResult { effects }
     }
 
-    pub fn tick(&mut self, override_mode: Option<EventMode>) -> EventResult<A, T, M> {
+    pub fn tick(&mut self, override_mode: Option<EventMode>) -> EventResult<A> {
         let mode = override_mode.unwrap_or(self.mode);
 
         if self.buffer.is_empty() {
@@ -327,15 +314,15 @@ where
         self.pending_operator = None;
     }
 
-    fn normal_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    fn normal_event(&mut self, event: AppEvent) -> EventResult<A> {
         self.key_event(event)
     }
 
-    fn visual_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    fn visual_event(&mut self, event: AppEvent) -> EventResult<A> {
         self.key_event(event)
     }
 
-    fn insert_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    fn insert_event(&mut self, event: AppEvent) -> EventResult<A> {
         let Some(key) = event.key() else {
             return EventResult::default();
         };
@@ -369,7 +356,7 @@ where
         }
     }
 
-    fn replace_event(&mut self, event: AppEvent) -> EventResult<A, T, M> {
+    fn replace_event(&mut self, event: AppEvent) -> EventResult<A> {
         let Some(key) = event.key() else {
             return EventResult::default();
         };
@@ -405,7 +392,7 @@ where
         }
     }
 
-    fn handle_mode_switch(&mut self, command: &Command<A, T, M>) -> Option<EventMode> {
+    fn handle_mode_switch(&mut self, command: &AppCommand<A>) -> Option<EventMode> {
         tracing::info!("\tHandling mode switch for result {command:?}");
 
         let mode = match command {

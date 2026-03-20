@@ -8,8 +8,8 @@ pub(crate) use render::*;
 use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AsCore, Command, EventMode, GridWidget, HandleBaseMotion, HandleOperator, Operator,
-    RenderSize, Widget as AppWidget,
+    Action, AppCommand, AppResolver, AsCore, Command, EventMode, GridWidget, HandleBaseMotion,
+    HandleOperator, Operator, RenderSize, Widget as AppWidget,
 };
 
 use ratatui::{
@@ -19,17 +19,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, StatefulWidget, Widget},
 };
 
-use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
-    CrosswordTextObject, Focus, PuzzleScreenState,
-};
+use crate::{CrosswordApp, Focus, PuzzleScreenState};
 use tui_scrollview::ScrollView;
 
 pub struct CrosswordWidget;
 
-impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
-    for CrosswordWidget
-{
+impl AppWidget<CrosswordApp> for CrosswordWidget {
     type State = PuzzleScreenState;
 
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -118,8 +113,8 @@ impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
 
     fn on_command(
         &mut self,
-        command: CrosswordCommand,
-        resolver: CrosswordResolver,
+        command: AppCommand<CrosswordApp>,
+        resolver: AppResolver<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
         match command {

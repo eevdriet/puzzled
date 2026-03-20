@@ -3,7 +3,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Rect, Size};
 use ratatui::widgets::{List, ListItem, ListState, StatefulWidget};
 
-use crate::{AppResolver, Command, Motion, Widget as AppWidget};
+use crate::{AppCommand, AppResolver, AppTypes, Command, Motion, Widget as AppWidget};
 
 pub trait ListRender {
     type State;
@@ -28,9 +28,10 @@ impl<R> ListWidget<R> {
 //     pub list: ListState,
 // }
 
-impl<R, A, T, M, S> AppWidget<A, T, M, S> for ListWidget<R>
+impl<R, A> AppWidget<A> for ListWidget<R>
 where
     R: ListRender,
+    A: AppTypes,
 {
     type State = R::State;
 
@@ -55,8 +56,8 @@ where
 
     fn on_command(
         &mut self,
-        command: Command<A, T, M>,
-        _resolver: AppResolver<A, T, M, S>,
+        command: AppCommand<A>,
+        _resolver: AppResolver<A>,
         state: &mut Self::State,
     ) -> bool {
         match command {

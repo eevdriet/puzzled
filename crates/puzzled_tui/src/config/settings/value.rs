@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt};
 
 use serde::{Deserialize, Serialize, Serializer, de::Visitor, ser};
 
-use crate::{Action, AppContext, AppResolver, Command, HandleCommand};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes, HandleCommand};
 
 #[derive(Debug)]
 pub enum SettingValue {
@@ -533,14 +533,14 @@ impl<'de> Deserialize<'de> for SettingValue {
     }
 }
 
-impl<A, T, M, S> HandleCommand<A, T, M, S> for SettingValue {
+impl<A: AppTypes> HandleCommand<A> for SettingValue {
     type State = ();
 
     fn handle_command(
         &mut self,
-        _command: Command<A, T, M>,
-        _resolver: AppResolver<A, T, M, S>,
-        _ctx: &mut AppContext<A, T, M, S>,
+        _command: AppCommand<A>,
+        _resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
         _state: &mut Self::State,
     ) -> bool {
         // match self {

@@ -7,15 +7,15 @@ use ratatui::{
     widgets::{Widget, WidgetRef},
 };
 
-use crate::{ActionBehavior, KeyMap, MotionBehavior, TextObjectBehavior, TrieEntry};
+use crate::{AppTrieEntry, AppTypes, KeyMap};
 
-pub struct KeyLineWidget<'a, A, T, M> {
-    pub keys: Vec<(Cow<'a, str>, TrieEntry<A, T, M>)>,
-    pub map: &'a KeyMap<A, T, M>,
+pub struct KeyLineWidget<'a, A: AppTypes> {
+    pub keys: Vec<(Cow<'a, str>, AppTrieEntry<A>)>,
+    pub map: &'a KeyMap<A>,
 }
 
-impl<'a, A, T, M> KeyLineWidget<'a, A, T, M> {
-    pub fn new<S>(keys: Vec<(S, TrieEntry<A, T, M>)>, map: &'a KeyMap<A, T, M>) -> Self
+impl<'a, A: AppTypes> KeyLineWidget<'a, A> {
+    pub fn new<S>(keys: Vec<(S, AppTrieEntry<A>)>, map: &'a KeyMap<A>) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -29,11 +29,9 @@ impl<'a, A, T, M> KeyLineWidget<'a, A, T, M> {
     }
 }
 
-impl<'a, A, T, M> WidgetRef for KeyLineWidget<'a, A, T, M>
+impl<'a, A> WidgetRef for KeyLineWidget<'a, A>
 where
-    A: ActionBehavior,
-    T: TextObjectBehavior,
-    M: MotionBehavior,
+    A: AppTypes,
 {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let base = Style::default().fg(Color::Gray);

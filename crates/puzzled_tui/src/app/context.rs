@@ -1,12 +1,12 @@
-use crate::KeyMap;
+use crate::{AppTypes, KeyMap};
 
-pub struct AppContext<A, T, M, S> {
-    pub state: S,
-    pub keys: KeyMap<A, T, M>,
+pub struct AppContext<A: AppTypes> {
+    pub state: A::State,
+    pub keys: KeyMap<A>,
 }
 
-impl<A, T, M, S> AppContext<A, T, M, S> {
-    pub fn new(state: S, keys: KeyMap<A, T, M>) -> Self {
+impl<A: AppTypes> AppContext<A> {
+    pub fn new(state: A::State, keys: KeyMap<A>) -> Self {
         Self { state, keys }
     }
 }

@@ -1,8 +1,6 @@
-use std::fmt::Debug;
+use crate::{AppTypeTraits, Describe, Motion};
 
-use crate::Motion;
-
-pub trait MotionBehavior: Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized {
+pub trait MotionBehavior: AppTypeTraits {
     fn variants() -> Vec<Self>;
 
     fn is_mouse(&self) -> bool {
@@ -13,6 +11,15 @@ pub trait MotionBehavior: Clone + PartialEq + Eq + PartialOrd + Ord + Send + Deb
 impl MotionBehavior for () {
     fn variants() -> Vec<Self> {
         vec![]
+    }
+}
+
+impl<M> Describe for Motion<M>
+where
+    M: Describe,
+{
+    fn describe(&self) -> Option<String> {
+        None
     }
 }
 

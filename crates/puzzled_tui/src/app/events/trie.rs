@@ -7,11 +7,11 @@ use std::{
 
 use puzzled_core::Puzzle;
 use puzzled_io::puzzle_config_dir;
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::Deserialize;
 
 use crate::{
-    Action, ActionBehavior, AppEvent, Motion, MotionBehavior, Operator, RawActionKeys, TextObject,
-    TextObjectBehavior, app::events::parse_key, parse_action_events,
+    Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, RawActionKeys,
+    TextObject, TextObjectBehavior, app::events::parse_key, parse_action_events,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
@@ -22,6 +22,7 @@ pub enum TrieEntry<A, T, M> {
     Motion(Motion<M>),
     Operator(Operator),
 }
+pub type AppTrieEntry<A: AppTypes> = TrieEntry<A::Action, A::TextObject, A::Motion>;
 
 impl<A, T, M> Ord for TrieEntry<A, T, M>
 where
@@ -59,12 +60,12 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrieNode<A, T, M> {
-    entry: Option<TrieEntry<A, T, M>>,
-    children: HashMap<AppEvent, EventTrieNode<A, T, M>>,
+pub struct EventTrieNode<A: AppTypes> {
+    entry: Option<AppTrieEntry<A>>,
+    children: HashMap<AppEvent, EventTrieNode<A>>,
 }
 
-impl<A, T, M> Default for EventTrieNode<A, T, M> {
+impl<A: AppTypes> Default for EventTrieNode<A> {
     fn default() -> Self {
         Self {
             entry: None,
@@ -74,7 +75,7 @@ impl<A, T, M> Default for EventTrieNode<A, T, M> {
 }
 
 #[derive(Debug)]
-pub enum EventSearchResult<A, T, M> {
+pub enum EventSearchResult<A: AppTypes> {
     /// Event search does not lead to an action
     None,
 
@@ -82,37 +83,32 @@ pub enum EventSearchResult<A, T, M> {
     Prefix,
 
     /// Events trigger an action
-    Exact(TrieEntry<A, T, M>),
+    Exact(AppTrieEntry<A>),
 
     /// Events trigger an action and and prefix
-    ExactPrefix(TrieEntry<A, T, M>),
+    ExactPrefix(AppTrieEntry<A>),
 }
 
-impl<A, T, M> EventSearchResult<A, T, M> {
+impl<A: AppTypes> EventSearchResult<A> {
     pub fn is_partial(&self) -> bool {
         matches!(self, EventSearchResult::Prefix)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct EventTrie<A, T, M> {
-    root: EventTrieNode<A, T, M>,
+pub struct EventTrie<A: AppTypes> {
+    root: EventTrieNode<A>,
 }
 
-impl<A, T, M> Default for EventTrie<A, T, M> {
+impl<A: AppTypes> Default for EventTrie<A> {
     fn default() -> Self {
         Self {
-            root: EventTrieNode::<A, T, M>::default(),
+            root: EventTrieNode::<A>::default(),
         }
     }
 }
 
-impl<A, T, M> EventTrie<A, T, M>
-where
-    A: Hash + Clone + Eq + DeserializeOwned,
-    T: Hash + Clone + Eq + DeserializeOwned,
-    M: Hash + Clone + Eq + DeserializeOwned,
-{
+impl<A: AppTypes> EventTrie<A> {
     pub fn from_config<P>() -> io::Result<Self>
     where
         P: Puzzle,
@@ -122,7 +118,7 @@ where
             return Ok(EventTrie::default());
         };
 
-        let action_keys: RawActionKeys<A, T, M> =
+        let action_keys: RawActionKeys<A::Action, A::TextObject, A::Motion> =
             toml::from_str(&contents).map_err(io::Error::other)?;
 
         let trie = parse_action_events(action_keys).map_err(io::Error::other)?;
@@ -130,8 +126,12 @@ where
     }
 }
 
-impl<A, T, M> EventTrie<A, T, M> {
-    pub fn insert_key(&mut self, key: &str, entry: TrieEntry<A, T, M>) -> bool {
+impl<A: AppTypes> EventTrie<A> {
+    pub fn insert_key(
+        &mut self,
+        key: &str,
+        entry: TrieEntry<A::Action, A::TextObject, A::Motion>,
+    ) -> bool {
         let Ok(events) = parse_key(key) else {
             return false;
         };
@@ -140,7 +140,11 @@ impl<A, T, M> EventTrie<A, T, M> {
         true
     }
 
-    pub fn insert(&mut self, events: &[AppEvent], entry: TrieEntry<A, T, M>) {
+    pub fn insert(
+        &mut self,
+        events: &[AppEvent],
+        entry: TrieEntry<A::Action, A::TextObject, A::Motion>,
+    ) {
         let mut node = &mut self.root;
 
         for event in events {
@@ -151,13 +155,8 @@ impl<A, T, M> EventTrie<A, T, M> {
     }
 }
 
-impl<A, T, M> EventTrie<A, T, M>
-where
-    A: Clone,
-    T: Clone,
-    M: Clone,
-{
-    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<A, T, M> {
+impl<A: AppTypes> EventTrie<A> {
+    pub fn search(&self, events: &[AppEvent]) -> EventSearchResult<A> {
         if events.is_empty() {
             return EventSearchResult::None;
         }
@@ -199,21 +198,16 @@ where
     }
 }
 
-pub struct KeyMap<A, T, M> {
-    keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>,
+pub struct KeyMap<A: AppTypes> {
+    keys: BTreeMap<AppTrieEntry<A>, Vec<String>>,
 }
 
-impl<A, T, M> KeyMap<A, T, M> {
-    pub fn new(keys: BTreeMap<TrieEntry<A, T, M>, Vec<String>>) -> Self {
+impl<A: AppTypes> KeyMap<A> {
+    pub fn new(keys: BTreeMap<AppTrieEntry<A>, Vec<String>>) -> Self {
         Self { keys }
     }
 
-    pub fn get_merged(&self, entry: &TrieEntry<A, T, M>) -> Option<String>
-    where
-        A: ActionBehavior,
-        T: TextObjectBehavior,
-        M: MotionBehavior,
-    {
+    pub fn get_merged(&self, entry: &AppTrieEntry<A>) -> Option<String> {
         let keys = self.keys.get(entry)?;
         let mut iter = keys.iter();
 
@@ -221,17 +215,12 @@ impl<A, T, M> KeyMap<A, T, M> {
         Some(iter.fold(first, |acc, item| format!("{acc} / {item}")))
     }
 
-    pub fn keys(&self) -> &BTreeMap<TrieEntry<A, T, M>, Vec<String>> {
+    pub fn keys(&self) -> &BTreeMap<AppTrieEntry<A>, Vec<String>> {
         &self.keys
     }
 }
 
-impl<A, T, M> Clone for KeyMap<A, T, M>
-where
-    A: Clone,
-    T: Clone,
-    M: Clone,
-{
+impl<A: AppTypes> Clone for KeyMap<A> {
     fn clone(&self) -> Self {
         Self {
             keys: self.keys.clone(),
@@ -239,13 +228,8 @@ where
     }
 }
 
-impl<A, T, M> EventTrie<A, T, M>
-where
-    A: ActionBehavior + Hash,
-    M: MotionBehavior + Hash,
-    T: TextObjectBehavior + Hash,
-{
-    pub fn action_keys(&self) -> KeyMap<A, T, M> {
+impl<A: AppTypes> EventTrie<A> {
+    pub fn action_keys(&self) -> KeyMap<A> {
         // Initialize keys for all action variants
         let mut keys = BTreeMap::default();
 
@@ -262,15 +246,11 @@ where
     }
 }
 
-fn dfs<A, T, M>(
-    node: &EventTrieNode<A, T, M>,
-    result: &mut BTreeMap<TrieEntry<A, T, M>, Vec<String>>,
+fn dfs<A: AppTypes>(
+    node: &EventTrieNode<A>,
+    result: &mut BTreeMap<AppTrieEntry<A>, Vec<String>>,
     current_events: Vec<AppEvent>,
-) where
-    A: ActionBehavior,
-    M: MotionBehavior,
-    T: TextObjectBehavior,
-{
+) {
     // If the node has an action, add the current path of events to the result
     if let Some(entry) = &node.entry {
         let keys = current_events

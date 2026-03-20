@@ -8,20 +8,16 @@ use ratatui::{
     widgets::Widget,
 };
 
-use crate::{AppState, CrosswordAction, CrosswordKeys, CrosswordMotion, CrosswordTextObject};
+use crate::CrosswordApp;
 
-pub struct FooterWidget<'a> {
-    pub keys: &'a CrosswordKeys,
-}
+pub struct FooterWidget;
 
 pub struct FooterState {
     pub mode: EventMode,
     pub timer: Timer,
 }
 
-impl<'a> AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
-    for FooterWidget<'a>
-{
+impl<'a> AppWidget<CrosswordApp> for FooterWidget {
     type State = FooterState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {

@@ -16,13 +16,13 @@ use ratatui::{
     layout::{Rect, Size},
 };
 
-use crate::{AppResolver, Command, EventMode};
+use crate::{AppCommand, AppResolver, AppTypes, Command, EventMode};
 
 pub trait RenderSize<S> {
     fn render_size(&self, state: &S) -> Size;
 }
 
-pub trait Widget<A, T, M, S> {
+pub trait Widget<A: AppTypes> {
     type State;
 
     // Rendering
@@ -37,8 +37,8 @@ pub trait Widget<A, T, M, S> {
     // Commands
     fn on_command(
         &mut self,
-        _command: Command<A, T, M>,
-        _resolver: AppResolver<A, T, M, S>,
+        _command: AppCommand<A>,
+        _resolver: AppResolver<A>,
         _state: &mut Self::State,
     ) -> bool {
         false
@@ -48,7 +48,7 @@ pub trait Widget<A, T, M, S> {
     fn on_mode(
         &mut self,
         _mode: EventMode,
-        _resolver: AppResolver<A, T, M, S>,
+        _resolver: AppResolver<A>,
         _state: &mut Self::State,
     ) -> bool {
         false

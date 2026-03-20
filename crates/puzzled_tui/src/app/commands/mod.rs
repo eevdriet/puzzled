@@ -18,6 +18,8 @@ pub use operator::*;
 pub use resolver::*;
 pub use text_object::*;
 
+use crate::AppTypes;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Command<A, T, M> {
     Action {
@@ -36,6 +38,8 @@ pub enum Command<A, T, M> {
     },
     Operator(Operator),
 }
+
+pub type AppCommand<A: AppTypes> = Command<A::Action, A::TextObject, A::Motion>;
 
 impl<A, T, M> Command<A, T, M> {
     pub fn new_action(action: Action<A>) -> Self {

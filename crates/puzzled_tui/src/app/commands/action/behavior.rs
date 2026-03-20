@@ -1,10 +1,6 @@
-use std::fmt::Debug;
+use crate::{Action, AppTypeTraits, Describe};
 
-use crate::{Action, Describe};
-
-pub trait ActionBehavior:
-    Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized + Describe
-{
+pub trait ActionBehavior: AppTypeTraits {
     fn is_focus(&self) -> bool {
         false
     }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use crate::{EventTrie, TrieEntry, parse_key};
+use crate::{AppTypes, EventTrie, TrieEntry, parse_key};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -13,14 +13,9 @@ pub(crate) enum RawKeySeq {
 
 pub(crate) type RawActionKeys<A, T, M> = HashMap<TrieEntry<A, T, M>, RawKeySeq>;
 
-pub(crate) fn parse_action_events<A, T, M>(
-    action_keys: RawActionKeys<A, T, M>,
-) -> Result<EventTrie<A, T, M>, String>
-where
-    A: Clone,
-    M: Clone,
-    T: Clone,
-{
+pub(crate) fn parse_action_events<A: AppTypes>(
+    action_keys: RawActionKeys<A::Action, A::TextObject, A::Motion>,
+) -> Result<EventTrie<A>, String> {
     let mut trie = EventTrie::default();
 
     for (action, key_seq) in action_keys {

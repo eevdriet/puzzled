@@ -6,22 +6,22 @@ pub use focus::*;
 
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{AppContext, AppResolver, Command, EventMode};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes, Command, EventMode};
 
-pub trait Screen<A, T, M, S> {
+pub trait Screen<A: AppTypes> {
     // Rendering
-    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<A, T, M, S>);
+    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<A>);
 
-    fn on_tick(&self, _ctx: &AppContext<A, T, M, S>) -> bool {
+    fn on_tick(&self, _ctx: &AppContext<A>) -> bool {
         false
     }
 
     // Actions
     fn on_command(
         &mut self,
-        _command: Command<A, T, M>,
-        _resolver: AppResolver<A, T, M, S>,
-        _ctx: &mut AppContext<A, T, M, S>,
+        _command: AppCommand<A>,
+        _resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
     ) -> bool {
         false
     }
@@ -30,8 +30,8 @@ pub trait Screen<A, T, M, S> {
     fn on_mode(
         &mut self,
         _mode: EventMode,
-        _resolver: AppResolver<A, T, M, S>,
-        _ctx: &mut AppContext<A, T, M, S>,
+        _resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
     ) -> bool {
         false
     }
@@ -41,11 +41,11 @@ pub trait Screen<A, T, M, S> {
     }
 
     // Lifetime events
-    fn on_popup_open(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
-    fn on_popup_close(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_popup_open(&mut self, _ctx: &mut AppContext<A>) {}
+    fn on_popup_close(&mut self, _ctx: &mut AppContext<A>) {}
 
-    fn on_enter(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
-    fn on_exit(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
-    fn on_pause(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
-    fn on_resume(&mut self, _ctx: &mut AppContext<A, T, M, S>) {}
+    fn on_enter(&mut self, _ctx: &mut AppContext<A>) {}
+    fn on_exit(&mut self, _ctx: &mut AppContext<A>) {}
+    fn on_pause(&mut self, _ctx: &mut AppContext<A>) {}
+    fn on_resume(&mut self, _ctx: &mut AppContext<A>) {}
 }

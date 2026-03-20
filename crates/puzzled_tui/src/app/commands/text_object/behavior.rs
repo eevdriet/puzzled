@@ -1,16 +1,21 @@
-use std::fmt::Debug;
+use crate::{AppTypeTraits, Describe, TextObject};
 
-use crate::TextObject;
-
-pub trait TextObjectBehavior:
-    Clone + PartialEq + Eq + PartialOrd + Ord + Send + Debug + Sized
-{
+pub trait TextObjectBehavior: AppTypeTraits {
     fn variants() -> Vec<Self>;
 }
 
 impl TextObjectBehavior for () {
     fn variants() -> Vec<Self> {
         vec![]
+    }
+}
+
+impl<T> Describe for TextObject<T>
+where
+    T: Describe,
+{
+    fn describe(&self) -> Option<String> {
+        None
     }
 }
 

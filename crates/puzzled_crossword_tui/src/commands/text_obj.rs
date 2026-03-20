@@ -1,5 +1,5 @@
 use derive_more::{Display, Eq};
-use puzzled_tui::TextObjectBehavior;
+use puzzled_tui::{Describe, TextObjectBehavior};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
@@ -15,5 +15,11 @@ pub enum CrosswordTextObject {
 impl TextObjectBehavior for CrosswordTextObject {
     fn variants() -> Vec<Self> {
         vec![Self::Clue(0)]
+    }
+}
+
+impl Describe for CrosswordTextObject {
+    fn describe(&self) -> Option<String> {
+        None
     }
 }

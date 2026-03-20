@@ -1,10 +1,15 @@
 mod action;
 
 pub use action::*;
-use puzzled_tui::{AppContext, AppResolver, Command};
+use puzzled_tui::{AppContext, AppResolver, AppTypes, Command};
 
 use crate::AppState;
 
-pub type BinarioCommand = Command<BinarioAction, (), ()>;
-pub type BinarioResolver = AppResolver<BinarioAction, (), (), AppState>;
-pub type BinarioContext = AppContext<BinarioAction, (), (), AppState>;
+pub struct BinarioApp;
+
+impl AppTypes for BinarioApp {
+    type Action = BinarioAction;
+    type TextObject = ();
+    type Motion = ();
+    type State = AppState;
+}

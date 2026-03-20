@@ -6,17 +6,9 @@ use ratatui::{
     widgets::{Block, Clear, Row, StatefulWidget, Table, Widget},
 };
 
-use crate::{
-    ActionBehavior, KeysPopup, KeysPopupState, MotionBehavior, Popup, TextObjectBehavior,
-    TrieEntry, align_area,
-};
+use crate::{AppTypes, KeysPopup, KeysPopupState, Popup, TrieEntry, align_area};
 
-impl<A, T, M, S> Popup<A, T, M, S> for KeysPopup<A, T, M>
-where
-    A: ActionBehavior,
-    T: TextObjectBehavior,
-    M: MotionBehavior,
-{
+impl<A: AppTypes> Popup<A> for KeysPopup<A> {
     type State = KeysPopupState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {

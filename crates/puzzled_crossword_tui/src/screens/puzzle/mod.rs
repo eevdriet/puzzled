@@ -18,14 +18,12 @@ use ratatui::{
 
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
-    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, Screen, Widget,
+    Action, ActionBehavior, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
+    FocusManager, GridRenderState, HandleCommand, HandleMode, KeyMap, KeysPopup, KeysPopupState,
+    Popup, Screen, Widget,
 };
 
-use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordKeys, CrosswordMotion,
-    CrosswordResolver, CrosswordTextObject,
-};
+use crate::{CrosswordAction, CrosswordApp};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Focus {
@@ -46,7 +44,7 @@ pub struct PuzzleScreen {
 
     // Popups
     popup: bool,
-    keys: KeysPopup<CrosswordAction, CrosswordTextObject, CrosswordMotion>,
+    keys: KeysPopup<CrosswordApp>,
 }
 
 impl PuzzleScreen {
@@ -54,7 +52,7 @@ impl PuzzleScreen {
         puzzle: Crossword,
         solve_state: CrosswordState,
         render_state: GridRenderState,
-        keys: CrosswordKeys,
+        keys: KeyMap<CrosswordApp>,
     ) -> Self {
         let mut focus = FocusManager::default();
 
@@ -87,8 +85,8 @@ impl PuzzleScreen {
     }
 }
 
-impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for PuzzleScreen {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut CrosswordContext) {
+impl Screen<CrosswordApp> for PuzzleScreen {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut AppContext<CrosswordApp>) {
         // Compute sizes
         let gap = 2;
 
@@ -138,29 +136,24 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
             timer: self.state.solve.timer,
         };
 
-        FooterWidget { keys: &ctx.keys }.render(footer, buf, &mut footer_state);
+        FooterWidget.render(footer, buf, &mut footer_state);
 
         if self.popup {
             let mut state = KeysPopupState::default();
 
-            Popup::<CrosswordAction, CrosswordTextObject, CrosswordMotion, CrosswordState>::render(
-                &mut self.keys,
-                area,
-                buf,
-                &mut state,
-            );
+            Popup::<CrosswordApp>::render(&mut self.keys, area, buf, &mut state);
         }
     }
 
-    fn on_tick(&self, _ctx: &CrosswordContext) -> bool {
+    fn on_tick(&self, _ctx: &AppContext<CrosswordApp>) -> bool {
         true
     }
 
     fn on_command(
         &mut self,
-        command: CrosswordCommand,
-        resolver: CrosswordResolver,
-        ctx: &mut CrosswordContext,
+        command: AppCommand<CrosswordApp>,
+        resolver: AppResolver<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
         if self.popup {
             return self.keys.on_command(command, resolver, ctx);
@@ -200,13 +193,8 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
     fn on_mode(
         &mut self,
         mode: EventMode,
-        resolver: puzzled_tui::AppResolver<
-            CrosswordAction,
-            CrosswordTextObject,
-            CrosswordMotion,
-            AppState,
-        >,
-        ctx: &mut CrosswordContext,
+        resolver: AppResolver<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
         let solutions = &mut self.state.solve.solutions;
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
@@ -220,24 +208,24 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
         }
     }
 
-    fn on_popup_open(&mut self, _ctx: &mut CrosswordContext) {
+    fn on_popup_open(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.popup = true;
     }
 
-    fn on_popup_close(&mut self, _ctx: &mut CrosswordContext) {
+    fn on_popup_close(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.popup = false;
     }
 
-    fn on_enter(&mut self, _ctx: &mut CrosswordContext) {
+    fn on_enter(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.state.solve.timer.start();
     }
 
-    fn on_pause(&mut self, _ctx: &mut CrosswordContext) {
+    fn on_pause(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.state.solve.timer.pause();
         self.state.is_paused = true;
     }
 
-    fn on_resume(&mut self, _ctx: &mut CrosswordContext) {
+    fn on_resume(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.state.solve.timer.start();
         self.state.is_paused = false;
     }
