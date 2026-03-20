@@ -16,7 +16,7 @@ use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
 async fn main() -> io::Result<()> {
     init_logging(true);
 
-    // let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
+    let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
 
     let mut render_state = GridRenderState::default();
     let opts = &mut render_state.options;
@@ -24,15 +24,15 @@ async fn main() -> io::Result<()> {
     opts.cell_width = 5;
     opts.cell_height = 3;
 
-    // let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    // let events: EventTrie<BinarioApp> = EventTrie::from_config::<Binario>()?;
-    // let keys = events.action_keys();
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
+    let events: EventTrie<BinarioApp> = EventTrie::from_config::<Binario>()?;
+    let keys = events.action_keys();
 
-    // let state = AppState {};
-    // let context = AppContext::new(state, keys);
-    // let mut app = App::new(context, events);
+    let state = AppState {};
+    let context = AppContext::new(state, keys);
+    let mut app = App::new(context, events);
 
-    // app.run(Box::new(screen)).await?;
+    app.run(Box::new(screen)).await?;
 
     Ok(())
 }

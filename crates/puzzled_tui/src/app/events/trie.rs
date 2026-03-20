@@ -22,7 +22,8 @@ pub enum TrieEntry<A, T, M> {
     Motion(Motion<M>),
     Operator(Operator),
 }
-pub type AppTrieEntry<A: AppTypes> = TrieEntry<A::Action, A::TextObject, A::Motion>;
+pub type AppTrieEntry<A> =
+    TrieEntry<<A as AppTypes>::Action, <A as AppTypes>::TextObject, <A as AppTypes>::Motion>;
 
 impl<A, T, M> Ord for TrieEntry<A, T, M>
 where

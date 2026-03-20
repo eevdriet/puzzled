@@ -1,13 +1,13 @@
 use puzzled_tui::EventMode;
 
 pub struct AppState {
-    mode: EventMode,
+    _mode: EventMode,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            mode: EventMode::Normal,
+            _mode: EventMode::Normal,
         }
     }
 }

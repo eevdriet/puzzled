@@ -4,7 +4,7 @@ mod text_obj;
 
 pub use action::*;
 pub use motion::*;
-use puzzled_tui::{AppContext, AppResolver, AppTypes, Command, KeyMap};
+use puzzled_tui::AppTypes;
 pub use text_obj::*;
 
 use crate::AppState;

@@ -6,7 +6,7 @@ pub use focus::*;
 
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{AppCommand, AppContext, AppResolver, AppTypes, Command, EventMode};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes, EventMode};
 
 pub trait Screen<A: AppTypes> {
     // Rendering

@@ -17,7 +17,7 @@ pub struct FooterState {
     pub timer: Timer,
 }
 
-impl<'a> AppWidget<CrosswordApp> for FooterWidget {
+impl AppWidget<CrosswordApp> for FooterWidget {
     type State = FooterState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {

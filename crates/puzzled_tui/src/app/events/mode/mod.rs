@@ -5,7 +5,7 @@ pub use handle::*;
 use derive_more::Display;
 use serde::Deserialize;
 
-use crate::{AppContext, AppResolver, SelectionKind};
+use crate::SelectionKind;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Display, Hash)]
 pub enum EventMode {

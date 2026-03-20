@@ -59,12 +59,12 @@ impl Screen<CrosswordApp> for TitleScreen {
         resolver: AppResolver<CrosswordApp>,
         _ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
-        match command {
-            Command::Action {
-                action: Action::Quit,
-                ..
-            } => resolver.quit(),
-            _ => {}
+        if let Command::Action {
+            action: Action::Quit,
+            ..
+        } = command
+        {
+            resolver.quit()
         }
 
         true

@@ -18,12 +18,12 @@ use crate::text::TxtPuzzle;
 
 #[derive(Debug, Default)]
 pub struct TxtReader {
-    strict: bool,
+    _strict: bool,
 }
 
 impl TxtReader {
     pub fn new(strict: bool) -> Self {
-        Self { strict }
+        Self { _strict: strict }
     }
 
     pub fn read<P, S>(&self, input: &str) -> Result<(P, S)>

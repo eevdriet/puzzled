@@ -88,7 +88,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);
-        let grid_size = grid.render_size(&render.options as &_);
+        let grid_size = grid.render_size(&render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
         // Render the grid in a scrollable view

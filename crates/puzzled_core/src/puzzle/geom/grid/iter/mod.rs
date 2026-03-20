@@ -296,6 +296,15 @@ impl<'a, T> ExactSizeIterator for GridIterMut<'a, T> {
     }
 }
 
+impl<T> IntoIterator for Grid<T> {
+    type Item = T;
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
+    }
+}
+
 impl<T> Grid<T> {
     /// Creates an iterator over the [positions](Position) of the grid
     ///
@@ -316,10 +325,6 @@ impl<T> Grid<T> {
     /// ```
     pub fn positions(&self) -> impl Iterator<Item = Position> {
         (0..self.data.len()).map(move |idx| self.position(idx).expect("Position should be valid"))
-    }
-
-    pub fn into_iter(self) -> impl Iterator<Item = T> {
-        self.data.into_iter()
     }
 
     /// Creates an iterator over the grid
@@ -651,7 +656,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use crate::puzzle::geom::grid::iter::resolve_range;
-    use crate::{Direction, Grid, Position, grid};
+    use crate::{Direction, Grid, grid};
     use crate::{Direction::*, LineSegment};
 
     #[fixture]

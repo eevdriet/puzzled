@@ -23,7 +23,7 @@ use puzzled_tui::{
     Popup, Screen, Widget,
 };
 
-use crate::{CrosswordAction, CrosswordApp};
+use crate::CrosswordApp;
 
 #[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Focus {
@@ -86,7 +86,7 @@ impl PuzzleScreen {
 }
 
 impl Screen<CrosswordApp> for PuzzleScreen {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut AppContext<CrosswordApp>) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<CrosswordApp>) {
         // Compute sizes
         let gap = 2;
 

@@ -173,9 +173,6 @@ mod serde_impl {
 mod tests {
     use puzzled_core::{CellStyle, Position};
 
-    #[cfg(feature = "text")]
-    use puzzled_io::TxtPuzzle;
-
     use crate::nonogram;
 
     #[test]

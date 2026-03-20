@@ -16,7 +16,7 @@ use ratatui::{
     layout::{Rect, Size},
 };
 
-use crate::{AppCommand, AppResolver, AppTypes, Command, EventMode};
+use crate::{AppCommand, AppResolver, AppTypes, EventMode};
 
 pub trait RenderSize<S> {
     fn render_size(&self, state: &S) -> Size;

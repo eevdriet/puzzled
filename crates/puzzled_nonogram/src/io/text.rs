@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-enum Error {
+enum _Error {
     #[error("Fill colors should be specified as `<fill_id> : \"<text>\"`")]
     InvalidColorSpec,
 }

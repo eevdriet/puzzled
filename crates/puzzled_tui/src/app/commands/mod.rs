@@ -39,7 +39,8 @@ pub enum Command<A, T, M> {
     Operator(Operator),
 }
 
-pub type AppCommand<A: AppTypes> = Command<A::Action, A::TextObject, A::Motion>;
+pub type AppCommand<A> =
+    Command<<A as AppTypes>::Action, <A as AppTypes>::TextObject, <A as AppTypes>::Motion>;
 
 impl<A, T, M> Command<A, T, M> {
     pub fn new_action(action: Action<A>) -> Self {

@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use chumsky::{
     IterParser, Parser,
     extra::Err,

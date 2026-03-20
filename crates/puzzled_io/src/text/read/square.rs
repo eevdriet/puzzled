@@ -1,7 +1,10 @@
 use chumsky::{Parser, extra::Err, prelude::just};
 use puzzled_core::{Cell, Entry, Grid, NON_PLAYABLE_CHAR, Square};
 
-use crate::text::read::{ParseError, cell_entry, grid};
+use crate::{
+    SquareEntries,
+    text::read::{ParseError, cell_entry, grid},
+};
 
 pub fn square_entry<'a, T, P>(
     value: P,
@@ -16,7 +19,7 @@ where
 
 pub fn square_entry_grids<'a, T, P>(
     value: P,
-) -> impl Parser<'a, &'a str, (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>), Err<ParseError<'a>>>
+) -> impl Parser<'a, &'a str, SquareEntries<T>, Err<ParseError<'a>>>
 where
     P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
 {
