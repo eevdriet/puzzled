@@ -5,26 +5,34 @@ mod render;
 pub(crate) use clue::*;
 pub(crate) use render::*;
 
-use puzzled_core::Puzzle;
-use puzzled_crossword::{ClueDirection, Crossword};
-use puzzled_tui::{GridWidget, RenderSize};
-
-use ratatui::{
-    layout::{Constraint, HorizontalAlignment, Layout},
-    prelude::{Buffer, Rect},
-    style::{Color, Style},
-    widgets::{Block, BorderType, Borders, StatefulWidget, StatefulWidgetRef, Widget},
+use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
+use puzzled_crossword::{ClueDirection, Crossword, Solution};
+use puzzled_tui::{
+    Action, AsCore, Command, EventMode, GridWidget, HandleBaseMotion, HandleOperator, Operator,
+    RenderSize, Widget as AppWidget,
 };
 
-use crate::{Focus, PuzzleScreenState};
+use ratatui::{
+    layout::{Constraint, HorizontalAlignment, Layout, Size},
+    prelude::{Buffer, Rect},
+    style::{Color, Style},
+    widgets::{Block, BorderType, Borders, StatefulWidget, Widget},
+};
+
+use crate::{
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject, Focus, PuzzleScreenState,
+};
 use tui_scrollview::ScrollView;
 
 pub struct CrosswordWidget;
 
-impl StatefulWidgetRef for CrosswordWidget {
+impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for CrosswordWidget
+{
     type State = PuzzleScreenState;
 
-    fn render_ref(&self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let mode = state.render.mode;
 
         let PuzzleScreenState {
@@ -93,5 +101,123 @@ impl StatefulWidgetRef for CrosswordWidget {
 
         scroll_view.render_stateful_widget(grid_widget, Rect::from(grid_size), render);
         scroll_view.render(grid_area, buf, &mut render.scroll);
+    }
+
+    fn render_size(&self, state: &Self::State) -> Size {
+        let mut size = state.puzzle.squares().render_size(&state.render.options);
+
+        // Border around puzzle grid
+        size.width += 2;
+        size.height += 2;
+
+        // Current clue
+        size.height += 2;
+
+        size
+    }
+
+    fn on_command(
+        &mut self,
+        command: CrosswordCommand,
+        resolver: CrosswordResolver,
+        state: &mut Self::State,
+    ) -> bool {
+        match command {
+            Command::Operator(op) => {
+                if state.render.mode.is_visual() {
+                    let size = state.puzzle.squares().size();
+                    let positions = state
+                        .render
+                        .selection
+                        .range(size)
+                        .positions()
+                        .map(|pos| pos.as_core());
+
+                    state
+                        .solve
+                        .handle_operator(op, positions, &mut state.history);
+
+                    let mode = match op {
+                        Operator::Change => EventMode::Insert,
+                        _ => EventMode::Normal,
+                    };
+                    resolver.set_mode(mode);
+                } else if !op.requires_motion() {
+                    let positions = vec![state.render.cursor];
+
+                    state
+                        .solve
+                        .handle_operator(op, positions, &mut state.history);
+                } else {
+                    return false;
+                }
+            }
+            Command::Motion { count, motion, op } if state.render.mode.is_visual() => {
+                tracing::info!("Visual motion: {motion:?}");
+                assert!(op.is_none());
+
+                let squares = SquareGridRef(state.puzzle.squares());
+                let positions = squares.handle_base_motion(count, motion, &mut state.render);
+
+                if let Some(end) = positions.into_iter().last() {
+                    state.render.selection.update(end);
+                }
+            }
+            Command::Motion { count, motion, op } => {
+                tracing::info!("Other motion: {motion:?}");
+
+                {
+                    let squares = SquareGridRef(state.puzzle.squares());
+                    let positions = squares.handle_base_motion(count, motion, &mut state.render);
+
+                    if let Some(op) = op {
+                        state
+                            .solve
+                            .handle_operator(op, positions, &mut state.history);
+                    }
+                }
+
+                state.update_clues_from_cursor();
+            }
+            Command::Action { action, .. } => {
+                let pos = state.render.cursor;
+                let dir = match state.render.direction {
+                    Direction::Left | Direction::Right => Direction::Right,
+                    Direction::Up | Direction::Down => Direction::Down,
+                };
+
+                match action {
+                    Action::Insert(letter) => {
+                        let entry = Solution::Letter(letter.to_ascii_uppercase());
+                        state.solve.enter(&pos, entry);
+
+                        if let Some(next) = pos + dir
+                            && state.puzzle.squares().get_fill(next).is_some()
+                        {
+                            state.render.cursor = next;
+                        }
+                    }
+
+                    Action::DeleteLeft => {
+                        state.solve.clear(&pos);
+
+                        if let Some(next) = pos - dir
+                            && state.puzzle.squares().get_fill(next).is_some()
+                        {
+                            state.render.cursor = next;
+                        }
+                    }
+
+                    Action::DeleteRight => {
+                        state.solve.clear(&pos);
+                    }
+
+                    _ => return false,
+                }
+            }
+            _ => return false,
+        }
+
+        true
     }
 }

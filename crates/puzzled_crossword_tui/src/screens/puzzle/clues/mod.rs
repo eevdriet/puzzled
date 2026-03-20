@@ -2,7 +2,9 @@ mod list;
 
 use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
-use puzzled_tui::{Action, Command, EventMode, HandleCommand, Motion, RenderSize};
+use puzzled_tui::{
+    Action, Command, EventMode, HandleCommand, Motion, RenderSize, Widget as AppWidget,
+};
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
@@ -12,9 +14,8 @@ use ratatui::{
 };
 
 use crate::{
-    AppState, CrosswordAction, CrosswordCommand, CrosswordContext, CrosswordMotion,
-    CrosswordResolver, CrosswordTextObject, Focus, PuzzleScreenState,
-    screens::puzzle::clues::list::CluesListWidget,
+    AppState, CrosswordAction, CrosswordCommand, CrosswordMotion, CrosswordResolver,
+    CrosswordTextObject, Focus, PuzzleScreenState, screens::puzzle::clues::list::CluesListWidget,
 };
 
 pub struct CluesWidget {
@@ -33,30 +34,10 @@ impl Default for CluesWidget {
     }
 }
 
-impl RenderSize<PuzzleScreenState> for CluesWidget {
-    fn render_size(&self, state: &PuzzleScreenState) -> Size {
-        let mut size = self.across_down.render_size(state);
-
-        let across_size = self.across.render_size(state);
-        let down_size = self.down.render_size(state);
-
-        size.width = size.width.max(across_size.width + down_size.width + 2);
-        size.height = size
-            .height
-            .max(2 + across_size.height.max(down_size.height));
-
-        // Border
-        size.width += 2;
-        size.height += 2;
-
-        size
-    }
-}
-
-impl StatefulWidgetRef for CluesWidget {
+impl AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for CluesWidget {
     type State = PuzzleScreenState;
 
-    fn render_ref(&self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Render the outside block with the tabs
         let base_style = Style::default();
         let selected_style = base_style.fg(Color::Yellow);
@@ -82,8 +63,7 @@ impl StatefulWidgetRef for CluesWidget {
         let text_margin = Margin::new(0, 1);
 
         if state.clue_dir.is_none() {
-            self.across_down
-                .render_ref(area.inner(text_margin), buf, state);
+            self.across_down.render(area.inner(text_margin), buf, state);
             return;
         }
 
@@ -102,7 +82,7 @@ impl StatefulWidgetRef for CluesWidget {
             .fg(Color::Green)
             .render(across_title, buf);
 
-        self.across.render_ref(across, buf, state);
+        self.across.render(across, buf, state);
 
         // Render down clues
         let [down_title, down] =
@@ -112,20 +92,35 @@ impl StatefulWidgetRef for CluesWidget {
             .fg(Color::Blue)
             .render(down_title, buf);
 
-        self.down.render_ref(down, buf, state);
+        self.down.render(down, buf, state);
     }
-}
 
-impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
-    for CluesWidget
-{
-    type State = PuzzleScreenState;
+    fn render_size(&self, state: &Self::State) -> Size {
+        let mut size = self.across_down.render_size(state);
 
-    fn handle_command(
+        let across_size = self.across.render_size(state);
+        let down_size = self.down.render_size(state);
+
+        size.width = size.width.max(across_size.width + down_size.width + 2);
+        size.height = size
+            .height
+            .max(2 + across_size.height.max(down_size.height));
+
+        // Border
+        size.width += 2;
+        size.height += 2;
+
+        size
+    }
+
+    fn override_mode(&self) -> Option<EventMode> {
+        Some(EventMode::Normal)
+    }
+
+    fn on_command(
         &mut self,
         command: CrosswordCommand,
         resolver: CrosswordResolver,
-        ctx: &mut CrosswordContext,
         state: &mut Self::State,
     ) -> bool {
         match command {
@@ -135,7 +130,6 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
             } => {
                 state.focus.set(Focus::Crossword);
                 resolver.set_mode(EventMode::Insert);
-                true
             }
             Command::Motion { motion, .. } => {
                 let is_across = matches!(state.clue_dir, Some(ClueDirection::Across));
@@ -146,42 +140,42 @@ impl HandleCommand<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppSta
                     Motion::Right if is_across => {
                         state.clue_dir = Some(ClueDirection::Down);
                         state.update_cursor_from_clues();
-                        true
                     }
                     Motion::Mouse(mouse)
                         if is_across && mouse.kind == MouseEventKind::ScrollRight =>
                     {
                         state.clue_dir = Some(ClueDirection::Down);
                         state.update_cursor_from_clues();
-                        true
                     }
 
                     // Down -> across
                     Motion::Left if is_down => {
                         state.clue_dir = Some(ClueDirection::Across);
                         state.update_cursor_from_clues();
-                        true
                     }
                     Motion::Mouse(mouse) if is_down && mouse.kind == MouseEventKind::ScrollLeft => {
                         state.clue_dir = Some(ClueDirection::Across);
                         state.update_cursor_from_clues();
-                        true
                     }
-                    _ => match state.clue_dir {
-                        Some(ClueDirection::Across) => {
-                            self.across.handle_command(command, resolver, ctx, state)
-                        }
-                        Some(ClueDirection::Down) => {
-                            self.down.handle_command(command, resolver, ctx, state)
-                        }
-                        None => self
-                            .across_down
-                            .handle_command(command, resolver, ctx, state),
-                    },
+                    _ => {
+                        return match state.clue_dir {
+                            Some(ClueDirection::Across) => {
+                                self.across.on_command(command, resolver, state)
+                            }
+                            Some(ClueDirection::Down) => {
+                                self.down.on_command(command, resolver, state)
+                            }
+                            None => self.across_down.on_command(command, resolver, state),
+                        };
+                    }
                 }
             }
 
-            _ => false,
+            _ => {
+                return false;
+            }
         }
+
+        true
     }
 }

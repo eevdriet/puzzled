@@ -1,14 +1,14 @@
 use puzzled_core::Timer;
-use puzzled_tui::{EventMode, TimerWidget};
+use puzzled_tui::{EventMode, TimerWidget, Widget as AppWidget};
 use ratatui::{
     layout::Margin,
-    prelude::{Buffer, Rect},
+    prelude::{Buffer, Rect, Size},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{StatefulWidgetRef, Widget},
+    widgets::Widget,
 };
 
-use crate::CrosswordKeys;
+use crate::{AppState, CrosswordAction, CrosswordKeys, CrosswordMotion, CrosswordTextObject};
 
 pub struct FooterWidget<'a> {
     pub keys: &'a CrosswordKeys,
@@ -19,10 +19,12 @@ pub struct FooterState {
     pub timer: Timer,
 }
 
-impl<'a> StatefulWidgetRef for FooterWidget<'a> {
+impl<'a> AppWidget<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState>
+    for FooterWidget<'a>
+{
     type State = FooterState;
 
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         Line::from(vec![
             Span::raw("Press"),
             Span::styled(" ? ", Style::new().fg(Color::Yellow)),
@@ -32,5 +34,10 @@ impl<'a> StatefulWidgetRef for FooterWidget<'a> {
 
         let timer = TimerWidget { timer: state.timer };
         timer.render(area.inner(Margin::new(0, 1)), buf);
+    }
+
+    fn render_size(&self, _state: &Self::State) -> Size {
+        let width = "Press ? to display the key bindings that are defined".len() as u16;
+        Size::new(width, 2)
     }
 }

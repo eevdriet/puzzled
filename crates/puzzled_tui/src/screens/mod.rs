@@ -26,6 +26,7 @@ pub trait Screen<A, T, M, S> {
         false
     }
 
+    // Mode
     fn on_mode(
         &mut self,
         _mode: EventMode,
@@ -33,6 +34,10 @@ pub trait Screen<A, T, M, S> {
         _ctx: &mut AppContext<A, T, M, S>,
     ) -> bool {
         false
+    }
+
+    fn override_mode(&self) -> Option<EventMode> {
+        None
     }
 
     // Lifetime events

@@ -15,21 +15,6 @@ use crate::PuzzleScreenState;
 
 use crate::CrosswordWidget;
 
-impl RenderSize<PuzzleScreenState> for CrosswordWidget {
-    fn render_size(&self, state: &PuzzleScreenState) -> Size {
-        let mut size = state.puzzle.squares().render_size(&state.render.options);
-
-        // Border around puzzle grid
-        size.width += 2;
-        size.height += 2;
-
-        // Current clue
-        size.height += 2;
-
-        size
-    }
-}
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>>);
 

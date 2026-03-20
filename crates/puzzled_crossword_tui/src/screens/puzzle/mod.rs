@@ -19,7 +19,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, Command, EventMode, FocusManager, GridRenderState,
-    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, Screen,
+    HandleCommand, HandleMode, KeysPopup, KeysPopupState, Popup, RenderSize, Screen, Widget,
 };
 
 use crate::{
@@ -130,15 +130,15 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
         tracing::debug!("Footer: {footer:?}");
 
         // Render
-        self.crossword.render_ref(crossword, buf, &mut self.state);
-        self.clues.render_ref(clues, buf, &mut self.state);
+        self.crossword.render(crossword, buf, &mut self.state);
+        self.clues.render(clues, buf, &mut self.state);
 
         let mut footer_state = FooterState {
             mode: self.state.render.mode,
             timer: self.state.solve.timer,
         };
 
-        FooterWidget { keys: &ctx.keys }.render_ref(footer, buf, &mut footer_state);
+        FooterWidget { keys: &ctx.keys }.render(footer, buf, &mut footer_state);
 
         if self.popup {
             let mut state = KeysPopupState::default();
@@ -187,16 +187,13 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
         }
 
         match self.state.focus.get() {
-            Focus::Crossword => {
-                self.crossword
-                    .handle_command(command, resolver, ctx, &mut self.state)
-            }
-            Focus::Clues => self
-                .clues
-                .handle_command(command, resolver, ctx, &mut self.state),
+            Focus::Crossword => self
+                .crossword
+                .on_command(command, resolver, &mut self.state),
+            Focus::Clues => self.clues.on_command(command, resolver, &mut self.state),
             Focus::Footer => self
                 .crossword
-                .handle_command(command, resolver, ctx, &mut self.state),
+                .on_command(command, resolver, &mut self.state),
         }
     }
 
@@ -213,6 +210,14 @@ impl Screen<CrosswordAction, CrosswordTextObject, CrosswordMotion, AppState> for
     ) -> bool {
         let solutions = &mut self.state.solve.solutions;
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+    }
+
+    fn override_mode(&self) -> Option<EventMode> {
+        match self.state.focus.get() {
+            Focus::Clues => self.clues.override_mode(),
+            Focus::Crossword => self.crossword.override_mode(),
+            _ => None,
+        }
     }
 
     fn on_popup_open(&mut self, _ctx: &mut CrosswordContext) {
