@@ -1,10 +1,12 @@
 mod commands;
 mod context;
 mod events;
+mod types;
 
 pub use commands::*;
 pub use context::*;
 pub use events::*;
+pub use types::*;
 
 use std::{collections::VecDeque, time::Duration};
 

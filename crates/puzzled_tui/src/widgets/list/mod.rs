@@ -1,18 +1,20 @@
 use crossterm::event::MouseEventKind;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Rect, Size};
-use ratatui::widgets::{List, ListItem, ListState, Widget};
+use ratatui::widgets::{List, ListItem, ListState, StatefulWidget};
 
 use crate::{AppResolver, Command, Motion, Widget as AppWidget};
 
 pub trait ListRender {
     type State;
 
+    fn render_list(&self, state: &Self::State) -> List<'_>;
     fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>>;
+    fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState;
 }
 
 pub struct ListWidget<R> {
-    render: R,
+    pub render: R,
 }
 
 impl<R> ListWidget<R> {
@@ -21,31 +23,34 @@ impl<R> ListWidget<R> {
     }
 }
 
-pub struct ListContext<S> {
-    pub state: S,
-    pub list: ListState,
-}
+// pub struct ListContext<S> {
+//     pub state: S,
+//     pub list: ListState,
+// }
 
 impl<R, A, T, M, S> AppWidget<A, T, M, S> for ListWidget<R>
 where
     R: ListRender,
 {
-    type State = ListContext<R::State>;
+    type State = R::State;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let items = self.render.render_items(&state.state);
-        List::new(items).highlight_symbol(">> ").render(area, buf);
+        let items = self.render.render_items(state);
+        let list = self.render.render_list(state).items(items);
+        let state = self.render.render_state(state);
+
+        list.render(area, buf, state);
     }
 
     fn render_size(&self, state: &Self::State) -> Size {
-        self.render
-            .render_items(&state.state)
-            .fold(Size::ZERO, |mut size, item| {
-                size.width = size.width.max(item.width() as u16);
-                size.height += item.height() as u16;
+        let items = self.render.render_items(state);
 
-                size
-            })
+        items.fold(Size::ZERO, |mut size, item| {
+            size.width = size.width.max(item.width() as u16);
+            size.height += item.height() as u16;
+
+            size
+        })
     }
 
     fn on_command(
@@ -56,7 +61,7 @@ where
     ) -> bool {
         match command {
             Command::Motion { count, motion, .. } => {
-                let list = &mut state.list;
+                let list = self.render.render_state(state);
                 let count = count as u16;
 
                 match motion {

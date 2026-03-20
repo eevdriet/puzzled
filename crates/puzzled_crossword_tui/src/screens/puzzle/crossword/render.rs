@@ -1,19 +1,14 @@
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Direction, Entry, Position, Square};
 use puzzled_crossword::{ClueDirection, Clues, Solution, Squares};
-use puzzled_tui::{AsApp, CellRender, EventMode, GridOptions, RenderSize, Selection, TextBlock};
+use puzzled_tui::{AsApp, CellRender, EventMode, GridOptions, Selection, TextBlock};
 
 use ratatui::{
     layout::HorizontalAlignment,
-    prelude::Size,
     style::{Color, Modifier, Style, Stylize},
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
 };
-
-use crate::PuzzleScreenState;
-
-use crate::CrosswordWidget;
 
 #[derive(Deref, DerefMut)]
 pub(crate) struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>>);
@@ -26,6 +21,20 @@ pub struct RenderSquareState<'a> {
     pub squares: &'a Squares,
     pub opts: GridOptions,
     pub mode: EventMode,
+}
+
+impl<'a> RenderSquareState<'a> {
+    pub fn new(squares: &'a Squares, clues: &'a Clues) -> Self {
+        Self {
+            squares,
+            clues,
+            cursor: Position::default(),
+            direction: Direction::default(),
+            selection: Selection::default(),
+            opts: GridOptions::default(),
+            mode: EventMode::default(),
+        }
+    }
 }
 
 impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
