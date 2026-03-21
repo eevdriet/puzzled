@@ -8,7 +8,7 @@ pub use context::*;
 pub use events::*;
 pub use types::*;
 
-use std::{collections::VecDeque, time::Duration};
+use std::{collections::VecDeque, io, time::Duration};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture},
@@ -36,7 +36,12 @@ pub struct App<A: AppTypes> {
 }
 
 impl<A: AppTypes> App<A> {
-    pub fn new(context: AppContext<A>, actions: EventTrie<A>) -> Self {
+    pub fn new(state: A::State) -> io::Result<Self> {
+        let events: EventTrie<A> = EventTrie::from_config::<A::Puzzle>()?;
+        let keys = events.action_keys();
+        let context = AppContext::new(state, keys);
+        let engine = EventEngine::new(events, TICK_DURATION);
+
         let (events_tx, events_rx) = unbounded_channel();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 
@@ -58,18 +63,16 @@ impl<A: AppTypes> App<A> {
             }
         });
 
-        let engine = EventEngine::new(actions, TICK_DURATION);
-
-        Self {
+        Ok(Self {
             context,
             engine,
 
             events_rx,
             shutdown: Some(shutdown_tx),
-        }
+        })
     }
 
-    pub async fn run(&mut self, init_screen: Box<dyn Screen<A>>) -> std::io::Result<()> {
+    pub async fn run(&mut self, init_screen: Box<dyn Screen<A>>) -> io::Result<()> {
         let mut terminal = ratatui::init();
         execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 

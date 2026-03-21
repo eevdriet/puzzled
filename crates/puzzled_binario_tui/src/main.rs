@@ -10,7 +10,7 @@ use std::io;
 
 use puzzled_binario::Binario;
 use puzzled_io::TxtPuzzle;
-use puzzled_tui::{App, AppContext, EventTrie, GridRenderState, init_logging};
+use puzzled_tui::{App, GridRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -24,14 +24,10 @@ async fn main() -> io::Result<()> {
     opts.cell_width = 5;
     opts.cell_height = 3;
 
-    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
-    let events: EventTrie<BinarioApp> = EventTrie::from_config::<Binario>()?;
-    let keys = events.action_keys();
-
     let state = AppState {};
-    let context = AppContext::new(state, keys);
-    let mut app = App::new(context, events);
+    let mut app = App::<BinarioApp>::new(state)?;
 
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     app.run(Box::new(screen)).await?;
 
     Ok(())

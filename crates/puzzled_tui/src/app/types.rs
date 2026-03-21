@@ -1,5 +1,6 @@
 use std::{fmt::Debug, hash::Hash};
 
+use puzzled_core::Puzzle;
 use serde::de::DeserializeOwned;
 
 use crate::{ActionBehavior, Describe, MotionBehavior, TextObjectBehavior};
@@ -36,8 +37,14 @@ impl<
 }
 
 pub trait AppTypes {
+    // Puzzle
+    type Puzzle: Puzzle;
+
+    // Commands
     type Action: ActionBehavior;
     type TextObject: TextObjectBehavior;
     type Motion: MotionBehavior;
+
+    // App
     type State;
 }
