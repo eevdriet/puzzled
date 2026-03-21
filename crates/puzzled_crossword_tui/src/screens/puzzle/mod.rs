@@ -177,6 +177,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                 }
                 _ => {}
             }
+
+            return true;
         }
 
         match self.state.focus.get() {
