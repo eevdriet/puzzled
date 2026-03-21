@@ -113,7 +113,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 };
 
                 match action {
-                    Action::Insert(letter @ '0') | Action::Insert(letter @ '1') => {
+                    Action::Literal(letter @ '0') | Action::Literal(letter @ '1') => {
                         let bit = Bit::try_from(letter as u8 - b'0').expect("Verified bit input");
                         state.solve.enter(&pos, bit);
 

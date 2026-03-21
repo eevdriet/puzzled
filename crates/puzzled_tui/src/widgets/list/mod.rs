@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crossterm::event::MouseEventKind;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Rect, Size};
@@ -13,13 +15,17 @@ pub trait ListRender {
     fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState;
 }
 
-pub struct ListWidget<R> {
+pub struct ListWidget<R, A> {
     pub render: R,
+    pub _marker: PhantomData<A>,
 }
 
-impl<R> ListWidget<R> {
+impl<R, A> ListWidget<R, A> {
     pub fn new(render: R) -> Self {
-        Self { render }
+        Self {
+            render,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -28,7 +34,7 @@ impl<R> ListWidget<R> {
 //     pub list: ListState,
 // }
 
-impl<R, A> AppWidget<A> for ListWidget<R>
+impl<R, A> AppWidget<A> for ListWidget<R, A>
 where
     R: ListRender,
     A: AppTypes,

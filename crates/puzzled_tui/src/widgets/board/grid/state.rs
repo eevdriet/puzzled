@@ -17,7 +17,13 @@ pub struct GridRenderState {
 
     /// Offset of the grid with its top-left most cell
     pub cursor: Position,
+
+    /// Current direction the cursor is facing in within the grid
     pub direction: Direction,
+
+    /// Whether to use directed movements in the grid
+    pub use_direction: bool,
+
     pub scroll: ScrollViewState,
 }
 

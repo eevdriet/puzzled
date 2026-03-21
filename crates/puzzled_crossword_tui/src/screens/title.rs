@@ -1,13 +1,24 @@
-use puzzled_crossword::{Crossword, CrosswordState, crossword};
-use puzzled_tui::{Action, AppCommand, Command, GridRenderState, GridWidget, Screen};
-use puzzled_tui::{AppContext, AppResolver};
-use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget};
+use std::io;
 
-use crate::{CrosswordApp, RenderSquareSolution, RenderSquareState};
+use puzzled_crossword::{Crossword, CrosswordState, crossword};
+use puzzled_io::TxtPuzzle;
+use puzzled_tui::{
+    Action, AppCommand, Command, EventMode, EventTrie, GridRenderState, GridWidget, ListRender,
+    ListWidget, Screen, Widget,
+};
+use puzzled_tui::{AppContext, AppResolver};
+use ratatui::widgets::{List, ListItem, ListState};
+use ratatui::{buffer::Buffer, layout::Rect};
+
+use crate::{CrosswordApp, PuzzleScreen, RenderSquareSolution, RenderSquareState};
 
 pub struct TitleScreen {
     title: Crossword,
+    list: ListWidget<TitleRender, CrosswordApp>,
+    state: ListState,
 }
+
+const ITEMS: [&str; 4] = ["New game", "Continue", "About", "Quit"];
 
 impl Default for TitleScreen {
     fn default() -> Self {
@@ -35,7 +46,11 @@ impl Default for TitleScreen {
         //
         // );
 
-        Self { title }
+        let list = ListWidget::new(TitleRender);
+        let mut state = ListState::default();
+        state.select_first();
+
+        Self { title, list, state }
     }
 }
 
@@ -48,9 +63,9 @@ impl Screen<CrosswordApp> for TitleScreen {
         render.options.cell_height = 3;
 
         let grid = state.entries.map_ref(RenderSquareSolution);
-        let grid_widget = GridWidget::new(&grid, &cell_state);
+        let _grid_widget = GridWidget::new(&grid, &cell_state);
 
-        grid_widget.render(root, buf, &mut render);
+        self.list.render(root, buf, &mut self.state);
     }
 
     fn on_command(
@@ -59,14 +74,77 @@ impl Screen<CrosswordApp> for TitleScreen {
         resolver: AppResolver<CrosswordApp>,
         _ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
-        if let Command::Action {
-            action: Action::Quit,
-            ..
-        } = command
-        {
-            resolver.quit()
+        match command {
+            Command::Action { action, .. } => match action {
+                // Selection hotkeys
+                Action::Literal('n') => self.state.select(Some(0)),
+                Action::Literal('C') => self.state.select(Some(1)),
+                Action::Literal('a') => self.state.select(Some(2)),
+                Action::Quit | Action::Literal('q') => self.state.select(Some(3)),
+
+                // Select actions
+                Action::Select => {
+                    if let Some(selected) = self.state.selected() {
+                        match selected {
+                            0 => {
+                                let Ok(screen) = create_puzzle_screen() else {
+                                    return false;
+                                };
+
+                                resolver.next_screen(Box::new(screen));
+                            }
+                            1 => resolver.prev_screen(),
+                            3 => resolver.quit(),
+                            _ => {}
+                        }
+                    }
+                }
+                _ => return false,
+            },
+            command => return self.list.on_command(command, resolver, &mut self.state),
         }
 
         true
     }
+
+    fn override_mode(&self) -> Option<EventMode> {
+        Some(EventMode::Normal)
+    }
+}
+
+struct TitleRender;
+
+impl ListRender for TitleRender {
+    type State = ListState;
+
+    fn render_list(&self, _state: &Self::State) -> ratatui::widgets::List<'_> {
+        List::default().highlight_symbol(">> ")
+    }
+
+    fn render_items(
+        &self,
+        _state: &Self::State,
+    ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
+        ITEMS.into_iter().map(ListItem::new)
+    }
+
+    fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
+        state
+    }
+}
+
+fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
+    let (puzzle, solve_state) = Crossword::load_text("2026-03-08-nyt").map_err(io::Error::other)?;
+
+    let mut render_state = GridRenderState::default();
+    let opts = &mut render_state.options;
+
+    opts.cell_width = 5;
+    opts.cell_height = 3;
+
+    let events: EventTrie<CrosswordApp> = EventTrie::from_config::<Crossword>()?;
+    let keys = events.action_keys();
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state, keys.clone());
+
+    Ok(screen)
 }

@@ -29,8 +29,7 @@ pub enum Action<A> {
     TopViewport,
 
     // -- Insert/Replace -- //
-    Insert(char),
-    Replace(char),
+    Literal(char),
     DeleteLeft,
     DeleteRight,
 

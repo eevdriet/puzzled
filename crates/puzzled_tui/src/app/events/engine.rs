@@ -86,8 +86,8 @@ impl<A: AppTypes> EventEngine<A> {
         }
 
         let result = match mode {
-            EventMode::Normal => self.normal_event(event),
-            EventMode::Visual(_) => self.visual_event(event),
+            EventMode::Normal => self.normal_event(event, override_mode),
+            EventMode::Visual(_) => self.visual_event(event, override_mode),
             EventMode::Insert => self.insert_event(event),
             EventMode::Replace => self.replace_event(event),
         };
@@ -97,6 +97,41 @@ impl<A: AppTypes> EventEngine<A> {
         }
 
         result
+    }
+
+    pub fn tick(&mut self, override_mode: Option<EventMode>) -> EventResult<A> {
+        let mode = override_mode.unwrap_or(self.mode);
+
+        if self.buffer.is_empty() {
+            return EventResult::default();
+        }
+
+        // Before time out, wait for additional events to handle
+        if self.last_insert.elapsed() < self.timeout {
+            return EventResult::default();
+        }
+
+        // After time out, perform the action w.r.t. longest valid action
+        let command = {
+            let mut result = None;
+
+            if matches!(mode, EventMode::Normal) {
+                result = self.fallback_literal();
+
+                if result.is_none() {
+                    self.reset();
+                }
+            }
+
+            result
+        };
+
+        EventResult {
+            effects: match command {
+                Some(command) => vec![EventEffect::Command(command)],
+                _ => vec![],
+            },
+        }
     }
 
     fn mouse_event(&mut self, mouse: MouseEvent) -> EventResult<A> {
@@ -157,12 +192,7 @@ impl<A: AppTypes> EventEngine<A> {
             },
 
             // Clear previous keys for unknown sequence but keep repeat
-            EventSearchResult::None => {
-                tracing::debug!("\tFound no action, clearing buffer");
-
-                self.buffer.clear();
-                None
-            }
+            EventSearchResult::None => self.fallback_literal(),
 
             // Wait for additional input for prefix sequence
             EventSearchResult::Prefix => {
@@ -191,12 +221,14 @@ impl<A: AppTypes> EventEngine<A> {
         }
     }
 
-    fn key_event(&mut self, event: AppEvent) -> EventResult<A> {
+    fn key_event(&mut self, event: AppEvent, override_mode: Option<EventMode>) -> EventResult<A> {
         tracing::debug!("[EVENT] {event} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
 
         // Check for mode switching keys
-        if let Event::Key(key) = *event {
+        if override_mode.is_none()
+            && let Event::Key(key) = *event
+        {
             tracing::info!("Key event: {key:?}");
 
             let next_mode = match (self.mode, key.code, key.modifiers) {
@@ -267,45 +299,45 @@ impl<A: AppTypes> EventEngine<A> {
         EventResult { effects }
     }
 
-    pub fn tick(&mut self, override_mode: Option<EventMode>) -> EventResult<A> {
-        let mode = override_mode.unwrap_or(self.mode);
+    fn fallback_literal(&mut self) -> Option<AppCommand<A>> {
+        // Try to find a prefix of the buffer that is a valid command
+        for split in 1..=self.buffer.len() {
+            let prefix = &self.buffer[..self.buffer.len() - split];
 
-        if self.buffer.is_empty() {
-            return EventResult::default();
-        }
+            match self.actions.search(prefix) {
+                EventSearchResult::Exact(_)
+                | EventSearchResult::ExactPrefix(_)
+                | EventSearchResult::Prefix => {
+                    // Return the first event as a literal action if it is a key
+                    let first = self.buffer.remove(0);
 
-        // Before time out, wait for additional events to handle
-        if self.last_insert.elapsed() < self.timeout {
-            return EventResult::default();
-        }
-
-        // After time out, perform the action w.r.t. longest valid action
-        let command = {
-            let mut result = None;
-
-            if matches!(mode, EventMode::Normal) {
-                for idx in (1..=self.buffer.len()).rev() {
-                    let events = self.buffer[..idx].to_vec();
-
-                    if let Some(command) = self.search_command(&events, &mode) {
-                        result = Some(command);
-                    }
+                    return first.key().and_then(|key| {
+                        if let KeyCode::Char(ch) = key.code {
+                            Some(Command::Action {
+                                count: 1,
+                                action: Action::Literal(ch),
+                            })
+                        } else {
+                            None
+                        }
+                    });
                 }
-
-                if result.is_none() {
-                    self.reset();
-                }
+                EventSearchResult::None => continue,
             }
-
-            result
-        };
-
-        EventResult {
-            effects: match command {
-                Some(command) => vec![EventEffect::Command(command)],
-                _ => vec![],
-            },
         }
+
+        // Still emit the first action if it is a key
+        let first = self.buffer.remove(0);
+        first.key().and_then(|key| {
+            if let KeyCode::Char(ch) = key.code {
+                Some(Command::Action {
+                    count: 1,
+                    action: Action::Literal(ch),
+                })
+            } else {
+                None
+            }
+        })
     }
 
     fn reset(&mut self) {
@@ -314,12 +346,20 @@ impl<A: AppTypes> EventEngine<A> {
         self.pending_operator = None;
     }
 
-    fn normal_event(&mut self, event: AppEvent) -> EventResult<A> {
-        self.key_event(event)
+    fn normal_event(
+        &mut self,
+        event: AppEvent,
+        override_mode: Option<EventMode>,
+    ) -> EventResult<A> {
+        self.key_event(event, override_mode)
     }
 
-    fn visual_event(&mut self, event: AppEvent) -> EventResult<A> {
-        self.key_event(event)
+    fn visual_event(
+        &mut self,
+        event: AppEvent,
+        override_mode: Option<EventMode>,
+    ) -> EventResult<A> {
+        self.key_event(event, override_mode)
     }
 
     fn insert_event(&mut self, event: AppEvent) -> EventResult<A> {
@@ -329,7 +369,7 @@ impl<A: AppTypes> EventEngine<A> {
 
         let effect = match key.code {
             // Insert
-            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Insert(char))),
+            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Literal(char))),
 
             // Delete
             KeyCode::Backspace => EventEffect::Command(Command::new_action(Action::DeleteLeft)),
@@ -363,7 +403,7 @@ impl<A: AppTypes> EventEngine<A> {
 
         let effect = match key.code {
             // Insert
-            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Insert(char))),
+            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Literal(char))),
 
             // Delete
             KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),

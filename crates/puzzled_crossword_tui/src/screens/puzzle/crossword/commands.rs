@@ -99,7 +99,7 @@ impl HandleBaseAction<CrosswordAction, PuzzleScreenState> for CrosswordWidget {
         };
 
         match action {
-            Action::Insert(letter) => {
+            Action::Literal(letter) => {
                 let entry = Solution::Letter(letter.to_ascii_uppercase());
                 state.solve.enter(&pos, entry);
 

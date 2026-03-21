@@ -12,7 +12,7 @@ use ratatui::{
 use crate::{CrosswordApp, PuzzleScreenState};
 
 pub struct CluesListWidget {
-    list: ListWidget<CluesListRender>,
+    list: ListWidget<CluesListRender, CrosswordApp>,
 }
 
 impl CluesListWidget {

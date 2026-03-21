@@ -44,7 +44,10 @@ where
         let iter = grid_motion(self, count, motion, start, next_dir, state);
 
         // If currently going in another direction, change the direction
-        if iter.clone().count() <= 2 && ![next_dir, !next_dir].contains(&state.direction) {
+        if state.use_direction
+            && iter.clone().count() <= 2
+            && ![next_dir, !next_dir].contains(&state.direction)
+        {
             state.direction = next_dir;
         }
         // Otherwise, move to the end and make sure it stays visible
@@ -90,7 +93,10 @@ where
         let iter = grid_motion(self.0, count, motion, pos, next_dir, state);
 
         // If currently going in another direction, change the direction
-        if iter.clone().count() <= 2 && ![next_dir, !next_dir].contains(&state.direction) {
+        if state.use_direction
+            && iter.clone().count() <= 2
+            && ![next_dir, !next_dir].contains(&state.direction)
+        {
             state.direction = next_dir;
         }
         // Otherwise, move to the end and make sure it stays visible
