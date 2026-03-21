@@ -1,4 +1,7 @@
-use std::{fs, io, path::PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use directories::ProjectDirs;
 use puzzled_core::Puzzle;
@@ -10,6 +13,20 @@ const APPLICATION: &str = "puzzled";
 fn project_dirs() -> io::Result<ProjectDirs> {
     ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION)
         .ok_or_else(|| io::Error::other(format!("Could not determine {APPLICATION} directories")))
+}
+
+pub fn config_dir() -> io::Result<PathBuf> {
+    let dir = project_dirs()?.config_dir().to_owned();
+    fs::create_dir_all(&dir)?;
+
+    Ok(dir.to_path_buf())
+}
+
+pub fn data_dir() -> io::Result<PathBuf> {
+    let dir = project_dirs()?.data_dir().to_owned();
+    fs::create_dir_all(&dir)?;
+
+    Ok(dir.to_path_buf())
 }
 
 pub fn puzzle_dir<P>() -> io::Result<PathBuf>

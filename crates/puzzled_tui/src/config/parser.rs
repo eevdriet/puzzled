@@ -13,11 +13,10 @@ pub(crate) enum RawKeySeq {
 
 pub(crate) type RawActionKeys<A, T, M> = HashMap<TrieEntry<A, T, M>, RawKeySeq>;
 
-pub(crate) fn parse_action_events<A: AppTypes>(
+pub(crate) fn insert_action_keys<A: AppTypes>(
     action_keys: RawActionKeys<A::Action, A::TextObject, A::Motion>,
-) -> Result<EventTrie<A>, String> {
-    let mut trie = EventTrie::default();
-
+    trie: &mut EventTrie<A>,
+) -> Result<(), String> {
     for (action, key_seq) in action_keys {
         let key_strs = match key_seq {
             RawKeySeq::Single(single) => vec![single],
@@ -30,5 +29,5 @@ pub(crate) fn parse_action_events<A: AppTypes>(
         }
     }
 
-    Ok(trie)
+    Ok(())
 }
