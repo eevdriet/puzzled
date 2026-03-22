@@ -1,26 +1,66 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, HorizontalAlignment, Rect, Size, VerticalAlignment},
+    layout::{Alignment, Constraint, Rect, Size},
     style::{Color, Style},
     text::Span,
-    widgets::{Block, Clear, Row, StatefulWidget, Table, Widget},
+    widgets::{Block, BorderType, Row, StatefulWidget, Table},
 };
 
-use crate::{
-    AppTypes, KeysPopup, KeysPopupState, Popup, TrieEntry, Widget as AppWidget, align_area,
-};
+use crate::{AppTypes, KeysPopup, KeysPopupState, Popup, TrieEntry, Widget as AppWidget};
+
+const TITLES: [&str; 3] = ["Action", "Key(s)", "Description"];
 
 impl<A: AppTypes> AppWidget<A> for KeysPopup<A> {
     type State = KeysPopupState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let titles = vec!["Action", "Key(s)", "Description"];
-        let mut max_name_width = titles[0].len();
-        let mut max_keys_width = titles[1].len();
-        let mut max_desc_width = titles[2].len();
+        let header = Row::new(TITLES).style(Style::new().bold()).bottom_margin(1);
+        let (rows, name_width, keys_width, desc_width) = self.rows_and_widths(state);
+        let widths = vec![
+            Constraint::Length(name_width as u16),
+            Constraint::Length(keys_width as u16),
+            Constraint::Length(desc_width as u16),
+        ];
+
+        // Widgets
+        let block = Block::bordered()
+            .title(" Keys ")
+            .title_alignment(Alignment::Center)
+            .border_type(BorderType::Rounded);
+
+        let table = Table::new(rows, widths)
+            .block(block)
+            .header(header)
+            .column_spacing(1);
+
+        // Render
+        let table_area = self.render_area(area, state);
+        StatefulWidget::render(table, table_area, buf, &mut state.table);
+    }
+
+    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
+        let (rows, max_name_width, max_keys_width, max_desc_width) = self.rows_and_widths(state);
+
+        // Sizing
+        Size::new(
+            (max_name_width + max_keys_width + max_desc_width) as u16 + 2 + 2,
+            rows.len() as u16 + 2,
+        )
+    }
+}
+
+impl<A: AppTypes> Popup<A> for KeysPopup<A> {}
+
+impl<A: AppTypes> KeysPopup<A> {
+    pub(crate) fn rows_and_widths(
+        &self,
+        state: &KeysPopupState,
+    ) -> (Vec<Row<'_>>, usize, usize, usize) {
+        let mut max_name_width = TITLES[0].len();
+        let mut max_keys_width = TITLES[1].len();
+        let mut max_desc_width = TITLES[2].len();
 
         let base = Style::default();
-        let header = Row::new(titles).style(Style::new().bold()).bottom_margin(1);
 
         let rows = match state.tab {
             0 => self
@@ -31,8 +71,8 @@ impl<A: AppTypes> AppWidget<A> for KeysPopup<A> {
                     let entry_str = self.map.get_merged(&entry).unwrap_or_default();
 
                     max_name_width = name.len().max(max_name_width);
-                    max_keys_width = entry_str.len().max(max_keys_width);
                     max_desc_width = desc.len().max(max_desc_width);
+                    max_keys_width = entry_str.len().max(max_keys_width);
 
                     Row::new(vec![
                         Span::styled(name, base.fg(Color::White)),
@@ -44,38 +84,6 @@ impl<A: AppTypes> AppWidget<A> for KeysPopup<A> {
             _ => vec![],
         };
 
-        let widths = vec![
-            Constraint::Length(max_name_width as u16),
-            Constraint::Length(max_keys_width as u16),
-            Constraint::Length(max_desc_width as u16),
-        ];
-
-        // Sizing
-        let size = Size::new(
-            (max_name_width + max_keys_width + max_desc_width) as u16 + 2 + 2,
-            rows.len() as u16 + 2,
-        );
-        let area = align_area(
-            area,
-            size,
-            HorizontalAlignment::Center,
-            VerticalAlignment::Center,
-        );
-
-        // Widgets
-        let block = Block::bordered()
-            .title(" Keys ")
-            .title_alignment(Alignment::Center);
-
-        let table = Table::new(rows, widths)
-            .block(block)
-            .header(header)
-            .column_spacing(1);
-
-        // Render
-        Clear.render(area, buf);
-        StatefulWidget::render(table, area, buf, &mut state.table);
+        (rows, max_name_width, max_keys_width, max_desc_width)
     }
 }
-
-impl<A: AppTypes> Popup<A> for KeysPopup<A> {}

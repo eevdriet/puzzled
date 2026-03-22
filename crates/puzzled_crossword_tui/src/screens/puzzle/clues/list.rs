@@ -31,8 +31,8 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
         AppWidget::<CrosswordApp>::render(&mut self.list, area, buf, state);
     }
 
-    fn render_size(&self, state: &Self::State) -> Size {
-        self.list.render_size(state)
+    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+        self.list.render_size(area, state)
     }
 
     fn override_mode(&self) -> Option<EventMode> {

@@ -20,7 +20,7 @@ use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
     FocusManager, GridRenderState, HandleCommand, HandleMode, KeyMap, KeysPopup, KeysPopupState,
-    Popup, Screen, Widget,
+    Popup, Screen, TrieEntry, Widget,
 };
 
 use crate::CrosswordApp;
@@ -86,12 +86,12 @@ impl PuzzleScreen {
 }
 
 impl Screen<CrosswordApp> for PuzzleScreen {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<CrosswordApp>) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut AppContext<CrosswordApp>) {
         // Compute sizes
         let gap = 2;
 
-        let crossword_size = self.crossword.render_size(&self.state);
-        let clues_size = self.clues.render_size(&self.state);
+        let crossword_size = self.crossword.render_size(root, &self.state);
+        let clues_size = self.clues.render_size(root, &self.state);
 
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 
@@ -127,9 +127,13 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         self.crossword.render(crossword, buf, &mut self.state);
         self.clues.render(clues, buf, &mut self.state);
 
+        let entry = TrieEntry::Action(Action::Cancel);
+        let pause_key = ctx.keys.get_merged(&entry).unwrap_or_default();
+
         let mut footer_state = FooterState {
             mode: self.state.render.mode,
             timer: self.state.solve.timer,
+            pause_key,
         };
 
         FooterWidget.render(footer, buf, &mut footer_state);

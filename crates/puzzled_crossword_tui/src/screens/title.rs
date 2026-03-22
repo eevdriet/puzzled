@@ -59,7 +59,7 @@ impl Screen<CrosswordApp> for TitleScreen {
         // Render
         Paragraph::new(lines).render(title_area, buf);
 
-        let mut size = self.list.render_size(&self.state);
+        let mut size = self.list.render_size(root, &self.state);
         size.width += 3; // Add on highlight symbol width
 
         let list_area = center_area(list_area, size);

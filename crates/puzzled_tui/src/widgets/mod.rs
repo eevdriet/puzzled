@@ -16,7 +16,7 @@ use ratatui::{
     layout::{Rect, Size},
 };
 
-use crate::{AppCommand, AppResolver, AppTypes, EventMode};
+use crate::{AppCommand, AppResolver, AppTypes, EventMode, center_area};
 
 pub trait RenderSize<S> {
     fn render_size(&self, state: &S) -> Size;
@@ -28,8 +28,12 @@ pub trait Widget<A: AppTypes> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 
-    fn render_size(&self, _state: &Self::State) -> Size {
-        Size::default()
+    fn render_size(&self, area: Rect, _state: &Self::State) -> Size {
+        area.as_size()
+    }
+
+    fn render_area(&self, area: Rect, state: &Self::State) -> Rect {
+        center_area(area, self.render_size(area, state))
     }
 
     fn on_tick(&self, _state: &Self::State) -> bool {

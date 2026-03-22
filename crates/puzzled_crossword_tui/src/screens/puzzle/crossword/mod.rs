@@ -92,7 +92,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         scroll_view.render(grid_area, buf, &mut render.scroll);
     }
 
-    fn render_size(&self, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
         let mut size = state.puzzle.squares().render_size(&state.render.options);
 
         // Border around puzzle grid

@@ -36,7 +36,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         scroll_view.render(area, buf, &mut render.scroll);
     }
 
-    fn render_size(&self, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
         let mut size = state.puzzle.cells().render_size(&state.render.options);
 
         // Border around puzzle grid

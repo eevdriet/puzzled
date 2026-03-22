@@ -5,6 +5,7 @@ pub use keys::*;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
+    style::Style,
     widgets::{Clear, Widget},
 };
 
@@ -12,7 +13,14 @@ use crate::{Action, AppCommand, AppResolver, AppTypes, Command, Widget as AppWid
 
 pub trait Popup<A: AppTypes>: AppWidget<A> {
     fn render_popup(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        Clear.render(area, buf);
+        // Dim the surrounding area
+        buf.set_style(area, Style::default().dim());
+
+        // Clear the area in which the popup is to be rendered
+        let clear_area = self.render_area(area, state);
+        Clear.render(clear_area, buf);
+
+        // Then render the popup as a widget
         self.render(area, buf, state);
     }
 

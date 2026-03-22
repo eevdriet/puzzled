@@ -15,6 +15,7 @@ pub struct FooterWidget;
 pub struct FooterState {
     pub mode: EventMode,
     pub timer: Timer,
+    pub pause_key: String,
 }
 
 impl AppWidget<CrosswordApp> for FooterWidget {
@@ -24,7 +25,9 @@ impl AppWidget<CrosswordApp> for FooterWidget {
         Line::from(vec![
             Span::raw("Press"),
             Span::styled(" ? ", Style::new().fg(Color::Yellow)),
-            Span::raw("to display the key bindings that are defined"),
+            Span::raw("for help and "),
+            Span::styled(&state.pause_key, Style::new().fg(Color::Yellow)),
+            Span::raw(" to pause the puzzle"),
         ])
         .render(area, buf);
 
@@ -32,8 +35,7 @@ impl AppWidget<CrosswordApp> for FooterWidget {
         timer.render(area.inner(Margin::new(0, 1)), buf);
     }
 
-    fn render_size(&self, _state: &Self::State) -> Size {
-        let width = "Press ? to display the key bindings that are defined".len() as u16;
-        Size::new(width, 2)
+    fn render_size(&self, area: Rect, _state: &Self::State) -> Size {
+        Size::new(area.width, 2)
     }
 }

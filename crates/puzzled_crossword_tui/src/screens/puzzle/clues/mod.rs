@@ -94,11 +94,11 @@ impl AppWidget<CrosswordApp> for CluesWidget {
         self.down.render(down, buf, state);
     }
 
-    fn render_size(&self, state: &Self::State) -> Size {
-        let mut size = self.across_down.render_size(state);
+    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+        let mut size = self.across_down.render_size(area, state);
 
-        let across_size = self.across.render_size(state);
-        let down_size = self.down.render_size(state);
+        let across_size = self.across.render_size(area, state);
+        let down_size = self.down.render_size(area, state);
 
         size.width = size.width.max(across_size.width + down_size.width + 2);
         size.height = size

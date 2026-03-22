@@ -49,7 +49,7 @@ where
         list.render(area, buf, state);
     }
 
-    fn render_size(&self, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
         let items = self.render.render_items(state);
 
         items.fold(Size::ZERO, |mut size, item| {
