@@ -143,6 +143,17 @@ impl<A: AppTypes> Keys<A> {
             .collect();
         self
     }
+
+    pub fn all<S>(self, state: &S) -> Self
+    where
+        Action<A::Action>: Description<S>,
+        Motion<A::Motion>: Description<S>,
+        TextObject<A::TextObject>: Description<S>,
+    {
+        self.all_actions(state)
+            .all_motions(state)
+            .all_text_objects(state)
+    }
 }
 
 impl<A: AppTypes> Clone for Keys<A> {

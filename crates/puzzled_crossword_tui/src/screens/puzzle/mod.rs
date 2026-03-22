@@ -66,7 +66,7 @@ impl PuzzleScreen {
         focus.link_below(Focus::Footer, &[Focus::Clues]);
 
         let list = ListState::default().with_selected(Some(0));
-        let keys = Keys::new(key_map.clone()).all_actions(&());
+        let keys = Keys::new(key_map.clone()).all(&());
         let popup = KeysTablePopup { keys };
 
         let pause_keys = Keys::new(key_map)
@@ -88,6 +88,7 @@ impl PuzzleScreen {
             focus,
             popup: None,
             pause_state,
+            help_state: KeysTablePopupState::default(),
         };
 
         Self {
@@ -160,8 +161,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                         .render_popup(area, buf, &mut self.state.pause_state);
                 }
                 PuzzlePopup::Help => {
-                    let mut state = KeysTablePopupState::default();
-                    self.keys.render_popup(area, buf, &mut state);
+                    self.keys
+                        .render_popup(area, buf, &mut self.state.help_state);
                 }
             }
         }
@@ -187,8 +188,11 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                     );
                 }
                 PuzzlePopup::Help => {
-                    let mut state = KeysTablePopupState::default();
-                    return self.keys.on_popup_command(command, resolver, &mut state);
+                    return self.keys.on_popup_command(
+                        command,
+                        resolver,
+                        &mut self.state.help_state,
+                    );
                 }
             }
         }

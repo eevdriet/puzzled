@@ -3,7 +3,7 @@ use std::{fmt::Debug, hash::Hash};
 use puzzled_core::Puzzle;
 use serde::de::DeserializeOwned;
 
-use crate::{ActionBehavior, Describe, MotionBehavior, TextObjectBehavior};
+use crate::{ActionBehavior, Description, MotionBehavior, TextObjectBehavior};
 
 pub trait AppTypeTraits:
     Clone
@@ -14,7 +14,7 @@ pub trait AppTypeTraits:
     + Send
     + Debug
     + Sized
-    + Describe
+    + Description<()>
     + Hash
     + DeserializeOwned
 {
@@ -29,7 +29,7 @@ impl<
         + Send
         + Debug
         + Sized
-        + Describe
+        + Description<()>
         + Hash
         + DeserializeOwned,
 > AppTypeTraits for T

@@ -1,5 +1,5 @@
 use derive_more::Display;
-use puzzled_tui::{ActionBehavior, Describe};
+use puzzled_tui::{ActionBehavior, Description};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
@@ -14,8 +14,8 @@ impl ActionBehavior for BinarioAction {
     }
 }
 
-impl Describe for BinarioAction {
-    fn describe(&self) -> Option<String> {
+impl Description<()> for BinarioAction {
+    fn description(&self, _state: &()) -> Option<String> {
         None
     }
 }

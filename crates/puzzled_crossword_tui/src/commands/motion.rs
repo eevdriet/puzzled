@@ -1,7 +1,7 @@
 use derive_more::{Display, Eq};
 use puzzled_core::{Grid, Position};
 use puzzled_crossword::{Clue, ClueDirection, ClueId, Crossword};
-use puzzled_tui::{Describe, GridRenderState, HandleCustomMotion, MotionBehavior};
+use puzzled_tui::{Description, GridRenderState, HandleCustomMotion, MotionBehavior};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
@@ -14,9 +14,13 @@ pub enum CrosswordMotion {
     ),
 }
 
-impl Describe for CrosswordMotion {
-    fn describe(&self) -> Option<String> {
-        None
+impl Description<()> for CrosswordMotion {
+    fn description(&self, _state: &()) -> Option<String> {
+        let desc = match self {
+            CrosswordMotion::Clue(_) => "Inside a clue",
+        };
+
+        Some(desc.to_string())
     }
 }
 

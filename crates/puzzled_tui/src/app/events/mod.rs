@@ -127,12 +127,13 @@ impl fmt::Display for AppEvent {
                 let mods = key.modifiers;
                 let code = match key.code {
                     KeyCode::Left => "←".to_string(),
-                    KeyCode::Backspace => "← BS".to_string(),
+                    KeyCode::Backspace => "⌫".to_string(),
                     KeyCode::Right => "→".to_string(),
                     KeyCode::Up => "↑".to_string(),
                     KeyCode::Down => "↓".to_string(),
                     KeyCode::Enter => "↵".to_string(),
                     KeyCode::Tab => "↹".to_string(),
+                    KeyCode::Delete => "⌦".to_string(),
                     code => code.to_string(),
                 };
                 (code, mods)

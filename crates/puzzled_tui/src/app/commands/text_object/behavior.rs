@@ -1,4 +1,4 @@
-use crate::{AppTypeTraits, Describe, TextObject};
+use crate::{AppTypeTraits, Description, TextObject};
 
 pub trait TextObjectBehavior: AppTypeTraits {
     fn variants() -> Vec<Self>;
@@ -10,12 +10,17 @@ impl TextObjectBehavior for () {
     }
 }
 
-impl<T> Describe for TextObject<T>
+impl<T, S> Description<S> for TextObject<T>
 where
-    T: Describe,
+    T: Description<S>,
 {
-    fn describe(&self) -> Option<String> {
-        None
+    fn description(&self, state: &S) -> Option<String> {
+        let desc = match self {
+            TextObject::Word => "Word under the cursor",
+            TextObject::Custom(custom) => return custom.description(state),
+        };
+
+        Some(desc.to_string())
     }
 }
 
@@ -24,7 +29,7 @@ where
     T: TextObjectBehavior,
 {
     fn variants() -> Vec<Self> {
-        let mut variants = vec![];
+        let mut variants = vec![TextObject::Word];
 
         let other_variants = T::variants().into_iter().map(TextObject::Custom);
         variants.extend(other_variants);

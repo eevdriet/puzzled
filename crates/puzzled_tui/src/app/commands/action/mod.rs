@@ -54,7 +54,7 @@ pub enum Action<A> {
 
     // Other (for puzzle specific actions)
     #[serde(untagged)]
-    Other(A),
+    Custom(A),
 }
 
 impl<A> Action<A> {
@@ -96,7 +96,7 @@ impl<A> Action<A> {
             Literal(..) => 17,
 
             // Other (for puzzle specific actions)
-            Other { .. } => 18,
+            Custom { .. } => 18,
         }
     }
 }
@@ -110,7 +110,7 @@ where
             (Action::Literal(lhs), Action::Literal(rhs)) => {
                 lhs.partial_cmp(rhs).unwrap_or(Ordering::Less)
             }
-            (Action::Other(lhs), Action::Other(rhs)) => lhs.cmp(rhs),
+            (Action::Custom(lhs), Action::Custom(rhs)) => lhs.cmp(rhs),
             (lhs, rhs) => lhs.as_usize().cmp(&rhs.as_usize()),
         }
     }

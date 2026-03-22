@@ -3,6 +3,7 @@ mod handle;
 mod selection;
 
 pub use behavior::*;
+use derive_more::Debug;
 pub use handle::*;
 pub use selection::*;
 
@@ -15,7 +16,7 @@ use serde::Deserialize;
 pub enum Motion<M> {
     // Mouse
     #[serde(skip)]
-    Mouse(MouseEvent),
+    Mouse(#[debug(skip)] MouseEvent),
 
     // Left-right
     Col(usize),
@@ -36,6 +37,7 @@ pub enum Motion<M> {
 
     // Custom (for puzzle specific motions)
     #[serde(untagged)]
+    #[debug("{_0:?}")]
     Custom(M),
 }
 

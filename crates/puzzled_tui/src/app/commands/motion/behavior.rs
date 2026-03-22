@@ -1,4 +1,4 @@
-use crate::{AppTypeTraits, Describe, Motion};
+use crate::{AppTypeTraits, Description, Motion};
 
 pub trait MotionBehavior: AppTypeTraits {
     fn variants() -> Vec<Self>;
@@ -14,12 +14,21 @@ impl MotionBehavior for () {
     }
 }
 
-impl<M> Describe for Motion<M>
+impl<M, S> Description<S> for Motion<M>
 where
-    M: Describe,
+    M: Description<S>,
 {
-    fn describe(&self) -> Option<String> {
-        None
+    fn description(&self, state: &S) -> Option<String> {
+        let desc = match self {
+            Motion::Left => "Move left in the active widget",
+            Motion::Right => "Move right in the active widget",
+            Motion::Down => "Move down in the active widget",
+            Motion::Up => "Move up in the active widget",
+            Motion::Custom(custom) => return custom.description(state),
+            _ => return None,
+        };
+
+        Some(desc.to_string())
     }
 }
 

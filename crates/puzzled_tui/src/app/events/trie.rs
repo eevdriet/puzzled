@@ -247,14 +247,13 @@ impl<A: AppTypes> EventTrie<A> {
         // Initialize keys for all action variants
         let mut keys = BTreeMap::default();
 
-        // TODO: add back all variants for motions/operators etc.
-        // for action in Action::<A, T, M>::variants() {
-        //     keys.entry(action).or_default();
-        // }
-        //
-
         // Perform a DFS to find all actions for which keys are defined
         dfs(&self.root, &mut keys, vec![]);
+
+        // Sort the keys lexographically for a consistent ordering
+        for values in keys.values_mut() {
+            values.sort();
+        }
 
         KeyMap { keys }
     }
