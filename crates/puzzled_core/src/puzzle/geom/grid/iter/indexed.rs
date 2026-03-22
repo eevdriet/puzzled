@@ -1,13 +1,23 @@
-use crate::{Direction, Grid, GridIter, GridIterMut, Line, Order, Position};
+use crate::{
+    Direction, Grid, GridIter, GridLinearIter, GridLinearIterMut, GridPositionsIter, Line, Order,
+    Position,
+};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct GridIndexedIter<'a, T> {
     inner: GridIter<'a, T>,
 }
 
 impl<'a, T> GridIndexedIter<'a, T> {
-    pub fn new(iter: GridIter<'a, T>) -> Self {
-        Self { inner: iter }
+    pub fn new_linear(iter: GridLinearIter<'a, T>) -> Self {
+        Self {
+            inner: GridIter::Linear(iter),
+        }
+    }
+    pub fn new_positions(iter: GridPositionsIter<'a, T>) -> Self {
+        Self {
+            inner: GridIter::Positions(iter),
+        }
     }
 }
 
@@ -15,46 +25,76 @@ impl<'a, T> Iterator for GridIndexedIter<'a, T> {
     type Item = (Position, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.inner.remaining == 0 {
-            return None;
-        }
+        let next = match &mut self.inner {
+            GridIter::Linear(iter) => {
+                if iter.remaining == 0 {
+                    return None;
+                }
 
-        let pos = self.inner.front;
-        let item = self.inner.next()?;
+                let pos = iter.front;
+                let item = iter.next()?;
 
-        Some((pos, item))
+                (pos, item)
+            }
+            GridIter::Positions(iter) => {
+                let pos = iter.positions[iter.front];
+                let item = iter.next()?;
+
+                (pos, item)
+            }
+        };
+
+        Some(next)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
+        match &self.inner {
+            GridIter::Linear(iter) => iter.size_hint(),
+            GridIter::Positions(iter) => iter.size_hint(),
+        }
     }
 }
 
 impl<'a, T> DoubleEndedIterator for GridIndexedIter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.inner.remaining == 0 {
-            return None;
-        }
+        let next = match &mut self.inner {
+            GridIter::Linear(iter) => {
+                if iter.remaining == 0 {
+                    return None;
+                }
 
-        let pos = self.inner.back;
-        let item = self.inner.next_back()?;
+                let pos = iter.back;
+                let item = iter.next_back()?;
 
-        Some((pos, item))
+                (pos, item)
+            }
+            GridIter::Positions(iter) => {
+                let pos = iter.positions[iter.back.saturating_sub(1)];
+                let item = iter.next_back()?;
+
+                (pos, item)
+            }
+        };
+
+        Some(next)
     }
 }
 
 impl<'a, T> ExactSizeIterator for GridIndexedIter<'a, T> {
     fn len(&self) -> usize {
-        self.inner.len()
+        match &self.inner {
+            GridIter::Linear(iter) => iter.len(),
+            GridIter::Positions(iter) => iter.len(),
+        }
     }
 }
 
 pub struct GridIndexedIterMut<'a, T> {
-    inner: GridIterMut<'a, T>,
+    inner: GridLinearIterMut<'a, T>,
 }
 
 impl<'a, T> GridIndexedIterMut<'a, T> {
-    pub fn new(iter: GridIterMut<'a, T>) -> Self {
+    pub fn new(iter: GridLinearIterMut<'a, T>) -> Self {
         Self { inner: iter }
     }
 }
@@ -171,7 +211,7 @@ impl<T> Grid<T> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_indexed_row(&self, row: usize) -> GridIndexedIter<'_, T> {
-        GridIndexedIter::new(self.iter_row(row))
+        GridIndexedIter::new_linear(self.iter_row(row))
     }
 
     /// Creates a mutable indexed iterator over a specified row of the grid
@@ -229,7 +269,7 @@ impl<T> Grid<T> {
     /// assert_eq!(row_sums.next(), None);
     /// ```
     pub fn iter_indexed_rows(&self) -> impl Iterator<Item = GridIndexedIter<'_, T>> {
-        self.iter_rows().map(GridIndexedIter::new)
+        self.iter_rows().map(GridIndexedIter::new_linear)
     }
 
     /// Creates an indexed iterator over a specified column of the grid
@@ -254,7 +294,7 @@ impl<T> Grid<T> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_indexed_col(&self, col: usize) -> GridIndexedIter<'_, T> {
-        GridIndexedIter::new(self.iter_col(col))
+        GridIndexedIter::new_linear(self.iter_col(col))
     }
 
     /// Creates a mutable indexed iterator over a specified column of the grid
@@ -309,7 +349,7 @@ impl<T> Grid<T> {
     /// assert_eq!(col_sums.next(), None);
     /// ```
     pub fn iter_indexed_cols(&self) -> impl Iterator<Item = GridIndexedIter<'_, T>> {
-        self.iter_cols().map(GridIndexedIter::new)
+        self.iter_cols().map(GridIndexedIter::new_linear)
     }
 
     /// Creates an indexed iterator over a specified [line](Line) of the grid
@@ -331,7 +371,7 @@ impl<T> Grid<T> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter_indexed_line(&self, line: Line) -> GridIndexedIter<'_, T> {
-        GridIndexedIter::new(self.iter_line(line))
+        GridIndexedIter::new_linear(self.iter_line(line))
     }
 
     /// Creates a mutable indexed iterator over a specified [line](Line) of the grid
@@ -392,11 +432,11 @@ impl<T> Grid<T> {
     /// assert_eq!(col_sums.next(), None);
     /// ```
     pub fn iter_indexed_lines(&self, order: Order) -> impl Iterator<Item = GridIndexedIter<'_, T>> {
-        self.iter_lines(order).map(GridIndexedIter::new)
+        self.iter_lines(order).map(GridIndexedIter::new_linear)
     }
 
     pub fn iter_indexed_segment(&self, pos: Position, dir: Direction) -> GridIndexedIter<'_, T> {
-        GridIndexedIter::new(self.iter_segment(pos, dir))
+        GridIndexedIter::new_linear(self.iter_segment(pos, dir))
     }
 
     pub fn iter_indexed_segment_mut(

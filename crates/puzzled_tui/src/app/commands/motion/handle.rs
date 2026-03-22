@@ -1,76 +1,75 @@
-use puzzled_core::{Direction, Grid, GridIndexedIter, GridIter, Position, SquareGridRef};
+use puzzled_core::{
+    Direction, Grid, GridIndexedIter, GridLinearIter, GridPositionsIter, Position, Square,
+    SquareGridRef,
+};
 
 use crate::{GridRenderState, Motion};
 
-pub trait HandleBaseMotion<M, S> {
-    type Position;
-
-    fn handle_base_motion(
+pub trait HandleMotion<M, S, S2, P> {
+    fn handle_motion(
         &self,
         count: usize,
         motion: Motion<M>,
         state: &mut S,
-    ) -> impl IntoIterator<Item = Self::Position>;
+        custom_state: &mut S2,
+    ) -> impl IntoIterator<Item = P>;
 }
 
-pub trait HandleCustomMotion<M, S> {
-    type Position;
-
+pub trait HandleCustomMotion<M, S, S2, P> {
     fn handle_custom_motion(
         &self,
         count: usize,
         motion: M,
         state: &mut S,
-    ) -> impl IntoIterator<Item = Self::Position>;
+        custom_state: &mut S2,
+    ) -> impl IntoIterator<Item = P>;
 }
 
-impl<T, S> HandleCustomMotion<(), S> for T {
-    type Position = ();
-
+impl<T, S, S2, P> HandleCustomMotion<(), S, S2, P> for T {
     fn handle_custom_motion(
         &self,
         _count: usize,
         _motion: (),
         _state: &mut S,
-    ) -> impl IntoIterator<Item = Self::Position> {
+        _custom_state: &mut S2,
+    ) -> impl IntoIterator<Item = P> {
         std::iter::empty()
     }
 }
 
-impl<M, T> HandleBaseMotion<M, GridRenderState> for Grid<T>
+impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for Grid<T>
 where
     T: Clone,
-    Grid<T>: HandleCustomMotion<M, GridRenderState>,
+    Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
-    type Position = Position;
-
-    fn handle_base_motion(
+    fn handle_motion(
         &self,
         count: usize,
         motion: Motion<M>,
-        state: &mut GridRenderState,
-    ) -> impl IntoIterator<Item = Self::Position> {
+        render: &mut GridRenderState,
+        custom_state: &mut S,
+    ) -> impl IntoIterator<Item = Position> {
         // Determine where to start the motion from and in which direction
-        let start = state.cursor;
-        let next_dir = Direction::try_from(&motion).unwrap_or(state.direction);
+        let start = render.cursor;
+        let next_dir = Direction::try_from(&motion).unwrap_or(render.direction);
 
         // Perform the motion by collecting all covered positions in the grid
-        let iter = grid_motion(self, count, motion, start, next_dir, state);
+        let iter = grid_motion(self, count, motion, start, next_dir, render, custom_state);
 
         // If currently going in another direction, change the direction
-        if state.use_direction
-            && !state.mode.is_visual()
+        if render.use_direction
+            && !render.mode.is_visual()
             && iter.clone().count() <= 2
-            && ![next_dir, !next_dir].contains(&state.direction)
+            && ![next_dir, !next_dir].contains(&render.direction)
         {
-            state.direction = next_dir;
+            render.direction = next_dir;
         }
         // Otherwise, move to the end and make sure it stays visible
         else if let Some(end) = iter.clone().next_back().map(|(pos, _)| pos) {
-            state.cursor = end;
-            state.ensure_cursor_visible(end);
+            render.cursor = end;
+            render.ensure_cursor_visible(end);
 
-            if let Some(selection) = state.selection.active_mut() {
+            if let Some(selection) = render.selection.active_mut() {
                 selection.update(end);
             }
         }
@@ -79,21 +78,21 @@ where
     }
 }
 
-impl<M, T> HandleBaseMotion<M, GridRenderState> for SquareGridRef<'_, T>
+impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
     T: Clone,
+    Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
-    type Position = Position;
-
-    fn handle_base_motion(
+    fn handle_motion(
         &self,
         count: usize,
         motion: Motion<M>,
-        state: &mut GridRenderState,
-    ) -> impl IntoIterator<Item = Self::Position> {
+        render: &mut GridRenderState,
+        custom_state: &mut S,
+    ) -> impl IntoIterator<Item = Position> {
         // Go to the first filled square in the given direction to perform the motion
-        let mut pos = state.cursor;
-        let next_dir = Direction::try_from(&motion).unwrap_or(state.direction);
+        let mut pos = render.cursor;
+        let next_dir = Direction::try_from(&motion).unwrap_or(render.direction);
 
         if count > 0 {
             while let Some(next) = pos + next_dir
@@ -109,15 +108,15 @@ where
         }
 
         // Perform the motion by collecting all covered positions in the grid
-        let iter = grid_motion(self.0, count, motion, pos, next_dir, state);
+        let iter = grid_motion(self.0, count, motion, pos, next_dir, render, custom_state);
 
         // If currently going in another direction, change the direction
-        if state.use_direction
-            && !state.mode.is_visual()
+        if render.use_direction
+            && !render.mode.is_visual()
             && iter.clone().count() <= 2
-            && ![next_dir, !next_dir].contains(&state.direction)
+            && ![next_dir, !next_dir].contains(&render.direction)
         {
-            state.direction = next_dir;
+            render.direction = next_dir;
         }
         // Otherwise, move to the end and make sure it stays visible
         else if let Some(end) = iter
@@ -125,14 +124,14 @@ where
             .map(|(pos, _)| pos)
             .rfind(|&pos| self.0.is_fill(pos))
         {
-            state.cursor = end;
-            state.ensure_cursor_visible(end);
+            render.cursor = end;
+            render.ensure_cursor_visible(end);
 
             tracing::info!("Trying to update {end:?} for selection?");
 
-            if let Some(app_end) = state.to_app(end) {
+            if let Some(app_end) = render.to_app(end) {
                 tracing::info!("OK: {app_end}");
-                state.selection.update(app_end);
+                render.selection.update(app_end);
             }
         }
 
@@ -140,16 +139,20 @@ where
     }
 }
 
-fn grid_motion<'a, T, M>(
+fn grid_motion<'a, T, M, S>(
     grid: &'a Grid<T>,
     count: usize,
     motion: Motion<M>,
     start: Position,
     dir: Direction,
-    state: &GridRenderState,
-) -> GridIndexedIter<'a, T> {
+    state: &mut GridRenderState,
+    custom_state: &mut S,
+) -> GridIndexedIter<'a, T>
+where
+    Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
+{
     let iter_remaining =
-        |remaining: usize| GridIter::new_with_remaining(grid, start, dir.into(), remaining);
+        |remaining: usize| GridLinearIter::new_with_remaining(grid, start, dir.into(), remaining);
     let iter_direction = |dir: Direction| grid.iter_segment(start, dir);
 
     let iter = match motion {
@@ -161,16 +164,25 @@ fn grid_motion<'a, T, M>(
 
             tracing::info!("Translating {app_pos:?}");
             match state.to_grid(app_pos) {
-                Some(pos) => GridIter::new_single(grid, pos),
-                None => GridIter::new_empty(grid),
+                Some(pos) => GridLinearIter::new_single(grid, pos),
+                None => GridLinearIter::new_empty(grid),
             }
         }
         Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
         Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {
             iter_direction(dir)
         }
-        _ => GridIter::new_empty(grid),
+        Motion::Custom(custom) => {
+            let positions: Vec<_> = grid
+                .handle_custom_motion(count, custom, state, custom_state)
+                .into_iter()
+                .collect();
+            let iter = GridPositionsIter::new(grid, positions);
+
+            return GridIndexedIter::new_positions(iter);
+        }
+        _ => GridLinearIter::new_empty(grid),
     };
 
-    GridIndexedIter::new(iter)
+    GridIndexedIter::new_linear(iter)
 }

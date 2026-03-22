@@ -8,7 +8,7 @@ use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
     Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    HandleBaseMotion, HandleOperator, Operator, RenderSize, Widget as AppWidget,
+    HandleMotion, HandleOperator, Operator, RenderSize, Widget as AppWidget,
 };
 
 use ratatui::{
@@ -18,7 +18,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, StatefulWidget, Widget},
 };
 
-use crate::{CrosswordApp, Focus, PuzzleScreenState};
+use crate::{CrosswordApp, Focus, GridMotionState, PuzzleScreenState};
 use tui_scrollview::ScrollView;
 
 pub struct CrosswordWidget;
@@ -149,7 +149,11 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
 
                 {
                     let squares = SquareGridRef(state.puzzle.squares());
-                    let positions = squares.handle_base_motion(count, motion, &mut state.render);
+                    let mut custom_state = GridMotionState {
+                        puzzle: &state.puzzle,
+                    };
+                    let positions =
+                        squares.handle_motion(count, motion, &mut state.render, &mut custom_state);
 
                     if let Some(op) = op {
                         state

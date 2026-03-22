@@ -5,8 +5,8 @@ use puzzled_core::{Direction, Solve};
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseMotion,
-    HandleOperator, Operator, RenderSize, Widget as AppWidget,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleMotion, HandleOperator,
+    Operator, RenderSize, Widget as AppWidget,
 };
 use ratatui::prelude::{Buffer, Rect, Size, StatefulWidget};
 use tui_scrollview::ScrollView;
@@ -86,7 +86,9 @@ impl AppWidget<BinarioApp> for BinarioWidget {
             }
             Command::Motion { count, motion, op } => {
                 let cells = state.puzzle.cells();
-                let positions = cells.handle_base_motion(count, motion, &mut state.render);
+                let mut custom_state = ();
+                let positions =
+                    cells.handle_motion(count, motion, &mut state.render, &mut custom_state);
 
                 if let Some(op) = op {
                     state

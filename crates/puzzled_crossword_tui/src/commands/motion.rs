@@ -1,10 +1,8 @@
 use derive_more::{Display, Eq};
-use puzzled_core::Grid;
-use puzzled_crossword::{Clue, ClueDirection, ClueId};
-use puzzled_tui::{CustomMotionRange, Describe, MotionBehavior};
+use puzzled_core::{Grid, Position};
+use puzzled_crossword::{Clue, ClueDirection, ClueId, Crossword};
+use puzzled_tui::{Describe, GridRenderState, HandleCustomMotion, MotionBehavior};
 use serde::Deserialize;
-
-use crate::PuzzleScreenState;
 
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
@@ -22,24 +20,27 @@ impl Describe for CrosswordMotion {
     }
 }
 
-impl<T> CustomMotionRange<CrosswordMotion, PuzzleScreenState> for Grid<T> {
-    fn custom_motion_range(
+pub(crate) struct GridMotionState<'a> {
+    pub(crate) puzzle: &'a Crossword,
+}
+
+impl<'a, T> HandleCustomMotion<CrosswordMotion, GridRenderState, GridMotionState<'a>, Position>
+    for Grid<T>
+{
+    fn handle_custom_motion(
         &self,
-        _start: Self::Position,
         _count: usize,
-        motion: &CrosswordMotion,
-        state: &PuzzleScreenState,
-    ) -> impl IntoIterator<Item = Self::Position> {
+        motion: CrosswordMotion,
+        render: &mut GridRenderState,
+        custom_state: &mut GridMotionState,
+    ) -> impl IntoIterator<Item = Position> {
         match motion {
             CrosswordMotion::Clue(num) => {
-                let pos = state.render.cursor;
-                let direction = ClueDirection::from(state.render.direction);
-                let id = ClueId {
-                    num: *num,
-                    direction,
-                };
+                let pos = render.cursor;
+                let direction = ClueDirection::from(render.direction);
+                let id = ClueId { num, direction };
 
-                let clue = match state.puzzle.clues().get(&id) {
+                let clue = match custom_state.puzzle.clues().get(&id) {
                     Some(c) => c.clone(),
                     None => Clue::new(0, ClueDirection::Across, "", pos, 0),
                 };

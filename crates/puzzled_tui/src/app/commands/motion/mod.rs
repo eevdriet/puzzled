@@ -1,11 +1,9 @@
 mod behavior;
 mod handle;
-mod range;
 mod selection;
 
 pub use behavior::*;
 pub use handle::*;
-pub use range::*;
 pub use selection::*;
 
 use crossterm::event::MouseEvent;
