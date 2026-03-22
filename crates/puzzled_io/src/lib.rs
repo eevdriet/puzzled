@@ -33,5 +33,5 @@ pub mod format;
 
 use puzzled_core::{Cell, Entry, Grid, Square};
 
-pub(crate) type CellEntries<T> = (Grid<Cell<T>>, Grid<Entry<T>>);
-pub(crate) type SquareEntries<T> = (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>);
+pub type CellEntries<T> = (Grid<Cell<T>>, Grid<Entry<T>>);
+pub type SquareEntries<T> = (Grid<Square<Cell<T>>>, Grid<Square<Entry<T>>>);

@@ -22,7 +22,7 @@ pub struct EventEngine<A: AppTypes> {
     repeat: RepeatState,
 
     last_insert: Instant,
-    is_dragging: bool,
+    is_selecting: bool,
     timeout: Duration,
 }
 
@@ -66,7 +66,7 @@ impl<A: AppTypes> EventEngine<A> {
             repeat: RepeatState::default(),
             pending_operator: None,
             buffer: Vec::new(),
-            is_dragging: false,
+            is_selecting: false,
             last_insert: Instant::now(),
         }
     }
@@ -136,54 +136,64 @@ impl<A: AppTypes> EventEngine<A> {
     }
 
     fn mouse_event(&mut self, mouse: MouseEvent) -> EventResult<A> {
+        use MouseButton::*;
+        use MouseEventKind::*;
+
         let mut effects = Vec::new();
+        let has_ctrl = mouse.modifiers.contains(KeyModifiers::CONTROL);
 
-        match mouse.kind {
+        match (mouse.kind, has_ctrl, self.is_selecting) {
             // Start visual selection on mouse drag
-            MouseEventKind::Drag(MouseButton::Left) if !self.is_dragging => {
-                tracing::info!("[MOUSE] Start selection (left start drag)");
-                self.is_dragging = true;
+            (Drag(Left), _, false) | (Down(Left), true, false) => {
+                tracing::debug!("[MOUSE] Start selection (left start drag)");
+                self.is_selecting = true;
 
-                let additive = mouse.modifiers.contains(KeyModifiers::CONTROL);
                 let pos = Position {
                     x: mouse.column,
                     y: mouse.row,
                 };
-                let action = Action::StartSelection { pos, additive };
+                let action = Action::StartSelection {
+                    pos,
+                    additive: has_ctrl,
+                };
 
                 effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
                 effects.push(EventEffect::Command(Command::new_action(action)));
+                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                    mouse,
+                ))));
             }
 
             // Update visual selection on additional mouse drag
-            MouseEventKind::Drag(MouseButton::Left) if self.is_dragging => {
-                tracing::info!("[MOUSE] Update selection (left continue drag)");
+            (Drag(Left), _, true) => {
+                tracing::debug!("[MOUSE] Update selection (left continue drag)");
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));
             }
 
-            // Stop dragging when mouse released
-            MouseEventKind::Up(MouseButton::Left) if self.is_dragging => {
-                tracing::info!("[MOUSE] Finish selection (up end drag)");
-                self.is_dragging = false;
+            (Up(Left), _, was_selecting) => {
+                tracing::debug!("[MOUSE] Finish selection (up end drag)");
+                self.is_selecting = false;
 
-                let action = Action::EndSelection;
-                effects.push(EventEffect::Command(Command::new_action(action)));
-            }
-
-            // Return to normal mode on another mouse click
-            MouseEventKind::Up(MouseButton::Left) if !self.is_dragging => {
-                tracing::info!("[MOUSE] Back to normal (up no drag)");
-                effects.push(EventEffect::Mode(EventMode::Normal));
-                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                    mouse,
-                ))));
+                // Stop dragging when mouse released
+                if was_selecting {
+                    let action = Action::EndSelection;
+                    effects.push(EventEffect::Command(Command::new_action(action)));
+                }
+                // Return to normal mode on another mouse click
+                else {
+                    tracing::debug!("[MOUSE] Back to normal (up no drag)");
+                    effects.push(EventEffect::Mode(EventMode::Normal));
+                    effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                        mouse,
+                    ))));
+                }
             }
 
             // Pass through other mouse events normally
-            kind if !matches!(kind, MouseEventKind::Moved) => {
-                tracing::info!("[MOUSE] Other: {mouse:?}");
+            (kind, _, _) if !matches!(kind, MouseEventKind::Moved) => {
+                tracing::debug!("[MOUSE] Other: {mouse:?}");
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));

@@ -19,16 +19,6 @@ pub struct RenderSquareState<'a> {
     pub render: &'a GridRenderState,
 }
 
-impl<'a> RenderSquareState<'a> {
-    pub fn new(squares: &'a Squares, clues: &'a Clues, render: &'a GridRenderState) -> Self {
-        Self {
-            squares,
-            clues,
-            render,
-        }
-    }
-}
-
 impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
     fn render_cell(&self, pos: Position, state: &RenderSquareState) -> impl Widget {
         // Determine the styles
