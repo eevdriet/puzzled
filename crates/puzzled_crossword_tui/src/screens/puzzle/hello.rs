@@ -1,4 +1,5 @@
-use puzzled_tui::{AppTypes, Popup, align_area};
+use puzzled_tui::{AppTypes, Popup, Widget as AppWidget, align_area};
+
 use ratatui::{
     layout::{HorizontalAlignment, Size, VerticalAlignment},
     prelude::{Buffer, Rect},
@@ -7,7 +8,7 @@ use ratatui::{
 
 pub struct HelloPopup;
 
-impl<A: AppTypes> Popup<A> for HelloPopup {
+impl<A: AppTypes> AppWidget<A> for HelloPopup {
     type State = ();
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut Self::State) {
@@ -23,3 +24,5 @@ impl<A: AppTypes> Popup<A> for HelloPopup {
         Block::bordered().title("Hello").render(inner, buf);
     }
 }
+
+impl<A: AppTypes> Popup<A> for HelloPopup {}

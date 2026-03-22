@@ -136,8 +136,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
 
         if self.popup {
             let mut state = KeysPopupState::default();
-
-            Popup::<CrosswordApp>::render(&mut self.keys, area, buf, &mut state);
+            self.keys.render_popup(area, buf, &mut state);
         }
     }
 
@@ -152,7 +151,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
         if self.popup {
-            return self.keys.on_command(command, resolver, ctx);
+            let mut state = KeysPopupState::default();
+            return self.keys.on_popup_command(command, resolver, &mut state);
         }
 
         let mut handled_action = false;

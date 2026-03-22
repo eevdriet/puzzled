@@ -28,7 +28,9 @@ pub trait Widget<A: AppTypes> {
     // Rendering
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 
-    fn render_size(&self, state: &Self::State) -> Size;
+    fn render_size(&self, _state: &Self::State) -> Size {
+        Size::default()
+    }
 
     fn on_tick(&self, _state: &Self::State) -> bool {
         false

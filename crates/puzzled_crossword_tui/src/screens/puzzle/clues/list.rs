@@ -32,7 +32,7 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
     }
 
     fn render_size(&self, state: &Self::State) -> Size {
-        AppWidget::<CrosswordApp>::render_size(&self.list, state)
+        self.list.render_size(state)
     }
 
     fn override_mode(&self) -> Option<EventMode> {
@@ -79,15 +79,32 @@ impl ListRender for CluesListRender {
     }
 
     fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>> {
-        state.clues(self.dir).map(|clue| {
-            let clue_text = match (state.is_paused, self.dir.is_some()) {
-                (true, _) => format!("{:>2} ...", clue.num()),
-                (false, true) => format!("{:>2} {}", clue.num(), clue.text()),
-                (false, false) => {
-                    format!("{:>2}{} {}", clue.num(), clue.direction(), clue.text())
-                }
+        let max_num = state
+            .clues(self.dir)
+            .last()
+            .map(|clue| clue.num())
+            .unwrap_or(0);
+        let max_width = max_num.to_string().len();
+
+        state.clues(self.dir).map(move |clue| {
+            let clue_id = if self.dir.is_some() {
+                format!("{:>width$}", clue.num(), width = max_width)
+            } else {
+                format!(
+                    "{:>width$} {}",
+                    clue.num(),
+                    clue.direction(),
+                    width = max_width
+                )
             };
-            ListItem::new(clue_text)
+
+            let clue_text = if state.is_paused {
+                format!("{:<width$}", "...", width = clue.text().len())
+            } else {
+                clue.text().to_owned()
+            };
+
+            ListItem::new(format!("{clue_id} {clue_text}"))
         })
     }
 
