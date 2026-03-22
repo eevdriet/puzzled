@@ -1,6 +1,10 @@
+use derive_more::Debug;
+
 use crate::{Grid, Position};
 
+#[derive(Debug)]
 pub struct GridPositionsIter<'a, T> {
+    #[debug(skip)]
     pub(crate) grid: &'a Grid<T>,
     pub(crate) positions: Vec<Position>,
 

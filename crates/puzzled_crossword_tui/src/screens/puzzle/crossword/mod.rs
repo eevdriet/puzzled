@@ -111,12 +111,8 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         resolver: AppResolver<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
-        tracing::info!("Crossword command: {command:?}");
-
         match command {
             Command::Operator(op) => {
-                tracing::info!("Operator {op:?} in mode {:?}", state.render.mode);
-
                 if state.render.mode.is_visual() {
                     let size = state.render.viewport.as_size();
                     let positions = state
@@ -145,8 +141,6 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                 }
             }
             Command::Motion { count, motion, op } => {
-                tracing::info!("Other motion: {motion:?}");
-
                 {
                     let squares = SquareGridRef(state.puzzle.squares());
                     let mut custom_state = GridMotionState {

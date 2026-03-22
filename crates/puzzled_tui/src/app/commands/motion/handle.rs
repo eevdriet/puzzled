@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use puzzled_core::{
     Direction, Grid, GridIndexedIter, GridLinearIter, GridPositionsIter, Position, Square,
     SquareGridRef,
@@ -39,7 +41,7 @@ impl<T, S, S2, P> HandleCustomMotion<(), S, S2, P> for T {
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for Grid<T>
 where
-    T: Clone,
+    T: Clone + Debug,
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
     fn handle_motion(
@@ -69,8 +71,8 @@ where
             render.cursor = end;
             render.ensure_cursor_visible(end);
 
-            if let Some(selection) = render.selection.active_mut() {
-                selection.update(end);
+            if let Some(app_end) = render.to_app(end) {
+                render.selection.update(app_end);
             }
         }
 
@@ -80,7 +82,7 @@ where
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
-    T: Clone,
+    T: Clone + Debug,
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
     fn handle_motion(
@@ -127,10 +129,7 @@ where
             render.cursor = end;
             render.ensure_cursor_visible(end);
 
-            tracing::info!("Trying to update {end:?} for selection?");
-
             if let Some(app_end) = render.to_app(end) {
-                tracing::info!("OK: {app_end}");
                 render.selection.update(app_end);
             }
         }
@@ -150,6 +149,7 @@ fn grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, T>
 where
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
+    T: Debug,
 {
     let iter_remaining =
         |remaining: usize| GridLinearIter::new_with_remaining(grid, start, dir.into(), remaining);
@@ -162,7 +162,6 @@ where
                 y: mouse.row,
             };
 
-            tracing::info!("Translating {app_pos:?}");
             match state.to_grid(app_pos) {
                 Some(pos) => GridLinearIter::new_single(grid, pos),
                 None => GridLinearIter::new_empty(grid),

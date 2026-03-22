@@ -22,6 +22,10 @@ where
         match action {
             Action::StartSelection { pos, additive } => {
                 state.selection.start(pos, SelectionKind::Cells, additive);
+
+                if let Some(cursor) = state.to_grid(pos) {
+                    state.cursor = cursor;
+                }
             }
             Action::EndSelection => {
                 state.selection.finish();

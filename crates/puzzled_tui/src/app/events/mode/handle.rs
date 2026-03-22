@@ -14,7 +14,7 @@ pub trait HandleMode<A: AppTypes> {
     ) -> bool;
 }
 
-impl<C, A: AppTypes> HandleMode<A> for Grid<C> {
+impl<T, A: AppTypes> HandleMode<A> for Grid<T> {
     type State = GridRenderState;
 
     fn handle_mode(
@@ -24,17 +24,9 @@ impl<C, A: AppTypes> HandleMode<A> for Grid<C> {
         _ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) -> bool {
-        tracing::info!("Changing grid mode {} -> {}", state.mode, mode);
         state.mode = mode;
 
         if !mode.is_visual() {
-            if let Some(active) = state.selection.active()
-                && let Some(start) = active.start()
-                && let Some(cursor) = state.to_grid(start)
-            {
-                state.cursor = cursor;
-            }
-
             state.selection.reset();
         }
 

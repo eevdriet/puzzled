@@ -64,16 +64,21 @@ impl MultiSelection {
         P: AsApp<Position>,
         S: AsApp<Size>,
     {
-        self.selections
-            .iter()
-            .any(|sel| sel.range(&size.as_app()).contains(pos.as_app()))
+        let mut _contains = |sel: &Selection| sel.range(&size.as_app()).contains(pos.as_app());
+
+        self.active.is_some_and(|sel| _contains(&sel)) || self.selections.iter().any(_contains)
     }
 
     pub fn ranges<S>(&self, size: &S) -> impl Iterator<Item = Rect>
     where
         S: AsApp<Size>,
     {
-        self.selections.iter().map(|sel| sel.range(&size.as_app()))
+        let range = |sel: &Selection| sel.range(&size.as_app());
+
+        self.selections
+            .iter()
+            .map(range)
+            .chain(self.active.iter().map(range))
     }
 
     pub fn positions<S>(&self, size: &S) -> impl Iterator<Item = Position>

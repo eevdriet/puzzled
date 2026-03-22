@@ -8,7 +8,7 @@ pub use positions::*;
 
 use crate::{Grid, Position};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum GridIter<'a, T> {
     Linear(GridLinearIter<'a, T>),
     Positions(GridPositionsIter<'a, T>),

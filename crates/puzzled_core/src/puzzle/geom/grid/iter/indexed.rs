@@ -3,7 +3,7 @@ use crate::{
     Position,
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GridIndexedIter<'a, T> {
     inner: GridIter<'a, T>,
 }

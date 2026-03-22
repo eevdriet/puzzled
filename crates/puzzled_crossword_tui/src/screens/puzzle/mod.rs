@@ -181,9 +181,6 @@ impl Screen<CrosswordApp> for PuzzleScreen {
             }
         }
 
-        tracing::info!("Handled action? {handled_action}");
-        tracing::info!("Command? {command:?}");
-
         handled_action
             || match self.state.focus.get() {
                 Focus::Crossword => self

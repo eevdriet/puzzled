@@ -1,8 +1,12 @@
 use std::ops::Bound;
 
+use derive_more::Debug;
+
 use crate::{Direction, Grid, Line, LineSegment, Offset, Order, Position};
 
+#[derive(Debug)]
 pub struct GridLinearIter<'a, T> {
+    #[debug(skip)]
     pub(crate) grid: &'a Grid<T>,
     pub(crate) front: Position,
     pub(crate) back: Position,
