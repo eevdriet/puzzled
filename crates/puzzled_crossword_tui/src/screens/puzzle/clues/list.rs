@@ -98,7 +98,7 @@ impl ListRender<CrosswordApp> for CluesListRender {
                 )
             };
 
-            let clue_text = if state.is_paused {
+            let clue_text = if state.popup.is_some() {
                 format!("{:<width$}", "...", width = clue.text().len())
             } else {
                 clue.text().to_owned()

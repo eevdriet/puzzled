@@ -68,7 +68,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let clue_dir = ClueDirection::from(render.direction);
 
         if let Some(clue) = clues.get_clue(render.cursor, clue_dir) {
-            let mut is_paused = state.is_paused;
+            let mut is_paused = state.popup.is_some();
             ClueWidget { clue }.render(clue_area, buf, &mut is_paused);
         }
 

@@ -5,7 +5,7 @@ use puzzled_tui::{
 };
 use ratatui::{layout::Rect, widgets::ListState};
 
-use crate::{CrosswordApp, Focus};
+use crate::{CrosswordApp, Focus, PuzzlePopup};
 
 pub struct PuzzleScreenState {
     // Crossword state
@@ -21,7 +21,7 @@ pub struct PuzzleScreenState {
 
     // UI state
     pub focus: FocusManager<Focus>,
-    pub is_paused: bool,
+    pub popup: Option<PuzzlePopup>,
 
     pub pause_state: KeysListRenderState<CrosswordApp>,
 

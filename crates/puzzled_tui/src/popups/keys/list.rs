@@ -8,7 +8,8 @@ use ratatui::{
 };
 
 use crate::{
-    AppCommand, AppResolver, AppTypes, Keys, ListRender, ListWidget, Popup, Widget as AppWidget,
+    Action, AppCommand, AppResolver, AppTypes, Command, Keys, ListRender, ListWidget, Popup,
+    Widget as AppWidget,
 };
 
 pub struct KeysListPopup<A: AppTypes> {
@@ -116,6 +117,32 @@ impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
 
     fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
         &mut state.state
+    }
+
+    fn on_command(
+        &mut self,
+        command: AppCommand<A>,
+        resolver: AppResolver<A>,
+        state: &mut Self::State,
+    ) -> bool {
+        match command {
+            Command::Action {
+                action: Action::Select,
+                ..
+            } => {
+                if let Some(selected) = state.state.selected() {
+                    match selected {
+                        0 => resolver.prev_screen(),
+                        _ => resolver.close_popup(),
+                    }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
     }
 }
 

@@ -35,6 +35,12 @@ pub enum Focus {
     Footer,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum PuzzlePopup {
+    Pause,
+    Help,
+}
+
 pub struct PuzzleScreen {
     state: PuzzleScreenState,
 
@@ -43,9 +49,7 @@ pub struct PuzzleScreen {
     clues: CluesWidget,
 
     // Popups
-    popup: Option<usize>,
     keys: KeysTablePopup<CrosswordApp>,
-
     pause: KeysListPopup<CrosswordApp>,
 }
 
@@ -82,13 +86,12 @@ impl PuzzleScreen {
             down: list,
             history: ActionHistory::default(),
             focus,
-            is_paused: false,
+            popup: None,
             pause_state,
         };
 
         Self {
             state,
-            popup: None,
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
             keys: popup,
@@ -150,13 +153,13 @@ impl Screen<CrosswordApp> for PuzzleScreen {
 
         FooterWidget.render(footer, buf, &mut footer_state);
 
-        if let Some(popup) = self.popup {
+        if let Some(popup) = self.state.popup {
             match popup {
-                0 => {
+                PuzzlePopup::Pause => {
                     self.pause
                         .render_popup(area, buf, &mut self.state.pause_state);
                 }
-                _ => {
+                PuzzlePopup::Help => {
                     let mut state = KeysTablePopupState::default();
                     self.keys.render_popup(area, buf, &mut state);
                 }
@@ -174,16 +177,16 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         resolver: AppResolver<CrosswordApp>,
         ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
-        if let Some(popup) = self.popup {
+        if let Some(popup) = self.state.popup {
             match popup {
-                0 => {
+                PuzzlePopup::Pause => {
                     return self.pause.on_popup_command(
                         command,
                         resolver,
                         &mut self.state.pause_state,
                     );
                 }
-                _ => {
+                PuzzlePopup::Help => {
                     let mut state = KeysTablePopupState::default();
                     return self.keys.on_popup_command(command, resolver, &mut state);
                 }
@@ -201,11 +204,11 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                     resolver.prev_screen();
                 }
                 Action::Cancel => {
-                    self.popup = Some(0);
+                    self.state.popup = Some(PuzzlePopup::Pause);
                     resolver.open_popup();
                 }
                 Action::ShowHelp => {
-                    self.popup = Some(1);
+                    self.state.popup = Some(PuzzlePopup::Help);
                     resolver.open_popup();
                 }
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
@@ -255,7 +258,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
     }
 
     fn on_popup_close(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
-        self.popup = None;
+        self.state.popup = None;
     }
 
     fn on_enter(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
@@ -264,11 +267,9 @@ impl Screen<CrosswordApp> for PuzzleScreen {
 
     fn on_pause(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.state.solve.timer.pause();
-        self.state.is_paused = true;
     }
 
     fn on_resume(&mut self, _ctx: &mut AppContext<CrosswordApp>) {
         self.state.solve.timer.start();
-        self.state.is_paused = false;
     }
 }
