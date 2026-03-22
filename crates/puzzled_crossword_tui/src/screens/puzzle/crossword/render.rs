@@ -1,7 +1,7 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Direction, Entry, Position, Square};
+use puzzled_core::{Entry, Position, Square};
 use puzzled_crossword::{ClueDirection, Clues, Solution, Squares};
-use puzzled_tui::{AsApp, CellRender, EventMode, GridOptions, Selection, TextBlock};
+use puzzled_tui::{CellRender, GridRenderState, TextBlock};
 
 use ratatui::{
     layout::HorizontalAlignment,
@@ -14,25 +14,17 @@ use ratatui::{
 pub(crate) struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>>);
 
 pub struct RenderSquareState<'a> {
-    pub cursor: Position,
-    pub direction: Direction,
-    pub selection: Selection,
     pub clues: &'a Clues,
     pub squares: &'a Squares,
-    pub opts: GridOptions,
-    pub mode: EventMode,
+    pub render: &'a GridRenderState,
 }
 
 impl<'a> RenderSquareState<'a> {
-    pub fn new(squares: &'a Squares, clues: &'a Clues) -> Self {
+    pub fn new(squares: &'a Squares, clues: &'a Clues, render: &'a GridRenderState) -> Self {
         Self {
             squares,
             clues,
-            cursor: Position::default(),
-            direction: Direction::default(),
-            selection: Selection::default(),
-            opts: GridOptions::default(),
-            mode: EventMode::default(),
+            render,
         }
     }
 }
@@ -55,10 +47,10 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             base_style.fg(Color::Black).dim()
         };
 
-        if !state.mode.is_visual()
-            && let Some((across, down)) = state.clues.get_clues(state.cursor)
+        if !state.render.mode.is_visual()
+            && let Some((across, down)) = state.clues.get_clues(state.render.cursor)
         {
-            let clue_dir = ClueDirection::from(state.direction);
+            let clue_dir = ClueDirection::from(state.render.direction);
             let active_clue_style = border_style.fg(Color::Cyan).bold();
             let alt_clue_style = border_style.fg(Color::White).dim();
 
@@ -88,14 +80,17 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             }
         }
 
-        if pos == state.cursor {
-            border_style = if state.mode.is_visual() {
+        if pos == state.render.cursor {
+            border_style = if state.render.mode.is_visual() {
                 base_style.fg(Color::LightGreen)
             } else {
                 base_style.fg(Color::Yellow)
             }
             .add_modifier(Modifier::BOLD);
-        } else if is_playable && state.selection.range(size).contains(pos.as_app()) {
+        } else if is_playable
+            && let Some(app_pos) = state.render.to_app(pos)
+            && state.render.selection.contains(app_pos, &size)
+        {
             border_style = base_style.fg(Color::Green);
         }
 
@@ -126,8 +121,8 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
         TextBlock {
             text,
             block,
-            h_align: state.opts.h_align,
-            v_align: state.opts.v_align,
+            h_align: state.render.options.h_align,
+            v_align: state.render.options.v_align,
         }
     }
 }

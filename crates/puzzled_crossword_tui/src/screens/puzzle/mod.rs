@@ -93,10 +93,6 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         let crossword_size = self.crossword.render_size(&self.state);
         let clues_size = self.clues.render_size(&self.state);
 
-        tracing::info!("Sizes while paused?: {}", self.state.is_paused);
-        tracing::info!("\tCrossword: {crossword_size}");
-        tracing::info!("\tClues: {clues_size}");
-
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 
         let [area] = Layout::horizontal(vec![Constraint::Length(width)]).areas(root);
@@ -159,7 +155,11 @@ impl Screen<CrosswordApp> for PuzzleScreen {
             return self.keys.on_command(command, resolver, ctx);
         }
 
+        let mut handled_action = false;
+
         if let Command::Action { action, count } = &command {
+            handled_action = true;
+
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),
@@ -175,21 +175,25 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                         .focus
                         .handle_command(command, resolver, ctx, &mut ());
                 }
-                _ => {}
+                _ => {
+                    handled_action = false;
+                }
             }
-
-            return true;
         }
 
-        match self.state.focus.get() {
-            Focus::Crossword => self
-                .crossword
-                .on_command(command, resolver, &mut self.state),
-            Focus::Clues => self.clues.on_command(command, resolver, &mut self.state),
-            Focus::Footer => self
-                .crossword
-                .on_command(command, resolver, &mut self.state),
-        }
+        tracing::info!("Handled action? {handled_action}");
+        tracing::info!("Command? {command:?}");
+
+        handled_action
+            || match self.state.focus.get() {
+                Focus::Crossword => self
+                    .crossword
+                    .on_command(command, resolver, &mut self.state),
+                Focus::Clues => self.clues.on_command(command, resolver, &mut self.state),
+                Focus::Footer => self
+                    .crossword
+                    .on_command(command, resolver, &mut self.state),
+            }
     }
 
     fn on_mode(

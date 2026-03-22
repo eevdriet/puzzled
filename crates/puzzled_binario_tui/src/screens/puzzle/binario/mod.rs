@@ -5,7 +5,7 @@ use puzzled_core::{Direction, Solve};
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, AsCore, Command, EventMode, GridWidget, HandleBaseMotion,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseMotion,
     HandleOperator, Operator, RenderSize, Widget as AppWidget,
 };
 use ratatui::prelude::{Buffer, Rect, Size, StatefulWidget};
@@ -55,13 +55,13 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         match command {
             Command::Operator(op) => {
                 if state.render.mode.is_visual() {
-                    let size = state.puzzle.cells().size();
-                    let positions = state
+                    let size = state.render.viewport.as_size();
+                    let positions: Vec<_> = state
                         .render
                         .selection
-                        .range(size)
-                        .positions()
-                        .map(|pos| pos.as_core());
+                        .positions(&size)
+                        .filter_map(|pos| state.render.to_grid(pos))
+                        .collect();
 
                     state
                         .solve
@@ -82,16 +82,6 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                         .handle_operator(op, positions, &mut state.history);
                 } else {
                     return false;
-                }
-            }
-            Command::Motion { count, motion, op } if state.render.mode.is_visual() => {
-                assert!(op.is_none());
-
-                let cells = state.puzzle.cells();
-                let positions = cells.handle_base_motion(count, motion, &mut state.render);
-
-                if let Some(end) = positions.into_iter().last() {
-                    state.render.selection.update(end);
                 }
             }
             Command::Motion { count, motion, op } => {

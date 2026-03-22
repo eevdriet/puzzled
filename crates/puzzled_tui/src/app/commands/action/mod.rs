@@ -5,6 +5,7 @@ pub use behavior::*;
 pub use handle::*;
 
 use derive_more::{Display, Eq};
+use ratatui::layout::Position;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash, PartialOrd, Ord)]
@@ -16,6 +17,13 @@ pub enum Action<A> {
     Cancel,
 
     // -- Normal -- //
+    // Mouse
+    #[display("{pos}")]
+    StartSelection {
+        pos: Position,
+        additive: bool,
+    },
+    EndSelection,
 
     // Focus
     FocusDown,

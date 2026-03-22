@@ -1,19 +1,20 @@
 use std::io;
 
-use puzzled_crossword::{Crossword, CrosswordState, crossword};
+use puzzled_crossword::Crossword;
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{
-    Action, AppCommand, Command, EventMode, EventTrie, GridRenderState, GridWidget, ListRender,
-    ListWidget, Screen, Widget,
+    Action, AppCommand, Command, EventMode, EventTrie, GridRenderState, ListRender, ListWidget,
+    Screen, Widget as AppWidget, center_area,
 };
 use puzzled_tui::{AppContext, AppResolver};
-use ratatui::widgets::{List, ListItem, ListState};
+use ratatui::layout::{Constraint, Flex, Layout};
+use ratatui::text::Line;
+use ratatui::widgets::{List, ListItem, ListState, Paragraph, Widget};
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::{CrosswordApp, PuzzleScreen, RenderSquareSolution, RenderSquareState};
+use crate::{CrosswordApp, PuzzleScreen};
 
 pub struct TitleScreen {
-    title: Crossword,
     list: ListWidget<TitleRender, CrosswordApp>,
     state: ListState,
 }
@@ -22,50 +23,47 @@ const ITEMS: [&str; 4] = ["New game", "Continue", "About", "Quit"];
 
 impl Default for TitleScreen {
     fn default() -> Self {
-        let title = crossword!(
-            [ C C C . R R . O O O . S S S . S S S ]
-            [ C . . . R R . O . O . . S . . S . . ]
-            [ C C C . R . R O O O . S S S . S S S ]
-            [ . . . . . . . . . . . . . . . . . . ]
-            [ . W . . W . O O O . R R . . D D . . ]
-            [ . W . . W . O . O . R R . . D . D . ]
-            [ W W W . W . O O O . R . R . D D . . ]
-        );
-        // let title = crossword!(
-        //     [ C C C C C . R R R R . . O O O O O . S S S S S . S S S S S ]
-        //     [ C . . . . . R . . R . . O . . . O . S . . . . . S . . . . ]
-        //     [ C . . . . . R R R . . . O . . . O . S S S S S . S S S S S ]
-        //     [ C . . . . . R . . R . . O . . . O . . . . . S . . . . . S ]
-        //     [ C C C C C . R . . . R . O O O O O . S S S S S . S S S S S ]
-        //     [ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ]
-        //     [ . . . W . . . W . O O O O O . R R R R . . D D D D . . . . ]
-        //     [ . . . W . . . W . O . . . O . R . . R . . D . . . D . . . ]
-        //     [ . . . W . W . W . O . . . O . R R R . . . D . . . D . . . ]
-        //     [ . . . W . W . W . O . . . O . R . . R . . D . . . D . . . ]
-        //     [ . . . W W W W W . O O O O O . R . . . R . D D D D . . . . ]
-        //
-        // );
-
         let list = ListWidget::new(TitleRender);
         let mut state = ListState::default();
         state.select_first();
 
-        Self { title, list, state }
+        Self { list, state }
     }
 }
 
+const TITLE: [&str; 6] = [
+    r#"   _____                                                 _ "#,
+    r#"  / ____|                                               | |"#,
+    r#" | |      _ __  ___   ___  ___ __      __ ___   _ __  __| |"#,
+    r#" | |     | '__|/ _ \ / __|/ __|\ \ /\ / // _ \ | '__|/ _` |"#,
+    r#" | |____ | |  | (_) |\__ \\__ \ \ V  V /| (_) || |  | (_| |"#,
+    r#"  \_____||_|   \___/ |___/|___/  \_/\_/  \___/ |_|   \__,_| "#,
+];
+
 impl Screen<CrosswordApp> for TitleScreen {
     fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<CrosswordApp>) {
-        let state = CrosswordState::from(&self.title);
-        let cell_state = RenderSquareState::new(self.title.squares(), self.title.clues());
-        let mut render = GridRenderState::default();
-        render.options.cell_width = 4;
-        render.options.cell_height = 3;
+        let lines: Vec<_> = TITLE.into_iter().map(Line::from).collect();
+        let width = lines[0].width() as u16;
 
-        let grid = state.entries.map_ref(RenderSquareSolution);
-        let _grid_widget = GridWidget::new(&grid, &cell_state);
+        let [area] = Layout::horizontal(vec![Constraint::Length(width)])
+            .flex(Flex::Center)
+            .areas(root);
+        let [title_area, _, list_area] = Layout::vertical(vec![
+            Constraint::Length(lines.len() as u16),
+            Constraint::Length(2),
+            Constraint::Length(ITEMS.len() as u16),
+        ])
+        .flex(Flex::Center)
+        .areas(area);
 
-        self.list.render(root, buf, &mut self.state);
+        // Render
+        Paragraph::new(lines).render(title_area, buf);
+
+        let mut size = self.list.render_size(&self.state);
+        size.width += 3; // Add on highlight symbol width
+
+        let list_area = center_area(list_area, size);
+        AppWidget::render(&mut self.list, list_area, buf, &mut self.state);
     }
 
     fn on_command(
@@ -136,7 +134,11 @@ impl ListRender for TitleRender {
 fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
     let (puzzle, solve_state) = Crossword::load_text("2026-03-08-nyt").map_err(io::Error::other)?;
 
-    let mut render_state = GridRenderState::default();
+    let mut render_state = GridRenderState {
+        use_direction: true,
+        ..Default::default()
+    };
+
     let opts = &mut render_state.options;
 
     opts.cell_width = 5;

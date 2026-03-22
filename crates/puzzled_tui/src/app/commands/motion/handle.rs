@@ -16,7 +16,7 @@ pub trait HandleBaseMotion<M, S> {
 pub trait HandleCustomMotion<M, S> {
     type Position;
 
-    fn handle_base_motion(
+    fn handle_custom_motion(
         &self,
         count: usize,
         motion: M,
@@ -24,9 +24,23 @@ pub trait HandleCustomMotion<M, S> {
     ) -> impl IntoIterator<Item = Self::Position>;
 }
 
+impl<T, S> HandleCustomMotion<(), S> for T {
+    type Position = ();
+
+    fn handle_custom_motion(
+        &self,
+        _count: usize,
+        _motion: (),
+        _state: &mut S,
+    ) -> impl IntoIterator<Item = Self::Position> {
+        std::iter::empty()
+    }
+}
+
 impl<M, T> HandleBaseMotion<M, GridRenderState> for Grid<T>
 where
     T: Clone,
+    Grid<T>: HandleCustomMotion<M, GridRenderState>,
 {
     type Position = Position;
 
@@ -45,6 +59,7 @@ where
 
         // If currently going in another direction, change the direction
         if state.use_direction
+            && !state.mode.is_visual()
             && iter.clone().count() <= 2
             && ![next_dir, !next_dir].contains(&state.direction)
         {
@@ -54,6 +69,10 @@ where
         else if let Some(end) = iter.clone().next_back().map(|(pos, _)| pos) {
             state.cursor = end;
             state.ensure_cursor_visible(end);
+
+            if let Some(selection) = state.selection.active_mut() {
+                selection.update(end);
+            }
         }
 
         iter.map(|(pos, _)| pos)
@@ -94,6 +113,7 @@ where
 
         // If currently going in another direction, change the direction
         if state.use_direction
+            && !state.mode.is_visual()
             && iter.clone().count() <= 2
             && ![next_dir, !next_dir].contains(&state.direction)
         {
@@ -107,6 +127,13 @@ where
         {
             state.cursor = end;
             state.ensure_cursor_visible(end);
+
+            tracing::info!("Trying to update {end:?} for selection?");
+
+            if let Some(app_end) = state.to_app(end) {
+                tracing::info!("OK: {app_end}");
+                state.selection.update(app_end);
+            }
         }
 
         iter.map(|(pos, _)| pos)
@@ -132,6 +159,7 @@ fn grid_motion<'a, T, M>(
                 y: mouse.row,
             };
 
+            tracing::info!("Translating {app_pos:?}");
             match state.to_grid(app_pos) {
                 Some(pos) => GridIter::new_single(grid, pos),
                 None => GridIter::new_empty(grid),

@@ -27,21 +27,15 @@ impl<C, A: AppTypes> HandleMode<A> for Grid<C> {
         tracing::info!("Changing grid mode {} -> {}", state.mode, mode);
         state.mode = mode;
 
-        let selection = &mut state.selection;
-        let cursor = state.cursor;
-
-        match mode {
-            EventMode::Visual(kind) => {
-                selection.set_kind(kind);
-                selection.set(cursor, cursor);
+        if !mode.is_visual() {
+            if let Some(active) = state.selection.active()
+                && let Some(start) = active.start()
+                && let Some(cursor) = state.to_grid(start)
+            {
+                state.cursor = cursor;
             }
-            _ => {
-                if let Some(start) = selection.start() {
-                    state.cursor = start;
-                }
 
-                selection.reset();
-            }
+            state.selection.reset();
         }
 
         true

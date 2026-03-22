@@ -4,6 +4,7 @@ use std::{
 };
 
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+use ratatui::layout::Position;
 
 use crate::{
     Action, AppCommand, AppEvent, AppTrieEntry, AppTypes, Command, EventMode, EventSearchResult,
@@ -139,22 +140,41 @@ impl<A: AppTypes> EventEngine<A> {
 
         match mouse.kind {
             // Start visual selection on mouse drag
-            MouseEventKind::Drag(MouseButton::Left) => {
+            MouseEventKind::Drag(MouseButton::Left) if !self.is_dragging => {
+                tracing::info!("[MOUSE] Start selection (left start drag)");
                 self.is_dragging = true;
 
+                let additive = mouse.modifiers.contains(KeyModifiers::CONTROL);
+                let pos = Position {
+                    x: mouse.column,
+                    y: mouse.row,
+                };
+                let action = Action::StartSelection { pos, additive };
+
+                effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
+                effects.push(EventEffect::Command(Command::new_action(action)));
+            }
+
+            // Update visual selection on additional mouse drag
+            MouseEventKind::Drag(MouseButton::Left) if self.is_dragging => {
+                tracing::info!("[MOUSE] Update selection (left continue drag)");
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));
-                effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
             }
 
             // Stop dragging when mouse released
             MouseEventKind::Up(MouseButton::Left) if self.is_dragging => {
+                tracing::info!("[MOUSE] Finish selection (up end drag)");
                 self.is_dragging = false;
+
+                let action = Action::EndSelection;
+                effects.push(EventEffect::Command(Command::new_action(action)));
             }
 
             // Return to normal mode on another mouse click
             MouseEventKind::Up(MouseButton::Left) if !self.is_dragging => {
+                tracing::info!("[MOUSE] Back to normal (up no drag)");
                 effects.push(EventEffect::Mode(EventMode::Normal));
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
@@ -163,6 +183,7 @@ impl<A: AppTypes> EventEngine<A> {
 
             // Pass through other mouse events normally
             kind if !matches!(kind, MouseEventKind::Moved) => {
+                tracing::info!("[MOUSE] Other: {mouse:?}");
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));

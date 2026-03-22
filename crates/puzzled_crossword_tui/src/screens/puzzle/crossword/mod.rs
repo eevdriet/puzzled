@@ -1,5 +1,4 @@
 mod clue;
-mod commands;
 mod render;
 
 pub(crate) use clue::*;
@@ -8,8 +7,8 @@ pub(crate) use render::*;
 use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, AsCore, Command, EventMode, GridWidget, HandleBaseMotion,
-    HandleOperator, Operator, RenderSize, Widget as AppWidget,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
+    HandleBaseMotion, HandleOperator, Operator, RenderSize, Widget as AppWidget,
 };
 
 use ratatui::{
@@ -28,8 +27,6 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
     type State = PuzzleScreenState;
 
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let mode = state.render.mode;
-
         let PuzzleScreenState {
             puzzle,
             solve,
@@ -77,14 +74,11 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         // Set up the squares grid
         render.viewport = grid_area;
 
+        let render_c = render.clone();
         let cell_state = RenderSquareState {
-            cursor: render.cursor,
-            direction: render.direction,
             clues: puzzle.clues(),
             squares: puzzle.squares(),
-            selection: render.selection,
-            opts: render.options,
-            mode,
+            render: &render_c,
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);
@@ -117,16 +111,19 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         resolver: AppResolver<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
+        tracing::info!("Crossword command: {command:?}");
+
         match command {
             Command::Operator(op) => {
+                tracing::info!("Operator {op:?} in mode {:?}", state.render.mode);
+
                 if state.render.mode.is_visual() {
-                    let size = state.puzzle.squares().size();
+                    let size = state.render.viewport.as_size();
                     let positions = state
                         .render
                         .selection
-                        .range(size)
-                        .positions()
-                        .map(|pos| pos.as_core());
+                        .positions(&size)
+                        .filter_map(|pos| state.render.to_grid(pos));
 
                     state
                         .solve
@@ -147,17 +144,6 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     return false;
                 }
             }
-            Command::Motion { count, motion, op } if state.render.mode.is_visual() => {
-                tracing::info!("Visual motion: {motion:?}");
-                assert!(op.is_none());
-
-                let squares = SquareGridRef(state.puzzle.squares());
-                let positions = squares.handle_base_motion(count, motion, &mut state.render);
-
-                if let Some(end) = positions.into_iter().last() {
-                    state.render.selection.update(end);
-                }
-            }
             Command::Motion { count, motion, op } => {
                 tracing::info!("Other motion: {motion:?}");
 
@@ -172,7 +158,9 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     }
                 }
 
-                state.update_clues_from_cursor();
+                if !state.render.mode.is_visual() {
+                    state.update_clues_from_cursor();
+                }
             }
             Command::Action { action, .. } => {
                 let pos = state.render.cursor;
@@ -207,7 +195,12 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                         state.solve.clear(&pos);
                     }
 
-                    _ => return false,
+                    _ => {
+                        return state
+                            .solve
+                            .solutions
+                            .handle_base_action(action, &mut state.render);
+                    }
                 }
             }
             _ => return false,
