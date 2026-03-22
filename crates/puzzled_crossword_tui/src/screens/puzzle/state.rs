@@ -1,9 +1,11 @@
 use puzzled_core::{Direction, SquareGridState};
 use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState, Solution};
-use puzzled_tui::{ActionHistory, FocusManager, GridRenderState, ensure_cells_visible};
+use puzzled_tui::{
+    ActionHistory, FocusManager, GridRenderState, KeysListRenderState, ensure_cells_visible,
+};
 use ratatui::{layout::Rect, widgets::ListState};
 
-use crate::Focus;
+use crate::{CrosswordApp, Focus};
 
 pub struct PuzzleScreenState {
     // Crossword state
@@ -20,6 +22,8 @@ pub struct PuzzleScreenState {
     // UI state
     pub focus: FocusManager<Focus>,
     pub is_paused: bool,
+
+    pub pause_state: KeysListRenderState<CrosswordApp>,
 
     // Other
     pub history: ActionHistory<SquareGridState<Solution>>,

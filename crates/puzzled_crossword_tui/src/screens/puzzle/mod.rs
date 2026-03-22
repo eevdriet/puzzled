@@ -20,7 +20,7 @@ use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
     FocusManager, GridRenderState, HandleCommand, HandleMode, KeyMap, Keys, KeysListPopup,
-    KeysTablePopup, KeysTablePopupState, Popup, Screen, TrieEntry, Widget,
+    KeysListRenderState, KeysTablePopup, KeysTablePopupState, Popup, Screen, TrieEntry, Widget,
 };
 
 use crate::CrosswordApp;
@@ -45,6 +45,7 @@ pub struct PuzzleScreen {
     // Popups
     popup: Option<usize>,
     keys: KeysTablePopup<CrosswordApp>,
+
     pause: KeysListPopup<CrosswordApp>,
 }
 
@@ -61,6 +62,16 @@ impl PuzzleScreen {
         focus.link_below(Focus::Footer, &[Focus::Clues]);
 
         let list = ListState::default().with_selected(Some(0));
+        let keys = Keys::new(key_map.clone()).all_actions(&());
+        let popup = KeysTablePopup { keys };
+
+        let pause_keys = Keys::new(key_map)
+            .action(Action::Quit, &())
+            .action(Action::Cancel, &());
+
+        let pause = KeysListPopup::new("Paused puzzle".to_string());
+        let pause_state = KeysListRenderState::new(pause_keys);
+
         let state = PuzzleScreenState {
             puzzle,
             solve: solve_state,
@@ -72,15 +83,8 @@ impl PuzzleScreen {
             history: ActionHistory::default(),
             focus,
             is_paused: false,
+            pause_state,
         };
-
-        let keys = Keys::new(key_map.clone()).all_actions(&());
-        let popup = KeysTablePopup { keys };
-
-        let pause_keys = Keys::new(key_map)
-            .action(Action::Quit, &())
-            .action(Action::Cancel, &());
-        let pause = KeysListPopup::new("Paused puzzle".to_string(), pause_keys);
 
         Self {
             state,
@@ -149,8 +153,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         if let Some(popup) = self.popup {
             match popup {
                 0 => {
-                    let mut state = self.pause.state.clone();
-                    self.pause.render_popup(area, buf, &mut state);
+                    self.pause
+                        .render_popup(area, buf, &mut self.state.pause_state);
                 }
                 _ => {
                     let mut state = KeysTablePopupState::default();
@@ -173,8 +177,11 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         if let Some(popup) = self.popup {
             match popup {
                 0 => {
-                    let mut state = self.pause.state.clone();
-                    return self.pause.on_popup_command(command, resolver, &mut state);
+                    return self.pause.on_popup_command(
+                        command,
+                        resolver,
+                        &mut self.state.pause_state,
+                    );
                 }
                 _ => {
                     let mut state = KeysTablePopupState::default();

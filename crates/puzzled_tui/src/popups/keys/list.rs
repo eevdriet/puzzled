@@ -13,22 +13,11 @@ use crate::{
 
 pub struct KeysListPopup<A: AppTypes> {
     pub block: Block<'static>,
-    pub state: KeysListRenderState<A>,
     pub list: ListWidget<A, KeysListRender<A>>,
 }
 
 impl<A: AppTypes> KeysListPopup<A> {
-    pub fn new(title: String, keys: Keys<A>) -> Self {
-        // State
-        let mut list_state = ListState::default();
-        list_state.select_first();
-
-        let state = KeysListRenderState {
-            state: list_state,
-            keys,
-        };
-
-        // List
+    pub fn new(title: String) -> Self {
         let render = KeysListRender::default();
         let list = ListWidget::new(render);
 
@@ -38,7 +27,7 @@ impl<A: AppTypes> KeysListPopup<A> {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        Self { block, state, list }
+        Self { block, list }
     }
 }
 
@@ -61,6 +50,10 @@ impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
         size.height += 5;
 
         size
+    }
+
+    fn override_mode(&self) -> Option<crate::EventMode> {
+        self.list.override_mode()
     }
 
     fn on_command(
@@ -90,6 +83,18 @@ impl<A: AppTypes> Default for KeysListRender<A> {
 pub struct KeysListRenderState<A: AppTypes> {
     state: ListState,
     keys: Keys<A>,
+}
+
+impl<A: AppTypes> KeysListRenderState<A> {
+    pub fn new(keys: Keys<A>) -> Self {
+        let mut list_state = ListState::default();
+        list_state.select_first();
+
+        KeysListRenderState {
+            state: list_state,
+            keys,
+        }
+    }
 }
 
 impl<A: AppTypes> ListRender<A> for KeysListRender<A> {

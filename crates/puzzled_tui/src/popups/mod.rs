@@ -30,19 +30,16 @@ pub trait Popup<A: AppTypes>: AppWidget<A> {
         resolver: AppResolver<A>,
         state: &mut Self::State,
     ) -> bool {
-        match &command {
-            Command::Action { action, .. } => {
-                match action {
-                    Action::Quit | Action::Cancel => {
-                        resolver.close_popup();
-                    }
-                    _ => return self.on_command(command, resolver, state),
-                }
-
-                true
-            }
-
-            _ => false,
+        if let Command::Action {
+            action: Action::Quit | Action::Cancel,
+            ..
+        } = command
+        {
+            resolver.close_popup();
+            true
+        } else {
+            tracing::info!("Pause command");
+            self.on_command(command, resolver, state)
         }
     }
 }

@@ -36,7 +36,7 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
     }
 
     fn override_mode(&self) -> Option<EventMode> {
-        Some(EventMode::Normal)
+        self.list.override_mode()
     }
 
     fn on_command(
