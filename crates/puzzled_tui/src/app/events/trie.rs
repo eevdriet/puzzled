@@ -10,7 +10,7 @@ use puzzled_io::{config_dir, puzzle_config_dir};
 use serde::Deserialize;
 
 use crate::{
-    Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, RawActionKeys,
+    Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, RawKeys,
     TextObject, TextObjectBehavior, app::events::parse_key, insert_action_keys,
 };
 
@@ -117,23 +117,23 @@ impl<A: AppTypes> EventTrie<A> {
         let mut trie = EventTrie::default();
 
         // --- Global config (optional) ---
-        let global_path = config_dir()?.join("actions.toml");
+        let global_path = config_dir()?.join("keys.toml");
 
         if let Ok(contents) = std::fs::read_to_string(&global_path) {
-            let action_keys: RawActionKeys<A::Action, A::TextObject, A::Motion> =
+            let keys: RawKeys<A::Action, A::TextObject, A::Motion> =
                 toml::from_str(&contents).map_err(io::Error::other)?;
 
-            insert_action_keys(action_keys, &mut trie).map_err(io::Error::other)?;
+            insert_action_keys(keys, &mut trie).map_err(io::Error::other)?;
         }
 
         // --- Puzzle config (optional, overrides global) ---
-        let puzzle_path = puzzle_config_dir::<P>()?.join("actions.toml");
+        let puzzle_path = puzzle_config_dir::<P>()?.join("keys.toml");
 
         if let Ok(contents) = std::fs::read_to_string(&puzzle_path) {
-            let action_keys: RawActionKeys<A::Action, A::TextObject, A::Motion> =
+            let keys: RawKeys<A::Action, A::TextObject, A::Motion> =
                 toml::from_str(&contents).map_err(io::Error::other)?;
 
-            insert_action_keys(action_keys, &mut trie).map_err(io::Error::other)?;
+            insert_action_keys(keys, &mut trie).map_err(io::Error::other)?;
         }
 
         Ok(trie)
