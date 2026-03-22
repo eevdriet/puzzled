@@ -1,27 +1,22 @@
-mod commands;
-mod render;
+mod list;
+mod table;
 
-use ratatui::widgets::TableState;
+pub use list::*;
+pub use table::*;
 
 use crate::{
     Action, ActionBehavior, AppTypes, Description, KeyMap, Motion, MotionBehavior, TextObject,
     TextObjectBehavior,
 };
 
-pub struct KeysPopup<A: AppTypes> {
-    actions: Vec<(String, String, Action<A::Action>)>,
-    text_objects: Vec<(String, String, TextObject<A::TextObject>)>,
-    motions: Vec<(String, String, Motion<A::Motion>)>,
+pub struct Keys<A: AppTypes> {
+    pub actions: Vec<(String, String, Action<A::Action>)>,
+    pub text_objects: Vec<(String, String, TextObject<A::TextObject>)>,
+    pub motions: Vec<(String, String, Motion<A::Motion>)>,
     map: KeyMap<A>,
 }
 
-#[derive(Debug, Default)]
-pub struct KeysPopupState {
-    pub tab: usize,
-    pub table: TableState,
-}
-
-impl<A: AppTypes> KeysPopup<A> {
+impl<A: AppTypes> Keys<A> {
     pub fn new(map: KeyMap<A>) -> Self {
         Self {
             map,
@@ -31,7 +26,7 @@ impl<A: AppTypes> KeysPopup<A> {
         }
     }
 
-    pub fn action<D>(mut self, name: D, desc: D, action: Action<A::Action>) -> Self
+    pub fn custom_action<D>(mut self, name: D, desc: D, action: Action<A::Action>) -> Self
     where
         D: Into<String>,
     {
@@ -48,6 +43,19 @@ impl<A: AppTypes> KeysPopup<A> {
                 .into_iter()
                 .map(|(name, desc, action)| (name.into(), desc.into(), action)),
         );
+        self
+    }
+
+    pub fn action<S>(mut self, action: Action<A::Action>, state: &S) -> Self
+    where
+        Action<A::Action>: Description<S>,
+    {
+        let name = format!("{action:?}");
+
+        if let Some(desc) = action.description(state) {
+            self.actions.push((name, desc, action));
+        }
+
         self
     }
 
@@ -134,5 +142,16 @@ impl<A: AppTypes> KeysPopup<A> {
             })
             .collect();
         self
+    }
+}
+
+impl<A: AppTypes> Clone for Keys<A> {
+    fn clone(&self) -> Self {
+        Self {
+            actions: self.actions.clone(),
+            text_objects: self.text_objects.clone(),
+            motions: self.motions.clone(),
+            map: self.map.clone(),
+        }
     }
 }

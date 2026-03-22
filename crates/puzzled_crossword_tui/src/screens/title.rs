@@ -72,37 +72,7 @@ impl Screen<CrosswordApp> for TitleScreen {
         resolver: AppResolver<CrosswordApp>,
         _ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
-        match command {
-            Command::Action { action, .. } => match action {
-                // Selection hotkeys
-                Action::Literal('n') => self.state.select(Some(0)),
-                Action::Literal('C') => self.state.select(Some(1)),
-                Action::Literal('a') => self.state.select(Some(2)),
-                Action::Quit | Action::Literal('q') => self.state.select(Some(3)),
-
-                // Select actions
-                Action::Select => {
-                    if let Some(selected) = self.state.selected() {
-                        match selected {
-                            0 => {
-                                let Ok(screen) = create_puzzle_screen() else {
-                                    return false;
-                                };
-
-                                resolver.next_screen(Box::new(screen));
-                            }
-                            1 => resolver.prev_screen(),
-                            3 => resolver.quit(),
-                            _ => {}
-                        }
-                    }
-                }
-                _ => return false,
-            },
-            command => return self.list.on_command(command, resolver, &mut self.state),
-        }
-
-        true
+        self.list.on_command(command, resolver, &mut self.state)
     }
 
     fn override_mode(&self) -> Option<EventMode> {
@@ -112,7 +82,7 @@ impl Screen<CrosswordApp> for TitleScreen {
 
 struct TitleRender;
 
-impl ListRender for TitleRender {
+impl ListRender<CrosswordApp> for TitleRender {
     type State = ListState;
 
     fn render_list(&self, _state: &Self::State) -> ratatui::widgets::List<'_> {
@@ -128,6 +98,48 @@ impl ListRender for TitleRender {
 
     fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
         state
+    }
+
+    fn on_command(
+        &mut self,
+        command: AppCommand<CrosswordApp>,
+        resolver: AppResolver<CrosswordApp>,
+        state: &mut Self::State,
+    ) -> bool {
+        match command {
+            Command::Action { action, .. } => {
+                let selected = state.selected().unwrap_or(usize::MAX);
+
+                match (action, selected) {
+                    (Action::Quit, _) => {
+                        resolver.quit();
+                    }
+
+                    // Selection hotkeys
+                    (Action::Literal('n'), _) | (Action::Select, 0) => {
+                        let Ok(screen) = create_puzzle_screen() else {
+                            return false;
+                        };
+
+                        resolver.next_screen(Box::new(screen));
+                    }
+                    (Action::Literal('c'), _) | (Action::Select, 1) => {
+                        resolver.quit();
+                    }
+                    (Action::Literal('a'), _) | (Action::Select, 2) => {
+                        resolver.prev_screen();
+                    }
+                    (Action::Literal('q'), _) | (Action::Select, 3) => {
+                        resolver.quit();
+                    }
+
+                    // Select actions
+                    _ => return false,
+                }
+                true
+            }
+            _ => false,
+        }
     }
 }
 

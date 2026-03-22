@@ -3,15 +3,25 @@ use ratatui::{
     layout::{Alignment, Constraint, Rect, Size},
     style::{Color, Style},
     text::Span,
-    widgets::{Block, BorderType, Row, StatefulWidget, Table},
+    widgets::{Block, BorderType, Row, StatefulWidget, Table, TableState},
 };
 
-use crate::{AppTypes, KeysPopup, KeysPopupState, Popup, TrieEntry, Widget as AppWidget};
+use crate::{AppTypes, Keys, Popup, TrieEntry, Widget as AppWidget};
+
+pub struct KeysTablePopup<A: AppTypes> {
+    pub keys: Keys<A>,
+}
+
+#[derive(Debug, Default)]
+pub struct KeysTablePopupState {
+    pub tab: usize,
+    pub table: TableState,
+}
 
 const TITLES: [&str; 3] = ["Action", "Key(s)", "Description"];
 
-impl<A: AppTypes> AppWidget<A> for KeysPopup<A> {
-    type State = KeysPopupState;
+impl<A: AppTypes> AppWidget<A> for KeysTablePopup<A> {
+    type State = KeysTablePopupState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let header = Row::new(TITLES).style(Style::new().bold()).bottom_margin(1);
@@ -49,13 +59,10 @@ impl<A: AppTypes> AppWidget<A> for KeysPopup<A> {
     }
 }
 
-impl<A: AppTypes> Popup<A> for KeysPopup<A> {}
+impl<A: AppTypes> Popup<A> for KeysTablePopup<A> {}
 
-impl<A: AppTypes> KeysPopup<A> {
-    pub(crate) fn rows_and_widths(
-        &self,
-        state: &KeysPopupState,
-    ) -> (Vec<Row<'_>>, usize, usize, usize) {
+impl<A: AppTypes> KeysTablePopup<A> {
+    fn rows_and_widths(&self, state: &KeysTablePopupState) -> (Vec<Row<'_>>, usize, usize, usize) {
         let mut max_name_width = TITLES[0].len();
         let mut max_keys_width = TITLES[1].len();
         let mut max_desc_width = TITLES[2].len();
@@ -64,11 +71,12 @@ impl<A: AppTypes> KeysPopup<A> {
 
         let rows = match state.tab {
             0 => self
+                .keys
                 .actions
                 .iter()
                 .map(|(name, desc, action)| {
                     let entry = TrieEntry::Action(action.clone());
-                    let entry_str = self.map.get_merged(&entry).unwrap_or_default();
+                    let entry_str = self.keys.map.get_merged(&entry).unwrap_or_default();
 
                     max_name_width = name.len().max(max_name_width);
                     max_desc_width = desc.len().max(max_desc_width);

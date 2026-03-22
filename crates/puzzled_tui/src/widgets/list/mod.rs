@@ -7,12 +7,21 @@ use ratatui::widgets::{List, ListItem, ListState, StatefulWidget};
 
 use crate::{AppCommand, AppResolver, AppTypes, Command, Motion, Widget as AppWidget};
 
-pub trait ListRender {
+pub trait ListRender<A: AppTypes> {
     type State;
 
     fn render_list(&self, state: &Self::State) -> List<'_>;
     fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>>;
     fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState;
+
+    fn on_command(
+        &mut self,
+        _command: AppCommand<A>,
+        _resolver: AppResolver<A>,
+        _state: &mut Self::State,
+    ) -> bool {
+        false
+    }
 }
 
 pub struct ListWidget<R, A> {
@@ -29,14 +38,9 @@ impl<R, A> ListWidget<R, A> {
     }
 }
 
-// pub struct ListContext<S> {
-//     pub state: S,
-//     pub list: ListState,
-// }
-
 impl<R, A> AppWidget<A> for ListWidget<R, A>
 where
-    R: ListRender,
+    R: ListRender<A>,
     A: AppTypes,
 {
     type State = R::State;
@@ -63,9 +67,13 @@ where
     fn on_command(
         &mut self,
         command: AppCommand<A>,
-        _resolver: AppResolver<A>,
+        resolver: AppResolver<A>,
         state: &mut Self::State,
     ) -> bool {
+        if self.render.on_command(command.clone(), resolver, state) {
+            return true;
+        }
+
         match command {
             Command::Motion { count, motion, .. } => {
                 let list = self.render.render_state(state);

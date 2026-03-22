@@ -260,7 +260,7 @@ impl<A: AppTypes> EventEngine<A> {
         if override_mode.is_none()
             && let Event::Key(key) = *event
         {
-            tracing::info!("Key event: {key:?}");
+            tracing::info!("Key event: {key:?} (while override {override_mode:?})");
 
             let next_mode = match (self.mode, key.code, key.modifiers) {
                 // -> Normal
@@ -318,8 +318,21 @@ impl<A: AppTypes> EventEngine<A> {
         let curr_mode = self.mode;
         let mut effects = Vec::new();
 
-        if let Some(command) = self.search_command(&self.buffer.to_vec(), &curr_mode) {
-            let next_mode = self.handle_mode_switch(&command);
+        if let Some(mut command) = self.search_command(&self.buffer.to_vec(), &curr_mode) {
+            let mut next_mode = None;
+
+            // Ignore found command and interpret it as literal for override mode
+            if override_mode.is_some()
+                && let Event::Key(key) = *event
+                && let Some(char) = key.code.as_char()
+            {
+                command = Command::new_action(Action::Literal(char));
+            }
+            // Otherwise stick with the command and determine whether to switch modes
+            else {
+                next_mode = self.handle_mode_switch(&command);
+            }
+
             effects.push(EventEffect::Command(command));
 
             if let Some(mode) = next_mode {

@@ -31,4 +31,10 @@ impl Operator {
 
         matches!(self, Change | Delete | Yank | Reveal | Check)
     }
+
+    pub fn is_mode_changing(&self) -> bool {
+        use Operator::*;
+
+        matches!(self, Change | Delete | ChangeSingle | DeleteSingle)
+    }
 }

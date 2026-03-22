@@ -60,7 +60,7 @@ struct CluesListRender {
     dir: Option<ClueDirection>,
 }
 
-impl ListRender for CluesListRender {
+impl ListRender<CrosswordApp> for CluesListRender {
     type State = PuzzleScreenState;
 
     fn render_list(&self, state: &Self::State) -> List<'_> {

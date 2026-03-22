@@ -63,6 +63,13 @@ impl<A, T, M> Command<A, T, M> {
             Self::Operator(_) => 1,
         }
     }
+
+    pub fn is_mode_changing(&self) -> bool {
+        match self {
+            Self::Operator(op) => op.is_mode_changing(),
+            _ => false,
+        }
+    }
 }
 
 pub trait ExecuteAction<T> {
