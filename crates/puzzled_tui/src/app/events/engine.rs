@@ -322,11 +322,11 @@ impl<A: AppTypes> EventEngine<A> {
             let mut next_mode = None;
 
             // Ignore found command and interpret it as literal for override mode
-            if override_mode.is_some()
+            if command.is_mode_changing()
+                && override_mode.is_some()
                 && let Event::Key(key) = *event
-                && let Some(char) = key.code.as_char()
             {
-                command = Command::new_action(Action::Literal(char));
+                command = Command::new_action(Action::Literal(key.code));
             }
             // Otherwise stick with the command and determine whether to switch modes
             else {
@@ -355,33 +355,19 @@ impl<A: AppTypes> EventEngine<A> {
                     // Return the first event as a literal action if it is a key
                     let first = self.buffer.remove(0);
 
-                    return first.key().and_then(|key| {
-                        if let KeyCode::Char(ch) = key.code {
-                            Some(Command::Action {
-                                count: 1,
-                                action: Action::Literal(ch),
-                            })
-                        } else {
-                            None
-                        }
-                    });
+                    return first
+                        .key()
+                        .map(|key| Command::new_action(Action::Literal(key.code)));
                 }
                 EventSearchResult::None => continue,
             }
         }
 
         // Still emit the first action if it is a key
-        let first = self.buffer.remove(0);
-        first.key().and_then(|key| {
-            if let KeyCode::Char(ch) = key.code {
-                Some(Command::Action {
-                    count: 1,
-                    action: Action::Literal(ch),
-                })
-            } else {
-                None
-            }
-        })
+        self.buffer
+            .remove(0)
+            .key()
+            .map(|key| Command::new_action(Action::Literal(key.code)))
     }
 
     fn reset(&mut self) {
@@ -412,9 +398,6 @@ impl<A: AppTypes> EventEngine<A> {
         };
 
         let effect = match key.code {
-            // Insert
-            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Literal(char))),
-
             // Delete
             KeyCode::Backspace => EventEffect::Command(Command::new_action(Action::DeleteLeft)),
             KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
@@ -432,7 +415,8 @@ impl<A: AppTypes> EventEngine<A> {
             // Modes
             KeyCode::Esc => EventEffect::Mode(EventMode::Normal),
 
-            _ => return EventResult::default(),
+            // Literal
+            code => EventEffect::Command(Command::new_action(Action::Literal(code))),
         };
 
         EventResult {
@@ -446,9 +430,6 @@ impl<A: AppTypes> EventEngine<A> {
         };
 
         let effect = match key.code {
-            // Insert
-            KeyCode::Char(char) => EventEffect::Command(Command::new_action(Action::Literal(char))),
-
             // Delete
             KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
 
@@ -468,7 +449,8 @@ impl<A: AppTypes> EventEngine<A> {
             KeyCode::Esc => EventEffect::Mode(EventMode::Normal),
             KeyCode::Insert => EventEffect::Mode(EventMode::Insert),
 
-            _ => return EventResult::default(),
+            // Literal
+            code => EventEffect::Command(Command::new_action(Action::Literal(code))),
         };
 
         EventResult {

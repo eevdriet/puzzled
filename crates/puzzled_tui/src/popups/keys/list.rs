@@ -14,7 +14,7 @@ use crate::{
 pub struct KeysListPopup<A: AppTypes> {
     pub block: Block<'static>,
     pub state: KeysListRenderState<A>,
-    pub list: ListWidget<KeysListRender<A>, A>,
+    pub list: ListWidget<A, KeysListRender<A>>,
 }
 
 impl<A: AppTypes> KeysListPopup<A> {

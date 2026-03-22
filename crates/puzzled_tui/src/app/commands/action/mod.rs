@@ -1,14 +1,17 @@
 mod behavior;
 mod handle;
 
+use std::cmp::Ordering;
+
 pub use behavior::*;
+use crossterm::event::KeyCode;
 pub use handle::*;
 
 use derive_more::{Display, Eq};
 use ratatui::layout::Position;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A> {
     // Lifetime management
@@ -37,7 +40,6 @@ pub enum Action<A> {
     TopViewport,
 
     // -- Insert/Replace -- //
-    Literal(char),
     DeleteLeft,
     DeleteRight,
 
@@ -47,7 +49,78 @@ pub enum Action<A> {
 
     ShowHelp,
 
+    // Literal
+    Literal(KeyCode),
+
     // Other (for puzzle specific actions)
     #[serde(untagged)]
     Other(A),
+}
+
+impl<A> Action<A> {
+    fn as_usize(&self) -> usize {
+        use Action::*;
+
+        match self {
+            Quit => 0,
+            Select => 1,
+            Cancel => 2,
+
+            // -- Normal -- //
+            // Mouse
+            StartSelection { .. } => 3,
+            EndSelection => 4,
+
+            // Focus
+            FocusDown => 5,
+            FocusLeft => 6,
+            FocusRight => 7,
+            FocusUp => 8,
+
+            // Viewport
+            BottomViewport => 9,
+            CenterViewport => 10,
+            TopViewport => 11,
+
+            // -- Insert/Replace -- //
+            DeleteLeft => 12,
+            DeleteRight => 13,
+
+            // -- Command -- //
+            Undo => 14,
+            Redo => 15,
+
+            ShowHelp => 16,
+
+            // Literal
+            Literal(..) => 17,
+
+            // Other (for puzzle specific actions)
+            Other { .. } => 18,
+        }
+    }
+}
+
+impl<A> Ord for Action<A>
+where
+    A: Ord,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Action::Literal(lhs), Action::Literal(rhs)) => {
+                lhs.partial_cmp(rhs).unwrap_or(Ordering::Less)
+            }
+            (Action::Other(lhs), Action::Other(rhs)) => lhs.cmp(rhs),
+            (lhs, rhs) => lhs.as_usize().cmp(&rhs.as_usize()),
+        }
+    }
+}
+
+impl<A> PartialOrd for Action<A>
+where
+    A: Ord,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }

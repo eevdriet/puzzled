@@ -1,5 +1,6 @@
 mod render;
 
+use crossterm::event::KeyCode;
 use puzzled_binario::Bit;
 use puzzled_core::{Direction, Solve};
 pub(crate) use render::*;
@@ -105,7 +106,8 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 };
 
                 match action {
-                    Action::Literal(letter @ '0') | Action::Literal(letter @ '1') => {
+                    Action::Literal(KeyCode::Char(letter @ '0'))
+                    | Action::Literal(KeyCode::Char(letter @ '1')) => {
                         let bit = Bit::try_from(letter as u8 - b'0').expect("Verified bit input");
                         state.solve.enter(&pos, bit);
 

@@ -24,12 +24,12 @@ pub trait ListRender<A: AppTypes> {
     }
 }
 
-pub struct ListWidget<R, A> {
+pub struct ListWidget<A, R> {
     pub render: R,
     pub _marker: PhantomData<A>,
 }
 
-impl<R, A> ListWidget<R, A> {
+impl<A, R> ListWidget<A, R> {
     pub fn new(render: R) -> Self {
         Self {
             render,
@@ -38,10 +38,10 @@ impl<R, A> ListWidget<R, A> {
     }
 }
 
-impl<R, A> AppWidget<A> for ListWidget<R, A>
+impl<A, R> AppWidget<A> for ListWidget<A, R>
 where
-    R: ListRender<A>,
     A: AppTypes,
+    R: ListRender<A>,
 {
     type State = R::State;
 

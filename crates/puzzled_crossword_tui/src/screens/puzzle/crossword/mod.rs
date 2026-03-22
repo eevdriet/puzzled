@@ -2,6 +2,7 @@ mod clue;
 mod render;
 
 pub(crate) use clue::*;
+use crossterm::event::KeyCode;
 pub(crate) use render::*;
 
 use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
@@ -168,7 +169,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                 };
 
                 match action {
-                    Action::Literal(letter) => {
+                    Action::Literal(KeyCode::Char(letter)) => {
                         let entry = Solution::Letter(letter.to_ascii_uppercase());
                         state.solve.enter(&pos, entry);
 

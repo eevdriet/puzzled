@@ -1,5 +1,6 @@
 use std::io;
 
+use crossterm::event::KeyCode;
 use puzzled_crossword::Crossword;
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{
@@ -15,7 +16,7 @@ use ratatui::{buffer::Buffer, layout::Rect};
 use crate::{CrosswordApp, PuzzleScreen};
 
 pub struct TitleScreen {
-    list: ListWidget<TitleRender, CrosswordApp>,
+    list: ListWidget<CrosswordApp, TitleRender>,
     state: ListState,
 }
 
@@ -106,30 +107,33 @@ impl ListRender<CrosswordApp> for TitleRender {
         resolver: AppResolver<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
+        use Action::*;
+        use KeyCode::Char;
+
         match command {
             Command::Action { action, .. } => {
                 let selected = state.selected().unwrap_or(usize::MAX);
 
                 match (action, selected) {
-                    (Action::Quit, _) => {
+                    (Quit, _) => {
                         resolver.quit();
                     }
 
                     // Selection hotkeys
-                    (Action::Literal('n'), _) | (Action::Select, 0) => {
+                    (Literal(Char('n')), _) | (Select, 0) => {
                         let Ok(screen) = create_puzzle_screen() else {
                             return false;
                         };
 
                         resolver.next_screen(Box::new(screen));
                     }
-                    (Action::Literal('c'), _) | (Action::Select, 1) => {
+                    (Literal(Char('c')), _) | (Select, 1) => {
                         resolver.quit();
                     }
-                    (Action::Literal('a'), _) | (Action::Select, 2) => {
+                    (Literal(Char('a')), _) | (Select, 2) => {
                         resolver.prev_screen();
                     }
-                    (Action::Literal('q'), _) | (Action::Select, 3) => {
+                    (Literal(Char('q')), _) | (Select, 3) => {
                         resolver.quit();
                     }
 
