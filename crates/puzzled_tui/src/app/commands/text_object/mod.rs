@@ -17,3 +17,9 @@ pub enum TextObject<T> {
     #[debug("{_0:?}")]
     Custom(T),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, PartialOrd, Ord)]
+pub enum TextModifier {
+    Inside,
+    Around,
+}

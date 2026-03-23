@@ -8,7 +8,7 @@ use ratatui::layout::Position;
 
 use crate::{
     Action, AppCommand, AppEvent, AppTrieEntry, AppTypes, Command, EventMode, EventSearchResult,
-    EventTrie, Motion, Operator, SelectionKind, TrieEntry,
+    EventTrie, Motion, Operator, SelectionKind, TextModifier, TrieEntry,
 };
 
 #[derive(Debug)]
@@ -18,6 +18,7 @@ pub struct EventEngine<A: AppTypes> {
     buffer: Vec<AppEvent>,
     actions: EventTrie<A>,
     pending_operator: Option<Operator>,
+    pending_modifier: Option<TextModifier>,
 
     repeat: RepeatState,
 
@@ -58,13 +59,24 @@ impl<A: AppTypes> Default for EventResult<A> {
 }
 
 impl<A: AppTypes> EventEngine<A> {
-    pub fn new(actions: EventTrie<A>, timeout: Duration) -> Self {
+    pub fn new(mut events: EventTrie<A>, timeout: Duration) -> Self {
+        // Add text modifier events
+        events.insert(
+            &[AppEvent::new_key(KeyCode::Char('i'), KeyModifiers::empty())],
+            TrieEntry::TextModifier(TextModifier::Inside),
+        );
+        events.insert(
+            &[AppEvent::new_key(KeyCode::Char('a'), KeyModifiers::empty())],
+            TrieEntry::TextModifier(TextModifier::Around),
+        );
+
         Self {
             mode: EventMode::default(),
             timeout,
-            actions,
+            actions: events,
             repeat: RepeatState::default(),
             pending_operator: None,
+            pending_modifier: None,
             buffer: Vec::new(),
             is_selecting: false,
             last_insert: Instant::now(),
@@ -205,51 +217,71 @@ impl<A: AppTypes> EventEngine<A> {
     }
 
     fn search_command(&mut self, events: &[AppEvent], mode: &EventMode) -> Option<AppCommand<A>> {
+        tracing::info!("Searching with {events:?}...");
+
         match self.actions.search(events) {
             // Perform action for known sequence
-            EventSearchResult::Exact(entry) => self.entry_command(entry),
+            EventSearchResult::Exact(TrieEntry::TextModifier(modifier)) => {
+                tracing::info!("Setting pending modifier: {modifier:?}");
+                self.pending_modifier = Some(modifier);
+            }
 
-            EventSearchResult::ExactPrefix(entry) => match entry {
-                TrieEntry::Operator(op) => {
-                    if mode.is_visual() || !op.requires_motion() {
-                        self.entry_command(entry)
-                    } else {
-                        tracing::info!("Setting pending operator: {op:?}");
-                        self.pending_operator = Some(op);
-                        None
-                    }
+            EventSearchResult::Exact(entry @ TrieEntry::Operator(op))
+            | EventSearchResult::ExactPrefix(entry @ TrieEntry::Operator(op)) => {
+                if mode.is_visual() || !op.requires_motion() {
+                    return self.entry_command(entry);
                 }
-                _ => None,
-            },
+
+                tracing::info!("Setting pending operator: {op:?}");
+                self.pending_operator = Some(op);
+            }
+
+            EventSearchResult::Exact(entry) => {
+                tracing::info!("\tExact");
+                return self.entry_command(entry);
+            }
 
             // Clear previous keys for unknown sequence but keep repeat
-            EventSearchResult::None => self.fallback_literal(),
+            EventSearchResult::None => return self.fallback_literal(),
 
             // Wait for additional input for prefix sequence
             EventSearchResult::Prefix => {
                 tracing::debug!("\tFound prefix, waiting...");
-                None
             }
+
+            _ => {}
         }
+
+        None
     }
 
     fn entry_command(&mut self, entry: AppTrieEntry<A>) -> Option<AppCommand<A>> {
-        tracing::info!("Entry {entry:?}");
         let count = self.repeat.count().unwrap_or(1);
-        self.reset();
 
-        match entry {
+        let command = match entry {
             TrieEntry::Action(action) => Some(Command::Action { count, action }),
             TrieEntry::TextObject(obj) => {
                 let op = self.pending_operator.take()?;
-                Some(Command::TextObj { count, obj, op })
+                let modifier = self.pending_modifier.take()?;
+
+                Some(Command::TextObj {
+                    count,
+                    obj,
+                    op,
+                    modifier,
+                })
             }
             TrieEntry::Motion(motion) => {
                 let op = self.pending_operator.take();
                 Some(Command::Motion { count, motion, op })
             }
             TrieEntry::Operator(op) => Some(Command::Operator(op)),
-        }
+
+            TrieEntry::TextModifier(_) => None,
+        };
+
+        self.reset();
+        command
     }
 
     fn key_event(&mut self, event: AppEvent, override_mode: Option<EventMode>) -> EventResult<A> {

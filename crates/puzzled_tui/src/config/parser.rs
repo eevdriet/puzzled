@@ -15,7 +15,7 @@ pub(crate) enum RawKeySeq {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 pub(crate) struct RawKeys<A, T, M>
 where
     Action<A>: ActionBehavior,

@@ -27,6 +27,7 @@ pub enum Command<A, T, M> {
         action: Action<A>,
     },
     TextObj {
+        modifier: TextModifier,
         count: usize,
         obj: TextObject<T>,
         op: Operator,

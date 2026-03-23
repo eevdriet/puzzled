@@ -11,7 +11,7 @@ use serde::Deserialize;
 
 use crate::{
     Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, RawKeys,
-    TextObject, TextObjectBehavior, app::events::parse_key, insert_action_keys,
+    TextModifier, TextObject, TextObjectBehavior, app::events::parse_key, insert_action_keys,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
@@ -21,6 +21,7 @@ pub enum TrieEntry<A, T, M> {
     TextObject(TextObject<T>),
     Motion(Motion<M>),
     Operator(Operator),
+    TextModifier(TextModifier),
 }
 pub type AppTrieEntry<A> =
     TrieEntry<<A as AppTypes>::Action, <A as AppTypes>::TextObject, <A as AppTypes>::Motion>;
@@ -37,6 +38,7 @@ where
             TrieEntry::TextObject(_) => 1,
             TrieEntry::Motion(_) => 2,
             TrieEntry::Operator(_) => 3,
+            TrieEntry::TextModifier(_) => 4,
         };
 
         match (self, other) {
@@ -44,6 +46,7 @@ where
             (TrieEntry::TextObject(lhs), TrieEntry::TextObject(rhs)) => lhs.cmp(rhs),
             (TrieEntry::Motion(lhs), TrieEntry::Motion(rhs)) => lhs.cmp(rhs),
             (TrieEntry::Operator(lhs), TrieEntry::Operator(rhs)) => lhs.cmp(rhs),
+            (TrieEntry::TextModifier(lhs), TrieEntry::TextModifier(rhs)) => lhs.cmp(rhs),
             (lhs, rhs) => order(lhs).cmp(&order(rhs)),
         }
     }
