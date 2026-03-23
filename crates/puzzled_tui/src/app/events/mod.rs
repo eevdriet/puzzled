@@ -166,12 +166,12 @@ impl fmt::Display for AppEvent {
         // Display modifiers
         let mut has_mod = false;
 
+        if mods.contains(KeyModifiers::SHIFT) {
+            event = event.to_ascii_uppercase();
+        }
+
         if mods.contains(KeyModifiers::ALT) {
             event = format!("A-{event}");
-            has_mod = true;
-        }
-        if mods.contains(KeyModifiers::SHIFT) {
-            event = format!("S-{event}");
             has_mod = true;
         }
         if mods.contains(KeyModifiers::CONTROL) {

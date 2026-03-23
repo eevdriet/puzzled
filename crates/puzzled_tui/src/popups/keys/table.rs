@@ -4,7 +4,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Rect, Size},
     style::{Color, Style},
-    text::Span,
+    text::Line,
     widgets::{Block, BorderType, Padding, Row, StatefulWidget, Table, TableState},
 };
 
@@ -133,61 +133,75 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
         let mut max_keys_width = keys.len();
         let mut max_desc_width = desc.len();
 
-        let base = Style::default();
         let mut rows: HashMap<KeysTab, Vec<Row<'_>>> = HashMap::default();
 
-        for (name, desc, action) in self.keys.actions.iter() {
-            let entry = TrieEntry::Action(action.to_owned());
-            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
-
-            max_name_width = name.len().max(max_name_width);
-            max_desc_width = desc.len().max(max_desc_width);
-            max_keys_width = entry_str.len().max(max_keys_width);
-
-            rows.entry(KeysTab::Actions)
-                .or_default()
-                .push(Row::new(vec![
-                    Span::styled(name, base.fg(Color::White)),
-                    Span::styled(entry_str, base.fg(Color::Yellow)),
-                    Span::styled(desc, base.fg(Color::White)),
-                ]))
-        }
-
-        for (name, desc, motion) in self.keys.motions.iter() {
-            let entry = TrieEntry::Motion(motion.to_owned());
-            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
-
-            max_name_width = name.len().max(max_name_width);
-            max_desc_width = desc.len().max(max_desc_width);
-            max_keys_width = entry_str.len().max(max_keys_width);
-
-            rows.entry(KeysTab::Motions)
-                .or_default()
-                .push(Row::new(vec![
-                    Span::styled(name, base.fg(Color::White)),
-                    Span::styled(entry_str, base.fg(Color::Blue)),
-                    Span::styled(desc, base.fg(Color::White)),
-                ]))
-        }
-
-        for (name, desc, motion) in self.keys.text_objects.iter() {
-            let entry = TrieEntry::TextObject(motion.to_owned());
-            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
-
-            max_name_width = name.len().max(max_name_width);
-            max_desc_width = desc.len().max(max_desc_width);
-            max_keys_width = entry_str.len().max(max_keys_width);
-
-            rows.entry(KeysTab::TextObjects)
-                .or_default()
-                .push(Row::new(vec![
-                    Span::styled(name, base.fg(Color::White)),
-                    Span::styled(entry_str, base.fg(Color::Green)),
-                    Span::styled(desc, base.fg(Color::White)),
-                ]))
-        }
+        self.add_entries(
+            self.keys.actions.iter(),
+            KeysTab::Actions,
+            &mut rows,
+            &mut max_name_width,
+            &mut max_keys_width,
+            &mut max_desc_width,
+        );
+        self.add_entries(
+            self.keys.motions.iter(),
+            KeysTab::Motions,
+            &mut rows,
+            &mut max_name_width,
+            &mut max_keys_width,
+            &mut max_desc_width,
+        );
+        self.add_entries(
+            self.keys.text_objects.iter(),
+            KeysTab::TextObjects,
+            &mut rows,
+            &mut max_name_width,
+            &mut max_keys_width,
+            &mut max_desc_width,
+        );
 
         (rows, max_name_width, max_keys_width, max_desc_width)
+    }
+
+    fn add_entries<I, T>(
+        &self,
+        iter: I,
+        tab: KeysTab,
+        rows: &mut HashMap<KeysTab, Vec<Row<'a>>>,
+        max_name_width: &mut usize,
+        max_keys_width: &mut usize,
+        max_desc_width: &mut usize,
+    ) where
+        I: Iterator<Item = &'a (String, String, T)>,
+        T: Clone + Into<TrieEntry<A::Action, A::TextObject, A::Motion>> + 'a,
+    {
+        let base = Style::default();
+        let entry_style = match tab {
+            KeysTab::Actions => base.fg(Color::Yellow),
+            KeysTab::Motions => base.fg(Color::Blue),
+            KeysTab::TextObjects => base.fg(Color::Green),
+        };
+        let sep_style = base.fg(Color::White).dim();
+
+        for (name, desc, t) in iter {
+            *max_name_width = name.len().max(*max_name_width);
+            *max_desc_width = desc.len().max(*max_desc_width);
+
+            let entry = t.clone().into();
+            let mut row = vec![Line::styled(name, base.fg(Color::White))];
+
+            let keys = self
+                .map
+                .get_merged(&entry, entry_style, sep_style)
+                .unwrap_or(Line::raw(""));
+            let keys_len: usize = keys.iter().map(|span| span.width()).sum();
+            *max_keys_width = keys_len.max(*max_keys_width);
+
+            row.push(keys);
+            row.push(Line::styled(desc, base.fg(Color::White)));
+
+            rows.entry(tab).or_default().push(Row::new(row));
+        }
     }
 }
 

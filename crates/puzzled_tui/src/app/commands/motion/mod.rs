@@ -19,6 +19,7 @@ pub enum Motion<M> {
     Mouse(#[debug(skip)] MouseEvent),
 
     // Left-right
+    #[debug("Col(n)")]
     Col(#[serde(skip, default)] usize),
     Left,
     Right,
@@ -29,11 +30,16 @@ pub enum Motion<M> {
     ColEnd,
     ColStart,
     Down,
+
+    #[debug("Row(n)")]
     Row(#[serde(skip, default)] usize),
     Up,
 
     // Word
-    Word,
+    WordEndBackwards,
+    WordEndForwards,
+    WordStartBackwards,
+    WordStartForwards,
 
     // Custom (for puzzle specific motions)
     #[serde(untagged)]

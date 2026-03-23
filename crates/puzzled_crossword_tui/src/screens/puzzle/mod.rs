@@ -144,7 +144,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         self.clues.render(clues, buf, &mut self.state);
 
         let entry = TrieEntry::Action(Action::Cancel);
-        let pause_key = ctx.keys.get_merged(&entry).unwrap_or_default();
+        let pause_key = ctx.keys.get_merged_str(&entry).unwrap_or_default();
 
         let mut footer_state = FooterState {
             mode: self.state.render.mode,

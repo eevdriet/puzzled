@@ -7,6 +7,10 @@ use std::{
 
 use puzzled_core::Puzzle;
 use puzzled_io::{config_dir, puzzle_config_dir};
+use ratatui::{
+    style::Style,
+    text::{Line, Span},
+};
 use serde::Deserialize;
 
 use crate::{
@@ -23,6 +27,33 @@ pub enum TrieEntry<A, T, M> {
     Operator(Operator),
     TextModifier(TextModifier),
 }
+
+impl<A, T, M> From<Action<A>> for TrieEntry<A, T, M> {
+    fn from(action: Action<A>) -> Self {
+        TrieEntry::Action(action)
+    }
+}
+impl<A, T, M> From<TextObject<T>> for TrieEntry<A, T, M> {
+    fn from(text_object: TextObject<T>) -> Self {
+        TrieEntry::TextObject(text_object)
+    }
+}
+impl<A, T, M> From<Motion<M>> for TrieEntry<A, T, M> {
+    fn from(motion: Motion<M>) -> Self {
+        TrieEntry::Motion(motion)
+    }
+}
+impl<A, T, M> From<Operator> for TrieEntry<A, T, M> {
+    fn from(op: Operator) -> Self {
+        TrieEntry::Operator(op)
+    }
+}
+impl<A, T, M> From<TextModifier> for TrieEntry<A, T, M> {
+    fn from(modifier: TextModifier) -> Self {
+        TrieEntry::TextModifier(modifier)
+    }
+}
+
 pub type AppTrieEntry<A> =
     TrieEntry<<A as AppTypes>::Action, <A as AppTypes>::TextObject, <A as AppTypes>::Motion>;
 
@@ -224,7 +255,27 @@ impl<A: AppTypes> KeyMap<A> {
         Self { keys }
     }
 
-    pub fn get_merged(&self, entry: &AppTrieEntry<A>) -> Option<String> {
+    pub fn get_merged(
+        &self,
+        entry: &AppTrieEntry<A>,
+        key_style: Style,
+        sep_style: Style,
+    ) -> Option<Line<'_>> {
+        let keys = self.keys.get(entry)?;
+
+        let mut spans: Vec<Span> = Vec::new();
+
+        for (idx, key) in keys.iter().enumerate() {
+            if idx > 0 {
+                spans.push(Span::styled(" / ", sep_style));
+            }
+            spans.push(Span::styled(key, key_style));
+        }
+
+        Some(Line::default().spans(spans))
+    }
+
+    pub fn get_merged_str(&self, entry: &AppTrieEntry<A>) -> Option<String> {
         let keys = self.keys.get(entry)?;
         let mut iter = keys.iter();
 

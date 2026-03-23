@@ -35,18 +35,22 @@ where
 {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let base = Style::default().fg(Color::Gray);
+        let entry_style = base.fg(Color::Yellow);
+        let sep_style = base.fg(Color::White);
+
         let mut spans = Vec::new();
 
         for (desc, key) in self.keys.iter() {
-            let Some(keys) = self.map.get_merged(key) else {
+            let Some(keys) = self.map.get_merged(key, entry_style, sep_style) else {
                 continue;
             };
+
             if !spans.is_empty() {
                 spans.push(Span::styled(" | ", base));
             }
 
             spans.push(Span::styled(format!("{desc}: "), base));
-            spans.push(Span::styled(keys, base.fg(Color::Yellow)));
+            spans.extend(keys);
         }
 
         Line::from(spans).render(area, buf);
