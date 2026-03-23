@@ -11,6 +11,8 @@ use derive_more::{Display, Eq};
 use ratatui::layout::Position;
 use serde::Deserialize;
 
+use crate::SelectionKind;
+
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A> {
@@ -21,9 +23,10 @@ pub enum Action<A> {
 
     // -- Normal -- //
     // Mouse
-    #[display("{pos}")]
+    #[display("{pos:?}")]
     StartSelection {
-        pos: Position,
+        pos: Option<Position>,
+        kind: SelectionKind,
         additive: bool,
     },
     EndSelection,

@@ -47,6 +47,7 @@ pub struct PuzzleScreen {
     // Widgets
     crossword: CrosswordWidget,
     clues: CluesWidget,
+    footer: FooterWidget,
 
     // Popups
     keys: KeysTablePopup<CrosswordApp>,
@@ -95,6 +96,7 @@ impl PuzzleScreen {
             state,
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
+            footer: FooterWidget,
             keys: popup,
             pause,
         }
@@ -133,11 +135,11 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         ])
         .areas(right);
 
-        tracing::debug!("Root: {root:?}");
-        tracing::debug!("Crossword: {crossword:?}");
-        tracing::debug!("Right: {right:?}");
-        tracing::debug!("Clues: {clues:?}");
-        tracing::debug!("Footer: {footer:?}");
+        tracing::trace!("Root: {root:?}");
+        tracing::trace!("Crossword: {crossword:?}");
+        tracing::trace!("Right: {right:?}");
+        tracing::trace!("Clues: {clues:?}");
+        tracing::trace!("Footer: {footer:?}");
 
         // Render
         self.crossword.render(crossword, buf, &mut self.state);
@@ -151,8 +153,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
             timer: self.state.solve.timer,
             pause_key,
         };
-
-        FooterWidget.render(footer, buf, &mut footer_state);
+        self.footer.render(footer, buf, &mut footer_state);
 
         if let Some(popup) = self.state.popup {
             match popup {
@@ -257,7 +258,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         match self.state.focus.get() {
             Focus::Clues => self.clues.override_mode(),
             Focus::Crossword => self.crossword.override_mode(),
-            _ => None,
+            Focus::Footer => self.footer.override_mode(),
         }
     }
 

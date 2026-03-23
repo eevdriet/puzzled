@@ -181,14 +181,14 @@ impl<A: AppTypes> EventTrie<A> {
         let mut node = &self.root;
 
         for event in events {
-            tracing::debug!("\tSearch node for {event:?}");
+            tracing::trace!("\tSearch node for {event:?}");
 
             match node.children.get(event) {
                 Some(next) => {
                     node = next;
                 }
                 None => {
-                    tracing::debug!("\tEvent {event:?} not found, search failed");
+                    tracing::trace!("\tEvent {event:?} not found, search failed");
                     return EventSearchResult::None;
                 }
             };

@@ -65,7 +65,7 @@ impl EventEngine {
                 repeat: count,
             };
 
-            tracing::debug!("\tFound pending action {action:?}, sending with {event:?} as operand");
+            tracing::trace!("\tFound pending action {action:?}, sending with {event:?} as operand");
             self.reset(); // clear buffer + repeat
             return Some(input);
         }
@@ -77,18 +77,18 @@ impl EventEngine {
             && self.buffer.is_empty()
             && (ch != '0' || !self.repeat.is_empty())
         {
-            tracing::debug!("\tLeading digit {ch} found, ignoring event");
+            tracing::trace!("\tLeading digit {ch} found, ignoring event");
             let digit = ch as u8;
             self.repeat.push_digit(digit);
 
             return None;
         }
 
-        tracing::debug!("\tPush {event:?}");
+        tracing::trace!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
         let result = self.actions.search(&self.buffer);
-        tracing::debug!("\tSearch with events {:?} -> {result:?}", &self.buffer);
+        tracing::trace!("\tSearch with events {:?} -> {result:?}", &self.buffer);
 
         match result {
             // Perform action for known sequence
@@ -96,7 +96,7 @@ impl EventEngine {
                 let count = self.repeat.count();
                 self.reset();
 
-                tracing::debug!("\tFound action {action:?} with repeat {count:?}");
+                tracing::trace!("\tFound action {action:?} with repeat {count:?}");
 
                 Some(ActionInput {
                     event,
@@ -107,7 +107,7 @@ impl EventEngine {
 
             // Clear previous keys for unknown sequence but keep repeat
             EventSearchResult::None => {
-                tracing::debug!("\tFound no action, clearing buffer");
+                tracing::trace!("\tFound no action, clearing buffer");
 
                 self.buffer.clear();
                 None
@@ -115,13 +115,13 @@ impl EventEngine {
 
             // Wait for additional input for prefix sequence
             EventSearchResult::Prefix => {
-                tracing::debug!("\tFound prefix, waiting...");
+                tracing::trace!("\tFound prefix, waiting...");
                 None
             }
 
             // Wait for additional input for prefix sequence
             EventSearchResult::RequireOperand(action) => {
-                tracing::debug!("\tFound action {action:?} that requires operand, waiting...");
+                tracing::trace!("\tFound action {action:?} that requires operand, waiting...");
                 self.pending_operand = Some(action);
                 None
             }

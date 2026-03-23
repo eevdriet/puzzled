@@ -154,10 +154,27 @@ impl<A: AppTypes> EventEngine<A> {
         let mut effects = Vec::new();
         let has_ctrl = mouse.modifiers.contains(KeyModifiers::CONTROL);
 
-        match (mouse.kind, has_ctrl, self.is_selecting) {
-            // Start visual selection on mouse drag
-            (Drag(Left), _, false) | (Down(Left), true, false) => {
+        match (
+            mouse.kind,
+            has_ctrl,
+            self.is_selecting,
+            self.mode.is_visual(),
+        ) {
+            // Finish active visual selection before starting a new one
+            (Drag(Left), _, false, is_visual) | (Down(Left), true, false, is_visual) => {
+                if is_visual {
+                    tracing::debug!("[MOUSE] Finish old selection (e.g. manual visual)");
+                    self.is_selecting = false;
+
+                    let action = Action::EndSelection;
+                    effects.push(EventEffect::Command(Command::new_action(action)));
+                }
+
+                // Set visual kind
+                effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
+
                 tracing::debug!("[MOUSE] Start selection (left start drag)");
+                // Start selection
                 self.is_selecting = true;
 
                 let pos = Position {
@@ -165,31 +182,35 @@ impl<A: AppTypes> EventEngine<A> {
                     y: mouse.row,
                 };
                 let action = Action::StartSelection {
-                    pos,
+                    pos: Some(pos),
+                    kind: SelectionKind::Cells,
                     additive: has_ctrl,
                 };
-
-                effects.push(EventEffect::Mode(EventMode::Visual(SelectionKind::Cells)));
                 effects.push(EventEffect::Command(Command::new_action(action)));
+
+                // Move to the selected position
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));
             }
 
+            // Start visual selection on mouse drag
+            // (Drag(Left), _, false, _) | (Down(Left), true, false, _) => {}
+
             // Update visual selection on additional mouse drag
-            (Drag(Left), _, true) => {
+            (Drag(Left), _, true, _) => {
                 tracing::debug!("[MOUSE] Update selection (left continue drag)");
                 effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
                     mouse,
                 ))));
             }
 
-            (Up(Left), _, was_selecting) => {
+            (Up(Left), _, is_selecting, _) => {
                 tracing::debug!("[MOUSE] Finish selection (up end drag)");
                 self.is_selecting = false;
 
                 // Stop dragging when mouse released
-                if was_selecting {
+                if is_selecting {
                     let action = Action::EndSelection;
                     effects.push(EventEffect::Command(Command::new_action(action)));
                 }
@@ -204,55 +225,71 @@ impl<A: AppTypes> EventEngine<A> {
             }
 
             // Pass through other mouse events normally
-            (kind, _, _) if !matches!(kind, MouseEventKind::Moved) => {
-                tracing::debug!("[MOUSE] Other: {mouse:?}");
-                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                    mouse,
-                ))));
+            (kind, _, _, _) => {
+                if !matches!(kind, MouseEventKind::Moved) {
+                    tracing::debug!("[MOUSE] Other: {mouse:?}");
+                    effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
+                        mouse,
+                    ))));
+                }
             }
-            _ => {}
         }
 
         EventResult { effects }
     }
 
-    fn search_command(&mut self, events: &[AppEvent], mode: &EventMode) -> Option<AppCommand<A>> {
-        tracing::info!("Searching with {events:?}...");
+    fn search_commands(
+        &mut self,
+        events: &[AppEvent],
+        mode: &EventMode,
+    ) -> Vec<Option<AppCommand<A>>> {
+        tracing::trace!("Searching with {events:?}...");
+
+        let mut commands = Vec::new();
 
         match self.actions.search(events) {
             // Perform action for known sequence
             EventSearchResult::Exact(TrieEntry::TextModifier(modifier)) => {
-                tracing::info!("Setting pending modifier: {modifier:?}");
+                tracing::trace!("\tSetting pending modifier: {modifier:?}");
                 self.pending_modifier = Some(modifier);
             }
 
             EventSearchResult::Exact(entry @ TrieEntry::Operator(op))
             | EventSearchResult::ExactPrefix(entry @ TrieEntry::Operator(op)) => {
                 if mode.is_visual() || !op.requires_motion() {
-                    return self.entry_command(entry);
-                }
+                    if mode.is_visual() {
+                        tracing::trace!("\tEnding existing selection");
+                        let action = Action::EndSelection;
+                        commands.push(Some(Command::new_action(action)));
+                    }
 
-                tracing::info!("Setting pending operator: {op:?}");
-                self.pending_operator = Some(op);
+                    tracing::trace!("\tApplying {op:?} to {entry:?}");
+                    commands.push(self.entry_command(entry));
+                } else {
+                    tracing::trace!("\tSetting pending operator: {op:?}");
+                    self.pending_operator = Some(op);
+                }
             }
 
             EventSearchResult::Exact(entry) => {
-                tracing::info!("\tExact");
-                return self.entry_command(entry);
+                tracing::trace!("\tExact");
+                commands.push(self.entry_command(entry));
             }
 
             // Clear previous keys for unknown sequence but keep repeat
-            EventSearchResult::None => return self.fallback_literal(),
+            EventSearchResult::None => {
+                commands.push(self.fallback_literal());
+            }
 
             // Wait for additional input for prefix sequence
             EventSearchResult::Prefix => {
-                tracing::debug!("\tFound prefix, waiting...");
+                tracing::trace!("\tFound prefix, waiting...");
             }
 
             _ => {}
         }
 
-        None
+        commands
     }
 
     fn entry_command(&mut self, entry: AppTrieEntry<A>) -> Option<AppCommand<A>> {
@@ -285,19 +322,32 @@ impl<A: AppTypes> EventEngine<A> {
     }
 
     fn key_event(&mut self, event: AppEvent, override_mode: Option<EventMode>) -> EventResult<A> {
-        tracing::debug!("[EVENT] {event} (with buffer {:?})", self.buffer);
+        tracing::trace!("[EVENT] {event} (with buffer {:?})", self.buffer);
         self.last_insert = Instant::now();
+
+        let mut effects = Vec::new();
 
         // Check for mode switching keys
         if override_mode.is_none()
             && let Event::Key(key) = *event
         {
-            tracing::info!("Key event: {key:?} (while override {override_mode:?})");
+            tracing::trace!("Key event: {key:?} (while override {override_mode:?})");
 
-            let next_mode = match (self.mode, key.code, key.modifiers) {
+            let mut add_visual_effects = |kind: SelectionKind| {
+                effects.push(EventEffect::Mode(EventMode::Visual(kind)));
+
+                let action = Action::StartSelection {
+                    pos: None,
+                    additive: false,
+                    kind,
+                };
+                effects.push(EventEffect::Command(Command::new_action(action)));
+            };
+
+            match (self.mode, key.code, key.modifiers) {
                 // -> Normal
                 (mode, KeyCode::Esc, _) if !matches!(mode, EventMode::Normal) => {
-                    Some(EventMode::Normal)
+                    effects.push(EventEffect::Mode(EventMode::Normal));
                 }
 
                 // -> Insert
@@ -308,28 +358,27 @@ impl<A: AppTypes> EventEngine<A> {
                     | KeyCode::Char('I')
                     | KeyCode::Char('A'),
                     _,
-                ) => Some(EventMode::Insert),
+                ) => {
+                    effects.push(EventEffect::Mode(EventMode::Insert));
+                }
 
                 // -> Visual
                 (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::NONE) => {
-                    Some(EventMode::Visual(SelectionKind::Cells))
+                    add_visual_effects(SelectionKind::Cells);
                 }
                 (EventMode::Normal, KeyCode::Char('V'), KeyModifiers::SHIFT) => {
-                    Some(EventMode::Visual(SelectionKind::Rows))
+                    add_visual_effects(SelectionKind::Rows);
                 }
                 (EventMode::Normal, KeyCode::Char('v'), KeyModifiers::CONTROL) => {
-                    Some(EventMode::Visual(SelectionKind::Cols))
+                    add_visual_effects(SelectionKind::Cols);
                 }
-                _ => None,
+                _ => {}
             };
 
-            if let Some(mode) = next_mode {
-                return EventResult {
-                    effects: vec![EventEffect::Mode(mode)],
-                };
+            if !effects.is_empty() {
+                return EventResult { effects };
             }
         }
-
         // Intercept leading digits (note: 0 is not a command if following another digit)
         if let Event::Key(key) = *event
             && let KeyCode::Char(ch) = key.code
@@ -337,20 +386,21 @@ impl<A: AppTypes> EventEngine<A> {
             && self.buffer.is_empty()
             && (ch != '0' || !self.repeat.is_empty())
         {
-            tracing::debug!("\tLeading digit {ch} found, ignoring event");
+            tracing::trace!("\tLeading digit {ch} found, ignoring event");
             let digit = ch as u8;
             self.repeat.push_digit(digit);
 
-            return EventResult::default();
+            return EventResult { effects };
         }
 
-        tracing::debug!("\tPush {event:?}");
+        tracing::trace!("\tPush {event:?}");
         self.buffer.push(event.clone());
 
-        let curr_mode = self.mode;
-        let mut effects = Vec::new();
-
-        if let Some(mut command) = self.search_command(&self.buffer.to_vec(), &curr_mode) {
+        for mut command in self
+            .search_commands(&self.buffer.to_vec(), &self.mode.clone())
+            .into_iter()
+            .flatten()
+        {
             let mut next_mode = None;
 
             // Ignore found command and interpret it as literal for override mode
@@ -491,7 +541,7 @@ impl<A: AppTypes> EventEngine<A> {
     }
 
     fn handle_mode_switch(&mut self, command: &AppCommand<A>) -> Option<EventMode> {
-        tracing::info!("\tHandling mode switch for result {command:?}");
+        tracing::trace!("\tHandling mode switch for result {command:?}");
 
         let mode = match command {
             // Switch to the next mode explicitly
@@ -499,7 +549,7 @@ impl<A: AppTypes> EventEngine<A> {
             Command::Operator(op)
             | Command::Motion { op: Some(op), .. }
             | Command::TextObj { op, .. } => {
-                tracing::info!("\tNext mode from operator {op:?}");
+                tracing::trace!("\tNext mode from operator {op:?}");
                 let next_mode = match op {
                     Operator::Change | Operator::ChangeSingle => EventMode::Insert,
                     _ => EventMode::Normal,
@@ -511,7 +561,7 @@ impl<A: AppTypes> EventEngine<A> {
             _ => None,
         };
 
-        tracing::info!("\tNext mode: {mode:?}");
+        tracing::trace!("\tNext mode: {mode:?}");
         mode
     }
 }
