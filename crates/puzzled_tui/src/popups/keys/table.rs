@@ -8,10 +8,17 @@ use ratatui::{
     widgets::{Block, BorderType, Padding, Row, StatefulWidget, Table, TableState},
 };
 
-use crate::{AppTypes, Command, Keys, Motion, Popup, TrieEntry, Widget as AppWidget};
+use crate::{AppTypes, Command, KeyMap, Keys, Motion, Popup, TrieEntry, Widget as AppWidget};
 
-pub struct KeysTablePopup<A: AppTypes> {
-    pub keys: Keys<A>,
+pub struct KeysTablePopup<'a, A: AppTypes> {
+    pub keys: &'a Keys<A>,
+    pub map: &'a KeyMap<A>,
+}
+
+impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
+    pub fn new(keys: &'a Keys<A>, map: &'a KeyMap<A>) -> Self {
+        Self { keys, map }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -39,7 +46,7 @@ impl From<usize> for KeysTab {
     }
 }
 
-impl<A: AppTypes> AppWidget<A> for KeysTablePopup<A> {
+impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
     type State = KeysTablePopupState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -113,9 +120,9 @@ impl<A: AppTypes> AppWidget<A> for KeysTablePopup<A> {
     }
 }
 
-impl<A: AppTypes> Popup<A> for KeysTablePopup<A> {}
+impl<'a, A: AppTypes> Popup<A> for KeysTablePopup<'a, A> {}
 
-impl<A: AppTypes> KeysTablePopup<A> {
+impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
     fn rows_and_widths(
         &self,
         state: &KeysTablePopupState,
@@ -131,7 +138,7 @@ impl<A: AppTypes> KeysTablePopup<A> {
 
         for (name, desc, action) in self.keys.actions.iter() {
             let entry = TrieEntry::Action(action.to_owned());
-            let entry_str = self.keys.map.get_merged(&entry).unwrap_or_default();
+            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
 
             max_name_width = name.len().max(max_name_width);
             max_desc_width = desc.len().max(max_desc_width);
@@ -148,7 +155,7 @@ impl<A: AppTypes> KeysTablePopup<A> {
 
         for (name, desc, motion) in self.keys.motions.iter() {
             let entry = TrieEntry::Motion(motion.to_owned());
-            let entry_str = self.keys.map.get_merged(&entry).unwrap_or_default();
+            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
 
             max_name_width = name.len().max(max_name_width);
             max_desc_width = desc.len().max(max_desc_width);
@@ -165,7 +172,7 @@ impl<A: AppTypes> KeysTablePopup<A> {
 
         for (name, desc, motion) in self.keys.text_objects.iter() {
             let entry = TrieEntry::TextObject(motion.to_owned());
-            let entry_str = self.keys.map.get_merged(&entry).unwrap_or_default();
+            let entry_str = self.map.get_merged(&entry).unwrap_or_default();
 
             max_name_width = name.len().max(max_name_width);
             max_desc_width = desc.len().max(max_desc_width);
@@ -184,7 +191,7 @@ impl<A: AppTypes> KeysTablePopup<A> {
     }
 }
 
-impl<A: AppTypes> KeysTablePopup<A> {
+impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
     fn titles(&self, state: &KeysTablePopupState) -> [String; 3] {
         [
             format!("{:?}", state.tab),

@@ -5,7 +5,7 @@ pub use list::*;
 pub use table::*;
 
 use crate::{
-    Action, ActionBehavior, AppTypes, Description, KeyMap, Motion, MotionBehavior, TextObject,
+    Action, ActionBehavior, AppTypes, Description, Motion, MotionBehavior, TextObject,
     TextObjectBehavior,
 };
 
@@ -13,13 +13,11 @@ pub struct Keys<A: AppTypes> {
     pub actions: Vec<(String, String, Action<A::Action>)>,
     pub text_objects: Vec<(String, String, TextObject<A::TextObject>)>,
     pub motions: Vec<(String, String, Motion<A::Motion>)>,
-    map: KeyMap<A>,
 }
 
 impl<A: AppTypes> Keys<A> {
-    pub fn new(map: KeyMap<A>) -> Self {
+    pub fn new() -> Self {
         Self {
-            map,
             actions: Vec::default(),
             text_objects: Vec::default(),
             motions: Vec::default(),
@@ -156,13 +154,18 @@ impl<A: AppTypes> Keys<A> {
     }
 }
 
+impl<A: AppTypes> Default for Keys<A> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<A: AppTypes> Clone for Keys<A> {
     fn clone(&self) -> Self {
         Self {
             actions: self.actions.clone(),
             text_objects: self.text_objects.clone(),
             motions: self.motions.clone(),
-            map: self.map.clone(),
         }
     }
 }

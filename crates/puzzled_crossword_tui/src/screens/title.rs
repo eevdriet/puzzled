@@ -4,8 +4,8 @@ use crossterm::event::KeyCode;
 use puzzled_crossword::Crossword;
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{
-    Action, AppCommand, Command, EventMode, EventTrie, GridRenderState, ListRender, ListWidget,
-    Screen, Widget as AppWidget, center_area,
+    Action, AppCommand, Command, EventMode, GridRenderState, ListRender, ListWidget, Screen,
+    Widget as AppWidget, center_area,
 };
 use puzzled_tui::{AppContext, AppResolver};
 use ratatui::layout::{Constraint, Flex, Layout};
@@ -160,9 +160,7 @@ fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
     opts.cell_width = 5;
     opts.cell_height = 3;
 
-    let events: EventTrie<CrosswordApp> = EventTrie::from_config::<Crossword>()?;
-    let keys = events.action_keys();
-    let screen = PuzzleScreen::new(puzzle, solve_state, render_state, keys.clone());
+    let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
 
     Ok(screen)
 }

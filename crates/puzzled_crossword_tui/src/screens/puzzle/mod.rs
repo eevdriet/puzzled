@@ -19,7 +19,7 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
-    FocusManager, GridRenderState, HandleCommand, HandleMode, KeyMap, Keys, KeysListPopup,
+    FocusManager, GridRenderState, HandleCommand, HandleMode, Keys, KeysListPopup,
     KeysListRenderState, KeysTablePopup, KeysTablePopupState, Popup, Screen, TrieEntry, Widget,
 };
 
@@ -50,7 +50,6 @@ pub struct PuzzleScreen {
     footer: FooterWidget,
 
     // Popups
-    keys: KeysTablePopup<CrosswordApp>,
     pause: KeysListPopup<CrosswordApp>,
 }
 
@@ -59,7 +58,6 @@ impl PuzzleScreen {
         puzzle: Crossword,
         solve_state: CrosswordState,
         render_state: GridRenderState,
-        key_map: KeyMap<CrosswordApp>,
     ) -> Self {
         let mut focus = FocusManager::default();
 
@@ -67,15 +65,14 @@ impl PuzzleScreen {
         focus.link_below(Focus::Footer, &[Focus::Clues]);
 
         let list = ListState::default().with_selected(Some(0));
-        let keys = Keys::new(key_map.clone()).all(&());
-        let popup = KeysTablePopup { keys };
+        let help_keys = Keys::default().all(&());
 
-        let pause_keys = Keys::new(key_map)
+        let pause_keys = Keys::default()
             .action(Action::Quit, &())
             .action(Action::Cancel, &());
 
         let pause = KeysListPopup::new("Paused puzzle".to_string());
-        let pause_state = KeysListRenderState::new(pause_keys);
+        let pause_state = KeysListRenderState::default();
 
         let state = PuzzleScreenState {
             puzzle,
@@ -89,7 +86,9 @@ impl PuzzleScreen {
             focus,
             popup: None,
             pause_state,
+            pause_keys,
             help_state: KeysTablePopupState::default(),
+            help_keys,
         };
 
         Self {
@@ -97,7 +96,6 @@ impl PuzzleScreen {
             crossword: CrosswordWidget,
             clues: CluesWidget::default(),
             footer: FooterWidget,
-            keys: popup,
             pause,
         }
     }
@@ -162,8 +160,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                         .render_popup(area, buf, &mut self.state.pause_state);
                 }
                 PuzzlePopup::Help => {
-                    self.keys
-                        .render_popup(area, buf, &mut self.state.help_state);
+                    let mut help = KeysTablePopup::new(&self.state.help_keys, &ctx.keys);
+                    help.render_popup(area, buf, &mut self.state.help_state);
                 }
             }
         }
@@ -189,11 +187,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                     );
                 }
                 PuzzlePopup::Help => {
-                    return self.keys.on_popup_command(
-                        command,
-                        resolver,
-                        &mut self.state.help_state,
-                    );
+                    let mut help = KeysTablePopup::new(&self.state.help_keys, &ctx.keys);
+                    return help.on_popup_command(command, resolver, &mut self.state.help_state);
                 }
             }
         }

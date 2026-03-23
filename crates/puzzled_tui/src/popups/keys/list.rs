@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect, Size},
@@ -33,7 +31,7 @@ impl<A: AppTypes> KeysListPopup<A> {
 }
 
 impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
-    type State = KeysListRenderState<A>;
+    type State = KeysListRenderState;
 
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let area = self.render_area(root, state);
@@ -70,36 +68,44 @@ impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
 impl<A: AppTypes> Popup<A> for KeysListPopup<A> {}
 
 pub struct KeysListRender<A: AppTypes> {
-    _marker: PhantomData<A>,
+    keys: Keys<A>,
+}
+impl<A: AppTypes> KeysListRender<A> {
+    pub fn new(keys: Keys<A>) -> Self {
+        Self { keys }
+    }
 }
 
 impl<A: AppTypes> Default for KeysListRender<A> {
     fn default() -> Self {
         Self {
-            _marker: PhantomData,
+            keys: Keys::default(),
         }
     }
 }
 
-pub struct KeysListRenderState<A: AppTypes> {
+#[derive(Debug, Clone, Copy)]
+pub struct KeysListRenderState {
     state: ListState,
-    keys: Keys<A>,
 }
 
-impl<A: AppTypes> KeysListRenderState<A> {
-    pub fn new(keys: Keys<A>) -> Self {
-        let mut list_state = ListState::default();
-        list_state.select_first();
+impl KeysListRenderState {
+    pub fn new() -> Self {
+        let mut state = ListState::default();
+        state.select_first();
 
-        KeysListRenderState {
-            state: list_state,
-            keys,
-        }
+        KeysListRenderState { state }
+    }
+}
+
+impl Default for KeysListRenderState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
-    type State = KeysListRenderState<A>;
+    type State = KeysListRenderState;
 
     fn render_list(&self, _state: &Self::State) -> ratatui::widgets::List<'_> {
         List::default()
@@ -107,9 +113,8 @@ impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
             .highlight_symbol(">> ")
     }
 
-    fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>> {
-        state
-            .keys
+    fn render_items(&self, _state: &Self::State) -> impl Iterator<Item = ListItem<'_>> {
+        self.keys
             .actions
             .iter()
             .map(|(name, _desc, _action)| ListItem::new(name.to_owned()))
@@ -142,15 +147,6 @@ impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
                 }
             }
             _ => false,
-        }
-    }
-}
-
-impl<A: AppTypes> Clone for KeysListRenderState<A> {
-    fn clone(&self) -> Self {
-        Self {
-            state: self.state,
-            keys: self.keys.clone(),
         }
     }
 }
