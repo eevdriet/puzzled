@@ -5,7 +5,11 @@ pub struct SquareGridRefMut<'a, T>(pub &'a mut Grid<Square<T>>);
 
 impl<T> Grid<Square<T>> {
     pub fn is_fill(&self, pos: Position) -> bool {
-        self.get(pos).is_some_and(|square| square.is_some())
+        let Some(square) = self.get(pos) else {
+            return false;
+        };
+
+        square.is_some()
     }
 
     /// Get a reference to the [filled square](Square::Filled) at the given position

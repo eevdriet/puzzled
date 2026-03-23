@@ -9,6 +9,9 @@ pub struct GridIndexedIter<'a, T> {
 }
 
 impl<'a, T> GridIndexedIter<'a, T> {
+    pub fn new(iter: GridIter<'a, T>) -> Self {
+        Self { inner: iter }
+    }
     pub fn new_linear(iter: GridLinearIter<'a, T>) -> Self {
         Self {
             inner: GridIter::Linear(iter),
@@ -25,67 +28,39 @@ impl<'a, T> Iterator for GridIndexedIter<'a, T> {
     type Item = (Position, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match &mut self.inner {
-            GridIter::Linear(iter) => {
-                if iter.remaining == 0 {
-                    return None;
-                }
-
-                let pos = iter.front;
-                let item = iter.next()?;
-
-                (pos, item)
-            }
-            GridIter::Positions(iter) => {
-                let pos = iter.positions[iter.front];
-                let item = iter.next()?;
-
-                (pos, item)
-            }
-        };
-
-        Some(next)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        match &self.inner {
-            GridIter::Linear(iter) => iter.size_hint(),
-            GridIter::Positions(iter) => iter.size_hint(),
+        if self.inner.len() == 0 {
+            return None;
         }
+
+        let pos = match &self.inner {
+            GridIter::Linear(iter) => iter.front,
+            GridIter::Positions(iter) => iter.positions[iter.front],
+        };
+        let item = self.inner.next()?;
+
+        Some((pos, item))
     }
 }
 
 impl<'a, T> DoubleEndedIterator for GridIndexedIter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let next = match &mut self.inner {
-            GridIter::Linear(iter) => {
-                if iter.remaining == 0 {
-                    return None;
-                }
+        if self.inner.len() == 0 {
+            return None;
+        }
 
-                let pos = iter.back;
-                let item = iter.next_back()?;
-
-                (pos, item)
-            }
-            GridIter::Positions(iter) => {
-                let pos = iter.positions[iter.back.saturating_sub(1)];
-                let item = iter.next_back()?;
-
-                (pos, item)
-            }
+        let pos = match &self.inner {
+            GridIter::Linear(iter) => iter.back,
+            GridIter::Positions(iter) => iter.positions[iter.back.checked_sub(1)?],
         };
+        let item = self.inner.next_back()?;
 
-        Some(next)
+        Some((pos, item))
     }
 }
 
 impl<'a, T> ExactSizeIterator for GridIndexedIter<'a, T> {
     fn len(&self) -> usize {
-        match &self.inner {
-            GridIter::Linear(iter) => iter.len(),
-            GridIter::Positions(iter) => iter.len(),
-        }
+        self.inner.len()
     }
 }
 

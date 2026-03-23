@@ -168,6 +168,13 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     Direction::Up | Direction::Down => Direction::Down,
                 };
 
+                if !matches!(state.render.mode, EventMode::Insert) {
+                    return state
+                        .solve
+                        .solutions
+                        .handle_base_action(action, &mut state.render);
+                }
+
                 match action {
                     Action::Literal(KeyCode::Char(letter)) => {
                         let entry = Solution::Letter(letter.to_ascii_uppercase());
@@ -195,10 +202,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     }
 
                     _ => {
-                        return state
-                            .solve
-                            .solutions
-                            .handle_base_action(action, &mut state.render);
+                        return false;
                     }
                 }
             }

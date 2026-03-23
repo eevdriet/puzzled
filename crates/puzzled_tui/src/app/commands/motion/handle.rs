@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use puzzled_core::{
-    Direction, Grid, GridIndexedIter, GridLinearIter, GridPositionsIter, Position, Square,
-    SquareGridRef,
+    Direction, Grid, GridIndexedIter, GridIter, GridLinearIter, GridPositionsIter, Position,
+    Square, SquareGridRef,
 };
 
 use crate::{GridRenderState, Motion};
@@ -57,26 +57,7 @@ where
 
         // Perform the motion by collecting all covered positions in the grid
         let iter = grid_motion(self, count, motion, start, next_dir, render, custom_state);
-
-        // If currently going in another direction, change the direction
-        if render.use_direction
-            && !render.mode.is_visual()
-            && iter.clone().count() <= 2
-            && ![next_dir, !next_dir].contains(&render.direction)
-        {
-            render.direction = next_dir;
-        }
-        // Otherwise, move to the end and make sure it stays visible
-        else if let Some(end) = iter.clone().next_back().map(|(pos, _)| pos) {
-            render.cursor = end;
-            render.ensure_cursor_visible(end);
-
-            if let Some(app_end) = render.to_app(end) {
-                render.selection.update(app_end);
-            }
-        }
-
-        iter.map(|(pos, _)| pos)
+        perform_motion_from_iter(iter, next_dir, render, |_pos: &Position| true)
     }
 }
 
@@ -110,32 +91,43 @@ where
         }
 
         // Perform the motion by collecting all covered positions in the grid
-        let iter = grid_motion(self.0, count, motion, pos, next_dir, render, custom_state);
-
-        // If currently going in another direction, change the direction
-        if render.use_direction
-            && !render.mode.is_visual()
-            && iter.clone().count() <= 2
-            && ![next_dir, !next_dir].contains(&render.direction)
-        {
-            render.direction = next_dir;
-        }
-        // Otherwise, move to the end and make sure it stays visible
-        else if let Some(end) = iter
-            .clone()
-            .map(|(pos, _)| pos)
-            .rfind(|&pos| self.0.is_fill(pos))
-        {
-            render.cursor = end;
-            render.ensure_cursor_visible(end);
-
-            if let Some(app_end) = render.to_app(end) {
-                render.selection.update(app_end);
-            }
-        }
-
-        iter.map(|(pos, _)| pos)
+        let iter = square_grid_motion(self.0, count, motion, pos, next_dir, render, custom_state);
+        perform_motion_from_iter(iter, next_dir, render, |pos: &Position| {
+            self.0.is_fill(*pos)
+        })
     }
+}
+
+fn perform_motion_from_iter<'a, T, F>(
+    iter: GridIndexedIter<'a, T>,
+    next_dir: Direction,
+    render: &mut GridRenderState,
+    end_predicate: F,
+) -> impl IntoIterator<Item = Position>
+where
+    T: Clone,
+    F: FnMut(&Position) -> bool,
+{
+    // If currently going in another direction, change the direction
+    if render.use_direction
+        && !render.mode.is_visual()
+        && iter.clone().count() <= 2
+        && ![next_dir, !next_dir].contains(&render.direction)
+    {
+        render.direction = next_dir;
+    }
+    // Otherwise, move to the end and make sure it stays visible
+    else if let Some(end) = iter.clone().map(|(pos, _)| pos).rfind(end_predicate) {
+        tracing::info!("Move to end");
+        render.cursor = end;
+        render.ensure_cursor_visible(end);
+
+        if let Some(app_end) = render.to_app(end) {
+            render.selection.update(app_end);
+        }
+    }
+
+    iter.map(|(pos, _)| pos)
 }
 
 fn grid_motion<'a, T, M, S>(
@@ -149,13 +141,26 @@ fn grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, T>
 where
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
-    T: Debug,
+    T: Debug + Clone,
 {
-    let iter_remaining =
-        |remaining: usize| GridLinearIter::new_with_remaining(grid, start, dir.into(), remaining);
-    let iter_direction = |dir: Direction| grid.iter_segment(start, dir);
+    let iter_dir_remaining = |dir: Direction, remaining: usize| {
+        GridIter::Linear(GridLinearIter::new_with_remaining(
+            grid,
+            start,
+            dir.into(),
+            remaining,
+        ))
+    };
+    let iter_remaining = |remaining: usize| iter_dir_remaining(dir, remaining);
+    let iter_direction = |dir: Direction| GridIter::Linear(grid.iter_segment(start, dir));
+    let iter_single = |pos: Position| GridIter::Linear(GridLinearIter::new_single(grid, pos));
+    let iter_empty = || GridIter::Linear(GridLinearIter::new_empty(grid));
+    let iter_positions =
+        |positions: Vec<Position>| GridIter::Positions(GridPositionsIter::new(grid, positions));
 
+    let cursor = state.cursor;
     let iter = match motion {
+        // Linear
         Motion::Mouse(mouse) => {
             let app_pos = ratatui::layout::Position {
                 x: mouse.column,
@@ -163,25 +168,142 @@ where
             };
 
             match state.to_grid(app_pos) {
-                Some(pos) => GridLinearIter::new_single(grid, pos),
-                None => GridLinearIter::new_empty(grid),
+                Some(pos) => iter_single(pos),
+                None => iter_empty(),
             }
         }
         Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
         Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {
             iter_direction(dir)
         }
+
+        // Position based
+        Motion::Row(_) => {
+            let diff = (cursor.row as isize) - count.saturating_sub(1) as isize;
+            let dir = if diff >= 0 {
+                Direction::Up
+            } else {
+                Direction::Down
+            };
+
+            iter_dir_remaining(dir, diff.unsigned_abs() + 1)
+        }
+        Motion::Col(_) => {
+            let diff = (cursor.col as isize) - count.saturating_sub(1) as isize;
+            let dir = if diff >= 0 {
+                Direction::Left
+            } else {
+                Direction::Right
+            };
+
+            iter_dir_remaining(dir, diff.unsigned_abs() + 1)
+        }
+
         Motion::Custom(custom) => {
             let positions: Vec<_> = grid
                 .handle_custom_motion(count, custom, state, custom_state)
                 .into_iter()
                 .collect();
-            let iter = GridPositionsIter::new(grid, positions);
-
-            return GridIndexedIter::new_positions(iter);
+            iter_positions(positions)
         }
-        _ => GridLinearIter::new_empty(grid),
+        _ => iter_empty(),
     };
 
-    GridIndexedIter::new_linear(iter)
+    GridIndexedIter::new(iter)
+}
+
+fn square_grid_motion<'a, T, M, S>(
+    grid: &'a Grid<Square<T>>,
+    count: usize,
+    motion: Motion<M>,
+    start: Position,
+    dir: Direction,
+    state: &mut GridRenderState,
+    custom_state: &mut S,
+) -> GridIndexedIter<'a, Square<T>>
+where
+    Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
+    T: Debug + Clone,
+{
+    let iter_dir_remaining = |dir: Direction, remaining: usize| {
+        let iter = GridIter::Linear(GridLinearIter::new_with_remaining(
+            grid,
+            start,
+            dir.into(),
+            remaining,
+        ));
+
+        GridIndexedIter::new(iter)
+    };
+
+    let cursor = state.cursor;
+
+    match motion {
+        // Position based
+        Motion::Row(_) => {
+            let goal1 = Position {
+                row: count,
+                ..cursor
+            };
+            let row = find_nth_some(grid.iter_col(cursor.col), count);
+
+            let goal = Position { row, ..cursor };
+
+            let diff = (cursor.row as isize) - row as isize;
+            let dir = if diff >= 0 {
+                Direction::Up
+            } else {
+                Direction::Down
+            };
+
+            tracing::trace!(
+                "{cursor:?} <-> {goal1:?} ({goal:?}) => {dir:?} with a difference {diff}"
+            );
+
+            iter_dir_remaining(dir, diff.unsigned_abs() + 1)
+        }
+        Motion::Col(_) => {
+            let goal1 = Position {
+                col: count,
+                ..cursor
+            };
+            let col = find_nth_some(grid.iter_row(cursor.row), count);
+
+            let goal = Position { col, ..cursor };
+
+            let diff = (cursor.col as isize) - col as isize;
+            let dir = if diff >= 0 {
+                Direction::Left
+            } else {
+                Direction::Right
+            };
+
+            tracing::trace!(
+                "{cursor:?} <-> {goal1:?} ({goal:?}) => {dir:?} with a difference {diff}"
+            );
+
+            iter_dir_remaining(dir, diff.unsigned_abs() + 1)
+        }
+
+        _ => grid_motion(grid, count, motion, start, dir, state, custom_state),
+    }
+}
+
+fn find_nth_some<'a, T>(iter: GridLinearIter<'a, Square<T>>, goal: usize) -> usize {
+    let mut count = 0;
+    let mut last_idx = 0;
+
+    for (idx, item) in iter.enumerate() {
+        if count == goal {
+            break;
+        }
+
+        if item.is_some() {
+            count += 1;
+        }
+
+        last_idx = idx;
+    }
+
+    last_idx
 }

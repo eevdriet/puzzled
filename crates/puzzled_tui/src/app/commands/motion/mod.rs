@@ -19,7 +19,7 @@ pub enum Motion<M> {
     Mouse(#[debug(skip)] MouseEvent),
 
     // Left-right
-    Col(usize),
+    Col(#[serde(skip, default)] usize),
     Left,
     Right,
     RowEnd,
@@ -29,7 +29,7 @@ pub enum Motion<M> {
     ColEnd,
     ColStart,
     Down,
-    Row(usize),
+    Row(#[serde(skip, default)] usize),
     Up,
 
     // Word

@@ -14,6 +14,42 @@ pub enum GridIter<'a, T> {
     Positions(GridPositionsIter<'a, T>),
 }
 
+impl<'a, T> Iterator for GridIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            GridIter::Linear(iter) => iter.next(),
+            GridIter::Positions(iter) => iter.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            GridIter::Linear(iter) => iter.size_hint(),
+            GridIter::Positions(iter) => iter.size_hint(),
+        }
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for GridIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self {
+            GridIter::Linear(iter) => iter.next_back(),
+            GridIter::Positions(iter) => iter.next_back(),
+        }
+    }
+}
+
+impl<'a, T> ExactSizeIterator for GridIter<'a, T> {
+    fn len(&self) -> usize {
+        match self {
+            GridIter::Linear(iter) => iter.len(),
+            GridIter::Positions(iter) => iter.len(),
+        }
+    }
+}
+
 impl<T> IntoIterator for Grid<T> {
     type Item = T;
     type IntoIter = <Vec<T> as IntoIterator>::IntoIter;

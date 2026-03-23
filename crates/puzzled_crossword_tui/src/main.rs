@@ -12,7 +12,7 @@ use puzzled_tui::{App, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    init_logging(true);
+    init_logging(false);
 
     let state = AppState::default();
     let mut app = App::<CrosswordApp>::new(state)?;
