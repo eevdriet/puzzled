@@ -20,7 +20,11 @@ where
     ))
     .padded()
     .map(|(solution, opt_style, entry)| {
-        let style = opt_style.unwrap_or_default();
+        let mut style = opt_style.unwrap_or_default();
+        if solution.is_some() {
+            style |= CellStyle::INITIALLY_REVEALED;
+        }
+
         let cell = Cell::new_with_style(solution, style);
         let entry = Entry::new_with_style(entry, style);
 

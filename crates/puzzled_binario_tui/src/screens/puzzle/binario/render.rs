@@ -1,7 +1,7 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_binario::Bit;
-use puzzled_core::{Entry, Position};
-use puzzled_tui::{CellRender, GridOptions, TextBlock};
+use puzzled_binario::{Binario, Bit};
+use puzzled_core::{Position, SolutionEntry};
+use puzzled_tui::{CellRender, GridRenderState, TextBlock};
 use ratatui::{
     layout::HorizontalAlignment,
     style::{Color, Modifier, Style},
@@ -10,26 +10,35 @@ use ratatui::{
 };
 
 #[derive(Deref, DerefMut)]
-pub struct RenderBit<'a>(pub(crate) &'a Entry<Bit>);
+pub struct RenderBit<'a>(pub(crate) SolutionEntry<'a, Bit>);
 
-pub struct RenderBitState {
-    pub cursor: Position,
-    pub opts: GridOptions,
+pub struct RenderBitState<'a> {
+    pub puzzle: &'a Binario,
+    pub render: &'a GridRenderState,
 }
 
-impl<'a> CellRender<RenderBitState> for RenderBit<'a> {
+impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
     fn render_cell(&self, pos: Position, state: &RenderBitState) -> impl Widget {
         // Determine the cell style
-        let mut style = Style::default();
+        let entry = self.get();
+        let base = Style::default().fg(Color::Gray);
 
-        if self.entry().is_none() {
-            style = style.fg(Color::DarkGray).dim();
-        } else {
-            style = style.fg(Color::White);
+        let mut style = match entry {
+            None => base.dim(),
+            Some(_) => base.fg(Color::White),
+        };
+
+        let size = state.puzzle.cells().size();
+        let cursor = state.render.cursor;
+
+        if pos == cursor {
+            style = style.add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK);
         }
 
-        if pos == state.cursor {
-            style = style.add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK);
+        if let Some(app_pos) = state.render.to_app(pos)
+            && state.render.selection.contains(app_pos, &size)
+        {
+            style = style.fg(Color::Green);
         }
 
         let block = Block::default()
@@ -39,9 +48,10 @@ impl<'a> CellRender<RenderBitState> for RenderBit<'a> {
             .title_alignment(HorizontalAlignment::Center)
             .title_style(style);
 
-        let symbol = match pos == state.cursor {
-            true => "EE".to_string(),
-            false => self.to_string(),
+        let symbol = match entry {
+            Some(entry) => entry.to_string(),
+            None if pos == cursor => "E".to_string(),
+            _ => "".to_string(),
         };
 
         let text = Text::from(symbol).style(style);
@@ -49,8 +59,8 @@ impl<'a> CellRender<RenderBitState> for RenderBit<'a> {
         TextBlock {
             text,
             block,
-            h_align: state.opts.h_align,
-            v_align: state.opts.v_align,
+            h_align: state.render.options.h_align,
+            v_align: state.render.options.v_align,
         }
     }
 }

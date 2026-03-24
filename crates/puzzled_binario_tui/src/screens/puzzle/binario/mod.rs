@@ -2,12 +2,12 @@ mod render;
 
 use crossterm::event::KeyCode;
 use puzzled_binario::Bit;
-use puzzled_core::{Direction, Solve};
+use puzzled_core::Solve;
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleMotion, HandleOperator,
-    Operator, RenderSize, Widget as AppWidget,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
+    HandleMotion, HandleOperator, RenderSize, Widget as AppWidget, handle_grid_operator,
 };
 use ratatui::prelude::{Buffer, Rect, Size, StatefulWidget};
 use tui_scrollview::ScrollView;
@@ -20,14 +20,22 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     type State = PuzzleScreenState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let PuzzleScreenState { solve, render, .. } = state;
+        let PuzzleScreenState {
+            puzzle,
+            solve,
+            render,
+            ..
+        } = state;
 
+        let render_c = render.clone();
         let cell_state = RenderBitState {
-            cursor: render.cursor,
-            opts: render.options,
+            puzzle,
+            render: &render_c,
         };
 
-        let grid = solve.entries.map_ref(RenderBit);
+        // let grid = solve.entries.map_ref(RenderBit);
+
+        let grid = solve.to_merged().map(RenderBit);
         let grid_size = grid.render_size(&render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
@@ -54,37 +62,13 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         state: &mut Self::State,
     ) -> bool {
         match command {
-            Command::Operator(op) => {
-                if state.render.mode.is_visual() {
-                    let size = state.render.viewport.as_size();
-                    let positions: Vec<_> = state
-                        .render
-                        .selection
-                        .positions(&size)
-                        .filter_map(|pos| state.render.to_grid(pos))
-                        .collect();
-
-                    state
-                        .solve
-                        .0
-                        .handle_operator(op, positions, &mut state.history);
-
-                    let mode = match op {
-                        Operator::Change => EventMode::Insert,
-                        _ => EventMode::Normal,
-                    };
-                    resolver.set_mode(mode);
-                } else if !op.requires_motion() {
-                    let positions = vec![state.render.cursor];
-
-                    state
-                        .solve
-                        .0
-                        .handle_operator(op, positions, &mut state.history);
-                } else {
-                    return false;
-                }
-            }
+            Command::Operator(op) => handle_grid_operator(
+                op,
+                resolver,
+                &state.render,
+                &mut state.solve.0,
+                &mut state.history,
+            ),
             Command::Motion { count, motion, op } => {
                 let cells = state.puzzle.cells();
                 let mut custom_state = ();
@@ -97,33 +81,37 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                         .0
                         .handle_operator(op, positions, &mut state.history);
                 }
+                true
             }
             Command::Action { action, .. } => {
                 let pos = state.render.cursor;
-                let dir = match state.render.direction {
-                    Direction::Left | Direction::Right => Direction::Right,
-                    Direction::Up | Direction::Down => Direction::Down,
-                };
 
                 match action {
-                    Action::Literal(KeyCode::Char(letter @ '0'))
-                    | Action::Literal(KeyCode::Char(letter @ '1')) => {
-                        let bit = Bit::try_from(letter as u8 - b'0').expect("Verified bit input");
-                        state.solve.enter(&pos, bit);
+                    Action::Literal(KeyCode::Char(' ')) => {
+                        let bit = &state.solve.entries[pos];
 
-                        if let Some(next) = pos + dir
-                            && state.puzzle.cells().get(next).is_some()
-                        {
-                            state.render.cursor = next;
-                        }
+                        match bit.entry() {
+                            None => state.solve.enter(&pos, Bit::Zero),
+                            Some(Bit::Zero) => state.solve.enter(&pos, Bit::One),
+                            Some(Bit::One) => state.solve.clear(&pos),
+                        };
+
+                        true
                     }
 
-                    _ => return false,
+                    _ => state
+                        .solve
+                        .0
+                        .solutions
+                        .handle_action(action, &mut state.render, &mut ()),
                 }
             }
-            _ => return false,
+            _ => false,
         }
+    }
 
-        true
+    fn override_mode(&self) -> Option<EventMode> {
+        // Some(EventMode::Normal)
+        None
     }
 }

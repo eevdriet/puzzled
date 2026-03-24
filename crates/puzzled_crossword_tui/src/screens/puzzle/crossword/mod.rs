@@ -5,12 +5,11 @@ pub(crate) use clue::*;
 use crossterm::event::KeyCode;
 pub(crate) use render::*;
 
-use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef, SquareGridState};
+use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, ActionHistory, AppCommand, AppResolver, AppTypes, Command, EventMode, GridRenderState,
-    GridWidget, HandleBaseAction, HandleMotion, HandleOperator, Operator, RenderSize,
-    Widget as AppWidget, handle_square_grid_operator,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
+    HandleMotion, HandleOperator, RenderSize, Widget as AppWidget, handle_square_grid_operator,
 };
 
 use ratatui::{
@@ -154,7 +153,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     return state
                         .solve
                         .solutions
-                        .handle_base_action(action, &mut state.render);
+                        .handle_action(action, &mut state.render, &mut ());
                 }
 
                 match action {

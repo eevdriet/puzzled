@@ -92,7 +92,10 @@ impl<A: AppTypes> EventEngine<A> {
     pub fn push(&mut self, event: AppEvent, override_mode: Option<EventMode>) -> EventResult<A> {
         let mode = override_mode.unwrap_or(self.mode);
 
-        tracing::debug!("[EVENT] {event}");
+        tracing::debug!(
+            "[EVENT] {event} (mode: {:?}, override: {override_mode:?})",
+            self.mode
+        );
 
         if let Some(mouse) = event.mouse() {
             return self.mouse_event(mouse);

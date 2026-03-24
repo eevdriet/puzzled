@@ -6,8 +6,8 @@ pub use state::*;
 
 use puzzled_binario::{Binario, BinarioState};
 use puzzled_tui::{
-    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, GridRenderState, Screen,
-    Widget,
+    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, GridRenderState,
+    HandleMode, Screen, Widget,
 };
 use ratatui::prelude::{Buffer, Rect};
 
@@ -51,7 +51,11 @@ impl Screen<BinarioApp> for PuzzleScreen {
         resolver: AppResolver<BinarioApp>,
         _ctx: &mut AppContext<BinarioApp>,
     ) -> bool {
+        let mut handled_action = false;
+
         if let Command::Action { count, action } = &command {
+            handled_action = true;
+
             match action {
                 // Lifetime actions
                 Action::Cancel => resolver.prev_screen(),
@@ -59,11 +63,27 @@ impl Screen<BinarioApp> for PuzzleScreen {
                 Action::Quit => resolver.quit(),
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
-                _ => {}
+                _ => {
+                    handled_action = false;
+                }
             }
         }
 
-        self.binario.on_command(command, resolver, &mut self.state)
+        handled_action || self.binario.on_command(command, resolver, &mut self.state)
+    }
+
+    fn on_mode(
+        &mut self,
+        mode: puzzled_tui::EventMode,
+        resolver: AppResolver<BinarioApp>,
+        ctx: &mut AppContext<BinarioApp>,
+    ) -> bool {
+        let solutions = &mut self.state.solve.solutions;
+        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+    }
+
+    fn override_mode(&self) -> Option<puzzled_tui::EventMode> {
+        self.binario.override_mode()
     }
 
     fn on_enter(&mut self, _ctx: &mut AppContext<BinarioApp>) {

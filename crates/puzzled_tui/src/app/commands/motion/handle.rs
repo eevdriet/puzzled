@@ -122,11 +122,16 @@ where
     }
     // Otherwise, move to the end and make sure it stays visible
     else if let Some(end) = iter.clone().map(|(pos, _)| pos).rfind(end_predicate) {
-        tracing::info!("Move to end");
+        tracing::info!(
+            "Move to end {end:?}: {:?} ({:?})",
+            render.to_app(end),
+            render.mode
+        );
         render.cursor = end;
         render.ensure_cursor_visible(end);
 
         if let Some(app_end) = render.to_app(end) {
+            tracing::info!("Update selection");
             render.selection.update(app_end);
         }
     }

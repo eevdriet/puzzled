@@ -76,9 +76,9 @@ where
 
 pub fn handle_grid_operator<A, T>(
     op: Operator,
-    render: GridRenderState,
-    solve: &mut GridState<T>,
     resolver: AppResolver<A>,
+    render: &GridRenderState,
+    solve: &mut GridState<T>,
     history: &mut ActionHistory<GridState<T>>,
 ) -> bool
 where

@@ -59,6 +59,11 @@ impl<E> Entry<E> {
     check_style!(CellStyle::REVEALED, style, is_revealed());
     check_style!(CellStyle::INCORRECT, style, is_incorrect());
     check_style!(CellStyle::PREVIOUSLY_INCORRECT, style, was_incorrect());
+    check_style!(
+        CellStyle::INITIALLY_REVEALED,
+        style,
+        is_initially_revealed()
+    );
 
     // Initial styles
     check_style!(CellStyle::CIRCLED, style, is_circled());
@@ -108,7 +113,7 @@ impl<E> Entry<E> {
     /// This updates the cell [style](CellStyle) based on the [current](CellStyle::INCORRECT) and [previous](CellStyle::PREVIOUSLY_INCORRECT) correctness.
     pub fn enter<T: Into<E>>(&mut self, entry: T) -> bool {
         // Never overwrite revealed solution
-        if self.is_revealed() {
+        if self.is_revealed() || self.is_initially_revealed() {
             return false;
         }
 
@@ -158,12 +163,16 @@ impl<E> Entry<E> {
     ///
     /// Note that this does not apply to revealed solutions
     pub fn clear(&mut self) {
-        if !self.is_revealed() {
+        if !self.is_revealed() && !self.is_initially_revealed() {
             self.entry = None;
             self.guesses.clear();
 
             // NOTE: correctness is guaranteed as `init` only allows correct state
             // Therefore the style will never be incorrect when set to its initial state
+            if self.style.contains(CellStyle::INCORRECT) {
+                self.style |= CellStyle::PREVIOUSLY_INCORRECT;
+            }
+
             self.style -= CellStyle::INCORRECT;
         }
     }

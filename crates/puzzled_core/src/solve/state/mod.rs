@@ -14,6 +14,16 @@ pub struct SolutionEntry<'a, T> {
     pub entry: &'a Entry<T>,
 }
 
+impl<'a, T> SolutionEntry<'a, T> {
+    pub fn get(&self) -> Option<&T> {
+        if self.entry.is_initially_revealed() || self.entry.is_revealed() {
+            return self.solution.as_ref();
+        }
+
+        self.entry.entry()
+    }
+}
+
 impl<'a, T> fmt::Display for SolutionEntry<'a, T>
 where
     T: Display,
