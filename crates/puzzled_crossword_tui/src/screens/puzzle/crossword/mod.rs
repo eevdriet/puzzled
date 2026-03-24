@@ -5,11 +5,12 @@ pub(crate) use clue::*;
 use crossterm::event::KeyCode;
 pub(crate) use render::*;
 
-use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
+use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef, SquareGridState};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    HandleMotion, HandleOperator, Operator, RenderSize, Widget as AppWidget,
+    Action, ActionHistory, AppCommand, AppResolver, AppTypes, Command, EventMode, GridRenderState,
+    GridWidget, HandleBaseAction, HandleMotion, HandleOperator, Operator, RenderSize,
+    Widget as AppWidget, handle_square_grid_operator,
 };
 
 use ratatui::{
@@ -114,32 +115,13 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
     ) -> bool {
         match command {
             Command::Operator(op) => {
-                if state.render.mode.is_visual() {
-                    let size = state.render.viewport.as_size();
-                    let positions = state
-                        .render
-                        .selection
-                        .positions(&size)
-                        .filter_map(|pos| state.render.to_grid(pos));
-
-                    state
-                        .solve
-                        .handle_operator(op, positions, &mut state.history);
-
-                    let mode = match op {
-                        Operator::Change => EventMode::Insert,
-                        _ => EventMode::Normal,
-                    };
-                    resolver.set_mode(mode);
-                } else if !op.requires_motion() {
-                    let positions = vec![state.render.cursor];
-
-                    state
-                        .solve
-                        .handle_operator(op, positions, &mut state.history);
-                } else {
-                    return false;
-                }
+                return handle_square_grid_operator(
+                    op,
+                    resolver,
+                    &state.render,
+                    &mut state.solve,
+                    &mut state.history,
+                );
             }
             Command::Motion { count, motion, op } => {
                 {
