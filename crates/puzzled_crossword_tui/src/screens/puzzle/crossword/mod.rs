@@ -78,7 +78,6 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let render_c = render.clone();
         let cell_state = RenderSquareState {
             clues: puzzle.clues(),
-            squares: puzzle.squares(),
             render: &render_c,
         };
 

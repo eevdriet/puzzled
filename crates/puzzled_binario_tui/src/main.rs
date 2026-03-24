@@ -8,7 +8,7 @@ pub use state::*;
 
 use std::io;
 
-use puzzled_binario::Binario;
+use puzzled_binario::{Binario, BinarioState};
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{App, GridRenderState, init_logging};
 
@@ -16,7 +16,8 @@ use puzzled_tui::{App, GridRenderState, init_logging};
 async fn main() -> io::Result<()> {
     init_logging(true);
 
-    let (puzzle, solve_state) = Binario::load_text("special").map_err(io::Error::other)?;
+    let puzzle = Binario::load_text("special").map_err(io::Error::other)?;
+    let solve_state = BinarioState::from(&puzzle);
 
     let mut render_state = GridRenderState::default();
     let opts = &mut render_state.options;

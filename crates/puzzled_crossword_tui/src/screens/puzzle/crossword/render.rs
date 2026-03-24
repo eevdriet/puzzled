@@ -1,6 +1,6 @@
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Entry, Position, Square};
-use puzzled_crossword::{ClueDirection, Clues, Solution, Squares};
+use puzzled_crossword::{ClueDirection, Clues, Solution};
 use puzzled_tui::{CellRender, GridRenderState, TextBlock};
 
 use ratatui::{
@@ -15,7 +15,6 @@ pub(crate) struct RenderSquareSolution<'a>(pub(crate) &'a Square<Entry<Solution>
 
 pub struct RenderSquareState<'a> {
     pub clues: &'a Clues,
-    pub squares: &'a Squares,
     pub render: &'a GridRenderState,
 }
 
@@ -59,8 +58,6 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             clue_style = clue_style.not_dim();
         }
 
-        let size = state.squares.size();
-
         // Cell style
         if let Some(cell) = self.0.as_ref() {
             if cell.is_revealed() {
@@ -79,7 +76,10 @@ impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
             .add_modifier(Modifier::BOLD);
         } else if is_playable
             && let Some(app_pos) = state.render.to_app(pos)
-            && state.render.selection.contains(app_pos, &size)
+            && state
+                .render
+                .selection
+                .contains(app_pos, state.render.viewport)
         {
             border_style = base_style.fg(Color::Green);
         }

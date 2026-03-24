@@ -86,10 +86,9 @@ where
     T: Clone + Eq + 'static + Debug,
 {
     if render.mode.is_visual() {
-        let size = render.viewport.as_size();
         let positions = render
             .selection
-            .positions(&size)
+            .positions(render.viewport)
             .filter_map(|pos| render.to_grid(pos));
 
         solve.handle_operator(op, positions, history);
@@ -123,10 +122,9 @@ where
     T: Clone + Eq + 'static + Debug,
 {
     if render.mode.is_visual() {
-        let size = render.viewport.as_size();
         let positions = render
             .selection
-            .positions(&size)
+            .positions(render.viewport)
             .filter_map(|pos| render.to_grid(pos));
 
         solve.handle_operator(op, positions, history);

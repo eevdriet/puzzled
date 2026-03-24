@@ -3,13 +3,13 @@ use chumsky::{
     extra::Err,
     prelude::{choice, just},
 };
-use puzzled_core::{Metadata, Timer};
+use puzzled_core::Metadata;
 use puzzled_io::text::{
     TxtPuzzle,
-    read::{self, ParseError, cell_entry_grids, ignore_case_keyword},
+    read::{self, ParseError, cell, grid, ignore_case_keyword},
 };
 
-use crate::{Binario, BinarioState, Bit};
+use crate::{Binario, Bit};
 
 pub fn bit<'a>() -> impl Parser<'a, &'a str, Bit, Err<ParseError<'a>>> + Clone {
     choice((
@@ -24,29 +24,39 @@ pub fn bit<'a>() -> impl Parser<'a, &'a str, Bit, Err<ParseError<'a>>> + Clone {
     ))
 }
 
-impl TxtPuzzle<BinarioState> for Binario {
-    fn read_text<'a>(input: &str) -> read::Result<(Self, BinarioState)> {
-        let (cells, entries) =
-            cell_entry_grids(bit())
-                .parse(input)
-                .into_result()
-                .map_err(|errs| {
-                    read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
-                })?;
+impl TxtPuzzle for Binario {
+    fn read_text<'a>(input: &str) -> read::Result<Binario> {
+        // let (cells, entries) =
+        //     cell_entry_grids(bit())
+        //         .parse(input)
+        //         .into_result()
+        //         .map_err(|errs| {
+        //             read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
+        //         })?;
+        //
+        // let solutions = cells.map_ref(|cell| cell.solution);
+        //
+        // let timer = Timer::default();
+        // let meta = Metadata::default();
+        //
+        // let puzzle = Binario::new(cells, meta);
+        // let state = BinarioState::new(solutions, entries, timer);
+        //
+        // Ok((puzzle, state))
 
-        let solutions = cells.map_ref(|cell| cell.solution);
-
-        let timer = Timer::default();
+        let cells = grid(cell(bit()))
+            .parse(input)
+            .into_result()
+            .map_err(|errs| {
+                read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
+            })?;
         let meta = Metadata::default();
 
-        let puzzle = Binario::new(cells, meta);
-        let state = BinarioState::new(solutions, entries, timer);
-
-        Ok((puzzle, state))
+        Ok(Binario::new(cells, meta))
     }
 
-    fn write_text(&self, state: &BinarioState) -> String {
-        format!("{state}\n{}", self.meta())
+    fn write_text(&self) -> String {
+        self.to_string()
     }
 }
 
@@ -100,8 +110,7 @@ mod tests {
     #[rstest]
     fn read(#[files("puzzles/ok/*.txt")] path: PathBuf) {
         let reader = TxtReader::new(false);
-        let (_puzzle, _state): (Binario, BinarioState) =
-            reader.read_from_path(path).expect("Puzzle is valid");
+        let _puzzle: Binario = reader.read_from_path(path).expect("Puzzle is valid");
     }
 
     #[test]

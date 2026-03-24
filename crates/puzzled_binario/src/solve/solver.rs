@@ -23,7 +23,7 @@ impl Solver<BinarioState> for BinarioSolver {
             "START: {}",
             state.solutions.iter().filter(|v| v.is_some()).count()
         );
-        let _ = puzzle.save_text_with_state("start", state);
+        let _ = puzzle.save_text("start");
 
         self.init(state);
 
@@ -35,7 +35,7 @@ impl Solver<BinarioState> for BinarioSolver {
             "END: {}",
             state.solutions.iter().filter(|v| v.is_some()).count()
         );
-        let _ = puzzle.save_text_with_state("end3", state);
+        let _ = puzzle.save_text("end3");
 
         self.try_finalize(state)
     }

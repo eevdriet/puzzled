@@ -1,6 +1,6 @@
 mod render;
 
-use crossterm::event::KeyCode;
+use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
 use puzzled_core::Solve;
 pub(crate) use render::*;
@@ -20,20 +20,12 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     type State = PuzzleScreenState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let PuzzleScreenState {
-            puzzle,
-            solve,
-            render,
-            ..
-        } = state;
+        let PuzzleScreenState { solve, render, .. } = state;
 
         render.viewport = area;
 
         let render_c = render.clone();
-        let cell_state = RenderBitState {
-            puzzle,
-            render: &render_c,
-        };
+        let cell_state = RenderBitState { render: &render_c };
 
         // let grid = solve.entries.map_ref(RenderBit);
 
@@ -89,6 +81,21 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 let pos = state.render.cursor;
 
                 match action {
+                    Action::Click(button) => {
+                        let bit = match button {
+                            MouseButton::Left => Bit::Zero,
+                            _ => Bit::One,
+                        };
+                        let entry = &state.solve.entries[pos];
+
+                        match entry.entry() {
+                            None => state.solve.enter(&pos, bit),
+                            Some(other) if *other == bit => state.solve.enter(&pos, !bit),
+                            _ => state.solve.clear(&pos),
+                        };
+
+                        true
+                    }
                     Action::Literal(KeyCode::Char(' ')) => {
                         let bit = &state.solve.entries[pos];
 

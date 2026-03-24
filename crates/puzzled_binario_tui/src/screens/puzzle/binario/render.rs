@@ -1,5 +1,5 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_binario::{Binario, Bit};
+use puzzled_binario::Bit;
 use puzzled_core::{Position, SolutionEntry};
 use puzzled_tui::{CellRender, GridRenderState, TextBlock};
 use ratatui::{
@@ -13,7 +13,6 @@ use ratatui::{
 pub struct RenderBit<'a>(pub(crate) SolutionEntry<'a, Bit>);
 
 pub struct RenderBitState<'a> {
-    pub puzzle: &'a Binario,
     pub render: &'a GridRenderState,
 }
 
@@ -29,7 +28,6 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
             Some(Bit::One) => base.fg(Color::Yellow),
         };
 
-        let size = state.puzzle.cells().size();
         let cursor = state.render.cursor;
 
         if pos == cursor {
@@ -37,7 +35,10 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
         }
 
         if let Some(app_pos) = state.render.to_app(pos)
-            && state.render.selection.contains(app_pos, &size)
+            && state
+                .render
+                .selection
+                .contains(app_pos, state.render.viewport)
         {
             style = style.fg(Color::Green);
         }

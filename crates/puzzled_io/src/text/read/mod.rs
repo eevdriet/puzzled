@@ -26,17 +26,17 @@ impl TxtReader {
         Self { _strict: strict }
     }
 
-    pub fn read<P, S>(&self, input: &str) -> Result<(P, S)>
+    pub fn read<P>(&self, input: &str) -> Result<P>
     where
-        P: TxtPuzzle<S>,
+        P: TxtPuzzle,
     {
         P::read_text(input)
     }
 
-    pub fn read_from_path<R, P, S>(&self, path: R) -> Result<(P, S)>
+    pub fn read_from_path<R, P>(&self, path: R) -> Result<P>
     where
         R: AsRef<Path>,
-        P: TxtPuzzle<S>,
+        P: TxtPuzzle,
     {
         let file_str = fs::read_to_string(path)?;
         self.read(&file_str)

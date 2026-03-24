@@ -8,10 +8,10 @@ use chumsky::{
 };
 use puzzled_io::{
     TxtPuzzle,
-    text::read::{self, ParseError, metadata_with_timer, quoted_string, square_entry_grids},
+    text::read::{self, ParseError, grid, metadata_with_timer, quoted_string, square},
 };
 
-use crate::{ClueDirection, ClueSpec, Crossword, CrosswordState, Solution};
+use crate::{ClueDirection, ClueSpec, Crossword, Solution};
 
 pub fn solution<'a>() -> impl Parser<'a, &'a str, Solution, Err<ParseError<'a>>> + Clone {
     text::ident().map(Solution::from)
@@ -40,33 +40,43 @@ pub fn clues<'a>() -> impl Parser<'a, &'a str, Vec<ClueSpec>, Err<ParseError<'a>
         .collect()
 }
 
-impl TxtPuzzle<CrosswordState> for Crossword {
-    fn read_text<'a>(input: &str) -> read::Result<(Self, CrosswordState)> {
-        let parser = group((
-            square_entry_grids(solution()).padded(),
+impl TxtPuzzle for Crossword {
+    fn read_text<'a>(input: &str) -> read::Result<Crossword> {
+        let (squares, clues, (meta, _)) = group((
+            grid(square(solution())).padded(),
             clues().padded(),
             metadata_with_timer().padded(),
-        ));
+        ))
+        .parse(input)
+        .into_result()
+        .map_err(|errs| {
+            read::Error::Parse(errs.into_iter().map(|err| format!("{err:#}")).collect())
+        })?;
 
-        let ((squares, entries), clues, (metadata, timer)) =
-            parser.parse(input).into_result().map_err(|errs| {
-                read::Error::Parse(errs.into_iter().map(|err| format!("{err:#}")).collect())
-            })?;
-
-        let solutions =
-            squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
-
-        let timer = timer.unwrap_or_default();
-
-        let mut puzzle = Crossword::from_squares(squares, metadata);
+        let mut puzzle = Crossword::from_squares(squares, meta);
         puzzle.insert_clues(clues);
 
-        let state = CrosswordState::new(solutions, entries, timer);
+        Ok(puzzle)
 
-        Ok((puzzle, state))
+        // let ((squares, entries), clues, (metadata, timer)) =
+        //     parser.parse(input).into_result().map_err(|errs| {
+        //         read::Error::Parse(errs.into_iter().map(|err| format!("{err:#}")).collect())
+        //     })?;
+        //
+        // let solutions =
+        //     squares.map_ref(|square| square.map_ref(|cell| Some(cell.solution.clone())));
+        //
+        // let timer = timer.unwrap_or_default();
+        //
+        // let mut puzzle = Crossword::from_squares(squares, metadata);
+        // puzzle.insert_clues(clues);
+        //
+        // let state = CrosswordState::new(solutions, entries, timer);
+        //
+        // Ok((puzzle, state))
     }
 
-    fn write_text(&self, state: &CrosswordState) -> String {
-        format!("{state}\n{}", self.meta())
+    fn write_text(&self) -> String {
+        self.to_string()
     }
 }

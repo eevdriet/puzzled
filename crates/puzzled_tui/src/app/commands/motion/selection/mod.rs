@@ -4,7 +4,7 @@ mod multi;
 pub use kind::*;
 pub use multi::*;
 
-use ratatui::layout::{Position, Rect, Size};
+use ratatui::layout::{Position, Rect};
 
 use crate::AsApp;
 
@@ -51,45 +51,45 @@ impl Selection {
         self.end = Some(end.as_app());
     }
 
-    pub fn range<S>(&self, size: &S) -> Rect
-    where
-        S: AsApp<Size>,
-    {
-        let rect = Rect::from(size.as_app());
+    pub fn range(&self, rect: Rect) -> Rect {
+        let (start, end) = match (self.start, self.end) {
+            (Some(s), Some(e)) => (s, e),
+            (Some(s), None) => (s, s), // treat as single-cell selection
+            _ => return Rect::default(),
+        };
 
-        match (self.start, self.end) {
-            // Single point
-            (Some(start), None) => Rect {
-                x: start.x,
-                y: start.y,
-                width: 1,
-                height: 1,
+        // Normalize (top-left → bottom-right)
+        let x1 = start.x.min(end.x);
+        let y1 = start.y.min(end.y);
+        let x2 = start.x.max(end.x);
+        let y2 = start.y.max(end.y);
+
+        let width = x2 - x1 + 1;
+        let height = y2 - y1 + 1;
+
+        let area = match self.kind {
+            SelectionKind::Cells => Rect {
+                x: x1,
+                y: y1,
+                width,
+                height,
             },
 
-            (Some(start), Some(end)) => {
-                let range_w = 1 + start.x.abs_diff(end.x);
-                let range_h = 1 + start.y.abs_diff(end.y);
+            SelectionKind::Rows => Rect {
+                x: 0,
+                y: y1,
+                height,
+                ..rect
+            },
 
-                match self.kind {
-                    SelectionKind::Rows => Rect {
-                        height: range_h,
-                        ..rect
-                    },
-                    SelectionKind::Cols => Rect {
-                        width: range_w,
-                        ..rect
-                    },
-                    SelectionKind::Cells => Rect {
-                        x: start.x.min(end.x),
-                        y: start.y.min(end.y),
-                        width: range_w,
-                        height: range_h,
-                    },
-                }
-            }
+            SelectionKind::Cols => Rect {
+                x: x1,
+                y: 0,
+                width,
+                ..rect
+            },
+        };
 
-            // Other (no points)
-            _ => Rect::default(),
-        }
+        area.intersection(rect)
     }
 }

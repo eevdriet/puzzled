@@ -7,14 +7,14 @@ use std::cmp::Ordering;
 pub use behavior::*;
 pub use handle::*;
 
-use crossterm::event::KeyCode;
-use derive_more::{Display, Eq};
+use crossterm::event::{KeyCode, MouseButton};
+use derive_more::Eq;
 use ratatui::layout::Position;
 use serde::Deserialize;
 
 use crate::SelectionKind;
 
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Display, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum Action<A> {
     // Lifetime management
@@ -24,13 +24,13 @@ pub enum Action<A> {
 
     // -- Normal -- //
     // Mouse
-    #[display("{pos:?}")]
     StartSelection {
         pos: Option<Position>,
         kind: SelectionKind,
         additive: bool,
     },
     EndSelection,
+    Click(MouseButton),
 
     // Focus
     FocusDown,
@@ -70,6 +70,7 @@ impl<A> Action<A> {
             // Mouse
             StartSelection { .. } => 3,
             EndSelection => 4,
+            Click(_) => 4,
 
             // Focus
             FocusDown => 5,

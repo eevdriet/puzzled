@@ -66,6 +66,7 @@ impl CellStyle {
 impl fmt::Display for CellStyle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let styles = [
+            (CellStyle::INITIALLY_REVEALED, '`'),
             (CellStyle::CIRCLED, '@'),
             (CellStyle::REVEALED, '*'),
             (CellStyle::INCORRECT, '!'),

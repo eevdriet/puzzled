@@ -1,7 +1,7 @@
 use std::io;
 
 use crossterm::event::KeyCode;
-use puzzled_crossword::Crossword;
+use puzzled_crossword::{Crossword, CrosswordState};
 use puzzled_io::TxtPuzzle;
 use puzzled_tui::{
     Action, AppCommand, Command, EventMode, GridRenderState, ListRender, ListWidget, Screen,
@@ -148,7 +148,8 @@ impl ListRender<CrosswordApp> for TitleRender {
 }
 
 fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
-    let (puzzle, solve_state) = Crossword::load_text("2026-03-08-nyt").map_err(io::Error::other)?;
+    let puzzle = Crossword::load_text("2026-03-08-nyt").map_err(io::Error::other)?;
+    let solve_state = CrosswordState::from(&puzzle);
 
     let mut render_state = GridRenderState {
         use_direction: true,

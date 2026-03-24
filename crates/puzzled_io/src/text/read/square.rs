@@ -3,8 +3,19 @@ use puzzled_core::{Cell, Entry, Grid, NON_PLAYABLE_CHAR, Square};
 
 use crate::{
     SquareEntries,
-    text::read::{ParseError, cell_entry, grid},
+    text::read::{ParseError, cell, cell_entry, grid},
 };
+
+pub fn square<'a, T, P>(
+    value: P,
+) -> impl Parser<'a, &'a str, Square<Cell<T>>, Err<ParseError<'a>>> + Clone
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    just(NON_PLAYABLE_CHAR)
+        .map(|_| Square::new_empty())
+        .or(cell(value).map(Square::new))
+}
 
 pub fn square_entry<'a, T, P>(
     value: P,

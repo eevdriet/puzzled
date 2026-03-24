@@ -210,7 +210,7 @@ impl<A: AppTypes> EventEngine<A> {
                 )));
             }
 
-            (Up(Left), _, is_selecting, _) => {
+            (Up(button), _, is_selecting, is_visual) => {
                 tracing::debug!("[MOUSE] Finish selection (up end drag)");
                 self.is_selecting = false;
 
@@ -223,6 +223,13 @@ impl<A: AppTypes> EventEngine<A> {
                 else {
                     tracing::debug!("[MOUSE] Back to normal (up no drag)");
                     effects.push(EventEffect::Mode(EventMode::Normal));
+
+                    if !is_visual {
+                        effects.push(EventEffect::Command(Command::new_action(Action::Click(
+                            button,
+                        ))));
+                    }
+
                     effects.push(EventEffect::Command(Command::new_motion(
                         Motion::Mouse(mouse),
                         None,

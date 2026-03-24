@@ -1,4 +1,4 @@
-use ratatui::layout::{Position, Rect, Size};
+use ratatui::layout::{Position, Rect};
 
 use crate::{AsApp, Selection, SelectionKind};
 
@@ -59,21 +59,17 @@ impl MultiSelection {
         }
     }
 
-    pub fn contains<P, S>(&self, pos: P, size: &S) -> bool
+    pub fn contains<P>(&self, pos: P, area: Rect) -> bool
     where
         P: AsApp<Position>,
-        S: AsApp<Size>,
     {
-        let mut _contains = |sel: &Selection| sel.range(&size.as_app()).contains(pos.as_app());
+        let mut _contains = |sel: &Selection| sel.range(area).contains(pos.as_app());
 
         self.active.is_some_and(|sel| _contains(&sel)) || self.selections.iter().any(_contains)
     }
 
-    pub fn ranges<S>(&self, size: &S) -> impl Iterator<Item = Rect>
-    where
-        S: AsApp<Size>,
-    {
-        let range = |sel: &Selection| sel.range(&size.as_app());
+    pub fn ranges(&self, area: Rect) -> impl Iterator<Item = Rect> {
+        let range = move |sel: &Selection| sel.range(area);
 
         self.selections
             .iter()
@@ -81,13 +77,10 @@ impl MultiSelection {
             .chain(self.active.iter().map(range))
     }
 
-    pub fn positions<S>(&self, size: &S) -> impl Iterator<Item = Position>
-    where
-        S: AsApp<Size>,
-    {
+    pub fn positions(&self, area: Rect) -> impl Iterator<Item = Position> {
         self.selections
             .iter()
-            .flat_map(|sel| sel.range(&size.as_app()).positions())
+            .flat_map(move |sel| sel.range(area).positions())
     }
 }
 

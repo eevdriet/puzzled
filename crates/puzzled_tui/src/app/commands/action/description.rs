@@ -30,6 +30,7 @@ where
             Action::EndSelection => "End the current selection (if any)",
             // Custom
             Action::Custom(custom) => return custom.description(state),
+            Action::Click(button) => return Some(format!("{button:?} click")),
         };
 
         Some(desc.to_string())

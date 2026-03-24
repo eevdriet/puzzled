@@ -7,6 +7,22 @@ use puzzled_core::{Cell, CellStyle, Entry, Grid, MISSING_ENTRY_CHAR};
 
 use crate::text::read::{ParseError, grid};
 
+pub fn cell<'a, T, P>(value: P) -> impl Parser<'a, &'a str, Cell<T>, Err<ParseError<'a>>> + Clone
+where
+    P: Parser<'a, &'a str, T, Err<ParseError<'a>>> + Clone,
+{
+    group((
+        solution(value.clone()).padded(),
+        cell_style().or_not().padded(),
+    ))
+    .padded()
+    .map(|(solution, opt_style)| {
+        let style = opt_style.unwrap_or_default();
+
+        Cell::new_with_style(solution, style)
+    })
+}
+
 pub fn cell_entry<'a, T, P>(
     value: P,
 ) -> impl Parser<'a, &'a str, (Cell<T>, Entry<T>), Err<ParseError<'a>>> + Clone
@@ -20,11 +36,7 @@ where
     ))
     .padded()
     .map(|(solution, opt_style, entry)| {
-        let mut style = opt_style.unwrap_or_default();
-        if solution.is_some() {
-            style |= CellStyle::INITIALLY_REVEALED;
-        }
-
+        let style = opt_style.unwrap_or_default();
         let cell = Cell::new_with_style(solution, style);
         let entry = Entry::new_with_style(entry, style);
 
@@ -33,14 +45,15 @@ where
 }
 
 pub fn cell_style<'a>() -> impl Parser<'a, &'a str, CellStyle, Err<ParseError<'a>>> + Clone {
-    one_of("*@~!")
+    one_of("*@~`!")
         .repeated()
         .fold(CellStyle::default(), |style, marker| match marker {
             '*' => style | CellStyle::REVEALED,
+            '`' => style | CellStyle::INITIALLY_REVEALED,
             '!' => style | CellStyle::INCORRECT,
             '~' => style | CellStyle::PREVIOUSLY_INCORRECT,
             '@' => style | CellStyle::CIRCLED,
-            _ => unreachable!("Only parsed one_of(\"*@~!\")"),
+            _ => unreachable!("Only parsed one_of(\"*@~`!\")"),
         })
 }
 
