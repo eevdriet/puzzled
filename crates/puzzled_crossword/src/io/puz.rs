@@ -54,10 +54,10 @@ impl BinaryPuzzle<CrosswordState> for Crossword {
     fn grids(&self, state: &CrosswordState) -> write::Result<(Grid<u8>, Grid<u8>)> {
         let solution = state
             .solutions
-            .write_state_grid(|sol| sol.first_letter() as u8);
+            .write_state_grid(|sol: &Solution| sol.first_letter() as u8);
         let state = state
             .entries
-            .write_state_grid(|sol| sol.first_letter() as u8);
+            .write_state_grid(|sol: &Solution| sol.first_letter() as u8);
 
         Ok((solution, state))
     }

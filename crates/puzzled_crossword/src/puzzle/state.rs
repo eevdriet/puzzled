@@ -1,12 +1,11 @@
+use delegate::delegate;
 use derive_more::{Deref, DerefMut, Display};
-use puzzled_core::{
-    Entry, Grid, Solve, Square, SquareGridState, Timer, impl_solve_for_square_grid_state,
-};
+use puzzled_core::{Entry, Grid, Position, Solve, Square, SquareGridState, Timer};
 
 use crate::{ClueId, Crossword, Solution};
 
 #[derive(Debug, Deref, DerefMut, Display)]
-pub struct CrosswordState(pub(crate) SquareGridState<Solution>);
+pub struct CrosswordState(pub(crate) SquareGridState<Crossword>);
 
 impl CrosswordState {
     pub fn new(
@@ -28,8 +27,6 @@ impl CrosswordState {
         clue.positions().all(|pos| self.reveal(&pos))
     }
 }
-
-impl_solve_for_square_grid_state!(CrosswordState, Crossword, Solution);
 
 pub trait CrosswordSolve {
     /// Try to reveal a [clue](crate::Clue) from a given [identifier](ClueId).
@@ -61,5 +58,27 @@ impl From<&Crossword> for CrosswordState {
         let timer = Timer::default();
 
         CrosswordState::new(solutions, entries, timer)
+    }
+}
+
+impl Solve<Crossword> for CrosswordState {
+    delegate! {
+        to self.0 {
+            fn solve(&mut self, pos: &Position, solution: Solution) -> bool;
+            fn enter(&mut self, pos: &Position, entry: Solution) -> bool;
+            fn clear(&mut self, pos: &Position) -> bool;
+            fn reveal(&mut self, pos: &Position) -> bool;
+            fn check(&mut self, pos: &Position) -> Option<bool>;
+
+            fn reveal_all(&mut self);
+            fn check_all(&mut self);
+            fn clear_all(&mut self);
+
+            fn enter_checked(&mut self, pos: &Position, entry: Solution) -> Option<bool>;
+
+            fn guess(&mut self, pos: &Position, guess: Solution) -> bool;
+
+            fn guess_checked(&mut self, pos: &Position, guess: Solution) -> Option<bool>;
+        }
     }
 }

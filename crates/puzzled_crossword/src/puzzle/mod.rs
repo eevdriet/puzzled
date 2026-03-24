@@ -9,7 +9,7 @@ pub use clue::*;
 pub use square::*;
 pub use state::*;
 
-use puzzled_core::{Cell, Grid, Metadata, Puzzle, Square};
+use puzzled_core::{Cell, Grid, Metadata, Position, Puzzle, Square};
 use std::fmt;
 
 /// A [crossword](https://en.wikipedia.org/wiki/Crossword) puzzle
@@ -60,6 +60,8 @@ impl Puzzle for Crossword {
     const NAME: &'static str = "Crossword";
 
     type Solution = Grid<Square<Solution>>;
+    type Position = Position;
+    type Value = Solution;
 }
 
 /// # Constructors

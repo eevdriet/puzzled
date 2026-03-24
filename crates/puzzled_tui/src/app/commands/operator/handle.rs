@@ -1,23 +1,22 @@
-use std::fmt::Debug;
-
-use puzzled_core::{GridState, Position, SquareGridState};
+use puzzled_core::{GridState, Position, Puzzle, SquareGridState};
 
 use crate::{
     ActionHistory, AppResolver, AppTypes, EntryAction, EntryChange, EventMode, GridRenderState,
     Operator,
 };
 
-pub trait HandleOperator<S> {
+pub trait HandleOperator {
     type Position;
 
-    fn handle_operator<I>(&mut self, op: Operator, positions: I, state: &mut S)
+    fn handle_operator<I>(&mut self, op: Operator, positions: I, state: &mut ActionHistory<Self>)
     where
+        Self: Sized,
         I: IntoIterator<Item = Self::Position>;
 }
 
-impl<T> HandleOperator<ActionHistory<Self>> for GridState<T>
+impl<P> HandleOperator for GridState<P>
 where
-    T: Clone + Eq + 'static,
+    P: Puzzle<Position = Position> + 'static,
 {
     type Position = Position;
 
@@ -39,14 +38,14 @@ where
             })
             .collect();
 
-        let action = Box::new(EntryAction::new(op, changes));
+        let action = Box::new(EntryAction::<P>::new(op, changes));
         state.execute(action, self);
     }
 }
 
-impl<T> HandleOperator<ActionHistory<Self>> for SquareGridState<T>
+impl<P> HandleOperator for SquareGridState<P>
 where
-    T: Clone + Eq + 'static + Debug,
+    P: Puzzle<Position = Position> + 'static,
 {
     type Position = Position;
 
@@ -74,16 +73,15 @@ where
     }
 }
 
-pub fn handle_grid_operator<A, T>(
+pub fn handle_grid_operator<A: AppTypes>(
     op: Operator,
     resolver: AppResolver<A>,
     render: &GridRenderState,
-    solve: &mut GridState<T>,
-    history: &mut ActionHistory<GridState<T>>,
+    solve: &mut GridState<A::Puzzle>,
+    history: &mut ActionHistory<GridState<A::Puzzle>>,
 ) -> bool
 where
-    A: AppTypes,
-    T: Clone + Eq + 'static + Debug,
+    A::Puzzle: Puzzle<Position = Position> + 'static,
 {
     if render.mode.is_visual() {
         let positions = render
@@ -110,16 +108,15 @@ where
     }
 }
 
-pub fn handle_square_grid_operator<A, T>(
+pub fn handle_square_grid_operator<A: AppTypes>(
     op: Operator,
     resolver: AppResolver<A>,
     render: &GridRenderState,
-    solve: &mut SquareGridState<T>,
-    history: &mut ActionHistory<SquareGridState<T>>,
+    solve: &mut SquareGridState<A::Puzzle>,
+    history: &mut ActionHistory<SquareGridState<A::Puzzle>>,
 ) -> bool
 where
-    A: AppTypes,
-    T: Clone + Eq + 'static + Debug,
+    A::Puzzle: Puzzle<Position = Position> + 'static,
 {
     if render.mode.is_visual() {
         let positions = render

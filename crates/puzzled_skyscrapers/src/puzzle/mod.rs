@@ -8,7 +8,7 @@ pub use cell::*;
 pub use clue::*;
 pub use skyscraper::*;
 
-use puzzled_core::{Cell, Direction, Grid, Line, Metadata, Puzzle, SidedGridDisplay};
+use puzzled_core::{Cell, Direction, Grid, Line, Metadata, Position, Puzzle, SidedGridDisplay};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Skyscrapers {
@@ -50,6 +50,8 @@ impl Puzzle for Skyscrapers {
     const NAME: &'static str = "Skyscrapers";
 
     type Solution = Grid<Skyscraper>;
+    type Position = Position;
+    type Value = Skyscraper;
 }
 
 impl fmt::Display for Skyscrapers {

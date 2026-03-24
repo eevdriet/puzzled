@@ -1,16 +1,20 @@
 use std::fmt::{self, Display};
 
-use crate::{Entry, Grid, Position, SolutionEntry, Solve, Square, Timer};
+use crate::{Entry, Grid, Position, Puzzle, SolutionEntry, Solve, Square, Timer};
 
 #[derive(Debug)]
-pub struct GridState<T> {
-    pub solutions: Grid<Option<T>>,
-    pub entries: Grid<Entry<T>>,
+pub struct GridState<P: Puzzle> {
+    pub solutions: Grid<Option<P::Value>>,
+    pub entries: Grid<Entry<P::Value>>,
     pub timer: Timer,
 }
 
-impl<T> GridState<T> {
-    pub fn new(solutions: Grid<Option<T>>, entries: Grid<Entry<T>>, timer: Timer) -> Self {
+impl<P: Puzzle> GridState<P> {
+    pub fn new(
+        solutions: Grid<Option<P::Value>>,
+        entries: Grid<Entry<P::Value>>,
+        timer: Timer,
+    ) -> Self {
         Self {
             solutions,
             entries,
@@ -18,7 +22,7 @@ impl<T> GridState<T> {
         }
     }
 
-    pub fn to_merged(&self) -> Grid<SolutionEntry<'_, T>> {
+    pub fn to_merged(&self) -> Grid<SolutionEntry<'_, P::Value>> {
         let data: Vec<_> = self
             .solutions
             .iter()
@@ -31,23 +35,21 @@ impl<T> GridState<T> {
     }
 }
 
-impl<T> fmt::Display for GridState<T>
+impl<P> fmt::Display for GridState<P>
 where
-    T: Display,
+    P: Puzzle,
+    P::Value: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_merged())
     }
 }
 
-impl<T> Solve for GridState<T>
+impl<P> Solve<P> for GridState<P>
 where
-    T: Clone + Eq,
+    P: Puzzle<Position = Position>,
 {
-    type Value = T;
-    type Position = Position;
-
-    fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+    fn solve(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(solution) = self.solutions.get_mut(*pos) else {
             return false;
         };
@@ -56,7 +58,7 @@ where
         true
     }
 
-    fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+    fn enter(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(entry) = self.entries.get_mut(*pos) else {
             return false;
         };
@@ -65,7 +67,7 @@ where
         true
     }
 
-    fn clear(&mut self, pos: &Self::Position) -> bool {
+    fn clear(&mut self, pos: &Position) -> bool {
         let Some(entry) = self.entries.get_mut(*pos) else {
             return false;
         };
@@ -74,7 +76,7 @@ where
         true
     }
 
-    fn reveal(&mut self, pos: &Self::Position) -> bool {
+    fn reveal(&mut self, pos: &Position) -> bool {
         let Some(Some(solution)) = self.solutions.get(*pos) else {
             return false;
         };
@@ -87,7 +89,7 @@ where
         true
     }
 
-    fn check(&mut self, pos: &Self::Position) -> Option<bool> {
+    fn check(&mut self, pos: &Position) -> Option<bool> {
         let Some(Some(solution)) = self.solutions.get(*pos) else {
             return None;
         };
@@ -142,146 +144,20 @@ where
     // }
 }
 
-#[macro_export]
-macro_rules! impl_solve_for_grid_state {
-    ($state:ty, $field:tt, $puzzle:ty, $val:ty) => {
-        impl $crate::Solve for $state {
-            type Value = $val;
-            type Position = $crate::Position;
-
-            fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let $crate::GridState { solutions, .. } = &mut self.$field;
-
-                let Some(solution) = solutions.get_mut(*pos) else {
-                    return false;
-                };
-
-                *solution = Some(value);
-                true
-            }
-
-            fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let $crate::GridState { entries, .. } = &mut self.$field;
-
-                let Some(entry) = entries.get_mut(*pos) else {
-                    return false;
-                };
-
-                entry.enter(value);
-                true
-            }
-
-            fn clear(&mut self, pos: &Self::Position) -> bool {
-                let $crate::GridState { entries, .. } = &mut self.$field;
-
-                let Some(entry) = entries.get_mut(*pos) else {
-                    return false;
-                };
-
-                entry.clear();
-                true
-            }
-
-            fn reveal(&mut self, pos: &Self::Position) -> bool {
-                let $crate::GridState {
-                    solutions, entries, ..
-                } = &mut self.$field;
-
-                let solutions = &*solutions;
-
-                let Some(Some(solution)) = solutions.get(*pos) else {
-                    return false;
-                };
-
-                let Some(entry) = entries.get_mut(*pos) else {
-                    return false;
-                };
-
-                entry.enter(solution.clone());
-                true
-            }
-
-            fn check(&mut self, pos: &Self::Position) -> Option<bool> {
-                let $crate::GridState {
-                    solutions, entries, ..
-                } = &mut self.$field;
-
-                let solutions = &*solutions;
-
-                let Some(Some(solution)) = solutions.get(*pos) else {
-                    return None;
-                };
-
-                let entry = entries.get_mut(*pos)?;
-                entry.check(solution)
-            }
-
-            fn reveal_all(&mut self) {
-                let $crate::GridState {
-                    solutions, entries, ..
-                } = &mut self.$field;
-
-                let solutions = &*solutions;
-
-                for (pos, solution) in solutions
-                    .iter_indexed()
-                    .filter_map(|(pos, s)| s.as_ref().map(|sol| (pos, sol.clone())))
-                {
-                    if let Some(entry) = entries.get_mut(pos) {
-                        entry.enter(solution);
-                    }
-                }
-            }
-
-            fn check_all(&mut self) {
-                let $crate::GridState {
-                    solutions, entries, ..
-                } = &mut self.$field;
-
-                for pos in solutions.positions() {
-                    if let (Some(Some(solution)), Some(entry)) =
-                        (solutions.get(pos), entries.get_mut(pos))
-                    {
-                        entry.check(solution);
-                    }
-                }
-            }
-
-            fn clear_all(&mut self) {
-                let $crate::GridState {
-                    solutions, entries, ..
-                } = &mut self.$field;
-
-                for pos in solutions.positions() {
-                    if let Some(entry) = entries.get_mut(pos) {
-                        entry.clear();
-                    }
-                }
-            }
-        }
-    };
-}
-
-impl<T> fmt::Display for SquareGridState<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_merged())
-    }
-}
-
 #[derive(Debug)]
-pub struct SquareGridState<T> {
-    pub solutions: Grid<Square<Option<T>>>,
-    pub entries: Grid<Square<Entry<T>>>,
+pub struct SquareGridState<P: Puzzle> {
+    pub solutions: Grid<Square<Option<P::Value>>>,
+    pub entries: Grid<Square<Entry<P::Value>>>,
     pub timer: Timer,
 }
 
-impl<T> SquareGridState<T> {
+impl<P> SquareGridState<P>
+where
+    P: Puzzle,
+{
     pub fn new(
-        solutions: Grid<Square<Option<T>>>,
-        entries: Grid<Square<Entry<T>>>,
+        solutions: Grid<Square<Option<P::Value>>>,
+        entries: Grid<Square<Entry<P::Value>>>,
         timer: Timer,
     ) -> Self {
         Self {
@@ -291,7 +167,7 @@ impl<T> SquareGridState<T> {
         }
     }
 
-    pub fn to_merged(&self) -> Grid<Square<SolutionEntry<'_, T>>> {
+    pub fn to_merged(&self) -> Grid<Square<SolutionEntry<'_, P::Value>>> {
         let data: Vec<_> = self
             .solutions
             .iter()
@@ -309,14 +185,21 @@ impl<T> SquareGridState<T> {
     }
 }
 
-impl<T> Solve for SquareGridState<T>
+impl<P> fmt::Display for SquareGridState<P>
 where
-    T: Clone + Eq,
+    P: Puzzle,
+    P::Value: Display,
 {
-    type Value = T;
-    type Position = Position;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_merged())
+    }
+}
 
-    fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+impl<P> Solve<P> for SquareGridState<P>
+where
+    P: Puzzle<Position = Position>,
+{
+    fn solve(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(solution) = self.solutions.get_fill_mut(*pos) else {
             return false;
         };
@@ -325,7 +208,7 @@ where
         true
     }
 
-    fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
+    fn enter(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(entry) = self.entries.get_fill_mut(*pos) else {
             return false;
         };
@@ -334,7 +217,7 @@ where
         true
     }
 
-    fn clear(&mut self, pos: &Self::Position) -> bool {
+    fn clear(&mut self, pos: &Position) -> bool {
         let Some(entry) = self.entries.get_fill_mut(*pos) else {
             return false;
         };
@@ -343,7 +226,7 @@ where
         true
     }
 
-    fn reveal(&mut self, pos: &Self::Position) -> bool {
+    fn reveal(&mut self, pos: &Position) -> bool {
         let Some(Some(solution)) = self.solutions.get_fill(*pos) else {
             return false;
         };
@@ -356,7 +239,7 @@ where
         true
     }
 
-    fn check(&mut self, pos: &Self::Position) -> Option<bool> {
+    fn check(&mut self, pos: &Position) -> Option<bool> {
         let Some(Some(solution)) = self.solutions.get_fill(*pos) else {
             return None;
         };
@@ -394,104 +277,4 @@ where
             }
         }
     }
-}
-
-#[macro_export]
-macro_rules! impl_solve_for_square_grid_state {
-    ($state:ty, $puzzle:ty, $ty:ty) => {
-        impl $crate::Solve for $state {
-            type Value = $ty;
-            type Position = $crate::Position;
-
-            fn solve(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let Some(solution) = self.solutions.get_fill_mut(*pos) else {
-                    return false;
-                };
-
-                *solution = Some(value);
-                true
-            }
-
-            fn enter(&mut self, pos: &Self::Position, value: Self::Value) -> bool {
-                let Some(entry) = self.entries.get_fill_mut(*pos) else {
-                    return false;
-                };
-
-                entry.enter(value);
-                true
-            }
-
-            fn reveal(&mut self, pos: &Self::Position) -> bool {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                let Some(Some(solution)) = solutions.get_fill(*pos) else {
-                    return false;
-                };
-
-                let Some(entry) = entries.get_fill_mut(*pos) else {
-                    return false;
-                };
-
-                entry.enter(solution.clone());
-                true
-            }
-
-            fn check(&mut self, pos: &Self::Position) -> Option<bool> {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                let Some(Some(solution)) = solutions.get_fill(*pos) else {
-                    return None;
-                };
-
-                let entry = entries.get_fill_mut(*pos)?;
-                entry.check(solution)
-            }
-
-            fn clear(&mut self, pos: &Self::Position) -> bool {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                let Some(entry) = entries.get_fill_mut(*pos) else {
-                    return false;
-                };
-
-                entry.clear();
-                true
-            }
-
-            fn reveal_all(&mut self) {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                for (pos, solution) in solutions
-                    .iter_fills_indexed()
-                    .filter_map(|(pos, s)| s.as_ref().map(|sol| (pos, sol.clone())))
-                {
-                    if let Some(entry) = entries.get_fill_mut(pos) {
-                        entry.enter(solution);
-                    }
-                }
-            }
-
-            fn check_all(&mut self) {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                for pos in solutions.positions() {
-                    if let (Some(Some(solution)), Some(entry)) =
-                        (solutions.get_fill(pos), entries.get_fill_mut(pos))
-                    {
-                        entry.check(solution);
-                    }
-                }
-            }
-
-            fn clear_all(&mut self) {
-                let (solutions, entries) = (&self.0.solutions, &mut self.0.entries);
-
-                for pos in solutions.positions() {
-                    if let Some(entry) = entries.get_fill_mut(pos) {
-                        entry.clear();
-                    }
-                }
-            }
-        }
-    };
 }

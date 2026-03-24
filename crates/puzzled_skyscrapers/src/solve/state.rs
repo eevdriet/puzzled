@@ -1,18 +1,16 @@
 use std::collections::VecDeque;
 
-use puzzled_core::{Entry, Grid, GridState, Position, Timer, impl_solve_for_grid_state};
+use puzzled_core::{Entry, Grid, GridState, Position, Timer};
 
 use crate::{Skyscraper, Skyscrapers};
 
 #[derive(Debug)]
 pub struct SkyscraperState {
-    pub state: GridState<Skyscraper>,
+    pub state: GridState<Skyscrapers>,
     pub timer: Timer,
 
     pub(crate) _frontier: VecDeque<(Position, Skyscraper)>,
 }
-
-impl_solve_for_grid_state!(SkyscraperState, state, Skyscrapers, Skyscraper);
 
 impl SkyscraperState {
     pub fn new(

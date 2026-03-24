@@ -3,11 +3,8 @@ use std::ops;
 use crate::{Grid, Offset, Position};
 
 impl<T> Grid<T> {
-    pub fn get<P>(&self, pos: P) -> Option<&T>
-    where
-        P: Into<Position>,
-    {
-        let idx = self.index(pos.into())?;
+    pub fn get(&self, pos: Position) -> Option<&T> {
+        let idx = self.index(pos)?;
         unsafe { Some(self.data.get_unchecked(idx)) }
     }
 

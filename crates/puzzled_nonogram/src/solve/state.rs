@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, VecDeque};
 
 use bitvec::{bitvec, vec::BitVec};
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Timer, impl_solve_for_grid_state};
+use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Timer};
 
 use crate::{Fill, LineMaskConstraint, LineValidation, Nonogram};
 
@@ -13,7 +13,7 @@ pub(crate) type LineMask = BitVec;
 pub struct NonogramState {
     #[deref]
     #[deref_mut]
-    pub state: GridState<Fill>,
+    pub state: GridState<Nonogram>,
 
     pub(crate) frontier: VecDeque<Line>,
 
@@ -21,8 +21,6 @@ pub struct NonogramState {
     pub(crate) constraints: LineMap<BTreeMap<Fill, LineMaskConstraint>>,
     pub(crate) masks: LineMap<BTreeMap<Fill, LineMask>>,
 }
-
-impl_solve_for_grid_state!(NonogramState, state, Nonogram, Fill);
 
 impl NonogramState {
     pub fn new(solutions: Grid<Option<Fill>>, entries: Grid<Entry<Fill>>, timer: Timer) -> Self {

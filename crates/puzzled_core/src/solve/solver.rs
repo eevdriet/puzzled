@@ -1,19 +1,15 @@
 use crate::{Puzzle, Solve};
 
-pub trait Solver<S>
+pub trait Solver<P, S>
 where
-    S: Solve,
+    P: Puzzle,
+    S: Solve<P>,
 {
-    type Puzzle: Puzzle;
     type Error;
 
-    fn solve(
-        &mut self,
-        puzzle: &Self::Puzzle,
-        state: &mut S,
-    ) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
+    fn solve(&mut self, puzzle: &P, state: &mut S) -> Result<P::Solution, Self::Error>;
 
-    fn try_finalize(&self, state: &S) -> Result<<Self::Puzzle as Puzzle>::Solution, Self::Error>;
+    fn try_finalize(&self, state: &S) -> Result<P::Solution, Self::Error>;
 }
 
 #[derive(Debug, thiserror::Error)]

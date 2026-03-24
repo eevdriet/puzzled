@@ -1,30 +1,33 @@
-use puzzled_core::Solve;
+use puzzled_core::{Puzzle, Solve};
 
 use crate::{ExecuteAction, Operator, UndoAction};
 
-#[derive(Debug)]
-pub struct EntryAction<T, P> {
+pub struct EntryAction<P: Puzzle> {
     op: Operator,
-    changes: Vec<EntryChange<T, P>>,
+    changes: Vec<EntryChange<P>>,
 }
 
-impl<T, P> EntryAction<T, P> {
-    pub fn new(op: Operator, changes: Vec<EntryChange<T, P>>) -> Self {
+impl<P> EntryAction<P>
+where
+    P: Puzzle,
+{
+    pub fn new(op: Operator, changes: Vec<EntryChange<P>>) -> Self {
         Self { op, changes }
     }
 }
 
 #[derive(Debug)]
-pub struct EntryChange<T, P> {
-    pub pos: P,
-    pub before: Option<T>,
-    pub after: Option<T>,
+pub struct EntryChange<P: Puzzle> {
+    pub pos: P::Position,
+    pub before: Option<P::Value>,
+    pub after: Option<P::Value>,
 }
 
-impl<T, P, S> ExecuteAction<S> for EntryAction<T, P>
+impl<P, S> ExecuteAction<S> for EntryAction<P>
 where
-    T: Clone,
-    S: Solve<Value = T, Position = P>,
+    P: Puzzle,
+    P::Value: Clone,
+    S: Solve<P>,
 {
     fn execute(&mut self, state: &mut S) {
         for change in &self.changes {
@@ -58,10 +61,11 @@ where
     }
 }
 
-impl<T, P, S> UndoAction<S> for EntryAction<T, P>
+impl<P, S> UndoAction<S> for EntryAction<P>
 where
-    T: Clone,
-    S: Solve<Value = T, Position = P>,
+    P: Puzzle,
+    P::Value: Clone,
+    S: Solve<P>,
 {
     fn undo(&mut self, state: &mut S) {
         for change in &self.changes {

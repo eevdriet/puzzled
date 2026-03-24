@@ -1,4 +1,4 @@
-use puzzled_binario::{Binario, BinarioState, Bit};
+use puzzled_binario::{Binario, BinarioState};
 use puzzled_core::GridState;
 use puzzled_tui::{ActionHistory, GridRenderState};
 
@@ -9,5 +9,5 @@ pub struct PuzzleScreenState {
     pub render: GridRenderState,
 
     // Commands
-    pub history: ActionHistory<GridState<Bit>>,
+    pub history: ActionHistory<GridState<Binario>>,
 }

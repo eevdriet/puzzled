@@ -18,6 +18,8 @@ pub trait Puzzle: Sized {
     const NAME: &'static str;
 
     type Solution;
+    type Position;
+    type Value: Clone + Eq;
 
     fn title(meta: &Metadata) -> String {
         let title = meta.title().unwrap_or(Self::NAME);
@@ -30,8 +32,8 @@ pub trait Puzzle: Sized {
 
     fn solve_with<'a, S, T>(&'a self, solver: &mut S) -> Result<Self::Solution, S::Error>
     where
-        S: Solver<T, Puzzle = Self>,
-        T: Solve + From<&'a Self>,
+        S: Solver<Self, T>,
+        T: Solve<Self> + From<&'a Self>,
     {
         let mut state = T::from(self);
         solver.solve(self, &mut state)
@@ -43,8 +45,8 @@ pub trait Puzzle: Sized {
         state: &mut T,
     ) -> Result<Self::Solution, S::Error>
     where
-        S: Solver<T, Puzzle = Self>,
-        T: Solve,
+        S: Solver<Self, T>,
+        T: Solve<Self>,
     {
         solver.solve(self, state)
     }

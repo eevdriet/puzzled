@@ -49,4 +49,6 @@ impl Puzzle for Binario {
     const NAME: &'static str = "Binario";
 
     type Solution = Grid<Bit>;
+    type Position = puzzled_core::Position;
+    type Value = Bit;
 }

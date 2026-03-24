@@ -8,7 +8,7 @@ mod run;
 use std::fmt;
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Cell, Grid, Metadata, Puzzle};
+use puzzled_core::{Cell, Grid, Metadata, Position, Puzzle};
 
 pub use cell::*;
 pub use colors::*;
@@ -33,6 +33,8 @@ impl Puzzle for Nonogram {
     const NAME: &'static str = "Nonogram";
 
     type Solution = Grid<Fill>;
+    type Position = Position;
+    type Value = Fill;
 }
 
 impl fmt::Display for Nonogram {

@@ -10,8 +10,7 @@ pub struct BinarioSolver {
     seen: HashSet<Position>,
 }
 
-impl Solver<BinarioState> for BinarioSolver {
-    type Puzzle = Binario;
+impl Solver<Binario, BinarioState> for BinarioSolver {
     type Error = SolverError<String>;
 
     fn solve(
