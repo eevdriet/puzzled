@@ -62,6 +62,6 @@ impl ImagePuzzle<BinarioState> for Binario {
             Ok(rgba)
         };
 
-        write_grid_image(&state.solutions, &mut write_bill)
+        write_grid_image(&state.state.solutions, &mut write_bill)
     }
 }

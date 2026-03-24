@@ -27,9 +27,13 @@ impl BinaryPuzzle<BinarioState> for Binario {
 
     fn grids(&self, state: &BinarioState) -> write::Result<(Grid<u8>, Grid<u8>)> {
         let solution = state
+            .state
             .solutions
             .write_state_grid(|bit| b'0' + u8::from(*bit));
-        let state = state.entries.write_state_grid(|bit| b'0' + u8::from(*bit));
+        let state = state
+            .state
+            .entries
+            .write_state_grid(|bit| b'0' + u8::from(*bit));
 
         Ok((solution, state))
     }
@@ -46,7 +50,7 @@ impl BinaryPuzzle<BinarioState> for Binario {
 
         // GEXT
         let cells = self.cells();
-        let entries = &state.entries;
+        let entries = &state.state.entries;
 
         let gext = cells.write_combined_style(entries);
         extras.gext = Some(gext);

@@ -20,7 +20,7 @@ impl Solver<Binario, BinarioState> for BinarioSolver {
     ) -> Result<Grid<Bit>, Self::Error> {
         tracing::info!(
             "START: {}",
-            state.solutions.iter().filter(|v| v.is_some()).count()
+            state.state.solutions.iter().filter(|v| v.is_some()).count()
         );
         let _ = puzzle.save_text("start");
 
@@ -32,7 +32,7 @@ impl Solver<Binario, BinarioState> for BinarioSolver {
 
         tracing::info!(
             "END: {}",
-            state.solutions.iter().filter(|v| v.is_some()).count()
+            state.state.solutions.iter().filter(|v| v.is_some()).count()
         );
         let _ = puzzle.save_text("end3");
 
@@ -53,6 +53,7 @@ impl BinarioSolver {
         self.seen.clear();
 
         for pos in state
+            .state
             .solutions
             .iter_indexed()
             .filter_map(|(pos, bit)| bit.is_none().then_some(pos))
@@ -77,7 +78,12 @@ impl BinarioSolver {
             }
 
             // Avoid overriding set bit
-            if state.solutions.get(pos).is_some_and(|bit| bit.is_some()) {
+            if state
+                .state
+                .solutions
+                .get(pos)
+                .is_some_and(|bit| bit.is_some())
+            {
                 tracing::debug!("\tAlready solved, skipping...");
                 continue;
             }

@@ -14,6 +14,7 @@ pub enum SidedGridError {
 
 type Side<T> = Option<Vec<T>>;
 
+#[derive(Debug)]
 pub struct SidedGrid<T, U> {
     pub grid: Grid<T>,
 
@@ -24,35 +25,66 @@ pub struct SidedGrid<T, U> {
 }
 
 impl<T, U> SidedGrid<T, U> {
-    pub fn new(
-        grid: Grid<T>,
-        top: Side<U>,
-        right: Side<U>,
-        bottom: Side<U>,
-        left: Side<U>,
-    ) -> Result<Self, SidedGridError> {
-        for (side_str, side) in [
-            ("top", top.as_ref()),
-            ("right", right.as_ref()),
-            ("bottom", bottom.as_ref()),
-            ("left", left.as_ref()),
-        ] {
-            if side.is_some_and(|s| s.len() != grid.cols()) {
-                return Err(SidedGridError::InvalidColCount {
-                    side: side_str.to_string(),
-                    found: side.expect("Checked for is_some").len(),
-                    expected: grid.cols(),
-                });
-            }
+    pub fn new(grid: Grid<T>) -> Self {
+        SidedGrid {
+            grid,
+            top: None,
+            bottom: None,
+            left: None,
+            right: None,
+        }
+    }
+
+    pub fn top(mut self, top: Vec<U>) -> Result<Self, SidedGridError> {
+        if top.len() != self.grid.cols() {
+            return Err(SidedGridError::InvalidColCount {
+                side: "top".to_string(),
+                found: top.len(),
+                expected: self.grid.cols(),
+            });
         }
 
-        Ok(SidedGrid {
-            grid,
-            top,
-            bottom,
-            left,
-            right,
-        })
+        self.top = Some(top);
+        Ok(self)
+    }
+
+    pub fn bottom(mut self, bottom: Vec<U>) -> Result<Self, SidedGridError> {
+        if bottom.len() != self.grid.cols() {
+            return Err(SidedGridError::InvalidColCount {
+                side: "bottom".to_string(),
+                found: bottom.len(),
+                expected: self.grid.cols(),
+            });
+        }
+
+        self.bottom = Some(bottom);
+        Ok(self)
+    }
+
+    pub fn left(mut self, left: Vec<U>) -> Result<Self, SidedGridError> {
+        if left.len() != self.grid.rows() {
+            return Err(SidedGridError::InvalidColCount {
+                side: "left".to_string(),
+                found: left.len(),
+                expected: self.grid.cols(),
+            });
+        }
+
+        self.left = Some(left);
+        Ok(self)
+    }
+
+    pub fn right(mut self, right: Vec<U>) -> Result<Self, SidedGridError> {
+        if right.len() != self.grid.rows() {
+            return Err(SidedGridError::InvalidColCount {
+                side: "right".to_string(),
+                found: right.len(),
+                expected: self.grid.cols(),
+            });
+        }
+
+        self.right = Some(right);
+        Ok(self)
     }
 }
 

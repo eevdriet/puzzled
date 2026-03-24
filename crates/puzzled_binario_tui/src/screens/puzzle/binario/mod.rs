@@ -27,9 +27,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let render_c = render.clone();
         let cell_state = RenderBitState { render: &render_c };
 
-        // let grid = solve.entries.map_ref(RenderBit);
-
-        let grid = solve.to_merged().map(RenderBit);
+        let grid = solve.state.to_merged().map(RenderBit);
         let grid_size = grid.render_size(&render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
@@ -60,7 +58,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 op,
                 resolver,
                 &state.render,
-                &mut state.solve.0,
+                &mut state.solve.state,
                 &mut state.history,
             ),
             Command::Motion { count, motion, op } => {
@@ -72,7 +70,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 if let Some(op) = op {
                     state
                         .solve
-                        .0
+                        .state
                         .handle_operator(op, positions, &mut state.history);
                 }
                 true
@@ -86,7 +84,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                             MouseButton::Left => Bit::Zero,
                             _ => Bit::One,
                         };
-                        let entry = &state.solve.entries[pos];
+                        let entry = &state.solve.state.entries[pos];
 
                         match entry.entry() {
                             None => state.solve.enter(&pos, bit),
@@ -97,7 +95,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                         true
                     }
                     Action::Literal(KeyCode::Char(' ')) => {
-                        let bit = &state.solve.entries[pos];
+                        let bit = &state.solve.state.entries[pos];
 
                         match bit.entry() {
                             None => state.solve.enter(&pos, Bit::Zero),
@@ -108,11 +106,11 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                         true
                     }
 
-                    _ => state
-                        .solve
-                        .0
-                        .solutions
-                        .handle_action(action, &mut state.render, &mut ()),
+                    _ => state.solve.state.solutions.handle_action(
+                        action,
+                        &mut state.render,
+                        &mut (),
+                    ),
                 }
             }
             _ => false,

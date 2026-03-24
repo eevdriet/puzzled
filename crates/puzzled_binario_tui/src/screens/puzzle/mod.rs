@@ -61,8 +61,8 @@ impl Screen<BinarioApp> for PuzzleScreen {
                 Action::Cancel => resolver.prev_screen(),
                 Action::ShowHelp => resolver.open_popup(),
                 Action::Quit => resolver.quit(),
-                Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
-                Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
+                Action::Undo => self.state.history.undo(*count, &mut self.state.solve.state),
+                Action::Redo => self.state.history.redo(*count, &mut self.state.solve.state),
                 _ => {
                     handled_action = false;
                 }
@@ -78,7 +78,7 @@ impl Screen<BinarioApp> for PuzzleScreen {
         resolver: AppResolver<BinarioApp>,
         ctx: &mut AppContext<BinarioApp>,
     ) -> bool {
-        let solutions = &mut self.state.solve.solutions;
+        let solutions = &mut self.state.solve.state.solutions;
         solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
     }
 
@@ -87,14 +87,14 @@ impl Screen<BinarioApp> for PuzzleScreen {
     }
 
     fn on_enter(&mut self, _ctx: &mut AppContext<BinarioApp>) {
-        self.state.solve.timer.start();
+        self.state.solve.state.timer.start();
     }
 
     fn on_pause(&mut self, _ctx: &mut AppContext<BinarioApp>) {
-        self.state.solve.timer.pause();
+        self.state.solve.state.timer.pause();
     }
 
     fn on_resume(&mut self, _ctx: &mut AppContext<BinarioApp>) {
-        self.state.solve.timer.start();
+        self.state.solve.state.timer.start();
     }
 }
