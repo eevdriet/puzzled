@@ -27,6 +27,8 @@ impl AppWidget<BinarioApp> for BinarioWidget {
             ..
         } = state;
 
+        render.viewport = area;
+
         let render_c = render.clone();
         let cell_state = RenderBitState {
             puzzle,

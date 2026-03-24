@@ -34,8 +34,6 @@ where
         state: &mut GridRenderState,
         custom_state: &mut S,
     ) -> bool {
-        tracing::info!("Handling grid base action: {action:?}");
-
         match action {
             Action::StartSelection {
                 pos,
@@ -44,7 +42,6 @@ where
             } => match pos {
                 Some(start) => {
                     if let Some(cursor) = state.to_grid(start) {
-                        tracing::info!("Starting selection @ {cursor}");
                         state.cursor = cursor;
                         state.selection.start(start, kind, additive);
                     }

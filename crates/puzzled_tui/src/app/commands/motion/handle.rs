@@ -125,7 +125,7 @@ where
         tracing::info!(
             "Move to end {end:?}: {:?} ({:?})",
             render.to_app(end),
-            render.mode
+            render.selection
         );
         render.cursor = end;
         render.ensure_cursor_visible(end);

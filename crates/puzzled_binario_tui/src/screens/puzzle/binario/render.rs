@@ -25,7 +25,8 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
 
         let mut style = match entry {
             None => base.dim(),
-            Some(_) => base.fg(Color::White),
+            Some(Bit::Zero) => base.fg(Color::White),
+            Some(Bit::One) => base.fg(Color::Yellow),
         };
 
         let size = state.puzzle.cells().size();
