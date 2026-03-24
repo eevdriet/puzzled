@@ -1,5 +1,6 @@
 mod clues;
 mod crossword;
+mod description;
 mod footer;
 mod hello;
 mod state;
@@ -65,7 +66,6 @@ impl PuzzleScreen {
         focus.link_below(Focus::Footer, &[Focus::Clues]);
 
         let list = ListState::default().with_selected(Some(0));
-        let help_keys = Keys::default().all(&());
 
         let pause_keys = Keys::default()
             .action(Action::Quit, &())
@@ -88,7 +88,6 @@ impl PuzzleScreen {
             pause_state,
             pause_keys,
             help_state: KeysTablePopupState::default(),
-            help_keys,
         };
 
         Self {
@@ -160,7 +159,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                         .render_popup(area, buf, &mut self.state.pause_state);
                 }
                 PuzzlePopup::Help => {
-                    let mut help = KeysTablePopup::new(&self.state.help_keys, &ctx.keys);
+                    let keys = Keys::new().all(&self.state);
+                    let mut help = KeysTablePopup::new(&keys, &ctx.keys);
                     help.render_popup(area, buf, &mut self.state.help_state);
                 }
             }
@@ -187,7 +187,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                     );
                 }
                 PuzzlePopup::Help => {
-                    let mut help = KeysTablePopup::new(&self.state.help_keys, &ctx.keys);
+                    let keys = Keys::new().all(&self.state);
+                    let mut help = KeysTablePopup::new(&keys, &ctx.keys);
                     return help.on_popup_command(command, resolver, &mut self.state.help_state);
                 }
             }

@@ -91,6 +91,14 @@ impl<E> Entry<E> {
         self.entry.as_ref()
     }
 
+    pub fn entry_mut(&mut self) -> Option<&mut E> {
+        self.entry.as_mut()
+    }
+
+    pub fn is_filled(&self) -> bool {
+        self.entry.is_some()
+    }
+
     /// Retrieve the current style of the cell
     pub fn style(&self) -> CellStyle {
         self.style
@@ -104,21 +112,17 @@ impl<E> Entry<E> {
             return false;
         }
 
-        // // Check whether the cell was previously incorrect
-        // if self.entry.is_some() && !self.is_correct() {
-        //     self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-        // }
+        // Clear correctness status as we can no longer be sure of it after a new entry
+        if self.style.contains(CellStyle::INCORRECT) {
+            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
+        }
+        self.style -= CellStyle::INCORRECT;
 
         // Enter the new guess and set its correctness style
         self.entry = Some(entry.into());
         self.guesses.clear();
 
         true
-
-        // self.style = match self.is_correct() {
-        //     true => self.style - CellStyle::INCORRECT,
-        //     false => self.style | CellStyle::INCORRECT,
-        // };
     }
 
     pub fn reveal<T: Into<E>>(&mut self, solution: T) -> bool {
@@ -126,6 +130,28 @@ impl<E> Entry<E> {
         self.style |= CellStyle::REVEALED;
 
         result
+    }
+
+    pub fn check(&mut self, solution: &E) -> Option<bool>
+    where
+        E: Eq,
+    {
+        // Try to compare the current entry to the solution if there is an entry
+        let is_correct = self.entry().map(|e| e == solution)?;
+
+        // Set previous correctness style
+        if self.style.contains(CellStyle::INCORRECT) {
+            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
+        }
+
+        // Set current correctness style
+        if is_correct {
+            self.style -= CellStyle::INCORRECT;
+        } else {
+            self.style |= CellStyle::INCORRECT;
+        }
+
+        Some(is_correct)
     }
 
     /// Clear the current entry.
@@ -186,30 +212,6 @@ where
 }
 
 impl<E> Eq for Entry<E> where E: Eq {}
-
-impl<E> Entry<E>
-where
-    E: Eq,
-{
-    pub fn check(&mut self, solution: &E) -> Option<bool> {
-        // Try to compare the current entry to the solution
-        let is_correct = self.entry().map(|e| e == solution)?;
-
-        // Set previous correctness style
-        if self.style.contains(CellStyle::INCORRECT) {
-            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-        }
-
-        // Set current correctness style
-        if is_correct {
-            self.style -= CellStyle::INCORRECT;
-        } else {
-            self.style |= CellStyle::INCORRECT;
-        }
-
-        Some(is_correct)
-    }
-}
 
 impl<E> fmt::Display for Entry<E>
 where

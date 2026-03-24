@@ -10,18 +10,19 @@ pub enum Operator {
     // -- Motion -- //
     // Text
     Change,
+    ChangeSingle,
+
     Delete,
+    DeleteLeft,
+    DeleteRight,
+
     Yank,
+    YankSingle,
 
     // Puzzle
     Reveal,
-    Check,
-
-    // -- Motionless -- //
-    ChangeSingle,
-    DeleteSingle,
-    YankSingle,
     RevealSingle,
+    Check,
     CheckSingle,
 }
 
@@ -35,6 +36,9 @@ impl Operator {
     pub fn is_mode_changing(&self) -> bool {
         use Operator::*;
 
-        matches!(self, Change | Delete | ChangeSingle | DeleteSingle)
+        matches!(
+            self,
+            Change | Delete | ChangeSingle | DeleteLeft | DeleteRight
+        )
     }
 }

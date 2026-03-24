@@ -189,9 +189,10 @@ impl<A: AppTypes> EventEngine<A> {
                 effects.push(EventEffect::Command(Command::new_action(action)));
 
                 // Move to the selected position
-                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                    mouse,
-                ))));
+                effects.push(EventEffect::Command(Command::new_motion(
+                    Motion::Mouse(mouse),
+                    None,
+                )));
             }
 
             // Start visual selection on mouse drag
@@ -200,9 +201,10 @@ impl<A: AppTypes> EventEngine<A> {
             // Update visual selection on additional mouse drag
             (Drag(Left), _, true, _) => {
                 tracing::debug!("[MOUSE] Update selection (left continue drag)");
-                effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                    mouse,
-                ))));
+                effects.push(EventEffect::Command(Command::new_motion(
+                    Motion::Mouse(mouse),
+                    None,
+                )));
             }
 
             (Up(Left), _, is_selecting, _) => {
@@ -218,9 +220,10 @@ impl<A: AppTypes> EventEngine<A> {
                 else {
                     tracing::debug!("[MOUSE] Back to normal (up no drag)");
                     effects.push(EventEffect::Mode(EventMode::Normal));
-                    effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                        mouse,
-                    ))));
+                    effects.push(EventEffect::Command(Command::new_motion(
+                        Motion::Mouse(mouse),
+                        None,
+                    )));
                 }
             }
 
@@ -228,9 +231,10 @@ impl<A: AppTypes> EventEngine<A> {
             (kind, _, _, _) => {
                 if !matches!(kind, MouseEventKind::Moved) {
                     tracing::debug!("[MOUSE] Other: {mouse:?}");
-                    effects.push(EventEffect::Command(Command::new_motion(Motion::Mouse(
-                        mouse,
-                    ))));
+                    effects.push(EventEffect::Command(Command::new_motion(
+                        Motion::Mouse(mouse),
+                        None,
+                    )));
                 }
             }
         }
@@ -481,18 +485,21 @@ impl<A: AppTypes> EventEngine<A> {
 
         let effect = match key.code {
             // Delete
-            KeyCode::Backspace => EventEffect::Command(Command::new_action(Action::DeleteLeft)),
-            KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
+            KeyCode::Backspace => EventEffect::Command(Command::new_motion(
+                Motion::Backwards,
+                Some(Operator::Delete),
+            )),
+            KeyCode::Delete => EventEffect::Command(Command::new_operator(Operator::DeleteRight)),
 
             // Movements
-            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down)),
-            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd)),
-            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart)),
-            KeyCode::Left => EventEffect::Command(Command::new_motion(Motion::Left)),
-            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd)),
-            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart)),
-            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right)),
-            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up)),
+            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down, None)),
+            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd, None)),
+            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart, None)),
+            KeyCode::Left => EventEffect::Command(Command::new_motion(Motion::Left, None)),
+            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd, None)),
+            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart, None)),
+            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right, None)),
+            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up, None)),
 
             // Modes
             KeyCode::Esc => EventEffect::Mode(EventMode::Normal),
@@ -513,19 +520,20 @@ impl<A: AppTypes> EventEngine<A> {
 
         let effect = match key.code {
             // Delete
-            KeyCode::Delete => EventEffect::Command(Command::new_action(Action::DeleteRight)),
+            KeyCode::Delete => EventEffect::Command(Command::new_operator(Operator::DeleteRight)),
 
             // Movements
-            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down)),
-            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd)),
-            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart)),
-            KeyCode::Left | KeyCode::Backspace => {
-                EventEffect::Command(Command::new_motion(Motion::Left))
-            }
-            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd)),
-            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart)),
-            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right)),
-            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up)),
+            KeyCode::Down => EventEffect::Command(Command::new_motion(Motion::Down, None)),
+            KeyCode::End => EventEffect::Command(Command::new_motion(Motion::RowEnd, None)),
+            KeyCode::Home => EventEffect::Command(Command::new_motion(Motion::RowStart, None)),
+            KeyCode::Left | KeyCode::Backspace => EventEffect::Command(Command::new_motion(
+                Motion::Left,
+                Some(Operator::DeleteLeft),
+            )),
+            KeyCode::PageDown => EventEffect::Command(Command::new_motion(Motion::ColEnd, None)),
+            KeyCode::PageUp => EventEffect::Command(Command::new_motion(Motion::ColStart, None)),
+            KeyCode::Right => EventEffect::Command(Command::new_motion(Motion::Right, None)),
+            KeyCode::Up => EventEffect::Command(Command::new_motion(Motion::Up, None)),
 
             // Modes
             KeyCode::Esc => EventEffect::Mode(EventMode::Normal),

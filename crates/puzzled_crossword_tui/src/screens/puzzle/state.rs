@@ -28,7 +28,6 @@ pub struct PuzzleScreenState {
     pub pause_keys: Keys<CrosswordApp>,
 
     pub help_state: KeysTablePopupState,
-    pub help_keys: Keys<CrosswordApp>,
 
     // Other
     pub history: ActionHistory<SquareGridState<Solution>>,

@@ -1,4 +1,4 @@
-use puzzled_crossword::ClueDirection;
+use puzzled_crossword::{Clue, ClueDirection, CluesSolveState};
 use puzzled_tui::{
     AppCommand, AppResolver, EventMode, ListRender, ListWidget, Widget as AppWidget,
 };
@@ -6,6 +6,7 @@ use ratatui::{
     layout::Size,
     prelude::{Buffer, Rect},
     style::{Color, Style},
+    text::Text,
     widgets::{List, ListItem, ListState},
 };
 
@@ -65,7 +66,7 @@ impl ListRender<CrosswordApp> for CluesListRender {
 
     fn render_list(&self, state: &Self::State) -> List<'_> {
         let base_style = Style::default();
-        let selected_style = base_style.fg(Color::Yellow);
+        let selected_style = base_style.fg(Color::Yellow).bold();
 
         let highlight_style = if self.dir == state.clue_dir {
             selected_style
@@ -104,7 +105,10 @@ impl ListRender<CrosswordApp> for CluesListRender {
                 clue.text().to_owned()
             };
 
-            ListItem::new(format!("{clue_id} {clue_text}"))
+            let style = clue_style(clue, state);
+            let text = Text::styled(format!("{clue_id} {clue_text}"), style);
+
+            ListItem::new(text)
         })
     }
 
@@ -115,4 +119,34 @@ impl ListRender<CrosswordApp> for CluesListRender {
             None => &mut state.across_down,
         }
     }
+}
+
+fn clue_style(clue: &Clue, state: &PuzzleScreenState) -> Style {
+    let mut base = Style::default();
+    let iter = state.solve.entries.iter_clue(clue);
+    let entries = iter.clone().filter_map(|entry| entry.entry());
+
+    // No filled squares or paused -> apply no styling
+    if entries.count() == 0 || state.popup.is_some() {
+        return base;
+    }
+
+    // All filled squares -> strikethrough
+    let all_filled = iter.clone().all(|entry| entry.is_filled());
+    if all_filled {
+        base = base.crossed_out().dim();
+    }
+
+    // Incorrect -> red
+    if all_filled && iter.clone().all(|entry| entry.is_incorrect()) {
+        base = base.fg(Color::Red);
+    }
+
+    // Revealed -> blue
+    if all_filled && iter.clone().all(|entry| entry.is_revealed()) {
+        base = base.fg(Color::Blue);
+    }
+
+    // Otherwise don't apply styling either
+    base
 }

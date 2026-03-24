@@ -1,10 +1,12 @@
 mod clues;
 mod direction;
+mod grid;
 mod id;
 mod specification;
 
 pub use clues::*;
 pub use direction::*;
+pub use grid::*;
 pub use id::*;
 pub use specification::*;
 

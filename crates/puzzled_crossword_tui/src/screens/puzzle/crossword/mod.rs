@@ -187,20 +187,6 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                         }
                     }
 
-                    Action::DeleteLeft => {
-                        state.solve.clear(&pos);
-
-                        if let Some(next) = pos - dir
-                            && state.puzzle.squares().get_fill(next).is_some()
-                        {
-                            state.render.cursor = next;
-                        }
-                    }
-
-                    Action::DeleteRight => {
-                        state.solve.clear(&pos);
-                    }
-
                     _ => {
                         return false;
                     }

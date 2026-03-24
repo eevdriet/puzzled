@@ -48,12 +48,16 @@ impl<A, T, M> Command<A, T, M> {
         Self::Action { count: 1, action }
     }
 
-    pub fn new_motion(motion: Motion<M>) -> Self {
+    pub fn new_motion(motion: Motion<M>, op: Option<Operator>) -> Self {
         Self::Motion {
             count: 1,
             motion,
-            op: None,
+            op,
         }
+    }
+
+    pub fn new_operator(operator: Operator) -> Self {
+        Self::Operator(operator)
     }
 
     pub fn count(&self) -> usize {

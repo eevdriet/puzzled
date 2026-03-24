@@ -1,13 +1,14 @@
 mod behavior;
+mod description;
 mod handle;
 mod selection;
 
 pub use behavior::*;
-use derive_more::Debug;
 pub use handle::*;
 pub use selection::*;
 
 use crossterm::event::MouseEvent;
+use derive_more::Debug;
 use puzzled_core::Direction;
 use serde::Deserialize;
 
@@ -34,6 +35,10 @@ pub enum Motion<M> {
     #[debug("Row(n)")]
     Row(#[serde(skip, default)] usize),
     Up,
+
+    // General
+    Forwards,
+    Backwards,
 
     // Word
     WordEndBackwards,

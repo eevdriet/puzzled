@@ -33,7 +33,8 @@ where
                 Operator::Change
                 | Operator::ChangeSingle
                 | Operator::Delete
-                | Operator::DeleteSingle => match change.after {
+                | Operator::DeleteLeft
+                | Operator::DeleteRight => match change.after {
                     Some(ref entry) => {
                         state.enter(&change.pos, entry.clone());
                     }
@@ -69,7 +70,8 @@ where
                 Operator::Change
                 | Operator::ChangeSingle
                 | Operator::Delete
-                | Operator::DeleteSingle => match change.before {
+                | Operator::DeleteLeft
+                | Operator::DeleteRight => match change.before {
                     Some(ref entry) => {
                         state.enter(&change.pos, entry.clone());
                     }

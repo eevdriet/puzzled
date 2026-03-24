@@ -75,7 +75,11 @@ where
     ) -> impl IntoIterator<Item = Position> {
         // Go to the first filled square in the given direction to perform the motion
         let mut pos = render.cursor;
-        let next_dir = Direction::try_from(&motion).unwrap_or(render.direction);
+        let next_dir = match &motion {
+            Motion::Forwards => render.direction,
+            Motion::Backwards => !render.direction,
+            motion => Direction::try_from(motion).unwrap_or(render.direction),
+        };
 
         if count > 0 {
             while let Some(next) = pos + next_dir
@@ -173,6 +177,9 @@ where
             }
         }
         Motion::Down | Motion::Left | Motion::Right | Motion::Up => iter_remaining(count + 1),
+        Motion::Forwards => iter_dir_remaining(dir, count + 1),
+        // NOTE: dir is already reversed before passing to this function for backwards motions
+        Motion::Backwards => iter_dir_remaining(dir, count + 1),
         Motion::RowStart | Motion::RowEnd | Motion::ColStart | Motion::ColEnd => {
             iter_direction(dir)
         }

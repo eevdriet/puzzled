@@ -51,7 +51,7 @@ impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let titles = self.titles(state);
-        let header = Row::new(titles).style(Style::new().bold()).bottom_margin(1);
+        let header = Row::new(titles).style(Style::new().bold());
         let (mut rows, name_width, keys_width, desc_width) = self.rows_and_widths(state);
         let rows = rows.remove(&state.tab).unwrap_or_default();
 
@@ -87,7 +87,8 @@ impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
             .map(|keys| keys.len())
             .max()
             .unwrap_or_default() as u16
-            + 2;
+            + 2
+            + 1;
 
         Size::new(width, height)
     }
@@ -127,9 +128,9 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
         &self,
         state: &KeysTablePopupState,
     ) -> (HashMap<KeysTab, Vec<Row<'_>>>, usize, usize, usize) {
-        let [name, keys, desc] = self.titles(state);
+        let [_, keys, desc] = self.titles(state);
 
-        let mut max_name_width = name.len();
+        let mut max_name_width = 0;
         let mut max_keys_width = keys.len();
         let mut max_desc_width = desc.len();
 
@@ -159,6 +160,12 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
             &mut max_keys_width,
             &mut max_desc_width,
         );
+
+        max_name_width = rows
+            .keys()
+            .map(|name| format!("{name:?}").len())
+            .max()
+            .unwrap_or(max_name_width);
 
         (rows, max_name_width, max_keys_width, max_desc_width)
     }

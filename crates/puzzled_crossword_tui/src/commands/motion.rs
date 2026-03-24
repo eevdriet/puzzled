@@ -17,7 +17,7 @@ pub enum CrosswordMotion {
 impl Description<()> for CrosswordMotion {
     fn description(&self, _state: &()) -> Option<String> {
         let desc = match self {
-            CrosswordMotion::Clue(_) => "Inside a clue",
+            CrosswordMotion::Clue(_) => "Not inside a clue",
         };
 
         Some(desc.to_string())

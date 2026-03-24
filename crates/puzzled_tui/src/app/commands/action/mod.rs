@@ -1,12 +1,13 @@
 mod behavior;
+mod description;
 mod handle;
 
 use std::cmp::Ordering;
 
 pub use behavior::*;
-use crossterm::event::KeyCode;
 pub use handle::*;
 
+use crossterm::event::KeyCode;
 use derive_more::{Display, Eq};
 use ratatui::layout::Position;
 use serde::Deserialize;
@@ -41,10 +42,6 @@ pub enum Action<A> {
     BottomViewport,
     CenterViewport,
     TopViewport,
-
-    // -- Insert/Replace -- //
-    DeleteLeft,
-    DeleteRight,
 
     // -- Command -- //
     Undo,
@@ -84,10 +81,6 @@ impl<A> Action<A> {
             BottomViewport => 9,
             CenterViewport => 10,
             TopViewport => 11,
-
-            // -- Insert/Replace -- //
-            DeleteLeft => 12,
-            DeleteRight => 13,
 
             // -- Command -- //
             Undo => 14,

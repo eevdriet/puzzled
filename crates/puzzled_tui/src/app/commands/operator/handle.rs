@@ -28,7 +28,6 @@ where
                 let entry = self.entries.get(pos)?;
                 let before = entry.entry().cloned();
                 let after = match op {
-                    Operator::Delete | Operator::Change => None,
                     Operator::Reveal => self.solutions.get(pos).and_then(|sol| sol.clone()),
                     _ => None,
                 };
