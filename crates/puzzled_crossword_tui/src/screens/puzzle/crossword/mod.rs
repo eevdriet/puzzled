@@ -20,7 +20,6 @@ use ratatui::{
 };
 
 use crate::{CrosswordApp, Focus, GridMotionState, PuzzleScreenState};
-use tui_scrollview::ScrollView;
 
 pub struct CrosswordWidget;
 
@@ -82,14 +81,8 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);
-        let grid_size = grid.render_size(clue_area, &render.options);
-        let grid_widget = GridWidget::new(&grid, &cell_state);
-
-        // Render the grid in a scrollable view
-        let mut scroll_view = ScrollView::new(grid_size);
-
-        scroll_view.render_stateful_widget(grid_widget, Rect::from(grid_size), render);
-        scroll_view.render(grid_area, buf, &mut render.scroll);
+        let mut grid_widget = GridWidget::new(&grid, &cell_state);
+        AppWidget::<CrosswordApp>::render(&mut grid_widget, grid_area, buf, &mut state.render);
     }
 
     fn render_size(&self, area: Rect, state: &Self::State) -> Size {

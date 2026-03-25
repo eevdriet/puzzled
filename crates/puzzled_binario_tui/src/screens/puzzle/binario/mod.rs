@@ -10,7 +10,6 @@ use puzzled_tui::{
     HandleMotion, HandleOperator, RenderSize, Widget as AppWidget, handle_grid_operator,
 };
 use ratatui::prelude::{Buffer, Rect, Size, StatefulWidget};
-use tui_scrollview::ScrollView;
 
 use crate::{BinarioApp, PuzzleScreenState};
 
@@ -28,13 +27,8 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let cell_state = RenderBitState { render: &render_c };
 
         let grid = solve.state.to_merged().map(RenderBit);
-        let grid_size = grid.render_size(area, &render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
-
-        let mut scroll_view = ScrollView::new(grid_size);
-
-        scroll_view.render_stateful_widget(grid_widget, Rect::from(grid_size), render);
-        scroll_view.render(area, buf, &mut render.scroll);
+        grid_widget.render(area, buf, &mut state.render);
     }
 
     fn render_size(&self, area: Rect, state: &Self::State) -> Size {

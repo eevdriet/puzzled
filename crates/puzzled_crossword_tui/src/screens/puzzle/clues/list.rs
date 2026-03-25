@@ -134,7 +134,7 @@ fn clue_style(clue: &Clue, state: &PuzzleScreenState) -> Style {
     // All filled squares -> strikethrough
     let all_filled = iter.clone().all(|entry| entry.is_filled());
     if all_filled {
-        base = base.crossed_out().dim();
+        base = base.fg(Color::DarkGray).crossed_out().dim();
     }
 
     // Incorrect -> red
