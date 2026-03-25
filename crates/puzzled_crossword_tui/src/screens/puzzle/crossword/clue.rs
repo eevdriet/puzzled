@@ -16,8 +16,8 @@ pub struct CluesSizeWidget<'a> {
     pub clues: &'a Clues,
 }
 
-impl<'a> RenderSize<Rect> for CluesSizeWidget<'a> {
-    fn render_size(&self, area: &Rect) -> Size {
+impl<'a> RenderSize<()> for CluesSizeWidget<'a> {
+    fn render_size(&self, area: Rect, _state: &()) -> Size {
         let max_height = self
             .clues
             .values()

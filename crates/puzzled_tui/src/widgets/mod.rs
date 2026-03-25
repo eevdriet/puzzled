@@ -1,6 +1,7 @@
 mod board;
 mod keys;
 mod list;
+mod size;
 mod timer;
 
 // mod settings;
@@ -8,6 +9,7 @@ mod timer;
 pub use board::*;
 pub use keys::*;
 pub use list::*;
+pub use size::*;
 pub use timer::*;
 // pub use settings::*;
 
@@ -17,10 +19,6 @@ use ratatui::{
 };
 
 use crate::{AppCommand, AppResolver, AppTypes, EventMode, center_area};
-
-pub trait RenderSize<S> {
-    fn render_size(&self, state: &S) -> Size;
-}
 
 pub trait Widget<A: AppTypes> {
     type State;

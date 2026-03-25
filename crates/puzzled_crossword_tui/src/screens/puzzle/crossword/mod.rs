@@ -57,7 +57,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
 
         // Render the active clue
         let clues = puzzle.clues();
-        let clues_size = CluesSizeWidget { clues }.render_size(&area);
+        let clues_size = CluesSizeWidget { clues }.render_size(area, &());
 
         let [clue_area, grid_area] = Layout::vertical(vec![
             Constraint::Length(clues_size.height),
@@ -82,7 +82,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         };
 
         let grid = solve.entries.map_ref(RenderSquareSolution);
-        let grid_size = grid.render_size(&render.options);
+        let grid_size = grid.render_size(clue_area, &render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
         // Render the grid in a scrollable view
@@ -92,8 +92,11 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         scroll_view.render(grid_area, buf, &mut render.scroll);
     }
 
-    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
-        let mut size = state.puzzle.squares().render_size(&state.render.options);
+    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+        let mut size = state
+            .puzzle
+            .squares()
+            .render_size(area, &state.render.options);
 
         // Border around puzzle grid
         size.width += 2;

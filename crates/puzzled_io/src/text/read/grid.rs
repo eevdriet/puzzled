@@ -1,11 +1,11 @@
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use chumsky::{
     IterParser, Parser,
     extra::Err,
     prelude::{group, just},
 };
-use puzzled_core::{Grid, GridError, SidedGrid};
+use puzzled_core::{Direction, Grid, GridError, SidedGrid};
 
 use crate::text::read::ParseError;
 
@@ -68,32 +68,43 @@ where
 
         // Verify that every row and side of the grid have the same length
         let cols = rows.first().map(|row| row.len()).unwrap_or(0);
+        let mut sides = HashMap::default();
 
-        for (side_str, side) in [("top", top.as_ref()), ("bottom", bottom.as_ref())] {
-            if let Some(side) = side
-                && side.len() != cols
-            {
-                let err = GridError::InvalidSide {
-                    side: side_str.to_string(),
-                    found: side.len(),
-                    expected: rows.len(),
-                };
+        for (side_str, side, dir) in [
+            ("top", top, Direction::Up),
+            ("bottom", bottom, Direction::Down),
+        ] {
+            if let Some(side) = side {
+                if side.len() != cols {
+                    let err = GridError::InvalidSide {
+                        side: side_str.to_string(),
+                        found: side.len(),
+                        expected: rows.len(),
+                    };
 
-                return Err(ParseError::custom(span, err.to_string()));
+                    return Err(ParseError::custom(span, err.to_string()));
+                }
+
+                sides.insert(dir, side);
             }
         }
 
-        for (side_str, side) in [("left", left.as_ref()), ("right", right.as_ref())] {
-            if let Some(side) = side
-                && side.len() != rows.len()
-            {
-                let err = GridError::InvalidSide {
-                    side: side_str.to_string(),
-                    found: side.len(),
-                    expected: rows.len(),
-                };
+        for (side_str, side, dir) in [
+            ("left", left, Direction::Left),
+            ("right", right, Direction::Right),
+        ] {
+            if let Some(side) = side {
+                if side.len() != rows.len() {
+                    let err = GridError::InvalidSide {
+                        side: side_str.to_string(),
+                        found: side.len(),
+                        expected: rows.len(),
+                    };
 
-                return Err(ParseError::custom(span, err.to_string()));
+                    return Err(ParseError::custom(span, err.to_string()));
+                }
+
+                sides.insert(dir, side);
             }
         }
 
@@ -102,13 +113,7 @@ where
         let grid =
             Grid::from_vec(flat, cols).map_err(|err| ParseError::custom(span, err.to_string()))?;
 
-        Ok(SidedGrid {
-            grid,
-            top,
-            bottom,
-            left,
-            right,
-        })
+        Ok(SidedGrid { grid, sides })
     })
 }
 

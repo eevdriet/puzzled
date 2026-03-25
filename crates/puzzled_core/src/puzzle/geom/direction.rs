@@ -19,6 +19,13 @@ impl Direction {
         Direction::Down,
         Direction::Left,
     ];
+
+    pub fn is_horizontal(&self) -> bool {
+        matches!(self, Direction::Left | Direction::Right)
+    }
+    pub fn is_vertical(&self) -> bool {
+        matches!(self, Direction::Up | Direction::Down)
+    }
 }
 
 impl fmt::Display for Direction {

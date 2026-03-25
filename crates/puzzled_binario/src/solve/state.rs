@@ -18,9 +18,9 @@ impl BinarioState {
             None => 3,
         });
         let validity = SidedGrid::new(state.solutions.map_ref(|_| true))
-            .top(vec![true; possible.cols()])
+            .with_top(vec![true; possible.cols()])
             .expect("Checked dimensions")
-            .left(vec![true; possible.rows()])
+            .with_left(vec![true; possible.rows()])
             .expect("Checked dimensions");
 
         Self {

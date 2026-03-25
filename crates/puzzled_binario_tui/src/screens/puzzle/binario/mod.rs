@@ -28,7 +28,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let cell_state = RenderBitState { render: &render_c };
 
         let grid = solve.state.to_merged().map(RenderBit);
-        let grid_size = grid.render_size(&render.options);
+        let grid_size = grid.render_size(area, &render.options);
         let grid_widget = GridWidget::new(&grid, &cell_state);
 
         let mut scroll_view = ScrollView::new(grid_size);
@@ -37,8 +37,11 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         scroll_view.render(area, buf, &mut render.scroll);
     }
 
-    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
-        let mut size = state.puzzle.cells().render_size(&state.render.options);
+    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+        let mut size = state
+            .puzzle
+            .cells()
+            .render_size(area, &state.render.options);
 
         // Border around puzzle grid
         size.width += 2;

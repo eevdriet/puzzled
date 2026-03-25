@@ -12,7 +12,7 @@ pub struct TimerWidget {
 }
 
 impl<S> RenderSize<S> for TimerWidget {
-    fn render_size(&self, _state: &S) -> Size {
+    fn render_size(&self, _area: Rect, _state: &S) -> Size {
         Size {
             width: 8, // HH:mm:ss
             height: 1,

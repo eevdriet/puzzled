@@ -1,11 +1,11 @@
 mod cell;
 mod grid;
-// mod sided;
+mod sided;
 mod viewport;
 
 pub use cell::*;
 pub use grid::*;
-// pub use sided::*;
+pub use sided::*;
 pub use viewport::*;
 
 use puzzled_core::Position;
