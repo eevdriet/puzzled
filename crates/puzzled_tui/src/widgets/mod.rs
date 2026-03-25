@@ -1,16 +1,16 @@
 mod board;
 mod keys;
-mod list;
 mod size;
 mod timer;
+mod ui;
 
 // mod settings;
 
 pub use board::*;
 pub use keys::*;
-pub use list::*;
 pub use size::*;
 pub use timer::*;
+pub use ui::*;
 // pub use settings::*;
 
 use ratatui::{

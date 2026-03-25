@@ -20,8 +20,8 @@ use ratatui::{
 use puzzled_crossword::{ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     Action, ActionBehavior, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
-    FocusManager, GridRenderState, HandleCommand, HandleMode, Keys, KeysListPopup,
-    KeysListRenderState, KeysTablePopup, KeysTablePopupState, Popup, Screen, TrieEntry, Widget,
+    FocusManager, GridRenderState, HandleCommand, HandleMode, Keys, KeysListPopup, KeysTablePopup,
+    KeysTablePopupState, Popup, Screen, TrieEntry, Widget,
 };
 
 use crate::CrosswordApp;
@@ -70,9 +70,10 @@ impl PuzzleScreen {
         let pause_keys = Keys::default()
             .action(Action::Quit, &())
             .action(Action::Cancel, &());
+        let mut pause_state = ListState::default();
+        pause_state.select_first();
 
         let pause = KeysListPopup::new("Paused puzzle".to_string());
-        let pause_state = KeysListRenderState::default();
 
         let state = PuzzleScreenState {
             puzzle,
@@ -85,8 +86,8 @@ impl PuzzleScreen {
             history: ActionHistory::default(),
             focus,
             popup: None,
-            pause_state,
             pause_keys,
+            pause_state,
             help_state: KeysTablePopupState::default(),
         };
 

@@ -1,7 +1,7 @@
 use puzzled_core::{Direction, SquareGridState};
 use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
-    ActionHistory, FocusManager, GridRenderState, Keys, KeysListRenderState, KeysTablePopupState,
+    ActionHistory, FocusManager, GridRenderState, Keys, KeysTablePopupState, ListRenderState,
     ensure_cells_visible,
 };
 use ratatui::{layout::Rect, widgets::ListState};
@@ -24,7 +24,7 @@ pub struct PuzzleScreenState {
     pub focus: FocusManager<Focus>,
     pub popup: Option<PuzzlePopup>,
 
-    pub pause_state: KeysListRenderState,
+    pub pause_state: ListState,
     pub pause_keys: Keys<CrosswordApp>,
 
     pub help_state: KeysTablePopupState,
@@ -33,8 +33,27 @@ pub struct PuzzleScreenState {
     pub history: ActionHistory<SquareGridState<Crossword>>,
 }
 
+impl ListRenderState for PuzzleScreenState {
+    fn get(&self) -> ListState {
+        self.clue_list(self.clue_dir)
+    }
+
+    fn set(&mut self, state: ListState) {
+        let list = self.clue_list_mut(self.clue_dir);
+        *list = state;
+    }
+}
+
 impl PuzzleScreenState {
-    pub fn clue_list(&mut self, clue_dir: Option<ClueDirection>) -> &mut ListState {
+    pub fn clue_list(&self, clue_dir: Option<ClueDirection>) -> ListState {
+        match clue_dir {
+            Some(ClueDirection::Across) => self.across,
+            Some(ClueDirection::Down) => self.down,
+            None => self.across_down,
+        }
+    }
+
+    pub fn clue_list_mut(&mut self, clue_dir: Option<ClueDirection>) -> &mut ListState {
         match clue_dir {
             Some(ClueDirection::Across) => &mut self.across,
             Some(ClueDirection::Down) => &mut self.down,
@@ -80,7 +99,7 @@ impl PuzzleScreenState {
 
     pub fn update_cursor_from_clues(&mut self) {
         // Determine the currently selected clue
-        let Some(idx) = self.clue_list(self.clue_dir).selected() else {
+        let Some(idx) = self.clue_list_mut(self.clue_dir).selected() else {
             return;
         };
 

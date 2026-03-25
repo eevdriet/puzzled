@@ -10,7 +10,7 @@ use puzzled_tui::{
 use puzzled_tui::{AppContext, AppResolver};
 use ratatui::layout::{Constraint, Flex, Layout};
 use ratatui::text::Line;
-use ratatui::widgets::{List, ListItem, ListState, Paragraph, Widget};
+use ratatui::widgets::{ListItem, ListState, Paragraph, Widget};
 use ratatui::{buffer::Buffer, layout::Rect};
 
 use crate::{CrosswordApp, PuzzleScreen};
@@ -24,7 +24,7 @@ const ITEMS: [&str; 4] = ["New game", "Continue", "About", "Quit"];
 
 impl Default for TitleScreen {
     fn default() -> Self {
-        let list = ListWidget::new(TitleRender);
+        let list = ListWidget::new(TitleRender).highlight_symbol(">> ");
         let mut state = ListState::default();
         state.select_first();
 
@@ -86,19 +86,11 @@ struct TitleRender;
 impl ListRender<CrosswordApp> for TitleRender {
     type State = ListState;
 
-    fn render_list(&self, _state: &Self::State) -> ratatui::widgets::List<'_> {
-        List::default().highlight_symbol(">> ")
-    }
-
-    fn render_items(
+    fn render_items<'a>(
         &self,
-        _state: &Self::State,
-    ) -> impl Iterator<Item = ratatui::widgets::ListItem<'_>> {
+        _state: &'a Self::State,
+    ) -> impl Iterator<Item = ratatui::widgets::ListItem<'a>> {
         ITEMS.into_iter().map(ListItem::new)
-    }
-
-    fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
-        state
     }
 
     fn on_command(

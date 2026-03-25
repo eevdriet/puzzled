@@ -7,7 +7,7 @@ use ratatui::{
     prelude::{Buffer, Rect},
     style::{Color, Style},
     text::Text,
-    widgets::{List, ListItem, ListState},
+    widgets::{List, ListItem},
 };
 
 use crate::{CrosswordApp, PuzzleScreenState};
@@ -19,7 +19,7 @@ pub struct CluesListWidget {
 impl CluesListWidget {
     pub fn new(dir: Option<ClueDirection>) -> Self {
         let render = CluesListRender { dir };
-        let list = ListWidget::new(render);
+        let list = ListWidget::new(render).highlight_symbol(">> ");
 
         Self { list }
     }
@@ -29,7 +29,7 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
     type State = PuzzleScreenState;
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        AppWidget::<CrosswordApp>::render(&mut self.list, area, buf, state);
+        self.list.render(area, buf, state);
     }
 
     fn render_size(&self, area: Rect, state: &Self::State) -> Size {
@@ -57,14 +57,14 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
     }
 }
 
-struct CluesListRender {
+pub struct CluesListRender {
     dir: Option<ClueDirection>,
 }
 
 impl ListRender<CrosswordApp> for CluesListRender {
     type State = PuzzleScreenState;
 
-    fn render_list(&self, state: &Self::State) -> List<'_> {
+    fn render_list<'a>(&self, list: List<'a>, state: &'a Self::State) -> List<'a> {
         let base_style = Style::default();
         let selected_style = base_style.fg(Color::Yellow).bold();
 
@@ -74,12 +74,10 @@ impl ListRender<CrosswordApp> for CluesListRender {
             base_style
         };
 
-        List::default()
-            .highlight_style(highlight_style)
-            .highlight_symbol(">> ")
+        list.highlight_style(highlight_style)
     }
 
-    fn render_items(&self, state: &Self::State) -> impl Iterator<Item = ListItem<'_>> {
+    fn render_items<'a>(&self, state: &'a Self::State) -> impl Iterator<Item = ListItem<'a>> {
         let max_num = state
             .clues(self.dir)
             .last()
@@ -110,14 +108,6 @@ impl ListRender<CrosswordApp> for CluesListRender {
 
             ListItem::new(text)
         })
-    }
-
-    fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
-        match self.dir {
-            Some(ClueDirection::Across) => &mut state.across,
-            Some(ClueDirection::Down) => &mut state.down,
-            None => &mut state.across_down,
-        }
     }
 }
 

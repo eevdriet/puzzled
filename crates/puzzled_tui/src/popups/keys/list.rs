@@ -1,8 +1,7 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect, Size},
-    style::{Color, Style},
-    widgets::{Block, BorderType, List, ListItem, ListState, Padding, Widget},
+    widgets::{Block, BorderType, ListItem, ListState, Padding, Widget},
 };
 
 use crate::{
@@ -31,7 +30,7 @@ impl<A: AppTypes> KeysListPopup<A> {
 }
 
 impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
-    type State = KeysListRenderState;
+    type State = ListState;
 
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let area = self.render_area(root, state);
@@ -84,44 +83,14 @@ impl<A: AppTypes> Default for KeysListRender<A> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct KeysListRenderState {
-    state: ListState,
-}
-
-impl KeysListRenderState {
-    pub fn new() -> Self {
-        let mut state = ListState::default();
-        state.select_first();
-
-        KeysListRenderState { state }
-    }
-}
-
-impl Default for KeysListRenderState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
-    type State = KeysListRenderState;
+    type State = ListState;
 
-    fn render_list(&self, _state: &Self::State) -> ratatui::widgets::List<'_> {
-        List::default()
-            .highlight_style(Style::default().fg(Color::Yellow))
-            .highlight_symbol(">> ")
-    }
-
-    fn render_items(&self, _state: &Self::State) -> impl Iterator<Item = ListItem<'_>> {
+    fn render_items<'a>(&self, _state: &'a Self::State) -> impl Iterator<Item = ListItem<'a>> {
         self.keys
             .actions
             .iter()
             .map(|(name, _desc, _action)| ListItem::new(name.to_owned()))
-    }
-
-    fn render_state<'a>(&self, state: &'a mut Self::State) -> &'a mut ListState {
-        &mut state.state
     }
 
     fn on_command(
@@ -135,7 +104,7 @@ impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
                 action: Action::Select,
                 ..
             } => {
-                if let Some(selected) = state.state.selected() {
+                if let Some(selected) = state.selected() {
                     match selected {
                         0 => resolver.prev_screen(),
                         _ => resolver.close_popup(),

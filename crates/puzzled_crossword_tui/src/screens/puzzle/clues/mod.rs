@@ -1,5 +1,7 @@
 mod list;
 
+pub use list::*;
+
 use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{
@@ -13,9 +15,7 @@ use ratatui::{
     widgets::{Block, Borders, Widget},
 };
 
-use crate::{
-    CrosswordApp, Focus, PuzzleScreenState, screens::puzzle::clues::list::CluesListWidget,
-};
+use crate::{CrosswordApp, Focus, PuzzleScreenState};
 
 pub struct CluesWidget {
     across_down: CluesListWidget,
