@@ -36,7 +36,7 @@ impl<T> RenderSize<GridOptions> for Grid<T> {
         let mut width = cols * opts.cell_width;
         let mut height = rows * opts.cell_height;
 
-        if let Some(inner) = opts.inner {
+        if let Some(inner) = opts.inner_borders {
             width += (cols - 1) / inner.width;
             height += (rows - 1) / inner.height;
         }
@@ -69,6 +69,8 @@ where
         } else {
             bordered_area
         };
+        tracing::info!("Bordered area: {bordered_area:?}");
+        tracing::info!("Area: {area:?}");
 
         // Render the grid itself
         let opts = &state.options;
@@ -87,6 +89,7 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self.grid[pos];
+                tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
                 let cell_widget = cell.render_cell(pos, self.cell_state);
@@ -99,12 +102,14 @@ where
                 // Draw inner vertical border if defined
                 let col = col as u16;
 
-                if let Some(size) = state.options.inner
+                if let Some(size) = state.options.inner_borders
                     && (col + 1).is_multiple_of(size.width)
                 {
                     if draw_inner {
                         for div_y in y..y + cell_h {
+                            tracing::trace!("\tSetting │ at ({x}, {div_y}) on screen");
                             buf.set_stringn(x, div_y, "│", 1, state.options.inner_border_style);
+                            tracing::trace!("\tDone");
                         }
                     }
 
@@ -118,7 +123,7 @@ where
             // Draw horizontal divider
             let row = row as u16;
 
-            if let Some(size) = state.options.inner
+            if let Some(size) = state.options.inner_borders
                 && (row + 1).is_multiple_of(size.height)
             {
                 let mut div_x = x_start;
@@ -127,21 +132,24 @@ where
                     let col = col as u16;
 
                     if draw_inner {
-                        let text = "─".repeat(cell_w as usize);
-                        buf.set_stringn(
-                            div_x,
-                            y,
-                            text,
-                            cell_w as usize,
-                            state.options.inner_border_style,
+                        let width = (area.right() - 1).saturating_sub(div_x).min(cell_w) as usize;
+                        let text = "─".repeat(width);
+
+                        tracing::trace!(
+                            "\tSetting ─ at ({div_x}..{}, {y}) on screen",
+                            div_x + width as u16
                         );
+                        tracing::trace!("\tDone");
+                        buf.set_stringn(div_x, y, text, width, state.options.inner_border_style);
                     }
 
                     div_x += cell_w;
 
                     if (col + 1).is_multiple_of(size.width) {
-                        if draw_inner {
+                        if draw_inner && y < area.bottom() {
+                            tracing::trace!("\tSetting ┼ at ({div_x}, {y}) on screen");
                             buf.set_stringn(div_x, y, "┼", 1, state.options.inner_border_style);
+                            tracing::trace!("\tDone");
                         }
 
                         div_x += 1;

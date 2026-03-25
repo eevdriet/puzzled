@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use derive_more::{Deref, DerefMut};
+
 use crate::Grid;
 
 #[derive(Debug, thiserror::Error, Clone)]
@@ -14,8 +16,10 @@ pub enum SidedGridError {
 
 type Side<T> = Option<Vec<T>>;
 
-#[derive(Debug)]
+#[derive(Debug, Deref, DerefMut)]
 pub struct SidedGrid<T, U> {
+    #[deref]
+    #[deref_mut]
     pub grid: Grid<T>,
 
     pub top: Side<U>,

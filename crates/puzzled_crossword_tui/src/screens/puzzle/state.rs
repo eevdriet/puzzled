@@ -1,5 +1,5 @@
 use puzzled_core::{Direction, SquareGridState};
-use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState, Solution};
+use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     ActionHistory, FocusManager, GridRenderState, Keys, KeysListRenderState, KeysTablePopupState,
     ensure_cells_visible,
@@ -30,7 +30,7 @@ pub struct PuzzleScreenState {
     pub help_state: KeysTablePopupState,
 
     // Other
-    pub history: ActionHistory<SquareGridState<Solution>>,
+    pub history: ActionHistory<SquareGridState<Crossword>>,
 }
 
 impl PuzzleScreenState {

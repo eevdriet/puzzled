@@ -23,6 +23,10 @@ async fn main() -> io::Result<()> {
     let opts = &mut render_state.options;
 
     opts.cell_width = 5;
+    // opts.inner = Some((3, 3).into());
+    opts.inner_borders = None;
+    opts.draw_inner_borders = true;
+    opts.draw_outer_borders = false;
     opts.cell_height = 3;
 
     let state = AppState {};

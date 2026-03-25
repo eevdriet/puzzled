@@ -54,7 +54,7 @@ impl GridRenderState {
         let cell_w = opts.cell_width;
         let cell_h = opts.cell_height;
 
-        if let Some(inner) = opts.inner {
+        if let Some(inner) = opts.inner_borders {
             let block_w = inner.width * cell_w + 1;
             let block_h = inner.height * cell_h + 1;
 
@@ -92,7 +92,7 @@ impl GridRenderState {
         y += row * cell_h;
 
         // Add inner cell borders if set
-        if let Some(inner) = opts.inner {
+        if let Some(inner) = opts.inner_borders {
             x += col / inner.width;
             y += row / inner.height;
         }

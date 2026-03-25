@@ -57,7 +57,7 @@ fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {
 
     // Inner borders
     if state.options.draw_outer_borders
-        && let Some(size) = state.options.inner
+        && let Some(size) = state.options.inner_borders
     {
         let w = state.options.cell_width * size.width + 1;
         let h = state.options.cell_height * size.height + 1;
