@@ -49,11 +49,16 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
         if entry.is_some() && !self.validity {
             style = style.fg(Color::Red);
         }
+        let border_type = if self.solution_entry.entry.is_initially_revealed() {
+            BorderType::LightDoubleDashed
+        } else {
+            BorderType::Rounded
+        };
 
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(style)
-            .border_type(BorderType::Rounded)
+            .border_type(border_type)
             .title_alignment(HorizontalAlignment::Center)
             .title_style(style);
 
