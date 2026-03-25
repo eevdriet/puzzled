@@ -1,4 +1,7 @@
 mod side;
+mod state;
+
+pub use state::*;
 
 use std::collections::HashMap;
 
@@ -13,19 +16,10 @@ use ratatui::{
     prelude::{Buffer, Rect, Size},
 };
 
-#[derive(Debug, Clone, Copy)]
-pub struct SideOptions {
-    pub top_height: u16,
-    pub bottom_height: u16,
-
-    pub left_width: u16,
-    pub right_width: u16,
-}
-
 #[derive(Debug, Clone)]
 pub struct SidedGridRenderState {
     pub grid: GridRenderState,
-    pub sides: SideOptions,
+    pub sides: SidesRenderState,
 }
 
 pub struct SidedGridWidget<'a, T, U, C, E> {
@@ -85,9 +79,11 @@ where
 
         let get_widget_and_size =
             |dir: Direction, widget: &mut Option<SideWidget<'a, U, E>>, size: &mut Size| {
-                if let Some(top) = self.sides.get(&Direction::Up) {
-                    let side_widget = SideWidget::new(dir, top, self.edge_state);
-                    *size = AppWidget::<A>::render_size(&side_widget, root, state);
+                if let Some(side) = self.sides.get(&dir) {
+                    let side_widget = SideWidget::new(dir, side, self.edge_state);
+                    let side_size = AppWidget::<A>::render_size(&side_widget, area, state);
+
+                    *size = side_size;
                     *widget = Some(side_widget);
                 }
             };

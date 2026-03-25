@@ -6,10 +6,10 @@ use puzzled_core::Solve;
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    HandleMotion, HandleOperator, RenderSize, Widget as AppWidget, handle_grid_operator,
+    Action, AppCommand, AppResolver, Command, EventMode, HandleBaseAction, HandleMotion,
+    HandleOperator, RenderSize, SidedGridWidget, Widget as AppWidget, handle_grid_operator,
 };
-use ratatui::prelude::{Buffer, Rect, Size, StatefulWidget};
+use ratatui::prelude::{Buffer, Rect, Size};
 
 use crate::{BinarioApp, PuzzleScreenState};
 
@@ -21,21 +21,33 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let PuzzleScreenState { solve, render, .. } = state;
 
-        render.viewport = area;
-
         let render_c = render.clone();
-        let cell_state = RenderBitState { render: &render_c };
+        let cell_state = RenderBitState {
+            render: &render_c.grid,
+        };
+        let edge_state = RenderEdgeState;
 
-        let grid = solve.state.to_merged().map(RenderBit);
-        let grid_widget = GridWidget::new(&grid, &cell_state);
-        grid_widget.render(area, buf, &mut state.render);
+        let grid = solve.state.to_merged();
+        let grid = grid
+            .join_ref(&solve.validity.grid, |solution_entry, validity| RenderBit {
+                solution_entry,
+                validity: *validity,
+            })
+            .expect("Solve grids have the same size");
+        // let grid_widget = GridWidget::new(&grid, &cell_state);
+        // grid_widget.render(area, buf, &mut state.render);
+
+        let mut sided_grid_widget =
+            SidedGridWidget::new(&grid, &solve.validity.sides, &cell_state, &edge_state);
+
+        AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, &mut state.render);
     }
 
     fn render_size(&self, area: Rect, state: &Self::State) -> Size {
         let mut size = state
             .puzzle
             .cells()
-            .render_size(area, &state.render.options);
+            .render_size(area, &state.render.grid.options);
 
         // Border around puzzle grid
         size.width += 2;
@@ -54,7 +66,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
             Command::Operator(op) => handle_grid_operator(
                 op,
                 resolver,
-                &state.render,
+                &state.render.grid,
                 &mut state.solve.state,
                 &mut state.history,
             ),
@@ -62,7 +74,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 let cells = state.puzzle.cells();
                 let mut custom_state = ();
                 let positions =
-                    cells.handle_motion(count, motion, &mut state.render, &mut custom_state);
+                    cells.handle_motion(count, motion, &mut state.render.grid, &mut custom_state);
 
                 if let Some(op) = op {
                     state
@@ -73,23 +85,29 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                 true
             }
             Command::Action { action, .. } => {
-                let pos = state.render.cursor;
+                let pos = state.render.grid.cursor;
 
                 match action {
-                    Action::Click(button) => {
+                    Action::Click { button, pos } => {
                         let bit = match button {
                             MouseButton::Left => Bit::Zero,
                             _ => Bit::One,
                         };
-                        let entry = &state.solve.state.entries[pos];
 
-                        match entry.entry() {
-                            None => state.solve.enter(&pos, bit),
-                            Some(other) if *other == bit => state.solve.enter(&pos, !bit),
-                            _ => state.solve.clear(&pos),
-                        };
+                        match state.render.grid.to_grid(pos) {
+                            Some(pos) => {
+                                let entry = &state.solve.state.entries[pos];
 
-                        true
+                                match entry.entry() {
+                                    None => state.solve.enter(&pos, bit),
+                                    Some(other) if *other == bit => state.solve.enter(&pos, !bit),
+                                    _ => state.solve.clear(&pos),
+                                };
+
+                                true
+                            }
+                            None => false,
+                        }
                     }
                     Action::Literal(KeyCode::Char(' ')) => {
                         let bit = &state.solve.state.entries[pos];
@@ -105,7 +123,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
 
                     _ => state.solve.state.solutions.handle_action(
                         action,
-                        &mut state.render,
+                        &mut state.render.grid,
                         &mut (),
                     ),
                 }

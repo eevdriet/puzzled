@@ -28,9 +28,15 @@ impl<'a, U, E> SideWidget<'a, U, E> {
         U: LineRender<E>,
     {
         let opts = &state.grid.options;
-        let alignment = match self.side {
-            Direction::Up => VerticalAlignment::Bottom,
-            Direction::Down => VerticalAlignment::Top,
+        let margin = state.sides.get(self.side).margin.min(area.height);
+
+        let (alignment, top, bottom) = match self.side {
+            Direction::Up => (
+                VerticalAlignment::Bottom,
+                area.top(),
+                area.bottom() - margin,
+            ),
+            Direction::Down => (VerticalAlignment::Top, area.top() + margin, area.bottom()),
             dir => unreachable!("{dir:?} should not be render as a horizontal side"),
         };
 
@@ -44,8 +50,7 @@ impl<'a, U, E> SideWidget<'a, U, E> {
                 .alignment(opts.h_align);
 
             // Determine the area to render the value in
-            let (text_y, text_h) =
-                align_vertically(text.height() as u16, area.top(), area.bottom(), alignment);
+            let (text_y, text_h) = align_vertically(text.height() as u16, top, bottom, alignment);
             let text_area = Rect::new(x, text_y, cell_w, text_h);
 
             text.render(text_area, buf);
@@ -69,13 +74,22 @@ impl<'a, U, E> SideWidget<'a, U, E> {
         U: LineRender<E>,
     {
         let opts = &state.grid.options;
-        let alignment = match self.side {
-            Direction::Left => HorizontalAlignment::Right,
-            Direction::Right => HorizontalAlignment::Left,
+        let margin = state.sides.get(self.side).margin.min(area.width);
+
+        let (alignment, left, right) = match self.side {
+            Direction::Left => (
+                HorizontalAlignment::Right,
+                area.left(),
+                area.right() - margin,
+            ),
+            Direction::Right => (
+                HorizontalAlignment::Left,
+                area.left() + margin,
+                area.right(),
+            ),
             dir => unreachable!("{dir:?} should not be render as a vertical side"),
         };
 
-        let x = area.x;
         let mut y = area.y;
         let cell_h = opts.cell_height;
 
@@ -86,7 +100,7 @@ impl<'a, U, E> SideWidget<'a, U, E> {
             // Determine the area to render the value in
             let (text_y, text_h) =
                 align_vertically(text.height() as u16, y, y + cell_h, opts.v_align);
-            let text_area = Rect::new(x, text_y, area.width, text_h);
+            let text_area = Rect::new(left, text_y, right - left, text_h);
 
             text.render(text_area, buf);
 
@@ -120,9 +134,10 @@ where
         }
     }
 
-    fn render_size(&self, area: Rect, _state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
         let mut size = Size::ZERO;
 
+        // Determine the edge size based on its edges
         for edge_size in self.edges.iter().enumerate().map(|(idx, edge)| {
             let edge_text = if self.side.is_vertical() {
                 edge.render_col(idx, self.edge_state)
@@ -138,6 +153,15 @@ where
                 size.width = edge_size.width.max(size.width);
                 size.height += edge_size.height;
             }
+        }
+
+        let margin = state.sides.get(self.side).margin;
+
+        // Add side margin
+        if self.side.is_vertical() {
+            size.height += margin;
+        } else {
+            size.width += margin;
         }
 
         size

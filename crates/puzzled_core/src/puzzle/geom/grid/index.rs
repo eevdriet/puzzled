@@ -50,6 +50,15 @@ impl<T> Grid<T> {
         ]
     }
 
+    pub fn indexed_adjacent4(&self, pos: Position) -> [Option<(Position, &T)>; 4] {
+        [
+            (pos + Offset::UP).and_then(|p| self.get(p).map(|v| (p, v))),
+            (pos + Offset::RIGHT).and_then(|p| self.get(p).map(|v| (p, v))),
+            (pos + Offset::DOWN).and_then(|p| self.get(p).map(|v| (p, v))),
+            (pos + Offset::LEFT).and_then(|p| self.get(p).map(|v| (p, v))),
+        ]
+    }
+
     pub fn adjacent8(&self, pos: Position) -> [Option<&T>; 8] {
         [
             (pos + Offset::UP).and_then(|p| self.get(p)),

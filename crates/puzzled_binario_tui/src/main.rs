@@ -10,7 +10,7 @@ use std::io;
 
 use puzzled_binario::{Binario, BinarioState};
 use puzzled_io::TxtPuzzle;
-use puzzled_tui::{App, GridRenderState, init_logging};
+use puzzled_tui::{App, GridRenderState, SidedGridRenderState, SidesRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -31,6 +31,11 @@ async fn main() -> io::Result<()> {
 
     let state = AppState {};
     let mut app = App::<BinarioApp>::new(state)?;
+
+    let render_state = SidedGridRenderState {
+        grid: render_state,
+        sides: SidesRenderState::default(),
+    };
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
     app.run(Box::new(screen)).await?;

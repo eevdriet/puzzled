@@ -1,37 +1,40 @@
-use derive_more::{Deref, DerefMut};
 use puzzled_binario::Bit;
 use puzzled_core::{Position, SolutionEntry};
-use puzzled_tui::{CellRender, GridRenderState, TextBlock};
+use puzzled_tui::{CellRender, GridRenderState, LineRender, TextBlock};
 use ratatui::{
     layout::HorizontalAlignment,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
 };
 
-#[derive(Deref, DerefMut)]
-pub struct RenderBit<'a>(pub(crate) SolutionEntry<'a, Bit>);
+pub struct RenderBit<'a> {
+    pub solution_entry: &'a SolutionEntry<'a, Bit>,
+    pub validity: bool,
+}
 
 pub struct RenderBitState<'a> {
     pub render: &'a GridRenderState,
 }
 
+pub struct RenderEdgeState;
+
 impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
     fn render_cell(&self, pos: Position, state: &RenderBitState) -> impl Widget {
         // Determine the cell style
-        let entry = self.get();
-        let base = Style::default().fg(Color::Gray);
+        let entry = self.solution_entry.get();
+        let base = Style::default().fg(Color::DarkGray);
 
         let mut style = match entry {
             None => base.dim(),
-            Some(Bit::Zero) => base.fg(Color::White),
-            Some(Bit::One) => base.fg(Color::Yellow),
+            Some(Bit::Zero) => base.fg(Color::Blue),
+            Some(Bit::One) => base.fg(Color::White),
         };
 
         let cursor = state.render.cursor;
 
         if pos == cursor {
-            style = style.add_modifier(Modifier::BOLD | Modifier::SLOW_BLINK);
+            style = style.bold().not_dim().fg(Color::Yellow);
         }
 
         if let Some(app_pos) = state.render.to_app(pos)
@@ -43,6 +46,10 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
             style = style.fg(Color::Green);
         }
 
+        if entry.is_some() && !self.validity {
+            style = style.fg(Color::Red);
+        }
+
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(style)
@@ -52,7 +59,6 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
 
         let symbol = match entry {
             Some(entry) => entry.to_string(),
-            None if pos == cursor => "E".to_string(),
             _ => "".to_string(),
         };
 
@@ -64,5 +70,14 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
             h_align: state.render.options.h_align,
             v_align: state.render.options.v_align,
         }
+    }
+}
+
+impl LineRender<RenderEdgeState> for bool {
+    fn render_row(&self, _row: usize, _state: &RenderEdgeState) -> Text<'_> {
+        Text::from("R")
+    }
+    fn render_col(&self, _col: usize, _state: &RenderEdgeState) -> Text<'_> {
+        Text::from("C")
     }
 }

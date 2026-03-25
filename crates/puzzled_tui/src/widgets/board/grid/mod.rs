@@ -68,6 +68,7 @@ where
     type State = GridRenderState;
 
     fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.viewport = root;
         let size = AppWidget::<A>::render_size(self as &_, root, state);
         let mut scroll_view = ScrollView::new(size);
 

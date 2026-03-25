@@ -225,9 +225,11 @@ impl<A: AppTypes> EventEngine<A> {
                     effects.push(EventEffect::Mode(EventMode::Normal));
 
                     if !is_visual {
-                        effects.push(EventEffect::Command(Command::new_action(Action::Click(
+                        let pos = Position::new(mouse.column, mouse.row);
+                        effects.push(EventEffect::Command(Command::new_action(Action::Click {
                             button,
-                        ))));
+                            pos,
+                        })));
                     }
 
                     effects.push(EventEffect::Command(Command::new_motion(

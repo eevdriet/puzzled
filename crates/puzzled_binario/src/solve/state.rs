@@ -30,26 +30,43 @@ impl BinarioState {
         }
     }
 
-    pub fn validate_cell(&mut self, pos: Position) -> bool {
+    pub fn validate_cell(&mut self, pos: Position) {
         // Retrieve the cell, which is always valid if not filled
-        let entries = &self.state.entries;
-        let Some(cell) = entries[pos].entry() else {
-            return true;
+        let validate = |pos: Position| {
+            let entries = &self.state.entries;
+            let Some(cell) = entries[pos].entry() else {
+                return true;
+            };
+
+            // Compare with the adjacent neighbors for no repeating fills
+            let [up, right, down, left] = entries
+                .adjacent4(pos)
+                .map(|bit| bit.and_then(|b| b.entry()));
+
+            if up.is_some_and(|u| u == cell) && down.is_some_and(|d| d == cell) {
+                return false;
+            }
+            if left.is_some_and(|l| l == cell) && right.is_some_and(|r| r == cell) {
+                return false;
+            }
+
+            true
         };
 
-        // Compare with the adjacent neighbors for no repeating fills
-        let [up, right, down, left] = entries
-            .adjacent4(pos)
-            .map(|bit| bit.and_then(|b| b.entry()));
+        self.validity[pos] = validate(pos);
 
-        if up.is_some_and(|u| u == cell) && down.is_some_and(|d| d == cell) {
-            return false;
-        }
-        if left.is_some_and(|l| l == cell) && right.is_some_and(|r| r == cell) {
-            return false;
-        }
+        let neighbors: Vec<_> = self
+            .state
+            .entries
+            .indexed_adjacent4(pos)
+            .into_iter()
+            .flatten()
+            .map(|(pos, _)| pos)
+            .collect();
 
-        true
+        for neighbor in neighbors {
+            self.validity[neighbor] = validate(neighbor);
+        }
     }
 }
 
@@ -83,10 +100,16 @@ impl Solve<Binario> for BinarioState {
         result
     }
 
+    fn clear(&mut self, pos: &Position) -> bool {
+        let result = self.state.clear(pos);
+        self.validate_cell(*pos);
+
+        result
+    }
+
     delegate! {
         to self.state {
             fn solve(&mut self, pos: &Position, solution: Bit) -> bool;
-            fn clear(&mut self, pos: &Position) -> bool;
             fn reveal(&mut self, pos: &Position) -> bool;
             fn check(&mut self, pos: &Position) -> Option<bool>;
 

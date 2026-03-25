@@ -147,6 +147,35 @@ impl<T> Grid<T> {
         }
     }
 
+    pub fn join_ref<'a, U, V, F>(
+        &'a self,
+        other: &'a Grid<U>,
+        mut f: F,
+    ) -> Result<Grid<V>, GridError>
+    where
+        F: FnMut(&'a T, &'a U) -> V,
+    {
+        if self.size() != other.size() {
+            return Err(GridError::InvalidSize {
+                found: other.size(),
+                expected: self.size(),
+            });
+        }
+
+        let data = self
+            .data
+            .iter()
+            .zip(other.data.iter())
+            .map(|(t, u)| f(t, u))
+            .collect();
+
+        Ok(Grid {
+            data,
+            cols: self.cols,
+            rows: self.rows,
+        })
+    }
+
     /// Try to swap the elements at the given [positions](Position)
     ///
     /// If either position is out of bounds, [`None`] is returned.

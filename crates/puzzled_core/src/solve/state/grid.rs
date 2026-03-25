@@ -23,14 +23,11 @@ impl<P: Puzzle> GridState<P> {
     }
 
     pub fn to_merged(&self) -> Grid<SolutionEntry<'_, P::Value>> {
-        let data: Vec<_> = self
-            .solutions
-            .iter()
-            .zip(self.entries.iter())
-            .map(|(solution, entry)| SolutionEntry { solution, entry })
-            .collect();
-
-        Grid::from_vec(data, self.solutions.cols())
+        self.solutions
+            .join_ref(&self.entries, |solution, entry| SolutionEntry {
+                solution,
+                entry,
+            })
             .expect("Solutions and entries have the same size")
     }
 }

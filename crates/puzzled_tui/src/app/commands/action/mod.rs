@@ -8,7 +8,7 @@ pub use behavior::*;
 pub use handle::*;
 
 use crossterm::event::{KeyCode, MouseButton};
-use derive_more::Eq;
+use derive_more::{Debug, Eq};
 use ratatui::layout::Position;
 use serde::Deserialize;
 
@@ -30,7 +30,11 @@ pub enum Action<A> {
         additive: bool,
     },
     EndSelection,
-    Click(MouseButton),
+    Click {
+        button: MouseButton,
+        #[debug(skip)]
+        pos: Position,
+    },
 
     // Focus
     FocusDown,
@@ -70,7 +74,7 @@ impl<A> Action<A> {
             // Mouse
             StartSelection { .. } => 3,
             EndSelection => 4,
-            Click(_) => 4,
+            Click { .. } => 4,
 
             // Focus
             FocusDown => 5,

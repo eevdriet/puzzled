@@ -6,8 +6,8 @@ pub use state::*;
 
 use puzzled_binario::{Binario, BinarioState};
 use puzzled_tui::{
-    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, GridRenderState,
-    HandleMode, Screen, Widget,
+    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, HandleMode, Screen,
+    SidedGridRenderState, Widget,
 };
 use ratatui::prelude::{Buffer, Rect};
 
@@ -21,7 +21,11 @@ pub struct PuzzleScreen {
 }
 
 impl PuzzleScreen {
-    pub fn new(puzzle: Binario, solve_state: BinarioState, render_state: GridRenderState) -> Self {
+    pub fn new(
+        puzzle: Binario,
+        solve_state: BinarioState,
+        render_state: SidedGridRenderState,
+    ) -> Self {
         let state = PuzzleScreenState {
             puzzle,
             solve: solve_state,
@@ -79,7 +83,7 @@ impl Screen<BinarioApp> for PuzzleScreen {
         ctx: &mut AppContext<BinarioApp>,
     ) -> bool {
         let solutions = &mut self.state.solve.state.solutions;
-        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render.grid)
     }
 
     fn override_mode(&self) -> Option<puzzled_tui::EventMode> {
