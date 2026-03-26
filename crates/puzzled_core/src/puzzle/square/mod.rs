@@ -2,6 +2,8 @@ use std::fmt;
 
 use derive_more::{Deref, DerefMut};
 
+use crate::Word;
+
 pub const NON_PLAYABLE_CHAR: char = '.';
 
 #[derive(Debug, Deref, DerefMut, PartialEq, Eq)]
@@ -26,6 +28,15 @@ impl<T> Square<T> {
         };
 
         Square(mapped)
+    }
+}
+
+impl<T> Word for Square<T>
+where
+    T: Word,
+{
+    fn is_word(&self) -> bool {
+        self.as_ref().is_some_and(|square| square.is_word())
     }
 }
 

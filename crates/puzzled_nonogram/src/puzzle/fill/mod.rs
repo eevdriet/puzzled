@@ -1,6 +1,7 @@
 mod mask;
 
 pub use mask::*;
+use puzzled_core::Word;
 
 use std::{
     fmt::{self, Debug},
@@ -190,6 +191,12 @@ impl FromStr for Fill {
 impl From<&Fill> for Fill {
     fn from(fill: &Fill) -> Self {
         *fill
+    }
+}
+
+impl Word for Fill {
+    fn is_word(&self) -> bool {
+        true
     }
 }
 

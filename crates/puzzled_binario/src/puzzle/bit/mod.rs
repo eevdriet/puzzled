@@ -3,7 +3,7 @@ mod bits;
 use std::{fmt, ops::Not, str::FromStr};
 
 pub use bits::*;
-use puzzled_core::Color;
+use puzzled_core::{Color, Word};
 
 #[derive(Debug, thiserror::Error)]
 pub enum BitError {
@@ -106,5 +106,11 @@ impl Not for Bit {
             Bit::Zero => Bit::One,
             Bit::One => Bit::Zero,
         }
+    }
+}
+
+impl Word for Bit {
+    fn is_word(&self) -> bool {
+        false
     }
 }

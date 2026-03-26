@@ -1,6 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use derive_more::{Deref, DerefMut};
+use puzzled_core::Word;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
 pub struct Skyscraper(usize);
@@ -29,6 +30,12 @@ impl FromStr for Skyscraper {
         let skyscraper = Skyscraper::new(height);
 
         Ok(skyscraper)
+    }
+}
+
+impl Word for Skyscraper {
+    fn is_word(&self) -> bool {
+        true
     }
 }
 

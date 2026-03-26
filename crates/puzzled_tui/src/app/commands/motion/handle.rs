@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use puzzled_core::{
     Direction, Grid, GridIndexedIter, GridIter, GridLinearIter, GridPositionsIter, Position,
-    Square, SquareGridRef,
+    Square, SquareGridRef, Word,
 };
 
 use crate::{GridRenderState, Motion, MotionBehavior};
@@ -41,7 +41,7 @@ impl<T, S, S2, P> HandleCustomMotion<(), S, S2, P> for T {
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for Grid<T>
 where
-    T: Clone + Debug + Eq,
+    T: Clone + Debug + Word,
     M: MotionBehavior,
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
@@ -64,7 +64,7 @@ where
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
-    T: Clone + Eq,
+    T: Clone + Word,
     M: MotionBehavior,
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
@@ -107,7 +107,7 @@ fn perform_motion_from_iter<'a, T, F>(
     end_predicate: F,
 ) -> impl IntoIterator<Item = Position>
 where
-    T: Clone + Eq,
+    T: Clone,
     F: FnMut(&Position) -> bool,
 {
     // If currently going in another direction, change the direction
@@ -148,7 +148,7 @@ fn grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, T>
 where
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
-    T: Eq,
+    T: Word,
 {
     let iter_dir_remaining = |dir: Direction, remaining: usize| {
         GridIter::Linear(GridLinearIter::new_with_remaining(
@@ -212,7 +212,6 @@ where
         | Motion::WordEndForwards
         | Motion::WordStartBackwards
         | Motion::WordStartForwards => {
-            tracing::info!("Hiero?");
             let iter = GridIndexedIter::new(iter_direction(dir));
             let target = &grid[cursor];
 
@@ -238,25 +237,88 @@ fn grid_word_motion<'a, T>(
     count: usize,
 ) -> GridIter<'a, T>
 where
-    T: Eq,
+    T: Word,
 {
     let mut positions = Vec::default();
-    let mut found = 0;
-    let mut is_target = true;
+    let mut word_count = 0;
 
-    while let Some((pos, item)) = iter.next()
-        && found < count
+    let mut prev_is_word = !target.is_word();
+
+    while let Some((pos, curr)) = iter.next()
+        && word_count < count + (target.is_word() as usize)
     {
-        if (item == target) != is_target {
-            found += 1;
-            is_target = !is_target;
+        let curr_is_word = curr.is_word();
+
+        tracing::trace!(
+            "\t{pos:?} | count {word_count}/{} | prev {:?}, curr {}, target {prev_is_word})",
+            count + (target.is_word() as usize),
+            prev_is_word,
+            curr_is_word
+        );
+
+        // Word -> Non-word
+        if prev_is_word != curr_is_word {
+            word_count += 1;
         }
+
+        prev_is_word = curr_is_word;
 
         positions.push(pos);
     }
 
+    tracing::info!("\tPositions: {positions:?}");
+
     let iter = GridPositionsIter::new(grid, positions);
     GridIter::Positions(iter)
+}
+
+fn square_grid_word_motion<'a, T>(
+    grid: &'a Grid<Square<T>>,
+    mut iter: GridIndexedIter<'a, Square<T>>,
+    target: &Square<T>,
+    count: usize,
+) -> GridIndexedIter<'a, Square<T>>
+where
+    T: Word,
+{
+    let mut positions = Vec::default();
+    let mut word_count = 0;
+
+    let mut prev_is_word = !target.is_word();
+    let mut between_squares = target.is_none();
+
+    tracing::info!("Word motion");
+
+    while let Some((pos, square)) = iter.next()
+        && word_count < count + (target.is_word() as usize)
+    {
+        tracing::info!("{pos:?}");
+
+        if let Some(curr) = square.as_ref() {
+            if between_squares {
+                tracing::info!("\tAfter non-square");
+                word_count += 1;
+            } else {
+                tracing::info!("\tSquare");
+                let curr_is_word = curr.is_word();
+
+                // Word -> Non-word
+                if prev_is_word != curr_is_word {
+                    word_count += 1;
+                }
+
+                prev_is_word = curr_is_word;
+            }
+        }
+
+        between_squares = square.is_none();
+        positions.push(pos);
+    }
+
+    tracing::info!("\tPositions: {positions:?}");
+
+    let iter = GridPositionsIter::new(grid, positions);
+    GridIndexedIter::new_positions(iter)
 }
 
 fn square_grid_motion<'a, T, M, S>(
@@ -270,8 +332,9 @@ fn square_grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, Square<T>>
 where
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
-    T: Clone + Eq,
+    T: Clone + Word,
 {
+    let iter_direction = |dir: Direction| GridIter::Linear(grid.iter_segment(start, dir));
     let iter_dir_remaining = |dir: Direction, remaining: usize| {
         let iter = GridIter::Linear(GridLinearIter::new_with_remaining(
             grid,
@@ -330,6 +393,16 @@ where
             );
 
             iter_dir_remaining(dir, diff.unsigned_abs() + 1)
+        }
+
+        Motion::WordEndBackwards
+        | Motion::WordEndForwards
+        | Motion::WordStartBackwards
+        | Motion::WordStartForwards => {
+            let iter = GridIndexedIter::new(iter_direction(dir));
+            let target = &grid[cursor];
+
+            square_grid_word_motion(grid, iter, target, count)
         }
 
         _ => grid_motion(grid, count, motion, start, dir, state, custom_state),

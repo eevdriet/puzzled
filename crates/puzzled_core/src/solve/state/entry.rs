@@ -1,4 +1,4 @@
-use crate::{CellStyle, Value, check_style};
+use crate::{CellStyle, Value, Word, check_style};
 use std::fmt::{self, Debug};
 
 /// Playable square that the user can enter their solution into
@@ -185,6 +185,15 @@ impl<T> Value<T> for Entry<T> {
 
     fn value_mut(&mut self) -> Option<&mut T> {
         self.entry.as_mut()
+    }
+}
+
+impl<T> Word for Entry<T>
+where
+    T: Word,
+{
+    fn is_word(&self) -> bool {
+        self.entry().is_some_and(|entry| entry.is_word())
     }
 }
 

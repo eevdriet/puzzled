@@ -4,6 +4,7 @@ mod geom;
 mod metadata;
 mod square;
 mod style;
+mod word;
 
 pub use cell::*;
 pub use constraints::*;
@@ -11,6 +12,7 @@ pub use geom::*;
 pub use metadata::*;
 pub use square::*;
 pub use style::*;
+pub use word::*;
 
 use crate::{Solve, Solver};
 
@@ -19,7 +21,7 @@ pub trait Puzzle: Sized {
 
     type Solution;
     type Position;
-    type Value: Clone + Eq;
+    type Value: Clone + Eq + Word;
 
     fn title(meta: &Metadata) -> String {
         let title = meta.title().unwrap_or(Self::NAME);

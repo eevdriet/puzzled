@@ -172,15 +172,6 @@ where
         Command::Motion { count, motion, op } => {
             let grid = SquareGridRef(&solve.entries);
 
-            // let positions = match motion {
-            //     Motion::Custom(m) => solve
-            //         .entries
-            //         .handle_custom_motion(count, m, render, custom_state)
-            //         .into_iter()
-            //         .collect(),
-            //     _ => vec![],
-            // };
-
             let positions: Vec<_> = grid
                 .handle_motion(count, motion, render, custom_state)
                 .into_iter()

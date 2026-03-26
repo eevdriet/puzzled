@@ -1,5 +1,7 @@
 use std::{fmt, str::FromStr};
 
+use puzzled_core::Word;
+
 /// Solution to a [square](crate::Square) that can be used to verify its correctness
 ///
 /// In almost all cases, solutions consist of a single [letter](Self::Letter).
@@ -30,6 +32,12 @@ impl Solution {
     /// Verify whether the solution to the cell is a rebus
     pub fn is_rebus(&self) -> bool {
         matches!(self, Solution::Rebus(_))
+    }
+}
+
+impl Word for Solution {
+    fn is_word(&self) -> bool {
+        true
     }
 }
 
