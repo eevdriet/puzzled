@@ -1,5 +1,5 @@
-use derive_more::{Display, Eq};
-use puzzled_core::{Grid, Position};
+use derive_more::{Debug, Display, Eq};
+use puzzled_core::{Grid, Position, Square};
 use puzzled_crossword::{Clue, ClueDirection, ClueId, Crossword};
 use puzzled_tui::{Description, GridRenderState, HandleCustomMotion, MotionBehavior};
 use serde::Deserialize;
@@ -7,6 +7,7 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Copy, Deserialize, Hash, PartialEq, Eq, Display, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum CrosswordMotion {
+    #[debug("Clue(n)")]
     Clue(
         #[serde(skip, default)]
         #[eq(skip)]
@@ -29,7 +30,7 @@ pub(crate) struct GridMotionState<'a> {
 }
 
 impl<'a, T> HandleCustomMotion<CrosswordMotion, GridRenderState, GridMotionState<'a>, Position>
-    for Grid<T>
+    for Grid<Square<T>>
 {
     fn handle_custom_motion(
         &self,

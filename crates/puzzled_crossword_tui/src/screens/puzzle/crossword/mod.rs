@@ -5,11 +5,11 @@ pub(crate) use clue::*;
 use crossterm::event::KeyCode;
 pub(crate) use render::*;
 
-use puzzled_core::{Direction, Puzzle, Solve, SquareGridRef};
+use puzzled_core::{Direction, Puzzle, Solve};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    HandleMotion, HandleOperator, RenderSize, Widget as AppWidget, handle_square_grid_operator,
+    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction, RenderSize,
+    Widget as AppWidget, handle_square_grid_command,
 };
 
 use ratatui::{
@@ -108,35 +108,53 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         state: &mut Self::State,
     ) -> bool {
         match command {
-            Command::Operator(op) => {
-                return handle_square_grid_operator(
-                    op,
+            // Command::Operator(op) => {
+            //     return handle_square_grid_operator(
+            //         op,
+            //         resolver,
+            //         &state.render,
+            //         &mut state.solve,
+            //         &mut state.history,
+            //     );
+            // }
+            command @ (Command::Operator(..) | Command::Motion { .. }) => {
+                let mut custom_state = GridMotionState {
+                    puzzle: &state.puzzle,
+                };
+
+                handle_square_grid_command(
+                    command,
                     resolver,
-                    &state.render,
+                    &mut state.render,
                     &mut state.solve,
+                    &mut custom_state,
                     &mut state.history,
                 );
-            }
-            Command::Motion { count, motion, op } => {
-                {
-                    let squares = SquareGridRef(state.puzzle.squares());
-                    let mut custom_state = GridMotionState {
-                        puzzle: &state.puzzle,
-                    };
-                    let positions =
-                        squares.handle_motion(count, motion, &mut state.render, &mut custom_state);
-
-                    if let Some(op) = op {
-                        state
-                            .solve
-                            .handle_operator(op, positions, &mut state.history);
-                    }
-                }
 
                 if !state.render.mode.is_visual() {
                     state.update_clues_from_cursor();
                 }
             }
+            // Command::Motion { count, motion, op } => {
+            //     {
+            //         let squares = SquareGridRef(state.puzzle.squares());
+            //         let mut custom_state = GridMotionState {
+            //             puzzle: &state.puzzle,
+            //         };
+            //         let positions =
+            //             squares.handle_motion(count, motion, &mut state.render, &mut custom_state);
+            //
+            //         if let Some(op) = op {
+            //             state
+            //                 .solve
+            //                 .handle_operator(op, positions, &mut state.history);
+            //         }
+            //     }
+            //
+            //     if !state.render.mode.is_visual() {
+            //         state.update_clues_from_cursor();
+            //     }
+            // }
             Command::Action { action, .. } => {
                 let pos = state.render.cursor;
                 let dir = match state.render.direction {

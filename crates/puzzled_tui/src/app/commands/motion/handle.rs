@@ -41,7 +41,7 @@ impl<T, S, S2, P> HandleCustomMotion<(), S, S2, P> for T {
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for Grid<T>
 where
-    T: Clone + Debug,
+    T: Clone + Debug + Eq,
     M: MotionBehavior,
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
@@ -64,7 +64,7 @@ where
 
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
-    T: Clone + Debug,
+    T: Clone + Eq,
     M: MotionBehavior,
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
@@ -107,7 +107,7 @@ fn perform_motion_from_iter<'a, T, F>(
     end_predicate: F,
 ) -> impl IntoIterator<Item = Position>
 where
-    T: Clone,
+    T: Clone + Eq,
     F: FnMut(&Position) -> bool,
 {
     // If currently going in another direction, change the direction
@@ -120,7 +120,7 @@ where
     }
     // Otherwise, move to the end and make sure it stays visible
     else if let Some(end) = iter.clone().map(|(pos, _)| pos).rfind(end_predicate) {
-        tracing::info!(
+        tracing::trace!(
             "Move to end {end:?}: {:?} ({:?})",
             render.to_app(end),
             render.selection
@@ -129,7 +129,7 @@ where
         render.ensure_cursor_visible(end);
 
         if let Some(app_end) = render.to_app(end) {
-            tracing::info!("Update selection");
+            tracing::trace!("Update selection");
             render.selection.update(app_end);
         }
     }
@@ -148,7 +148,7 @@ fn grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, T>
 where
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
-    T: Debug + Clone,
+    T: Eq,
 {
     let iter_dir_remaining = |dir: Direction, remaining: usize| {
         GridIter::Linear(GridLinearIter::new_with_remaining(
@@ -208,6 +208,16 @@ where
 
             iter_dir_remaining(dir, diff.unsigned_abs() + 1)
         }
+        Motion::WordEndBackwards
+        | Motion::WordEndForwards
+        | Motion::WordStartBackwards
+        | Motion::WordStartForwards => {
+            tracing::info!("Hiero?");
+            let iter = GridIndexedIter::new(iter_direction(dir));
+            let target = &grid[cursor];
+
+            grid_word_motion(grid, iter, target, count)
+        }
 
         Motion::Custom(custom) => {
             let positions: Vec<_> = grid
@@ -216,10 +226,37 @@ where
                 .collect();
             iter_positions(positions)
         }
-        _ => iter_empty(),
     };
 
     GridIndexedIter::new(iter)
+}
+
+fn grid_word_motion<'a, T>(
+    grid: &'a Grid<T>,
+    mut iter: GridIndexedIter<'a, T>,
+    target: &T,
+    count: usize,
+) -> GridIter<'a, T>
+where
+    T: Eq,
+{
+    let mut positions = Vec::default();
+    let mut found = 0;
+    let mut is_target = true;
+
+    while let Some((pos, item)) = iter.next()
+        && found < count
+    {
+        if (item == target) != is_target {
+            found += 1;
+            is_target = !is_target;
+        }
+
+        positions.push(pos);
+    }
+
+    let iter = GridPositionsIter::new(grid, positions);
+    GridIter::Positions(iter)
 }
 
 fn square_grid_motion<'a, T, M, S>(
@@ -233,7 +270,7 @@ fn square_grid_motion<'a, T, M, S>(
 ) -> GridIndexedIter<'a, Square<T>>
 where
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
-    T: Debug + Clone,
+    T: Clone + Eq,
 {
     let iter_dir_remaining = |dir: Direction, remaining: usize| {
         let iter = GridIter::Linear(GridLinearIter::new_with_remaining(

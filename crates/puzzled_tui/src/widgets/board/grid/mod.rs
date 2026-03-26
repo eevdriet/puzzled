@@ -109,8 +109,8 @@ where
         } else {
             bordered_area
         };
-        tracing::info!("Bordered area: {bordered_area:?}");
-        tracing::info!("Area: {area:?}");
+        tracing::trace!("Bordered area: {bordered_area:?}");
+        tracing::trace!("Area: {area:?}");
 
         // Render the grid itself
         let opts = &state.options;

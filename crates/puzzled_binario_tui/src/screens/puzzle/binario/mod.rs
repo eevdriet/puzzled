@@ -6,8 +6,8 @@ use puzzled_core::Solve;
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, HandleBaseAction, HandleMotion,
-    HandleOperator, RenderSize, SidedGridWidget, Widget as AppWidget, handle_grid_operator,
+    Action, AppCommand, AppResolver, Command, EventMode, HandleBaseAction, RenderSize,
+    SidedGridWidget, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
 
@@ -63,26 +63,17 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         state: &mut Self::State,
     ) -> bool {
         match command {
-            Command::Operator(op) => handle_grid_operator(
-                op,
-                resolver,
-                &state.render.grid,
-                &mut state.solve.state,
-                &mut state.history,
-            ),
-            Command::Motion { count, motion, op } => {
-                let cells = state.puzzle.cells();
+            command @ (Command::Operator(..) | Command::Motion { .. }) => {
                 let mut custom_state = ();
-                let positions =
-                    cells.handle_motion(count, motion, &mut state.render.grid, &mut custom_state);
 
-                if let Some(op) = op {
-                    state
-                        .solve
-                        .state
-                        .handle_operator(op, positions, &mut state.history);
-                }
-                true
+                handle_grid_command(
+                    command,
+                    resolver,
+                    &mut state.render.grid,
+                    &mut state.solve.state,
+                    &mut custom_state,
+                    &mut state.history,
+                )
             }
             Command::Action { action, .. } => {
                 let pos = state.render.grid.cursor;
