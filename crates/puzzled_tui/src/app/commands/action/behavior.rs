@@ -49,6 +49,10 @@ where
             Action::FocusLeft,
             Action::FocusRight,
             Action::FocusUp,
+            // Fills
+            Action::Fill(0),
+            Action::FillNext,
+            Action::FillPrev,
             // Viewport
             Action::BottomViewport,
             Action::CenterViewport,

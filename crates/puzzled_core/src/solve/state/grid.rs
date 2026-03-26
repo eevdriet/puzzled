@@ -3,13 +3,19 @@ use std::fmt::{self, Display};
 use crate::{Entry, Grid, Position, Puzzle, SolutionEntry, Solve, Square, Timer};
 
 #[derive(Debug)]
-pub struct GridState<P: Puzzle> {
+pub struct GridState<P>
+where
+    P: Puzzle<Position = Position>,
+{
     pub solutions: Grid<Option<P::Value>>,
     pub entries: Grid<Entry<P::Value>>,
     pub timer: Timer,
 }
 
-impl<P: Puzzle> GridState<P> {
+impl<P> GridState<P>
+where
+    P: Puzzle<Position = Position>,
+{
     pub fn new(
         solutions: Grid<Option<P::Value>>,
         entries: Grid<Entry<P::Value>>,
@@ -34,7 +40,7 @@ impl<P: Puzzle> GridState<P> {
 
 impl<P> fmt::Display for GridState<P>
 where
-    P: Puzzle,
+    P: Puzzle<Position = Position>,
     P::Value: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -74,15 +80,11 @@ where
     }
 
     fn reveal(&mut self, pos: &Position) -> bool {
-        let Some(Some(solution)) = self.solutions.get(*pos) else {
-            return false;
-        };
-
         let Some(entry) = self.entries.get_mut(*pos) else {
             return false;
         };
 
-        entry.reveal(solution.clone());
+        entry.reveal();
         true
     }
 
@@ -142,7 +144,10 @@ where
 }
 
 #[derive(Debug)]
-pub struct SquareGridState<P: Puzzle> {
+pub struct SquareGridState<P>
+where
+    P: Puzzle<Position = Position>,
+{
     pub solutions: Grid<Square<Option<P::Value>>>,
     pub entries: Grid<Square<Entry<P::Value>>>,
     pub timer: Timer,
@@ -150,7 +155,7 @@ pub struct SquareGridState<P: Puzzle> {
 
 impl<P> SquareGridState<P>
 where
-    P: Puzzle,
+    P: Puzzle<Position = Position>,
 {
     pub fn new(
         solutions: Grid<Square<Option<P::Value>>>,
@@ -184,7 +189,7 @@ where
 
 impl<P> fmt::Display for SquareGridState<P>
 where
-    P: Puzzle,
+    P: Puzzle<Position = Position>,
     P::Value: Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -224,15 +229,11 @@ where
     }
 
     fn reveal(&mut self, pos: &Position) -> bool {
-        let Some(Some(solution)) = self.solutions.get_fill(*pos) else {
-            return false;
-        };
-
         let Some(entry) = self.entries.get_fill_mut(*pos) else {
             return false;
         };
 
-        entry.reveal(solution.clone());
+        entry.reveal();
         true
     }
 

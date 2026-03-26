@@ -42,6 +42,11 @@ pub enum Action<A> {
     FocusRight,
     FocusUp,
 
+    // Fills
+    Fill(u8),
+    FillNext,
+    FillPrev,
+
     // Viewport
     BottomViewport,
     CenterViewport,
@@ -66,38 +71,43 @@ impl<A> Action<A> {
         use Action::*;
 
         match self {
-            Quit => 0,
-            Select => 1,
-            Cancel => 2,
+            Quit => 00,
+            Select => 10,
+            Cancel => 20,
 
             // -- Normal -- //
             // Mouse
-            StartSelection { .. } => 3,
-            EndSelection => 4,
-            Click { .. } => 4,
+            StartSelection { .. } => 30,
+            EndSelection => 40,
+            Click { .. } => 50,
 
             // Focus
-            FocusDown => 5,
-            FocusLeft => 6,
-            FocusRight => 7,
-            FocusUp => 8,
+            FocusDown => 60,
+            FocusLeft => 70,
+            FocusRight => 80,
+            FocusUp => 90,
+
+            // Fills
+            Fill(_) => 100,
+            FillNext => 110,
+            FillPrev => 120,
 
             // Viewport
-            BottomViewport => 9,
-            CenterViewport => 10,
-            TopViewport => 11,
+            BottomViewport => 130,
+            CenterViewport => 140,
+            TopViewport => 150,
 
             // -- Command -- //
-            Undo => 14,
-            Redo => 15,
+            Undo => 160,
+            Redo => 170,
 
-            ShowHelp => 16,
+            ShowHelp => 180,
 
             // Literal
-            Literal(..) => 17,
+            Literal(..) => 190,
 
             // Other (for puzzle specific actions)
-            Custom { .. } => 18,
+            Custom { .. } => 200,
         }
     }
 }

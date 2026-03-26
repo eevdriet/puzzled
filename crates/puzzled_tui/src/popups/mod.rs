@@ -31,7 +31,7 @@ pub trait Popup<A: AppTypes>: AppWidget<A> {
         state: &mut Self::State,
     ) -> bool {
         if let Command::Action {
-            action: Action::Quit | Action::Cancel,
+            action: Action::Quit | Action::Cancel | Action::Click { .. },
             ..
         } = command
         {

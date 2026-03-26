@@ -80,7 +80,11 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
             render: &render_c,
         };
 
-        let grid = solve.entries.map_ref(RenderSquareSolution);
+        let grid = solve.to_merged();
+        let grid = grid.map_ref(|entry| RenderSquareSolution {
+            solution_entry: entry,
+        });
+
         let mut grid_widget = GridWidget::new(&grid, &cell_state);
         AppWidget::<CrosswordApp>::render(&mut grid_widget, grid_area, buf, &mut state.render);
     }

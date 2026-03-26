@@ -50,7 +50,6 @@ use std::fmt::{self, Debug};
 #[derive(Debug)]
 pub struct Entry<E> {
     entry: Option<E>,
-    guesses: Vec<E>,
     style: CellStyle,
 }
 
@@ -69,11 +68,7 @@ impl<E> Entry<E> {
     check_style!(CellStyle::CIRCLED, style, is_circled());
 
     pub fn default_with_style(style: CellStyle) -> Self {
-        Self {
-            entry: None,
-            guesses: Vec::new(),
-            style,
-        }
+        Self { entry: None, style }
     }
 
     pub fn new(entry: Option<E>) -> Self {
@@ -84,11 +79,7 @@ impl<E> Entry<E> {
     }
 
     pub fn new_with_style(entry: Option<E>, style: CellStyle) -> Self {
-        Self {
-            entry,
-            style,
-            ..Default::default()
-        }
+        Self { entry, style }
     }
 
     /// Retrieve the current entry in the cell
@@ -125,16 +116,16 @@ impl<E> Entry<E> {
 
         // Enter the new guess and set its correctness style
         self.entry = Some(entry.into());
-        self.guesses.clear();
 
         true
     }
 
-    pub fn reveal<T: Into<E>>(&mut self, solution: T) -> bool {
-        let result = self.enter(solution);
+    pub fn reveal(&mut self) -> bool {
+        let was_revealed = self.is_revealed();
+
         self.style |= CellStyle::REVEALED;
 
-        result
+        was_revealed
     }
 
     pub fn check(&mut self, solution: &E) -> Option<bool>
@@ -165,7 +156,6 @@ impl<E> Entry<E> {
     pub fn clear(&mut self) {
         if !self.is_revealed() && !self.is_initially_revealed() {
             self.entry = None;
-            self.guesses.clear();
 
             // NOTE: correctness is guaranteed as `init` only allows correct state
             // Therefore the style will never be incorrect when set to its initial state
@@ -201,7 +191,6 @@ impl<E> Default for Entry<E> {
     fn default() -> Self {
         Self {
             entry: None,
-            guesses: Vec::new(),
             style: CellStyle::empty(),
         }
     }
@@ -215,7 +204,6 @@ where
         Self {
             entry: self.entry.clone(),
             style: self.style,
-            guesses: self.guesses.clone(),
         }
     }
 }
@@ -255,9 +243,6 @@ mod serde_impl {
             #[serde(skip_serializing_if = "Option::is_none")]
             entry: Option<E>,
 
-            #[serde(skip_serializing_if = "Vec::is_empty")]
-            guesses: Vec<E>,
-
             #[serde(skip_serializing_if = "CellStyle::is_empty")]
             style: CellStyle,
         },
@@ -271,13 +256,11 @@ mod serde_impl {
         pub fn to_serde(&self) -> SerdeEntry<E> {
             if let Some(ref entry) = self.entry
                 && self.style.is_empty()
-                && self.guesses.is_empty()
             {
                 SerdeEntry::Simple(entry.clone())
             } else {
                 SerdeEntry::Full {
                     entry: self.entry.to_owned(),
-                    guesses: self.guesses.clone(),
                     style: self.style,
                 }
             }
@@ -292,15 +275,7 @@ mod serde_impl {
 
                     entry
                 }
-                SerdeEntry::Full {
-                    entry,
-                    guesses,
-                    style,
-                } => Self {
-                    entry,
-                    guesses,
-                    style,
-                },
+                SerdeEntry::Full { entry, style } => Self { entry, style },
             }
         }
     }

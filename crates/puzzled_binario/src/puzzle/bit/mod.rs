@@ -111,6 +111,6 @@ impl Not for Bit {
 
 impl Word for Bit {
     fn is_word(&self) -> bool {
-        false
+        true
     }
 }

@@ -20,7 +20,7 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::Screen;
+use crate::{Screen, Settings};
 
 const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
@@ -37,10 +37,10 @@ pub struct App<A: AppTypes> {
 
 impl<A: AppTypes> App<A> {
     pub fn new(state: A::State) -> io::Result<Self> {
-        let events: EventTrie<A> = EventTrie::from_config::<A::Puzzle>()?;
-        let keys = events.action_keys();
+        let settings = Settings::load().map_err(io::Error::other)?;
+        let keys = settings.keys.action_keys();
         let context = AppContext::new(state, keys);
-        let engine = EventEngine::new(events, TICK_DURATION);
+        let engine = EventEngine::new(settings.keys, TICK_DURATION);
 
         let (events_tx, events_rx) = unbounded_channel();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();

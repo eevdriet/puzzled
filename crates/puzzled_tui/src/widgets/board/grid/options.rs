@@ -2,8 +2,9 @@ use ratatui::{
     layout::{HorizontalAlignment, Size, VerticalAlignment},
     style::{Color, Style},
 };
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub struct GridOptions {
     pub cell_width: u16,
 

@@ -2,11 +2,8 @@ use std::{
     collections::{BTreeMap, HashMap},
     fmt::Debug,
     hash::Hash,
-    io,
 };
 
-use puzzled_core::Puzzle;
-use puzzled_io::{config_dir, puzzle_config_dir};
 use ratatui::{
     style::Style,
     text::{Line, Span},
@@ -14,8 +11,8 @@ use ratatui::{
 use serde::Deserialize;
 
 use crate::{
-    Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, RawKeys,
-    TextModifier, TextObject, TextObjectBehavior, app::events::parse_key, insert_action_keys,
+    Action, ActionBehavior, AppEvent, AppTypes, Motion, MotionBehavior, Operator, TextModifier,
+    TextObject, TextObjectBehavior, app::events::parse_key,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
@@ -140,37 +137,6 @@ impl<A: AppTypes> Default for EventTrie<A> {
         Self {
             root: EventTrieNode::<A>::default(),
         }
-    }
-}
-
-impl<A: AppTypes> EventTrie<A> {
-    pub fn from_config<P>() -> io::Result<Self>
-    where
-        P: Puzzle,
-    {
-        let mut trie = EventTrie::default();
-
-        // --- Global config (optional) ---
-        let global_path = config_dir()?.join("keys.toml");
-
-        if let Ok(contents) = std::fs::read_to_string(&global_path) {
-            let keys: RawKeys<A::Action, A::TextObject, A::Motion> =
-                toml::from_str(&contents).map_err(io::Error::other)?;
-
-            insert_action_keys(keys, &mut trie).map_err(io::Error::other)?;
-        }
-
-        // --- Puzzle config (optional, overrides global) ---
-        let puzzle_path = puzzle_config_dir::<P>()?.join("keys.toml");
-
-        if let Ok(contents) = std::fs::read_to_string(&puzzle_path) {
-            let keys: RawKeys<A::Action, A::TextObject, A::Motion> =
-                toml::from_str(&contents).map_err(io::Error::other)?;
-
-            insert_action_keys(keys, &mut trie).map_err(io::Error::other)?;
-        }
-
-        Ok(trie)
     }
 }
 

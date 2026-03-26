@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use puzzled_core::{
     Entry, Grid, GridState, Position, Puzzle, Square, SquareGridRef, SquareGridState,
 };
@@ -145,6 +147,7 @@ pub fn handle_square_grid_command<'a, A, S>(
 where
     A: AppTypes,
     A::Puzzle: Puzzle<Position = Position> + 'static,
+    <A::Puzzle as Puzzle>::Value: Debug,
     // NOTE: Entries grid can handle a motion with custom state S
     SquareGridRef<'a, <A::Puzzle as Puzzle>::Value>:
         HandleMotion<A::Motion, GridRenderState, S, Position>,

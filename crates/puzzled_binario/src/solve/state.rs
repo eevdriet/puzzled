@@ -53,6 +53,7 @@ impl BinarioState {
             true
         };
 
+        // Validate the cell and its orthogonal neighbors
         self.validity[pos] = validate(pos);
 
         let neighbors: Vec<_> = self

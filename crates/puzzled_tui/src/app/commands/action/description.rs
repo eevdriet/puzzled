@@ -17,7 +17,10 @@ where
             Action::FocusLeft => "Focus the widget to the left of the active one",
             Action::FocusRight => "Focus the widget to the right of the active one",
             Action::FocusUp => "Focus the widget above the active one",
-
+            // Fills
+            Action::Fill(n) => return Some(format!("Fill the widget with fill {n}")),
+            Action::FillNext => "Fill the widget with the next fill",
+            Action::FillPrev => "Fill the widget with the previous fill",
             // Viewport
             Action::BottomViewport => "Scroll to the bottom of the viewport",
             Action::CenterViewport => "Scroll to the center of the viewport",
