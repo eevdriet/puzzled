@@ -5,7 +5,7 @@ use puzzled_core::{
     Square, SquareGridRef,
 };
 
-use crate::{GridRenderState, Motion};
+use crate::{GridRenderState, Motion, MotionBehavior};
 
 pub trait HandleMotion<M, S, S2, P> {
     fn handle_motion(
@@ -42,6 +42,7 @@ impl<T, S, S2, P> HandleCustomMotion<(), S, S2, P> for T {
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for Grid<T>
 where
     T: Clone + Debug,
+    M: MotionBehavior,
     Grid<T>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
     fn handle_motion(
@@ -53,7 +54,7 @@ where
     ) -> impl IntoIterator<Item = Position> {
         // Determine where to start the motion from and in which direction
         let start = render.cursor;
-        let next_dir = Direction::try_from(&motion).unwrap_or(render.direction);
+        let next_dir = motion.apply_to_dir(render.direction);
 
         // Perform the motion by collecting all covered positions in the grid
         let iter = grid_motion(self, count, motion, start, next_dir, render, custom_state);
@@ -64,6 +65,7 @@ where
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
     T: Clone + Debug,
+    M: MotionBehavior,
     Grid<Square<T>>: HandleCustomMotion<M, GridRenderState, S, Position>,
 {
     fn handle_motion(
@@ -75,11 +77,7 @@ where
     ) -> impl IntoIterator<Item = Position> {
         // Go to the first filled square in the given direction to perform the motion
         let mut pos = render.cursor;
-        let next_dir = match &motion {
-            Motion::Forwards => render.direction,
-            Motion::Backwards => !render.direction,
-            motion => Direction::try_from(motion).unwrap_or(render.direction),
-        };
+        let next_dir = motion.apply_to_dir(render.direction);
 
         if count > 0 {
             while let Some(next) = pos + next_dir

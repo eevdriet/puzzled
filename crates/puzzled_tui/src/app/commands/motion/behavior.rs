@@ -1,3 +1,5 @@
+use puzzled_core::Direction;
+
 use crate::{AppTypeTraits, Motion};
 
 pub trait MotionBehavior: AppTypeTraits {
@@ -5,6 +7,10 @@ pub trait MotionBehavior: AppTypeTraits {
 
     fn is_mouse(&self) -> bool {
         false
+    }
+
+    fn apply_to_dir(&self, dir: Direction) -> Direction {
+        dir
     }
 }
 
@@ -53,6 +59,55 @@ where
         match self {
             Motion::Custom(custom) => custom.is_mouse(),
             motion => motion.is_mouse(),
+        }
+    }
+
+    fn apply_to_dir(&self, dir: Direction) -> Direction {
+        match self {
+            // Independent of direction
+            Motion::Left | Motion::RowStart => Direction::Left,
+            Motion::Right | Motion::RowEnd => Direction::Right,
+            Motion::Up | Motion::ColStart => Direction::Up,
+            Motion::Down | Motion::ColEnd => Direction::Down,
+
+            // Depedent on direction
+            Motion::Forwards => dir,
+            Motion::Backwards => !dir,
+
+            Motion::WordEndBackwards => {
+                if dir.is_vertical() {
+                    Direction::Up
+                } else {
+                    Direction::Left
+                }
+            }
+            Motion::WordEndForwards => {
+                if dir.is_vertical() {
+                    Direction::Down
+                } else {
+                    Direction::Right
+                }
+            }
+            Motion::WordStartBackwards => {
+                if dir.is_vertical() {
+                    Direction::Up
+                } else {
+                    Direction::Left
+                }
+            }
+            Motion::WordStartForwards => {
+                if dir.is_vertical() {
+                    Direction::Down
+                } else {
+                    Direction::Right
+                }
+            }
+
+            // Custom -> apply inner behavior
+            Motion::Custom(custom) => custom.apply_to_dir(dir),
+
+            // Neither -> keep direction
+            _ => dir,
         }
     }
 }

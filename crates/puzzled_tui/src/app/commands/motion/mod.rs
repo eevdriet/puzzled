@@ -80,22 +80,6 @@ where
     }
 }
 
-impl<M> TryFrom<&Motion<M>> for Direction {
-    type Error = ();
-
-    fn try_from(motion: &Motion<M>) -> Result<Self, Self::Error> {
-        let dir = match motion {
-            Motion::Down | Motion::ColEnd => Direction::Down,
-            Motion::Left | Motion::RowStart => Direction::Left,
-            Motion::Right | Motion::RowEnd => Direction::Right,
-            Motion::Up | Motion::ColStart => Direction::Up,
-            _ => return Err(()),
-        };
-
-        Ok(dir)
-    }
-}
-
 impl<M> From<Direction> for Motion<M> {
     fn from(dir: Direction) -> Self {
         match dir {
