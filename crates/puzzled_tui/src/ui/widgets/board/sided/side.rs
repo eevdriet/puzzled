@@ -1,5 +1,6 @@
 use crate::{
-    AppTypes, LineRender, RenderSize, SidedGridRenderState, Widget as AppWidget, align_vertically,
+    AppContext, AppTypes, LineRender, RenderSize, SidedGridRenderState, Widget as AppWidget,
+    align_vertically,
 };
 
 use puzzled_core::Direction;
@@ -126,7 +127,13 @@ where
 {
     type State = SidedGridRenderState;
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        _ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) {
         if self.side.is_vertical() {
             self.render_vertical_side(area, buf, state);
         } else {
@@ -134,7 +141,7 @@ where
         }
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
         let mut size = Size::ZERO;
 
         // Determine the edge size based on its edges

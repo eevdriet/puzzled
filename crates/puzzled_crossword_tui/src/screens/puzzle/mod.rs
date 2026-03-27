@@ -106,8 +106,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         // Compute sizes
         let gap = 2;
 
-        let crossword_size = self.crossword.render_size(root, &self.state);
-        let clues_size = self.clues.render_size(root, &self.state);
+        let crossword_size = self.crossword.render_size(root, ctx, &self.state);
+        let clues_size = self.clues.render_size(root, ctx, &self.state);
 
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 
@@ -140,8 +140,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         tracing::trace!("Footer: {footer:?}");
 
         // Render
-        self.crossword.render(crossword, buf, &mut self.state);
-        self.clues.render(clues, buf, &mut self.state);
+        self.crossword.render(crossword, buf, ctx, &mut self.state);
+        self.clues.render(clues, buf, ctx, &mut self.state);
 
         let entry = TrieEntry::Action(Action::Cancel);
         let pause_key = ctx.keys.get_merged_str(&entry).unwrap_or_default();
@@ -151,18 +151,18 @@ impl Screen<CrosswordApp> for PuzzleScreen {
             timer: self.state.solve.timer,
             pause_key,
         };
-        self.footer.render(footer, buf, &mut footer_state);
+        self.footer.render(footer, buf, ctx, &mut footer_state);
 
         if let Some(popup) = self.state.popup {
             match popup {
                 PuzzlePopup::Pause => {
                     self.pause
-                        .render_popup(area, buf, &mut self.state.pause_state);
+                        .render_popup(area, buf, ctx, &mut self.state.pause_state);
                 }
                 PuzzlePopup::Help => {
                     let keys = Keys::new().all(&self.state);
-                    let mut help = KeysTablePopup::new(&keys, &ctx.keys);
-                    help.render_popup(area, buf, &mut self.state.help_state);
+                    let mut help = KeysTablePopup::new(&keys);
+                    help.render_popup(area, buf, ctx, &mut self.state.help_state);
                 }
             }
         }
@@ -184,13 +184,20 @@ impl Screen<CrosswordApp> for PuzzleScreen {
                     return self.pause.on_popup_command(
                         command,
                         resolver,
+                        ctx,
                         &mut self.state.pause_state,
                     );
                 }
                 PuzzlePopup::Help => {
                     let keys = Keys::new().all(&self.state);
-                    let mut help = KeysTablePopup::new(&keys, &ctx.keys);
-                    return help.on_popup_command(command, resolver, &mut self.state.help_state);
+                    let mut help = KeysTablePopup::new(&keys);
+
+                    return help.on_popup_command(
+                        command,
+                        resolver,
+                        ctx,
+                        &mut self.state.help_state,
+                    );
                 }
             }
         }
@@ -231,13 +238,16 @@ impl Screen<CrosswordApp> for PuzzleScreen {
 
         handled_action
             || match self.state.focus.get() {
-                Focus::Crossword => self
-                    .crossword
-                    .on_command(command, resolver, &mut self.state),
-                Focus::Clues => self.clues.on_command(command, resolver, &mut self.state),
+                Focus::Crossword => {
+                    self.crossword
+                        .on_command(command, resolver, ctx, &mut self.state)
+                }
+                Focus::Clues => self
+                    .clues
+                    .on_command(command, resolver, ctx, &mut self.state),
                 Focus::Footer => self
                     .crossword
-                    .on_command(command, resolver, &mut self.state),
+                    .on_command(command, resolver, ctx, &mut self.state),
             }
     }
 

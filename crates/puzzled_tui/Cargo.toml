@@ -16,5 +16,5 @@ toml = {workspace = true}
 tracing = {workspace = true}
 tracing-subscriber = {workspace = true}
 
-puzzled_core = {path = "../puzzled_core/"}
+puzzled_core = {path = "../puzzled_core/", features = ["serde"]}
 puzzled_io = {path = "../puzzled_io/"}

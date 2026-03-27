@@ -8,8 +8,8 @@ pub(crate) use render::*;
 use puzzled_core::{Direction, Puzzle, Solve};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, GridWidget, HandleBaseAction, RenderSize,
-    Widget as AppWidget, handle_square_grid_command,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
+    RenderSize, Widget as AppWidget, handle_square_grid_command,
 };
 
 use ratatui::{
@@ -26,7 +26,13 @@ pub struct CrosswordWidget;
 impl AppWidget<CrosswordApp> for CrosswordWidget {
     type State = PuzzleScreenState;
 
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<CrosswordApp>,
+        state: &mut Self::State,
+    ) {
         let PuzzleScreenState {
             puzzle,
             solve,
@@ -86,10 +92,15 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         });
 
         let mut grid_widget = GridWidget::new(&grid, &cell_state);
-        AppWidget::<CrosswordApp>::render(&mut grid_widget, grid_area, buf, &mut state.render);
+        AppWidget::<CrosswordApp>::render(&mut grid_widget, grid_area, buf, ctx, &mut state.render);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+    fn render_size(
+        &self,
+        area: Rect,
+        _ctx: &AppContext<CrosswordApp>,
+        state: &Self::State,
+    ) -> Size {
         let mut size = state
             .puzzle
             .squares()
@@ -109,6 +120,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         &mut self,
         command: AppCommand<CrosswordApp>,
         resolver: AppResolver<CrosswordApp>,
+        _ctx: &mut AppContext<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
         match command {

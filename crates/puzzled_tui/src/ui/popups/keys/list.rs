@@ -5,8 +5,8 @@ use ratatui::{
 };
 
 use crate::{
-    Action, AppCommand, AppResolver, AppTypes, Command, Keys, ListRender, ListWidget, Popup,
-    Widget as AppWidget,
+    Action, AppCommand, AppContext, AppResolver, AppTypes, Command, Keys, ListRender, ListWidget,
+    Popup, Widget as AppWidget,
 };
 
 pub struct KeysListPopup<A: AppTypes> {
@@ -32,17 +32,23 @@ impl<A: AppTypes> KeysListPopup<A> {
 impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
     type State = ListState;
 
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let area = self.render_area(root, state);
+    fn render(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) {
+        let area = self.render_area(root, ctx, state);
         let inner = self.block.inner(area);
 
         // Render
         self.block.clone().render(area, buf);
-        self.list.render(inner, buf, state);
+        self.list.render(inner, buf, ctx, state);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
-        let mut size = self.list.render_size(area, state);
+    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+        let mut size = self.list.render_size(area, ctx, state);
 
         size.width += 10;
         size.height += 5;
@@ -58,9 +64,10 @@ impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
         &mut self,
         command: AppCommand<A>,
         resolver: AppResolver<A>,
+        ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) -> bool {
-        self.list.on_command(command, resolver, state)
+        self.list.on_command(command, resolver, ctx, state)
     }
 }
 

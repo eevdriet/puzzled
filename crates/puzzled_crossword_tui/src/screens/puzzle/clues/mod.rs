@@ -5,7 +5,7 @@ pub use list::*;
 use crossterm::event::MouseEventKind;
 use puzzled_crossword::ClueDirection;
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, Motion, Widget as AppWidget,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, Motion, Widget as AppWidget,
 };
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
@@ -36,7 +36,13 @@ impl Default for CluesWidget {
 impl AppWidget<CrosswordApp> for CluesWidget {
     type State = PuzzleScreenState;
 
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<CrosswordApp>,
+        state: &mut Self::State,
+    ) {
         // Render the outside block with the tabs
         let base_style = Style::default();
         let selected_style = base_style.fg(Color::Yellow);
@@ -62,7 +68,8 @@ impl AppWidget<CrosswordApp> for CluesWidget {
         let text_margin = Margin::new(0, 1);
 
         if state.clue_dir.is_none() {
-            self.across_down.render(area.inner(text_margin), buf, state);
+            self.across_down
+                .render(area.inner(text_margin), buf, ctx, state);
             return;
         }
 
@@ -81,7 +88,7 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             .fg(Color::Green)
             .render(across_title, buf);
 
-        self.across.render(across, buf, state);
+        self.across.render(across, buf, ctx, state);
 
         // Render down clues
         let [down_title, down] =
@@ -91,14 +98,14 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             .fg(Color::Blue)
             .render(down_title, buf);
 
-        self.down.render(down, buf, state);
+        self.down.render(down, buf, ctx, state);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
-        let mut size = self.across_down.render_size(area, state);
+    fn render_size(&self, area: Rect, ctx: &AppContext<CrosswordApp>, state: &Self::State) -> Size {
+        let mut size = self.across_down.render_size(area, ctx, state);
 
-        let across_size = self.across.render_size(area, state);
-        let down_size = self.down.render_size(area, state);
+        let across_size = self.across.render_size(area, ctx, state);
+        let down_size = self.down.render_size(area, ctx, state);
 
         size.width = size.width.max(across_size.width + down_size.width + 2);
         size.height = size
@@ -120,6 +127,7 @@ impl AppWidget<CrosswordApp> for CluesWidget {
         &mut self,
         command: AppCommand<CrosswordApp>,
         resolver: AppResolver<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
         match command {
@@ -159,12 +167,12 @@ impl AppWidget<CrosswordApp> for CluesWidget {
                     _ => {
                         return match state.clue_dir {
                             Some(ClueDirection::Across) => {
-                                self.across.on_command(command, resolver, state)
+                                self.across.on_command(command, resolver, ctx, state)
                             }
                             Some(ClueDirection::Down) => {
-                                self.down.on_command(command, resolver, state)
+                                self.down.on_command(command, resolver, ctx, state)
                             }
-                            None => self.across_down.on_command(command, resolver, state),
+                            None => self.across_down.on_command(command, resolver, ctx, state),
                         };
                     }
                 }

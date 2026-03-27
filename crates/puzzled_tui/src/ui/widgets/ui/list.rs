@@ -9,7 +9,7 @@ use ratatui::widgets::{
     Block, HighlightSpacing, List, ListDirection, ListItem, ListState, StatefulWidget,
 };
 
-use crate::{AppCommand, AppResolver, AppTypes, Command, Motion, Widget as AppWidget};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes, Command, Motion, Widget as AppWidget};
 
 pub trait ListRender<A: AppTypes>: Sized {
     type State;
@@ -167,7 +167,13 @@ where
 {
     type State = R::State;
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        _ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) {
         let mut list_state = state.get();
 
         {
@@ -183,7 +189,7 @@ where
         state.set(list_state);
     }
 
-    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
         let items = self.render.render_items(state);
 
         items.fold(Size::ZERO, |mut size, item| {
@@ -198,6 +204,7 @@ where
         &mut self,
         command: AppCommand<A>,
         resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) -> bool {
         if self.render.on_command(command.clone(), resolver, state) {

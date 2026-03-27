@@ -42,7 +42,7 @@ const TITLE: [&str; 6] = [
 ];
 
 impl Screen<CrosswordApp> for TitleScreen {
-    fn render(&mut self, root: Rect, buf: &mut Buffer, _ctx: &mut AppContext<CrosswordApp>) {
+    fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut AppContext<CrosswordApp>) {
         let lines: Vec<_> = TITLE.into_iter().map(Line::from).collect();
         let width = lines[0].width() as u16;
 
@@ -60,20 +60,21 @@ impl Screen<CrosswordApp> for TitleScreen {
         // Render
         Paragraph::new(lines).render(title_area, buf);
 
-        let mut size = self.list.render_size(root, &self.state);
+        let mut size = self.list.render_size(root, ctx, &self.state);
         size.width += 3; // Add on highlight symbol width
 
         let list_area = center_area(list_area, size);
-        AppWidget::render(&mut self.list, list_area, buf, &mut self.state);
+        AppWidget::render(&mut self.list, list_area, buf, ctx, &mut self.state);
     }
 
     fn on_command(
         &mut self,
         command: AppCommand<CrosswordApp>,
         resolver: AppResolver<CrosswordApp>,
-        _ctx: &mut AppContext<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
     ) -> bool {
-        self.list.on_command(command, resolver, &mut self.state)
+        self.list
+            .on_command(command, resolver, ctx, &mut self.state)
     }
 
     fn override_mode(&self) -> Option<EventMode> {

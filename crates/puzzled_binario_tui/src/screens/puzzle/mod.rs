@@ -41,8 +41,8 @@ impl PuzzleScreen {
 }
 
 impl Screen<BinarioApp> for PuzzleScreen {
-    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppContext<BinarioApp>) {
-        self.binario.render(area, buf, &mut self.state);
+    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppContext<BinarioApp>) {
+        self.binario.render(area, buf, state, &mut self.state);
     }
 
     fn on_tick(&self, _ctx: &AppContext<BinarioApp>) -> bool {
@@ -53,7 +53,7 @@ impl Screen<BinarioApp> for PuzzleScreen {
         &mut self,
         command: AppCommand<BinarioApp>,
         resolver: AppResolver<BinarioApp>,
-        _ctx: &mut AppContext<BinarioApp>,
+        ctx: &mut AppContext<BinarioApp>,
     ) -> bool {
         let mut handled_action = false;
 
@@ -73,7 +73,10 @@ impl Screen<BinarioApp> for PuzzleScreen {
             }
         }
 
-        handled_action || self.binario.on_command(command, resolver, &mut self.state)
+        handled_action
+            || self
+                .binario
+                .on_command(command, resolver, ctx, &mut self.state)
     }
 
     fn on_mode(

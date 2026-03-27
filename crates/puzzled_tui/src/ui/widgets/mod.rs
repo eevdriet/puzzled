@@ -16,23 +16,29 @@ use ratatui::{
     layout::{Rect, Size},
 };
 
-use crate::{AppCommand, AppResolver, AppTypes, EventMode, center_area};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes, EventMode, center_area};
 
 pub trait Widget<A: AppTypes> {
     type State;
 
     // Rendering
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    );
 
-    fn render_size(&self, area: Rect, _state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, _ctx: &AppContext<A>, _state: &Self::State) -> Size {
         area.as_size()
     }
 
-    fn render_area(&self, area: Rect, state: &Self::State) -> Rect {
-        center_area(area, self.render_size(area, state))
+    fn render_area(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Rect {
+        center_area(area, self.render_size(area, ctx, state))
     }
 
-    fn on_tick(&self, _state: &Self::State) -> bool {
+    fn on_tick(&self, _ctx: AppContext<A>, _state: &Self::State) -> bool {
         false
     }
 
@@ -41,6 +47,7 @@ pub trait Widget<A: AppTypes> {
         &mut self,
         _command: AppCommand<A>,
         _resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
         _state: &mut Self::State,
     ) -> bool {
         false
@@ -51,6 +58,7 @@ pub trait Widget<A: AppTypes> {
         &mut self,
         _mode: EventMode,
         _resolver: AppResolver<A>,
+        _ctx: &mut AppContext<A>,
         _state: &mut Self::State,
     ) -> bool {
         false

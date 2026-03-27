@@ -14,7 +14,7 @@ use ratatui::{
 };
 use tui_scrollview::ScrollView;
 
-use crate::{AppTypes, CellRender, RenderSize, Widget as AppWidget, render_borders};
+use crate::{AppContext, AppTypes, CellRender, RenderSize, Widget as AppWidget, render_borders};
 
 pub struct GridRefMut<'a, T>(pub &'a mut Grid<T>);
 
@@ -65,16 +65,22 @@ where
 {
     type State = GridRenderState;
 
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) {
         state.viewport = root;
-        let size = AppWidget::<A>::render_size(self as &_, root, state);
+        let size = AppWidget::<A>::render_size(self as &_, root, ctx, state);
         let mut scroll_view = ScrollView::new(size);
 
         scroll_view.render_stateful_widget(self as &_, Rect::from(size), state);
         scroll_view.render(root, buf, &mut state.scroll);
     }
 
-    fn render_size(&self, _area: Rect, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
         let cols = self.grid.cols() as u16;
         let rows = self.grid.rows() as u16;
 

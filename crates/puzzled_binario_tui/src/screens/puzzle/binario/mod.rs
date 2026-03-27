@@ -6,7 +6,7 @@ use puzzled_core::Solve;
 pub(crate) use render::*;
 
 use puzzled_tui::{
-    Action, AppCommand, AppResolver, Command, EventMode, HandleBaseAction, RenderSize,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction, RenderSize,
     SidedGridWidget, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
@@ -18,7 +18,13 @@ pub struct BinarioWidget;
 impl AppWidget<BinarioApp> for BinarioWidget {
     type State = PuzzleScreenState;
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<BinarioApp>,
+        state: &mut Self::State,
+    ) {
         let PuzzleScreenState { solve, render, .. } = state;
 
         let render_c = render.clone();
@@ -40,10 +46,10 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let mut sided_grid_widget =
             SidedGridWidget::new(&grid, &solve.validity.sides, &cell_state, &edge_state);
 
-        AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, &mut state.render);
+        AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, ctx, &mut state.render);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, _ctx: &AppContext<BinarioApp>, state: &Self::State) -> Size {
         let mut size = state
             .puzzle
             .cells()
@@ -60,6 +66,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         &mut self,
         command: AppCommand<BinarioApp>,
         resolver: AppResolver<BinarioApp>,
+        _ctx: &mut AppContext<BinarioApp>,
         state: &mut Self::State,
     ) -> bool {
         match command {

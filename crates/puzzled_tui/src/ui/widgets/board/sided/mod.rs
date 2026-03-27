@@ -6,7 +6,9 @@ pub use state::*;
 
 use std::collections::HashMap;
 
-use crate::{AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget};
+use crate::{
+    AppContext, AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget,
+};
 use derive_more::Debug;
 use puzzled_core::{Direction, Grid, SidedGrid};
 use ratatui::{
@@ -61,8 +63,14 @@ where
 {
     type State = SidedGridRenderState;
 
-    fn render(&mut self, root: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let area = AppWidget::<A>::render_area(self, root, state);
+    fn render(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) {
+        let area = AppWidget::<A>::render_area(self, root, ctx, state);
 
         // Collect side widgets and sizes
         let mut top_size = Size::ZERO;
@@ -79,7 +87,7 @@ where
             |dir: Direction, widget: &mut Option<SideWidget<'a, U, E>>, size: &mut Size| {
                 if let Some(side) = self.sides.get(&dir) {
                     let side_widget = SideWidget::new(dir, side, self.edge_state);
-                    let side_size = AppWidget::<A>::render_size(&side_widget, area, state);
+                    let side_size = AppWidget::<A>::render_size(&side_widget, area, ctx, state);
 
                     *size = side_size;
                     *widget = Some(side_widget);
@@ -100,7 +108,7 @@ where
                 width: top_size.width,
                 height: top_size.height,
             };
-            AppWidget::<A>::render(&mut top, top_area, buf, state);
+            AppWidget::<A>::render(&mut top, top_area, buf, ctx, state);
         }
 
         // - Right
@@ -111,7 +119,7 @@ where
                 width: right_size.width,
                 height: right_size.height,
             };
-            AppWidget::<A>::render(&mut right, right_area, buf, state);
+            AppWidget::<A>::render(&mut right, right_area, buf, ctx, state);
         }
 
         // - Bottom
@@ -122,7 +130,7 @@ where
                 width: bottom_size.width,
                 height: bottom_size.height,
             };
-            AppWidget::<A>::render(&mut bottom, bottom_area, buf, state);
+            AppWidget::<A>::render(&mut bottom, bottom_area, buf, ctx, state);
         }
 
         // - Left
@@ -133,7 +141,7 @@ where
                 width: left_size.width,
                 height: left_size.height,
             };
-            AppWidget::<A>::render(&mut left, left_area, buf, state);
+            AppWidget::<A>::render(&mut left, left_area, buf, ctx, state);
         }
 
         // Compute the grid area from the sides
@@ -153,20 +161,20 @@ where
 
         // Render the grid
         let mut grid_widget = GridWidget::new(self.grid, self.cell_state);
-        AppWidget::<A>::render(&mut grid_widget, grid_area, buf, &mut state.grid);
+        AppWidget::<A>::render(&mut grid_widget, grid_area, buf, ctx, &mut state.grid);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
         // Grid
         let grid_state = &state.grid;
         let grid = GridWidget::<'a, T, C>::new(self.grid, self.cell_state);
 
-        let mut size = AppWidget::<A>::render_size(&grid, area, grid_state);
+        let mut size = AppWidget::<A>::render_size(&grid, area, ctx, grid_state);
 
         // Sides
         for (dir, edges) in self.sides.iter() {
             let side = SideWidget::new(*dir, edges, self.edge_state);
-            let side_size = AppWidget::<A>::render_size(&side, area, state);
+            let side_size = AppWidget::<A>::render_size(&side, area, ctx, state);
 
             size.width += side_size.width;
             size.height += side_size.height;

@@ -1,6 +1,6 @@
 use puzzled_crossword::{Clue, ClueDirection, CluesSolveState};
 use puzzled_tui::{
-    AppCommand, AppResolver, EventMode, ListRender, ListWidget, Widget as AppWidget,
+    AppCommand, AppContext, AppResolver, EventMode, ListRender, ListWidget, Widget as AppWidget,
 };
 use ratatui::{
     layout::Size,
@@ -28,12 +28,18 @@ impl CluesListWidget {
 impl AppWidget<CrosswordApp> for CluesListWidget {
     type State = PuzzleScreenState;
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        self.list.render(area, buf, state);
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &mut AppContext<CrosswordApp>,
+        state: &mut Self::State,
+    ) {
+        self.list.render(area, buf, ctx, state);
     }
 
-    fn render_size(&self, area: Rect, state: &Self::State) -> Size {
-        self.list.render_size(area, state)
+    fn render_size(&self, area: Rect, ctx: &AppContext<CrosswordApp>, state: &Self::State) -> Size {
+        self.list.render_size(area, ctx, state)
     }
 
     fn override_mode(&self) -> Option<EventMode> {
@@ -44,9 +50,10 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
         &mut self,
         command: AppCommand<CrosswordApp>,
         resolver: AppResolver<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
-        let is_handled = self.list.on_command(command, resolver, state);
+        let is_handled = self.list.on_command(command, resolver, ctx, state);
 
         if is_handled {
             state.update_cursor_from_clues();

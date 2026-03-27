@@ -1,5 +1,5 @@
 use puzzled_core::Timer;
-use puzzled_tui::{EventMode, TimerWidget, Widget as AppWidget};
+use puzzled_tui::{AppContext, EventMode, TimerWidget, Widget as AppWidget};
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect, Size},
@@ -21,7 +21,13 @@ pub struct FooterState {
 impl AppWidget<CrosswordApp> for FooterWidget {
     type State = FooterState;
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        _ctx: &mut AppContext<CrosswordApp>,
+        state: &mut Self::State,
+    ) {
         let [help_line, timer_line, mode_line] = Layout::vertical(vec![
             Constraint::Length(1),
             Constraint::Length(1),
@@ -45,7 +51,12 @@ impl AppWidget<CrosswordApp> for FooterWidget {
         Text::from(mode).render(mode_line, buf);
     }
 
-    fn render_size(&self, area: Rect, _state: &Self::State) -> Size {
+    fn render_size(
+        &self,
+        area: Rect,
+        _ctx: &AppContext<CrosswordApp>,
+        _state: &Self::State,
+    ) -> Size {
         Size::new(area.width, 3)
     }
 }
