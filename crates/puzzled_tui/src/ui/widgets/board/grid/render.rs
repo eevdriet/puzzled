@@ -1,8 +1,11 @@
 use puzzled_core::{Direction, Position};
-use ratatui::layout::{Position as AppPosition, Rect};
+use ratatui::{
+    layout::{Position as AppPosition, Rect},
+    style::Style,
+};
 use tui_scrollview::ScrollViewState;
 
-use crate::{EventMode, GridOptions, MultiSelection};
+use crate::{EventMode, GridOptions, MultiSelection, Theme};
 
 #[derive(Debug, Default, Clone)]
 pub struct GridRenderState {
@@ -99,6 +102,24 @@ impl GridRenderState {
 
         let app_pos = AppPosition::new(x, y);
         vp.contains(app_pos).then_some(app_pos)
+    }
+
+    pub fn cell_style(&self, pos: Position, theme: &Theme) -> Style {
+        let mut style = Style::default();
+
+        // Cell is the at the current cursor position
+        if pos == self.cursor {
+            style = style.patch(theme.cursor);
+        }
+
+        // Cell is visually selected
+        if let Some(app_pos) = self.to_app(pos)
+            && self.selection.contains(app_pos, self.viewport)
+        {
+            style = style.patch(theme.selection);
+        }
+
+        style
     }
 
     pub fn ensure_cursor_visible(&mut self, cursor: Position) {

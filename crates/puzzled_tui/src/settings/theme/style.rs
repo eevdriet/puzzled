@@ -1,3 +1,4 @@
+use puzzled_core::Entry;
 use ratatui::style::{Modifier, Style};
 use serde::{Deserialize, Serialize};
 
@@ -60,5 +61,31 @@ impl ResolveTheme<Style> for StyleDef {
 }
 
 pub trait ThemeStyled {
-    fn style(&self, theme: &Theme) -> Style;
+    fn theme_style(&self, theme: &Theme) -> Style;
+}
+
+impl<T> ThemeStyled for Entry<T>
+where
+    T: ThemeStyled,
+{
+    fn theme_style(&self, theme: &Theme) -> Style {
+        let base = Style::default();
+        let palette = &theme.palette;
+
+        match self.entry() {
+            None => base.fg(palette.dark1).dim(),
+            Some(entry) => {
+                let mut style = entry.theme_style(theme);
+
+                if self.is_revealed() {
+                    style = style.patch(theme.revealed);
+                }
+                if self.is_incorrect() {
+                    style = style.patch(theme.incorrect);
+                }
+
+                style
+            }
+        }
+    }
 }

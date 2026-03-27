@@ -100,6 +100,26 @@ impl<E> Entry<E> {
         self.style
     }
 
+    pub fn map<U, F>(self, f: F) -> Entry<U>
+    where
+        F: FnOnce(E) -> U,
+    {
+        Entry {
+            entry: self.entry.map(f),
+            style: self.style,
+        }
+    }
+
+    pub fn map_ref<U, F>(&self, f: F) -> Entry<U>
+    where
+        F: FnOnce(&E) -> U,
+    {
+        Entry {
+            entry: self.entry.as_ref().map(f),
+            style: self.style,
+        }
+    }
+
     /// Enter a new guess to solve the cell
     /// This updates the cell [style](CellStyle) based on the [current](CellStyle::INCORRECT) and [previous](CellStyle::PREVIOUSLY_INCORRECT) correctness.
     pub fn enter<T: Into<E>>(&mut self, entry: T) -> bool {

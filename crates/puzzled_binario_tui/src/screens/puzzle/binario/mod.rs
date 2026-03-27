@@ -2,7 +2,7 @@ mod render;
 
 use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
-use puzzled_core::Solve;
+use puzzled_core::{Entry, Solve};
 pub(crate) use render::*;
 
 use puzzled_tui::{
@@ -28,23 +28,28 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let PuzzleScreenState { solve, render, .. } = state;
 
         let render_c = render.clone();
-        let cell_state = RenderBitState {
-            render: &render_c.grid,
-        };
-        let edge_state = RenderEdgeState;
 
         let grid = solve.state.to_merged();
+
         let grid = grid
-            .join_ref(&solve.validity.grid, |solution_entry, validity| RenderBit {
-                solution_entry,
-                validity: *validity,
+            .join_ref(&solve.validity.grid, |solution_entry, validity| {
+                let cell = solution_entry.get().map(|bit| RenderBit {
+                    bit,
+                    validity: *validity,
+                });
+
+                Entry::new_with_style(cell, solution_entry.entry.style())
             })
             .expect("Solve grids have the same size");
-        // let grid_widget = GridWidget::new(&grid, &cell_state);
-        // grid_widget.render(area, buf, &mut state.render);
 
-        let mut sided_grid_widget =
-            SidedGridWidget::new(&grid, &solve.validity.sides, &cell_state, &edge_state);
+        tracing::info!("Merged grid: {grid:?}");
+
+        let mut sided_grid_widget = SidedGridWidget::new(
+            &grid,
+            &solve.validity.sides,
+            &render_c.grid,
+            &render_c.sides,
+        );
 
         AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, ctx, &mut state.render);
     }

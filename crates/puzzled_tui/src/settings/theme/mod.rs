@@ -25,27 +25,30 @@ pub struct Theme {
     pub circled: Style,
 
     pub grid: GridTheme,
+
+    pub palette: Palette,
 }
 
 impl Theme {
-    pub fn from_definition(def: ThemeDef, palette: &Palette) -> Self {
+    pub fn from_definition(def: ThemeDef, palette: Palette) -> Self {
         Self {
             // General
             // - UI
-            highlighted: def.highlighted.resolve(palette),
-            cursor: def.cursor.resolve(palette),
-            selection: def.selection.resolve(palette),
+            highlighted: def.highlighted.resolve(&palette),
+            cursor: def.cursor.resolve(&palette),
+            selection: def.selection.resolve(&palette),
 
             // - Solving
-            revealed: def.revealed.resolve(palette),
-            incorrect: def.incorrect.resolve(palette),
-            circled: def.circled.resolve(palette),
+            revealed: def.revealed.resolve(&palette),
+            incorrect: def.incorrect.resolve(&palette),
+            circled: def.circled.resolve(&palette),
 
-            grid: def.grid.resolve(palette),
+            grid: def.grid.resolve(&palette),
+            palette,
         }
     }
 
-    pub fn from_palette(palette: &Palette) -> Self {
+    pub fn from_palette(palette: Palette) -> Self {
         let base = Style::default();
 
         Self {
@@ -60,6 +63,7 @@ impl Theme {
             incorrect: base.fg(palette.red).bold(),
             circled: base,
 
+            palette,
             ..Default::default()
         }
     }

@@ -9,6 +9,7 @@ pub use grid::*;
 
 use crate::MISSING_ENTRY_CHAR;
 
+#[derive(Debug)]
 pub struct SolutionEntry<'a, T> {
     pub solution: &'a Option<T>,
     pub entry: &'a Entry<T>,

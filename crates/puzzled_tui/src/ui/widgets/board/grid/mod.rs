@@ -1,10 +1,10 @@
 mod options;
-mod state;
+mod render;
 
 use std::{marker::PhantomData, ops::Range};
 
 pub use options::*;
-pub use state::*;
+pub use render::*;
 
 use puzzled_core::{Grid, Position};
 use ratatui::{
@@ -183,6 +183,10 @@ where
             // Advance y by cell height
             y += cell_h;
 
+            if y >= area.bottom() {
+                break;
+            }
+
             // Draw horizontal divider
             let row = row as u16;
 
@@ -202,7 +206,6 @@ where
                             "\tSetting ─ at ({div_x}..{}, {y}) on screen",
                             div_x + width as u16
                         );
-                        tracing::trace!("\tDone");
                         buf.set_stringn(
                             div_x,
                             y,
@@ -210,6 +213,7 @@ where
                             width,
                             state.render.options.inner_border_style,
                         );
+                        tracing::trace!("\tDone");
                     }
 
                     div_x += cell_w;
