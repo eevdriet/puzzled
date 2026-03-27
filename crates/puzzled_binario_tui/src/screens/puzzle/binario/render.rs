@@ -1,12 +1,14 @@
 use puzzled_binario::Bit;
 use puzzled_core::{Position, SolutionEntry};
-use puzzled_tui::{CellRender, GridRenderState, LineRender, TextBlock};
+use puzzled_tui::{AppContext, CellRender, GridRenderState, LineRender, TextBlock};
 use ratatui::{
     layout::HorizontalAlignment,
     style::{Color, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
 };
+
+use crate::BinarioApp;
 
 pub struct RenderBit<'a> {
     pub solution_entry: &'a SolutionEntry<'a, Bit>,
@@ -19,8 +21,13 @@ pub struct RenderBitState<'a> {
 
 pub struct RenderEdgeState;
 
-impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
-    fn render_cell(&self, pos: Position, state: &RenderBitState) -> impl Widget {
+impl<'a> CellRender<BinarioApp, RenderBitState<'a>> for RenderBit<'a> {
+    fn render_cell(
+        &self,
+        pos: Position,
+        state: &RenderBitState,
+        _ctx: &AppContext<BinarioApp>,
+    ) -> impl Widget {
         // Determine the cell style
         let entry = self.solution_entry.get();
         let base = Style::default().fg(Color::DarkGray);
@@ -78,11 +85,21 @@ impl<'a> CellRender<RenderBitState<'a>> for RenderBit<'a> {
     }
 }
 
-impl LineRender<RenderEdgeState> for bool {
-    fn render_row(&self, _row: usize, _state: &RenderEdgeState) -> Text<'_> {
+impl LineRender<BinarioApp, RenderEdgeState> for bool {
+    fn render_row(
+        &self,
+        _row: usize,
+        _state: &RenderEdgeState,
+        _ctx: &AppContext<BinarioApp>,
+    ) -> Text<'_> {
         Text::from("R")
     }
-    fn render_col(&self, _col: usize, _state: &RenderEdgeState) -> Text<'_> {
+    fn render_col(
+        &self,
+        _col: usize,
+        _state: &RenderEdgeState,
+        _ctx: &AppContext<BinarioApp>,
+    ) -> Text<'_> {
         Text::from("C")
     }
 }

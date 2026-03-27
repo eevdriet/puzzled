@@ -4,7 +4,7 @@ mod state;
 pub use side::*;
 pub use state::*;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{
     AppContext, AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget,
@@ -22,15 +22,16 @@ pub struct SidedGridRenderState {
     pub sides: SidesRenderState,
 }
 
-pub struct SidedGridWidget<'a, T, U, C, E> {
+pub struct SidedGridWidget<'a, A: AppTypes, T, U, C, E> {
     pub grid: &'a Grid<T>,
     pub sides: &'a HashMap<Direction, Vec<U>>,
 
     pub cell_state: &'a C,
     pub edge_state: &'a E,
+    _marker: PhantomData<A>,
 }
 
-impl<'a, T, U, C, E> SidedGridWidget<'a, T, U, C, E> {
+impl<'a, A: AppTypes, T, U, C, E> SidedGridWidget<'a, A, T, U, C, E> {
     pub fn new(
         grid: &'a Grid<T>,
         sides: &'a HashMap<Direction, Vec<U>>,
@@ -42,6 +43,7 @@ impl<'a, T, U, C, E> SidedGridWidget<'a, T, U, C, E> {
             sides,
             cell_state,
             edge_state,
+            _marker: PhantomData,
         }
     }
 
@@ -51,15 +53,16 @@ impl<'a, T, U, C, E> SidedGridWidget<'a, T, U, C, E> {
             sides: &sided.sides,
             cell_state,
             edge_state,
+            _marker: PhantomData,
         }
     }
 }
 
-impl<'a, A, T, U, C, E> AppWidget<A> for SidedGridWidget<'a, T, U, C, E>
+impl<'a, A, T, U, C, E> AppWidget<A> for SidedGridWidget<'a, A, T, U, C, E>
 where
     A: AppTypes,
-    T: CellRender<C>,
-    U: LineRender<E>,
+    T: CellRender<A, C>,
+    U: LineRender<A, E>,
 {
     type State = SidedGridRenderState;
 
@@ -84,10 +87,10 @@ where
         let mut left_widget = None;
 
         let get_widget_and_size =
-            |dir: Direction, widget: &mut Option<SideWidget<'a, U, E>>, size: &mut Size| {
+            |dir: Direction, widget: &mut Option<SideWidget<'a, A, U, E>>, size: &mut Size| {
                 if let Some(side) = self.sides.get(&dir) {
-                    let side_widget = SideWidget::new(dir, side, self.edge_state);
-                    let side_size = AppWidget::<A>::render_size(&side_widget, area, ctx, state);
+                    let side_widget = SideWidget::<A, U, E>::new(dir, side, self.edge_state);
+                    let side_size = side_widget.render_size(area, ctx, state);
 
                     *size = side_size;
                     *widget = Some(side_widget);
@@ -167,14 +170,14 @@ where
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
         // Grid
         let grid_state = &state.grid;
-        let grid = GridWidget::<'a, T, C>::new(self.grid, self.cell_state);
+        let grid = GridWidget::<'a, A, T, C>::new(self.grid, self.cell_state);
 
         let mut size = AppWidget::<A>::render_size(&grid, area, ctx, grid_state);
 
         // Sides
         for (dir, edges) in self.sides.iter() {
-            let side = SideWidget::new(*dir, edges, self.edge_state);
-            let side_size = AppWidget::<A>::render_size(&side, area, ctx, state);
+            let side = SideWidget::<A, U, E>::new(*dir, edges, self.edge_state);
+            let side_size = side.render_size(area, ctx, state);
 
             size.width += side_size.width;
             size.height += side_size.height;

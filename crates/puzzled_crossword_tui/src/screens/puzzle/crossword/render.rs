@@ -1,7 +1,7 @@
 use derive_more::{Deref, DerefMut};
 use puzzled_core::{Position, SolutionEntry, Square};
 use puzzled_crossword::{ClueDirection, Clues, Solution};
-use puzzled_tui::{CellRender, GridRenderState, TextBlock};
+use puzzled_tui::{AppContext, CellRender, GridRenderState, TextBlock};
 
 use ratatui::{
     layout::HorizontalAlignment,
@@ -9,6 +9,8 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
 };
+
+use crate::CrosswordApp;
 
 #[derive(Deref, DerefMut)]
 pub(crate) struct RenderSquareSolution<'a> {
@@ -20,8 +22,13 @@ pub struct RenderSquareState<'a> {
     pub render: &'a GridRenderState,
 }
 
-impl<'a> CellRender<RenderSquareState<'a>> for RenderSquareSolution<'a> {
-    fn render_cell(&self, pos: Position, state: &RenderSquareState) -> impl Widget {
+impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for RenderSquareSolution<'a> {
+    fn render_cell(
+        &self,
+        pos: Position,
+        state: &RenderSquareState,
+        _ctx: &AppContext<CrosswordApp>,
+    ) -> impl Widget {
         // Determine the styles
         let base_style = Style::default();
 

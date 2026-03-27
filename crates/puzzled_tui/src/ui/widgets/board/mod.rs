@@ -15,13 +15,15 @@ use ratatui::{
     widgets::Widget,
 };
 
-pub trait CellRender<S> {
-    fn render_cell(&self, pos: Position, state: &S) -> impl Widget;
-}
-pub trait LineRender<S> {
-    fn render_row(&self, row: usize, state: &S) -> Text<'_>;
+use crate::{AppContext, AppTypes};
 
-    fn render_col(&self, col: usize, state: &S) -> Text<'_>;
+pub trait CellRender<A: AppTypes, S> {
+    fn render_cell(&self, pos: Position, state: &S, ctx: &AppContext<A>) -> impl Widget;
+}
+pub trait LineRender<A: AppTypes, S> {
+    fn render_row(&self, row: usize, state: &S, ctx: &AppContext<A>) -> Text<'_>;
+
+    fn render_col(&self, col: usize, state: &S, ctx: &AppContext<A>) -> Text<'_>;
 }
 
 pub fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {

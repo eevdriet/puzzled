@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{
     AppContext, AppTypes, LineRender, RenderSize, SidedGridRenderState, Widget as AppWidget,
     align_vertically,
@@ -9,24 +11,32 @@ use ratatui::{
     prelude::{Buffer, Rect, Size, Widget},
 };
 
-pub struct SideWidget<'a, U, E> {
+pub struct SideWidget<'a, A: AppTypes, U, E> {
     pub side: Direction,
     pub edges: &'a Vec<U>,
     pub edge_state: &'a E,
+
+    _marker: PhantomData<A>,
 }
 
-impl<'a, U, E> SideWidget<'a, U, E> {
+impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
     pub fn new(side: Direction, edges: &'a Vec<U>, edge_state: &'a E) -> Self {
         Self {
             side,
             edges,
             edge_state,
+            _marker: PhantomData,
         }
     }
 
-    fn render_vertical_side(&self, area: Rect, buf: &mut Buffer, state: &SidedGridRenderState)
-    where
-        U: LineRender<E>,
+    fn render_vertical_side(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &SidedGridRenderState,
+        ctx: &AppContext<A>,
+    ) where
+        U: LineRender<A, E>,
     {
         let opts = &state.grid.options;
         let margin = state.sides.get(self.side).margin.min(area.height);
@@ -47,7 +57,7 @@ impl<'a, U, E> SideWidget<'a, U, E> {
         for (col, edge) in self.edges.iter().enumerate() {
             // Draw the value at the current row of the side
             let text = edge
-                .render_col(col, self.edge_state)
+                .render_col(col, self.edge_state, ctx)
                 .alignment(opts.h_align);
 
             // Determine the area to render the value in
@@ -70,9 +80,14 @@ impl<'a, U, E> SideWidget<'a, U, E> {
         }
     }
 
-    fn render_horizontal_side(&self, area: Rect, buf: &mut Buffer, state: &SidedGridRenderState)
-    where
-        U: LineRender<E>,
+    fn render_horizontal_side(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &SidedGridRenderState,
+        ctx: &AppContext<A>,
+    ) where
+        U: LineRender<A, E>,
     {
         let opts = &state.grid.options;
         let margin = state.sides.get(self.side).margin.min(area.width);
@@ -96,7 +111,9 @@ impl<'a, U, E> SideWidget<'a, U, E> {
 
         for (row, edge) in self.edges.iter().enumerate() {
             // Draw the value at the current row of the side
-            let text = edge.render_row(row, self.edge_state).alignment(alignment);
+            let text = edge
+                .render_row(row, self.edge_state, ctx)
+                .alignment(alignment);
 
             // Determine the area to render the value in
             let (text_y, text_h) =
@@ -120,10 +137,10 @@ impl<'a, U, E> SideWidget<'a, U, E> {
     }
 }
 
-impl<'a, A, U, E> AppWidget<A> for SideWidget<'a, U, E>
+impl<'a, A, U, E> AppWidget<A> for SideWidget<'a, A, U, E>
 where
     A: AppTypes,
-    U: LineRender<E>,
+    U: LineRender<A, E>,
 {
     type State = SidedGridRenderState;
 
@@ -131,25 +148,25 @@ where
         &mut self,
         area: Rect,
         buf: &mut Buffer,
-        _ctx: &mut AppContext<A>,
+        ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
         if self.side.is_vertical() {
-            self.render_vertical_side(area, buf, state);
+            self.render_vertical_side(area, buf, state, ctx);
         } else {
-            self.render_horizontal_side(area, buf, state);
+            self.render_horizontal_side(area, buf, state, ctx);
         }
     }
 
-    fn render_size(&self, area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
         let mut size = Size::ZERO;
 
         // Determine the edge size based on its edges
         for edge_size in self.edges.iter().enumerate().map(|(idx, edge)| {
             let edge_text = if self.side.is_vertical() {
-                edge.render_col(idx, self.edge_state)
+                edge.render_col(idx, self.edge_state, ctx)
             } else {
-                edge.render_row(idx, self.edge_state)
+                edge.render_row(idx, self.edge_state, ctx)
             };
             edge_text.render_size(area, &())
         }) {

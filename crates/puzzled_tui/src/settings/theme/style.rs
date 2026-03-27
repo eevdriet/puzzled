@@ -1,7 +1,7 @@
 use ratatui::style::{Modifier, Style};
 use serde::{Deserialize, Serialize};
 
-use crate::{Palette, ResolveTheme, ThemeColor};
+use crate::{Palette, ResolveTheme, Theme, ThemeColor};
 
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct StyleDef {
@@ -57,4 +57,8 @@ impl ResolveTheme<Style> for StyleDef {
 
         style
     }
+}
+
+pub trait ThemeStyled {
+    fn style(&self, theme: &Theme) -> Style;
 }
