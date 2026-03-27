@@ -1,4 +1,13 @@
-use crate::{AppCommand, AppContext, AppResolver, AppTypes, EventMode, Screen};
+use std::fmt::Debug;
+
+use puzzled_core::{
+    Entry, Grid, GridState, Position, Puzzle, Square, SquareGridRef, SquareGridState,
+};
+
+use crate::{
+    AppCommand, AppContext, AppResolver, AppTypes, Command, EntryAction, EventMode,
+    GridRenderState, HandleCustomMotion, HandleMotion, HandleOperator, Operator, Screen,
+};
 
 pub enum CommandOutcome<A: AppTypes> {
     // Handled externally
@@ -27,142 +36,121 @@ pub trait HandleCommand<A: AppTypes> {
     ) -> bool;
 }
 
-// pub fn handle_action<H, M, A, T, S>(
-//     handler: &mut H,
-//     command: &Command<M, A>,
-//     resolver: ActionResolver<M, A, T>,
-//     ctx: &mut AppContext<T>,
-//     state: &mut S,
-// ) -> bool
-// where
-//     H: HandleCustomAction<M, A, T, S>,
-// {
-//     match (command.base_action(), command.custom_action()) {
-//         (Some(action), None) => handler.handle_base_action(action, resolver, ctx),
-//         (None, Some(action)) => handler.handle_custom_action(action, resolver, ctx, state),
-//         (None, None) => false,
-//         _ => unreachable!("Either a base, custom or no action should be set"),
-//     }
-// }
+pub fn handle_grid_command<A: AppTypes, S>(
+    command: Command<A::Action, A::TextObject, A::Motion>,
+    resolver: AppResolver<A>,
+    render: &mut GridRenderState,
+    solve: &mut GridState<A::Puzzle>,
+    custom_state: &mut S,
+) -> Option<Box<EntryAction<A::Puzzle>>>
+where
+    A::Puzzle: Puzzle<Position = Position> + 'static,
+    // NOTE: Entries grid can handle a motion with custom state S
+    Grid<Entry<<A::Puzzle as Puzzle>::Value>>:
+        HandleMotion<A::Motion, GridRenderState, S, Position>,
+{
+    let (positions, op) = match command {
+        Command::Operator(op) => {
+            // Use all visually selected positions
+            if render.mode.is_visual() {
+                let positions: Vec<_> = render
+                    .selection
+                    .positions(render.viewport)
+                    .filter_map(|pos| render.to_grid(pos))
+                    .collect();
 
-// pub fn handle_pure_motion<H, M, A, T, MS, OS, P>(
-//     handler: &mut H,
-//     cursor: &mut P,
-//     command: &Command<M, A>,
-//     motion_state: &mut MS,
-// ) -> bool
-// where
-//     H: CustomMotionRange<M, MS, Position = P> + ApplyOperator<Position = P, State = OS>,
-//     P: Clone,
-// {
-//     // Find the motion range and move the cursor to the last (valid) position
-//     let start = cursor.clone();
-//     let positions = motion_range(
-//         handler,
-//         start,
-//         command.count(),
-//         command.motion(),
-//         motion_state,
-//     );
-//
-//     let Some(end) = positions.last() else {
-//         return false;
-//     };
-//
-//     *cursor = end.clone();
-//     true
-// }
-//
-// pub fn handle_motion_with_operator<H, M, A, T, MS, OS, P>(
-//     handler: &mut H,
-//     cursor: &mut P,
-//     command: &Command<M, A>,
-//     motion_state: &mut MS,
-//     operator_state: &mut OS,
-// ) -> bool
-// where
-//     H: CustomMotionRange<M, MS, Position = P> + ApplyOperator<Position = P, State = OS>,
-//     P: Clone,
-// {
-//     // Make sure an operator is defined
-//     let Some(op) = command.operator() else {
-//         return false;
-//     };
-//
-//     // Find the motion range and move the cursor to the last (valid) position
-//     let start = cursor.clone();
-//     let positions = motion_range(
-//         handler,
-//         start,
-//         command.count(),
-//         command.motion(),
-//         motion_state,
-//     );
-//
-//     let Some(end) = positions.last() else {
-//         return false;
-//     };
-//
-//     *cursor = end.clone();
-//
-//     // Apply the operator to all positions
-//
-//     true
-// }
-//
-// pub fn handle_text_object<H, M, A, T, MS, OS, P>(
-//     handler: &mut H,
-//     cursor: &mut P,
-//     command: &Command<M, A>,
-//     motion_state: &mut MS,
-//     operator_state: &mut OS,
-// ) -> bool
-// where
-//     H: CustomMotionRange<M, MS, Position = P> + ApplyOperator<Position = P, State = OS>,
-//     P: Clone,
-// {
-//     // Find the motion range and move the cursor to the last (valid) position
-//     let start = cursor.clone();
-//     let positions = motion_range(
-//         handler,
-//         start,
-//         command.count(),
-//         command.motion(),
-//         motion_state,
-//     );
-//
-//     let Some(end) = positions.last() else {
-//         return false;
-//     };
-//
-//     *cursor = end.clone();
-//
-//     // If some operator was defined, apply it to all positions
-//     if let Some(op) = command.operator() {
-//         handler.apply_operator(op, positions, operator_state);
-//     }
-//
-//     true
-// }
-//
-// fn motion_range<H, M, S>(
-//     handler: &mut H,
-//     start: H::Position,
-//     count: usize,
-//     motion: &Motion<M>,
-//     state: &mut S,
-// ) -> Vec<H::Position>
-// where
-//     H: CustomMotionRange<M, S>,
-// {
-//     match motion {
-//         Motion::Other(custom) => handler
-//             .custom_motion_range(start, count, custom, state)
-//             .into_iter()
-//             .collect(),
-//         motion => handler
-//             .base_motion_range(start, count, motion)
-//             .into_iter()
-//             .collect(),
-//     }
-// }
+                (positions, Some(op))
+            } else if !op.requires_motion() {
+                let positions = vec![render.cursor];
+                (positions, Some(op))
+            } else {
+                return None;
+            }
+        }
+        Command::Motion { count, motion, op } => {
+            let entries = &solve.entries;
+            let positions: Vec<_> = entries
+                .handle_motion(count, motion, render, custom_state)
+                .into_iter()
+                .collect();
+
+            (positions, op)
+        }
+        _ => return None,
+    };
+
+    op.map(|op| {
+        let action = solve.handle_operator(op, positions);
+
+        // Possibly change the mode after applying the operator
+        let mode = match op {
+            Operator::Change => EventMode::Insert,
+            _ => EventMode::Normal,
+        };
+
+        resolver.set_mode(mode);
+        action
+    })
+}
+
+pub fn handle_square_grid_command<'a, A, S>(
+    command: Command<A::Action, A::TextObject, A::Motion>,
+    resolver: AppResolver<A>,
+    render: &mut GridRenderState,
+    solve: &mut SquareGridState<A::Puzzle>,
+    custom_state: &mut S,
+) -> Option<Box<EntryAction<A::Puzzle>>>
+where
+    A: AppTypes,
+    A::Puzzle: Puzzle<Position = Position> + 'static,
+    <A::Puzzle as Puzzle>::Value: Debug,
+    // NOTE: Entries grid can handle a motion with custom state S
+    SquareGridRef<'a, <A::Puzzle as Puzzle>::Value>:
+        HandleMotion<A::Motion, GridRenderState, S, Position>,
+    Grid<Square<Entry<<A::Puzzle as Puzzle>::Value>>>:
+        HandleCustomMotion<A::Motion, GridRenderState, S, Position>,
+{
+    let (positions, op) = match command {
+        Command::Operator(op) => {
+            // Use all visually selected positions
+            if render.mode.is_visual() {
+                let positions: Vec<_> = render
+                    .selection
+                    .positions(render.viewport)
+                    .filter_map(|pos| render.to_grid(pos))
+                    .collect();
+
+                (positions, Some(op))
+            } else if !op.requires_motion() {
+                let positions = vec![render.cursor];
+                (positions, Some(op))
+            } else {
+                return None;
+            }
+        }
+        Command::Motion { count, motion, op } => {
+            let grid = SquareGridRef(&solve.entries);
+
+            let positions: Vec<_> = grid
+                .handle_motion(count, motion, render, custom_state)
+                .into_iter()
+                .collect();
+
+            (positions, op)
+        }
+        _ => return None,
+    };
+
+    op.map(|op| {
+        let action = solve.handle_operator(op, positions);
+
+        // Possibly change the mode after applying the operator
+        let mode = match op {
+            Operator::Change => EventMode::Insert,
+            _ => EventMode::Normal,
+        };
+
+        resolver.set_mode(mode);
+        action
+    })
+}

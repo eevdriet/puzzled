@@ -124,52 +124,25 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         state: &mut Self::State,
     ) -> bool {
         match command {
-            // Command::Operator(op) => {
-            //     return handle_square_grid_operator(
-            //         op,
-            //         resolver,
-            //         &state.render,
-            //         &mut state.solve,
-            //         &mut state.history,
-            //     );
-            // }
             command @ (Command::Operator(..) | Command::Motion { .. }) => {
                 let mut custom_state = GridMotionState {
                     puzzle: &state.puzzle,
                 };
 
-                handle_square_grid_command(
+                if let Some(action) = handle_square_grid_command(
                     command,
                     resolver,
                     &mut state.render,
                     &mut state.solve.0,
                     &mut custom_state,
-                );
+                ) {
+                    state.history.execute(action, &mut state.solve);
+                }
 
                 if !state.render.mode.is_visual() {
                     state.update_clues_from_cursor();
                 }
             }
-            // Command::Motion { count, motion, op } => {
-            //     {
-            //         let squares = SquareGridRef(state.puzzle.squares());
-            //         let mut custom_state = GridMotionState {
-            //             puzzle: &state.puzzle,
-            //         };
-            //         let positions =
-            //             squares.handle_motion(count, motion, &mut state.render, &mut custom_state);
-            //
-            //         if let Some(op) = op {
-            //             state
-            //                 .solve
-            //                 .handle_operator(op, positions, &mut state.history);
-            //         }
-            //     }
-            //
-            //     if !state.render.mode.is_visual() {
-            //         state.update_clues_from_cursor();
-            //     }
-            // }
             Command::Action { action, .. } => {
                 let pos = state.render.cursor;
                 let dir = match state.render.direction {
