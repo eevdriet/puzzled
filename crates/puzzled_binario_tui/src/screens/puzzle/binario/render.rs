@@ -5,7 +5,6 @@ use puzzled_tui::{
     ThemeStyled,
 };
 use ratatui::{
-    layout::HorizontalAlignment,
     style::Style,
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
@@ -16,23 +15,16 @@ use crate::BinarioApp;
 #[derive(Debug)]
 pub struct RenderBit<'a> {
     pub bit: &'a Bit,
-    pub validity: bool,
 }
 
 impl<'a> ThemeStyled for RenderBit<'a> {
     fn theme_style(&self, theme: &Theme) -> Style {
         let base = Style::default();
 
-        let mut style = match self.bit {
+        match self.bit {
             Bit::Zero => base.fg(theme.palette.blue),
             Bit::One => base.fg(theme.palette.light3),
-        };
-
-        if !self.validity {
-            style = style.patch(theme.incorrect);
         }
-
-        style
     }
 }
 
@@ -43,8 +35,7 @@ impl<'a> CellRender<BinarioApp, GridRenderState> for Entry<RenderBit<'a>> {
         state: &GridRenderState,
         ctx: &AppContext<BinarioApp>,
     ) -> impl Widget {
-        let mut style = self.theme_style(&ctx.theme);
-        style = style.patch(state.cell_style(pos, &ctx.theme));
+        let style = state.entry_style(self, pos, &ctx.theme);
 
         let border_type = if self.is_initially_revealed() {
             BorderType::HeavyDoubleDashed
@@ -55,9 +46,7 @@ impl<'a> CellRender<BinarioApp, GridRenderState> for Entry<RenderBit<'a>> {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(style)
-            .border_type(border_type)
-            .title_alignment(HorizontalAlignment::Center)
-            .title_style(style);
+            .border_type(border_type);
 
         let symbol = match self.entry() {
             Some(entry) => entry.bit.to_string(),

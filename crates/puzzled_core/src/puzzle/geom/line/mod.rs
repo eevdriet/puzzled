@@ -6,6 +6,8 @@ pub use segment::*;
 
 use std::{cmp::Ordering, fmt, ops};
 
+use crate::Order;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Line {
     Row(usize),
@@ -40,6 +42,16 @@ impl Line {
 
     pub fn is_col(&self) -> bool {
         matches!(self, Line::Col(_))
+    }
+}
+
+impl From<Line> for Order {
+    fn from(line: Line) -> Self {
+        if line.is_row() {
+            Order::Rows
+        } else {
+            Order::Cols
+        }
     }
 }
 

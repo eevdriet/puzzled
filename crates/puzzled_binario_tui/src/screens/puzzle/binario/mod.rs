@@ -31,25 +31,14 @@ impl AppWidget<BinarioApp> for BinarioWidget {
 
         let grid = solve.state.to_merged();
 
-        let grid = grid
-            .join_ref(&solve.validity.grid, |solution_entry, validity| {
-                let cell = solution_entry.get().map(|bit| RenderBit {
-                    bit,
-                    validity: *validity,
-                });
+        let grid = grid.map_ref(|solution_entry| {
+            let cell = solution_entry.get().map(|bit| RenderBit { bit });
 
-                Entry::new_with_style(cell, solution_entry.entry.style())
-            })
-            .expect("Solve grids have the same size");
+            Entry::new_with_style(cell, solution_entry.entry.style())
+        });
 
-        tracing::info!("Merged grid: {grid:?}");
-
-        let mut sided_grid_widget = SidedGridWidget::new(
-            &grid,
-            &solve.validity.sides,
-            &render_c.grid,
-            &render_c.sides,
-        );
+        let mut sided_grid_widget =
+            SidedGridWidget::new(&grid, &solve.valid.sides, &render_c.grid, &render_c.sides);
 
         AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, ctx, &mut state.render);
     }

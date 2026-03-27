@@ -29,6 +29,8 @@ bitflags! {
     #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
     #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct CellStyle: u8 {
+        const CORRECT = 1 << 2;
+
         /// [Cell] is initially revealed
         ///
         /// This is sometimes required to ensure a puzzle is solvable from its initial state
@@ -58,6 +60,7 @@ impl CellStyle {
         style -= CellStyle::REVEALED;
         style -= CellStyle::PREVIOUSLY_INCORRECT;
         style -= CellStyle::INCORRECT;
+        style -= CellStyle::CORRECT;
 
         style
     }

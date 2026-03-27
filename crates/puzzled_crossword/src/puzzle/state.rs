@@ -64,21 +64,16 @@ impl From<&Crossword> for CrosswordState {
 impl Solve<Crossword> for CrosswordState {
     delegate! {
         to self.0 {
+            fn solution(&self, pos: &Position) -> Option<&Solution>;
+            fn entry(&self, pos: &Position) -> Option<&Solution>;
+
             fn solve(&mut self, pos: &Position, solution: Solution) -> bool;
             fn enter(&mut self, pos: &Position, entry: Solution) -> bool;
             fn clear(&mut self, pos: &Position) -> bool;
             fn reveal(&mut self, pos: &Position) -> bool;
             fn check(&mut self, pos: &Position) -> Option<bool>;
 
-            fn reveal_all(&mut self);
-            fn check_all(&mut self);
-            fn clear_all(&mut self);
-
-            fn enter_checked(&mut self, pos: &Position, entry: Solution) -> Option<bool>;
-
             fn guess(&mut self, pos: &Position, guess: Solution) -> bool;
-
-            fn guess_checked(&mut self, pos: &Position, guess: Solution) -> Option<bool>;
         }
     }
 }

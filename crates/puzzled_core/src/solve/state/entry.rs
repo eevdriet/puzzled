@@ -128,46 +128,59 @@ impl<E> Entry<E> {
             return false;
         }
 
-        // Clear correctness status as we can no longer be sure of it after a new entry
-        if self.style.contains(CellStyle::INCORRECT) {
-            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-        }
-        self.style -= CellStyle::INCORRECT;
-
         // Enter the new guess and set its correctness style
         self.entry = Some(entry.into());
+
+        // Clear correctness status as we can no longer be sure of it after a new entry
+        self.reset_correctness();
 
         true
     }
 
     pub fn reveal(&mut self) -> bool {
-        let was_revealed = self.is_revealed();
+        if self.is_revealed() | self.is_initially_revealed() {
+            return false;
+        }
 
         self.style |= CellStyle::REVEALED;
-
-        was_revealed
+        true
     }
 
-    pub fn check(&mut self, solution: &E) -> Option<bool>
-    where
-        E: Eq,
-    {
-        // Try to compare the current entry to the solution if there is an entry
-        let is_correct = self.entry().map(|e| e == solution)?;
+    pub fn mark_correct(&mut self) -> bool {
+        if self.is_revealed() {
+            return false;
+        }
 
-        // Set previous correctness style
         if self.style.contains(CellStyle::INCORRECT) {
             self.style |= CellStyle::PREVIOUSLY_INCORRECT;
         }
 
-        // Set current correctness style
-        if is_correct {
-            self.style -= CellStyle::INCORRECT;
-        } else {
-            self.style |= CellStyle::INCORRECT;
+        self.style -= CellStyle::INCORRECT;
+        self.style |= CellStyle::CORRECT;
+
+        true
+    }
+
+    pub fn mark_incorrect(&mut self) -> bool {
+        if self.is_revealed() {
+            return false;
         }
 
-        Some(is_correct)
+        self.style |= CellStyle::INCORRECT;
+        self.style -= CellStyle::CORRECT;
+
+        true
+    }
+
+    pub fn reset_correctness(&mut self) {
+        // NOTE: initial correctness is guaranteed to be valid
+        // Therefore the style will never be incorrect when reset
+        if self.style.contains(CellStyle::INCORRECT) {
+            self.style |= CellStyle::PREVIOUSLY_INCORRECT;
+        }
+
+        self.style -= CellStyle::INCORRECT;
+        self.style -= CellStyle::CORRECT;
     }
 
     /// Clear the current entry.
@@ -176,14 +189,7 @@ impl<E> Entry<E> {
     pub fn clear(&mut self) {
         if !self.is_revealed() && !self.is_initially_revealed() {
             self.entry = None;
-
-            // NOTE: correctness is guaranteed as `init` only allows correct state
-            // Therefore the style will never be incorrect when set to its initial state
-            if self.style.contains(CellStyle::INCORRECT) {
-                self.style |= CellStyle::PREVIOUSLY_INCORRECT;
-            }
-
-            self.style -= CellStyle::INCORRECT;
+            self.reset_correctness();
         }
     }
 }

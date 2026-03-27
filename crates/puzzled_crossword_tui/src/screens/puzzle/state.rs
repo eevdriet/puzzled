@@ -1,4 +1,4 @@
-use puzzled_core::{Direction, SquareGridState};
+use puzzled_core::Direction;
 use puzzled_crossword::{Clue, ClueDirection, Crossword, CrosswordState};
 use puzzled_tui::{
     ActionHistory, FocusManager, GridRenderState, Keys, KeysTablePopupState, ListRenderState,
@@ -30,7 +30,7 @@ pub struct PuzzleScreenState {
     pub help_state: KeysTablePopupState,
 
     // Other
-    pub history: ActionHistory<SquareGridState<Crossword>>,
+    pub history: ActionHistory<CrosswordState>,
 }
 
 impl ListRenderState for PuzzleScreenState {

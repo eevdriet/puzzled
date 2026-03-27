@@ -47,6 +47,15 @@ impl<T, U> SidedGrid<T, U> {
         Ok(self)
     }
 
+    pub fn with_top_value(mut self, val: U) -> Self
+    where
+        U: Clone,
+    {
+        self.sides
+            .insert(Direction::Up, vec![val; self.grid.cols()]);
+        self
+    }
+
     pub fn with_bottom(mut self, bottom: Vec<U>) -> Result<Self, SidedGridError> {
         if bottom.len() != self.grid.cols() {
             return Err(SidedGridError::InvalidColCount {
@@ -58,6 +67,15 @@ impl<T, U> SidedGrid<T, U> {
 
         self.sides.insert(Direction::Down, bottom);
         Ok(self)
+    }
+
+    pub fn with_bottom_value(mut self, val: U) -> Self
+    where
+        U: Clone,
+    {
+        self.sides
+            .insert(Direction::Down, vec![val; self.grid.cols()]);
+        self
     }
 
     pub fn with_left(mut self, left: Vec<U>) -> Result<Self, SidedGridError> {
@@ -73,6 +91,15 @@ impl<T, U> SidedGrid<T, U> {
         Ok(self)
     }
 
+    pub fn with_left_value(mut self, val: U) -> Self
+    where
+        U: Clone,
+    {
+        self.sides
+            .insert(Direction::Left, vec![val; self.grid.rows()]);
+        self
+    }
+
     pub fn with_right(mut self, right: Vec<U>) -> Result<Self, SidedGridError> {
         if right.len() != self.grid.rows() {
             return Err(SidedGridError::InvalidColCount {
@@ -84,6 +111,15 @@ impl<T, U> SidedGrid<T, U> {
 
         self.sides.insert(Direction::Right, right);
         Ok(self)
+    }
+
+    pub fn with_right_value(mut self, val: U) -> Self
+    where
+        U: Clone,
+    {
+        self.sides
+            .insert(Direction::Right, vec![val; self.grid.rows()]);
+        self
     }
 }
 

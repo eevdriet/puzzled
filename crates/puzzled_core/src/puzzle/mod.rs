@@ -6,6 +6,8 @@ mod square;
 mod style;
 mod word;
 
+use std::fmt::Debug;
+
 pub use cell::*;
 pub use constraints::*;
 pub use geom::*;
@@ -20,7 +22,7 @@ pub trait Puzzle: Sized {
     const NAME: &'static str;
 
     type Solution;
-    type Position;
+    type Position: Debug;
     type Value: Clone + Eq + Word;
 
     fn title(meta: &Metadata) -> String {

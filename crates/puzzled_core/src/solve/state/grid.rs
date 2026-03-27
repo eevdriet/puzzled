@@ -52,6 +52,18 @@ impl<P> Solve<P> for GridState<P>
 where
     P: Puzzle<Position = Position>,
 {
+    fn solution(&self, pos: &Position) -> Option<&P::Value> {
+        let result = self.solutions.get(*pos)?;
+
+        result.as_ref()
+    }
+
+    fn entry(&self, pos: &Position) -> Option<&P::Value> {
+        let result = self.entries.get(*pos)?;
+
+        result.entry()
+    }
+
     fn solve(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(solution) = self.solutions.get_mut(*pos) else {
             return false;
@@ -94,37 +106,15 @@ where
         };
 
         let entry = self.entries.get_mut(*pos)?;
-        entry.check(solution)
-    }
+        let is_correct = entry.entry().map(|s| s == solution)?;
 
-    fn reveal_all(&mut self) {
-        for (pos, solution) in self
-            .solutions
-            .iter_indexed()
-            .filter_map(|(pos, sol)| sol.as_ref().map(|sol| (pos, sol.clone())))
-        {
-            if let Some(entry) = self.entries.get_mut(pos) {
-                entry.enter(solution);
-            }
+        if is_correct {
+            entry.mark_correct();
+        } else {
+            entry.mark_incorrect();
         }
-    }
 
-    fn check_all(&mut self) {
-        for pos in self.solutions.positions() {
-            if let (Some(Some(solution)), Some(entry)) =
-                (self.solutions.get(pos), self.entries.get_mut(pos))
-            {
-                entry.check(solution);
-            }
-        }
-    }
-
-    fn clear_all(&mut self) {
-        for pos in self.solutions.positions() {
-            if let Some(entry) = self.entries.get_mut(pos) {
-                entry.clear();
-            }
-        }
+        Some(is_correct)
     }
 
     // fn try_finalize(&self) -> Result<<P as Puzzle>::Solution, Self::Error> {
@@ -201,6 +191,18 @@ impl<P> Solve<P> for SquareGridState<P>
 where
     P: Puzzle<Position = Position>,
 {
+    fn solution(&self, pos: &Position) -> Option<&P::Value> {
+        let result = self.solutions.get_fill(*pos)?;
+
+        result.as_ref()
+    }
+
+    fn entry(&self, pos: &Position) -> Option<&P::Value> {
+        let result = self.entries.get_fill(*pos)?;
+
+        result.entry()
+    }
+
     fn solve(&mut self, pos: &Position, value: P::Value) -> bool {
         let Some(solution) = self.solutions.get_fill_mut(*pos) else {
             return false;
@@ -243,36 +245,14 @@ where
         };
 
         let entry = self.entries.get_fill_mut(*pos)?;
-        entry.check(solution)
-    }
+        let is_correct = entry.entry().map(|s| s == solution)?;
 
-    fn reveal_all(&mut self) {
-        for (pos, solution) in self
-            .solutions
-            .iter_fills_indexed()
-            .filter_map(|(pos, sol)| sol.as_ref().map(|sol| (pos, sol.clone())))
-        {
-            if let Some(entry) = self.entries.get_fill_mut(pos) {
-                entry.enter(solution);
-            }
+        if is_correct {
+            entry.mark_correct();
+        } else {
+            entry.mark_incorrect();
         }
-    }
 
-    fn check_all(&mut self) {
-        for pos in self.solutions.positions() {
-            if let (Some(Some(solution)), Some(entry)) =
-                (self.solutions.get_fill(pos), self.entries.get_fill_mut(pos))
-            {
-                entry.check(solution);
-            }
-        }
-    }
-
-    fn clear_all(&mut self) {
-        for pos in self.solutions.positions() {
-            if let Some(entry) = self.entries.get_fill_mut(pos) {
-                entry.clear();
-            }
-        }
+        Some(is_correct)
     }
 }

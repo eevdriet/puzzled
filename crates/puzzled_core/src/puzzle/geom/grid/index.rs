@@ -59,6 +59,18 @@ impl<T> Grid<T> {
         ]
     }
 
+    pub fn neighbors4(&self, pos: Position) -> Vec<&T> {
+        self.adjacent4(pos).into_iter().flatten().collect()
+    }
+
+    pub fn neighbor_indices(&self, pos: Position) -> Vec<Position> {
+        self.indexed_adjacent4(pos)
+            .into_iter()
+            .flatten()
+            .map(|(pos, _)| pos)
+            .collect()
+    }
+
     pub fn adjacent8(&self, pos: Position) -> [Option<&T>; 8] {
         [
             (pos + Offset::UP).and_then(|p| self.get(p)),

@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use puzzled_core::{
-    Direction, Grid, GridIndexedIter, GridIter, GridLinearIter, GridPositionsIter, Position,
-    Square, SquareGridRef, Word,
+    Direction, Entry, Grid, GridIndexedIter, GridIter, GridLinearIter, GridPositionsIter,
+    GridState, Position, Puzzle, Square, SquareGridRef, SquareGridState, Word,
 };
 
 use crate::{GridRenderState, Motion, MotionBehavior};
@@ -62,6 +62,24 @@ where
     }
 }
 
+impl<M, P, S> HandleMotion<M, GridRenderState, S, Position> for GridState<P>
+where
+    P: Puzzle<Position = Position>,
+    M: MotionBehavior,
+    Grid<Entry<P::Value>>: HandleMotion<M, GridRenderState, S, Position>,
+{
+    fn handle_motion(
+        &self,
+        count: usize,
+        motion: Motion<M>,
+        state: &mut GridRenderState,
+        custom_state: &mut S,
+    ) -> impl IntoIterator<Item = Position> {
+        self.entries
+            .handle_motion(count, motion, state, custom_state)
+    }
+}
+
 impl<M, T, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridRef<'_, T>
 where
     T: Clone + Word + Debug,
@@ -97,6 +115,25 @@ where
         perform_motion_from_iter(iter, next_dir, render, |pos: &Position| {
             self.0.is_fill(*pos)
         })
+    }
+}
+
+impl<M, P, S> HandleMotion<M, GridRenderState, S, Position> for SquareGridState<P>
+where
+    P: Puzzle<Position = Position>,
+    M: MotionBehavior,
+    Entry<P::Value>: Debug,
+    Grid<Square<P::Value>>: HandleMotion<M, GridRenderState, S, Position>,
+{
+    fn handle_motion(
+        &self,
+        _count: usize,
+        _motion: Motion<M>,
+        _state: &mut GridRenderState,
+        _custom_state: &mut S,
+    ) -> impl IntoIterator<Item = Position> {
+        let _grid = SquareGridRef(&self.entries);
+        std::iter::empty()
     }
 }
 

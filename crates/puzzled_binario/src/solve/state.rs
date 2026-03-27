@@ -1,73 +1,77 @@
 use delegate::delegate;
-use puzzled_core::{Entry, Grid, GridState, Line, Position, SidedGrid, Solve, Timer};
+use puzzled_core::{Entry, Grid, GridState, Line, Order, Position, SidedGrid, Solve, Timer};
 
 use crate::{Binario, Bit, Bits};
 
 #[derive(Debug)]
 pub struct BinarioState {
     pub state: GridState<Binario>,
-    pub possible: Grid<u8>,
-    pub validity: SidedGrid<bool, bool>,
+
+    pub valid: SidedGrid<u8, bool>,
 }
 
 impl BinarioState {
     pub fn new(solutions: Grid<Option<Bit>>, entries: Grid<Entry<Bit>>, timer: Timer) -> Self {
         let state = GridState::new(solutions, entries, timer);
         let possible = state.solutions.map_ref(|sol| match sol {
-            Some(_) => 0,
-            None => 3,
+            Some(bit) => u8::from(*bit),
+            None => 2,
         });
-        let validity = SidedGrid::new(state.solutions.map_ref(|_| true))
-            .with_top(vec![true; possible.cols()])
-            .expect("Checked dimensions")
-            .with_left(vec![true; possible.rows()])
-            .expect("Checked dimensions");
 
         Self {
             state,
-            possible,
-            validity,
+            valid: SidedGrid::new(possible)
+                .with_top_value(true)
+                .with_left_value(true),
         }
     }
 
     pub fn validate_cell(&mut self, pos: Position) {
-        // Retrieve the cell, which is always valid if not filled
-        let validate = |pos: Position| {
-            let entries = &self.state.entries;
-            let Some(cell) = entries[pos].entry() else {
-                return true;
-            };
-
-            // Compare with the adjacent neighbors for no repeating fills
-            let [up, right, down, left] = entries
-                .adjacent4(pos)
-                .map(|bit| bit.and_then(|b| b.entry()));
-
-            if up.is_some_and(|u| u == cell) && down.is_some_and(|d| d == cell) {
-                return false;
-            }
-            if left.is_some_and(|l| l == cell) && right.is_some_and(|r| r == cell) {
-                return false;
-            }
-
-            true
+        // Retrieve the bit, which is valid (not incorrect) when not filled
+        let Some(bit) = self.state.entries[pos].entry().cloned() else {
+            return;
         };
 
-        // Validate the cell and its orthogonal neighbors
-        self.validity[pos] = validate(pos);
+        tracing::info!("Validating {pos}");
+        tracing::info!("\tEntry {bit}");
 
-        let neighbors: Vec<_> = self
+        // Compare with the adjacent neighbors for no repeating fills
+        let [up, right, down, left] = self
             .state
             .entries
-            .indexed_adjacent4(pos)
-            .into_iter()
-            .flatten()
-            .map(|(pos, _)| pos)
-            .collect();
+            .adjacent4(pos)
+            .map(|bit| bit.and_then(|b| b.entry().cloned()));
 
-        for neighbor in neighbors {
-            self.validity[neighbor] = validate(neighbor);
+        // Mark the entry as incorrect if it shares its bit with orthogonal neighbors
+        let entry = &mut self.state.entries[pos];
+
+        if up.is_some_and(|u| u == bit) && down.is_some_and(|d| d == bit) {
+            tracing::info!("\tIncorrect up/down");
+            entry.mark_incorrect();
+        } else if left.is_some_and(|l| l == bit) && right.is_some_and(|r| r == bit) {
+            tracing::info!("\tIncorrect left/right");
+            entry.mark_incorrect();
+        } else {
+            entry.reset_correctness();
         }
+    }
+
+    pub fn validate_line(&mut self, line: Line) {
+        let entries = &mut self.state.entries;
+
+        // Mark the line as incorrect if it is equal to another
+        let order = Order::from(line);
+        let iter = entries.iter_line(line);
+        let pos = line.line();
+
+        for (idx, other_iter) in entries.iter_lines(order).enumerate() {
+            if idx != pos && iter.eq(other_iter) {
+                return;
+            }
+        }
+
+        // Mark the line as incorrect if it is full
+        // but doesn't have the same number of zeroes and ones
     }
 }
 
@@ -95,34 +99,53 @@ impl Bits for BinarioState {
 
 impl Solve<Binario> for BinarioState {
     fn enter(&mut self, pos: &Position, entry: Bit) -> bool {
+        tracing::info!("Setting {pos} -> {entry}");
         let result = self.state.enter(pos, entry);
+
+        // Validate the cell and its neighbors
         self.validate_cell(*pos);
+
+        for neighbor in self.state.entries.neighbor_indices(*pos) {
+            self.validate_cell(neighbor);
+        }
+
+        // Validate the lines the position is on
+        let (row, col) = pos.lines();
+
+        self.validate_line(row);
+        self.validate_line(col);
 
         result
     }
 
     fn clear(&mut self, pos: &Position) -> bool {
+        tracing::info!("Clearing {pos}");
         let result = self.state.clear(pos);
-        self.validate_cell(*pos);
+
+        // Validate the neighboring cells
+        for neighbor in self.state.entries.neighbor_indices(*pos) {
+            self.validate_cell(neighbor);
+        }
+
+        // Validate the lines the position is on
+        let (row, col) = pos.lines();
+
+        self.validate_line(row);
+        self.validate_line(col);
 
         result
     }
 
     delegate! {
         to self.state {
+            fn solution(&self, pos: &Position) -> Option<&Bit>;
+            fn entry(&self, pos: &Position) -> Option<&Bit>;
+
             fn solve(&mut self, pos: &Position, solution: Bit) -> bool;
             fn reveal(&mut self, pos: &Position) -> bool;
             fn check(&mut self, pos: &Position) -> Option<bool>;
 
-            fn reveal_all(&mut self);
-            fn check_all(&mut self);
-            fn clear_all(&mut self);
-
-            fn enter_checked(&mut self, pos: &Position, entry: Bit) -> Option<bool>;
-
             fn guess(&mut self, pos: &Position, guess: Bit) -> bool;
-
-            fn guess_checked(&mut self, pos: &Position, guess: Bit) -> Option<bool>;
         }
     }
 }
