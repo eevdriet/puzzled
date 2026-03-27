@@ -5,7 +5,7 @@ use puzzled_core::{Entry, Grid, Position, Solve, Square, SquareGridState, Timer}
 use crate::{ClueId, Crossword, Solution};
 
 #[derive(Debug, Deref, DerefMut, Display)]
-pub struct CrosswordState(pub(crate) SquareGridState<Crossword>);
+pub struct CrosswordState(pub SquareGridState<Crossword>);
 
 impl CrosswordState {
     pub fn new(

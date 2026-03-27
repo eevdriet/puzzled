@@ -65,8 +65,8 @@ impl Screen<BinarioApp> for PuzzleScreen {
                 Action::Cancel => resolver.prev_screen(),
                 Action::ShowHelp => resolver.open_popup(),
                 Action::Quit => resolver.quit(),
-                Action::Undo => self.state.history.undo(*count, &mut self.state.solve.state),
-                Action::Redo => self.state.history.redo(*count, &mut self.state.solve.state),
+                Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
+                Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
                 _ => {
                     handled_action = false;
                 }

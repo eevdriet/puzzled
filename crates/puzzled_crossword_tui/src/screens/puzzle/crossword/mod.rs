@@ -9,7 +9,7 @@ use puzzled_core::{Direction, Puzzle, Solve};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
     Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    RenderSize, Widget as AppWidget, handle_grid_command,
+    RenderSize, Widget as AppWidget, handle_square_grid_command,
 };
 
 use ratatui::{
@@ -138,13 +138,12 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     puzzle: &state.puzzle,
                 };
 
-                handle_grid_command(
+                handle_square_grid_command(
                     command,
                     resolver,
                     &mut state.render,
-                    &mut state.solve,
+                    &mut state.solve.0,
                     &mut custom_state,
-                    &mut state.history,
                 );
 
                 if !state.render.mode.is_visual() {

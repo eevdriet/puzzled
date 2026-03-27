@@ -67,14 +67,19 @@ impl AppWidget<BinarioApp> for BinarioWidget {
             command @ (Command::Operator(..) | Command::Motion { .. }) => {
                 let mut custom_state = ();
 
-                handle_grid_command(
+                match handle_grid_command(
                     command,
                     resolver,
                     &mut state.render.grid,
                     &mut state.solve.state,
                     &mut custom_state,
-                    &mut state.history,
-                )
+                ) {
+                    Some(action) => {
+                        state.history.execute(action, &mut state.solve);
+                        true
+                    }
+                    _ => false,
+                }
             }
             Command::Action { action, .. } => {
                 let pos = state.render.grid.cursor;

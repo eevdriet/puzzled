@@ -5,28 +5,24 @@ use puzzled_core::{
 };
 
 use crate::{
-    ActionHistory, AppResolver, AppTypes, Command, EntryAction, EntryChange, EventMode,
-    GridRenderState, HandleCustomMotion, HandleMotion, Operator,
+    AppResolver, AppTypes, Command, EntryAction, EntryChange, EventMode, GridRenderState,
+    HandleCustomMotion, HandleMotion, Operator,
 };
 
-pub trait HandleOperator {
-    type Position;
-
-    fn handle_operator<I>(&mut self, op: Operator, positions: I, state: &mut ActionHistory<Self>)
+pub trait HandleOperator<P, S> {
+    fn handle_operator<I>(&mut self, op: Operator, positions: I) -> S
     where
         Self: Sized,
-        I: IntoIterator<Item = Self::Position>;
+        I: IntoIterator<Item = P>;
 }
 
-impl<P> HandleOperator for GridState<P>
+impl<P> HandleOperator<Position, Box<EntryAction<P>>> for GridState<P>
 where
     P: Puzzle<Position = Position> + 'static,
 {
-    type Position = Position;
-
-    fn handle_operator<I>(&mut self, op: Operator, positions: I, state: &mut ActionHistory<Self>)
+    fn handle_operator<I>(&mut self, op: Operator, positions: I) -> Box<EntryAction<P>>
     where
-        I: IntoIterator<Item = Self::Position>,
+        I: IntoIterator<Item = Position>,
     {
         let changes = positions
             .into_iter()
@@ -42,20 +38,17 @@ where
             })
             .collect();
 
-        let action = Box::new(EntryAction::<P>::new(op, changes));
-        state.execute(action, self);
+        Box::new(EntryAction::<P>::new(op, changes))
     }
 }
 
-impl<P> HandleOperator for SquareGridState<P>
+impl<P> HandleOperator<Position, Box<EntryAction<P>>> for SquareGridState<P>
 where
     P: Puzzle<Position = Position> + 'static,
 {
-    type Position = Position;
-
-    fn handle_operator<I>(&mut self, op: Operator, positions: I, state: &mut ActionHistory<Self>)
+    fn handle_operator<I>(&mut self, op: Operator, positions: I) -> Box<EntryAction<P>>
     where
-        I: IntoIterator<Item = Self::Position>,
+        I: IntoIterator<Item = Position>,
     {
         let changes = positions
             .into_iter()
@@ -72,10 +65,68 @@ where
             })
             .collect();
 
-        let action = Box::new(EntryAction::new(op, changes));
-        state.execute(action, self);
+        Box::new(EntryAction::new(op, changes))
     }
 }
+
+// pub fn handle_solve_command<A: AppTypes, MS, S>(
+//     command: Command<A::Action, A::TextObject, A::Motion>,
+//     resolver: AppResolver<A>,
+//     render: &mut GridRenderState,
+//     solve: &mut S,
+//     motion_state: &mut MS,
+//     history: &mut ActionHistory<S>,
+// ) -> bool
+// where
+//     A::Puzzle: Puzzle<Position = Position>,
+//     // NOTE: Entries grid can handle a motion with custom state S
+//     S: Solve<A::Puzzle>
+//         + HandleMotion<A::Motion, GridRenderState, MS, Position>
+//         + HandleOperator<Position>,
+// {
+//     let (positions, op) = match command {
+//         Command::Operator(op) => {
+//             // Use all visually selected positions
+//             if render.mode.is_visual() {
+//                 let positions: Vec<_> = render
+//                     .selection
+//                     .positions(render.viewport)
+//                     .filter_map(|pos| render.to_grid(pos))
+//                     .collect();
+//
+//                 (positions, Some(op))
+//             } else if !op.requires_motion() {
+//                 let positions = vec![render.cursor];
+//                 (positions, Some(op))
+//             } else {
+//                 return false;
+//             }
+//         }
+//         Command::Motion { count, motion, op } => {
+//             let positions = solve
+//                 .handle_motion(count, motion, render, motion_state)
+//                 .into_iter()
+//                 .collect();
+//
+//             (positions, op)
+//         }
+//         _ => return false,
+//     };
+//
+//     if let Some(op) = op {
+//         solve.handle_operator(op, positions, history);
+//
+//         // Possibly change the mode after applying the operator
+//         let mode = match op {
+//             Operator::Change => EventMode::Insert,
+//             _ => EventMode::Normal,
+//         };
+//
+//         resolver.set_mode(mode);
+//     }
+//
+//     true
+// }
 
 pub fn handle_grid_command<A: AppTypes, S>(
     command: Command<A::Action, A::TextObject, A::Motion>,
@@ -83,8 +134,7 @@ pub fn handle_grid_command<A: AppTypes, S>(
     render: &mut GridRenderState,
     solve: &mut GridState<A::Puzzle>,
     custom_state: &mut S,
-    history: &mut ActionHistory<GridState<A::Puzzle>>,
-) -> bool
+) -> Option<Box<EntryAction<A::Puzzle>>>
 where
     A::Puzzle: Puzzle<Position = Position> + 'static,
     // NOTE: Entries grid can handle a motion with custom state S
@@ -106,7 +156,7 @@ where
                 let positions = vec![render.cursor];
                 (positions, Some(op))
             } else {
-                return false;
+                return None;
             }
         }
         Command::Motion { count, motion, op } => {
@@ -118,22 +168,24 @@ where
 
             (positions, op)
         }
-        _ => return false,
+        _ => return None,
     };
 
-    if let Some(op) = op {
-        solve.handle_operator(op, positions, history);
+    match op {
+        Some(op) => {
+            let action = solve.handle_operator(op, positions);
 
-        // Possibly change the mode after applying the operator
-        let mode = match op {
-            Operator::Change => EventMode::Insert,
-            _ => EventMode::Normal,
-        };
+            // Possibly change the mode after applying the operator
+            let mode = match op {
+                Operator::Change => EventMode::Insert,
+                _ => EventMode::Normal,
+            };
 
-        resolver.set_mode(mode);
+            resolver.set_mode(mode);
+            Some(action)
+        }
+        _ => None,
     }
-
-    true
 }
 
 pub fn handle_square_grid_command<'a, A, S>(
@@ -142,7 +194,6 @@ pub fn handle_square_grid_command<'a, A, S>(
     render: &mut GridRenderState,
     solve: &mut SquareGridState<A::Puzzle>,
     custom_state: &mut S,
-    history: &mut ActionHistory<SquareGridState<A::Puzzle>>,
 ) -> bool
 where
     A: AppTypes,
@@ -186,7 +237,7 @@ where
     };
 
     if let Some(op) = op {
-        solve.handle_operator(op, positions, history);
+        solve.handle_operator(op, positions);
 
         // Possibly change the mode after applying the operator
         let mode = match op {

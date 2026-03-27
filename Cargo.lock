@@ -1978,6 +1978,7 @@ name = "puzzled_binario_tui"
 version = "0.1.0"
 dependencies = [
  "crossterm 0.29.0",
+ "delegate",
  "derive_more",
  "puzzled_binario",
  "puzzled_core",
