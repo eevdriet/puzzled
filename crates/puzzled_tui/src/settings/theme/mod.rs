@@ -14,6 +14,9 @@ use serde::Deserialize;
 #[derive(Debug, Default)]
 pub struct Theme {
     // General
+    pub primary: Style,
+    pub secondary: Style,
+
     // - UI
     pub highlighted: Style,
     pub cursor: Style,
@@ -21,6 +24,7 @@ pub struct Theme {
 
     // - Solving
     pub revealed: Style,
+    pub correct: Style,
     pub incorrect: Style,
     pub circled: Style,
 
@@ -33,6 +37,8 @@ impl Theme {
     pub fn from_definition(def: ThemeDef, palette: Palette) -> Self {
         Self {
             // General
+            primary: def.primary.resolve(&palette),
+            secondary: def.secondary.resolve(&palette),
             // - UI
             highlighted: def.highlighted.resolve(&palette),
             cursor: def.cursor.resolve(&palette),
@@ -40,6 +46,7 @@ impl Theme {
 
             // - Solving
             revealed: def.revealed.resolve(&palette),
+            correct: def.correct.resolve(&palette),
             incorrect: def.incorrect.resolve(&palette),
             circled: def.circled.resolve(&palette),
 
@@ -53,6 +60,8 @@ impl Theme {
 
         Self {
             // General
+            primary: base.fg(palette.yellow).bold(),
+            secondary: base.fg(palette.magenta).bold(),
             // - UI
             highlighted: base,
             cursor: base.fg(palette.yellow).bold(),
@@ -60,6 +69,7 @@ impl Theme {
 
             // - Solving
             revealed: base.fg(palette.blue),
+            correct: base.fg(palette.green),
             incorrect: base.fg(palette.red).bold(),
             circled: base,
 
@@ -73,6 +83,9 @@ impl Theme {
 #[serde(default)]
 pub struct ThemeDef {
     // General
+    pub primary: StyleDef,
+    pub secondary: StyleDef,
+
     // - UI
     pub highlighted: StyleDef,
     pub cursor: StyleDef,
@@ -80,6 +93,7 @@ pub struct ThemeDef {
 
     // - Solving
     pub revealed: StyleDef,
+    pub correct: StyleDef,
     pub incorrect: StyleDef,
     pub circled: StyleDef,
 

@@ -3,7 +3,6 @@ use puzzled_tui::{AppContext, EventMode, TimerWidget, Widget as AppWidget};
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect, Size},
-    style::{Color, Style},
     text::{Line, Span, Text},
     widgets::Widget,
 };
@@ -25,9 +24,11 @@ impl AppWidget<CrosswordApp> for FooterWidget {
         &mut self,
         area: Rect,
         buf: &mut Buffer,
-        _ctx: &mut AppContext<CrosswordApp>,
+        ctx: &mut AppContext<CrosswordApp>,
         state: &mut Self::State,
     ) {
+        let theme = &ctx.theme;
+
         let [help_line, timer_line, mode_line] = Layout::vertical(vec![
             Constraint::Length(1),
             Constraint::Length(1),
@@ -37,9 +38,9 @@ impl AppWidget<CrosswordApp> for FooterWidget {
 
         Line::from(vec![
             Span::raw("Press"),
-            Span::styled(" ? ", Style::new().fg(Color::Yellow)),
+            Span::styled(" ? ", theme.primary),
             Span::raw("for help and "),
-            Span::styled(&state.pause_key, Style::new().fg(Color::Yellow)),
+            Span::styled(&state.pause_key, theme.primary),
             Span::raw(" to pause the puzzle"),
         ])
         .render(help_line, buf);

@@ -10,7 +10,7 @@ use puzzled_tui::{
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Margin, Size},
     prelude::{Buffer, Rect},
-    style::{Color, Style, Stylize},
+    style::Style,
     text::Text,
     widgets::{Block, Borders, Widget},
 };
@@ -45,13 +45,11 @@ impl AppWidget<CrosswordApp> for CluesWidget {
     ) {
         // Render the outside block with the tabs
         let base_style = Style::default();
-        let selected_style = base_style.fg(Color::Yellow);
-        let unselected_style = base_style;
 
         let border_style = if matches!(state.focus.get(), Focus::Clues) {
-            selected_style
+            ctx.theme.primary
         } else {
-            unselected_style
+            base_style
         };
 
         let title = " Clues ";
@@ -85,7 +83,7 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(across);
 
         Text::from("   Across")
-            .fg(Color::Green)
+            .style(ctx.theme.secondary)
             .render(across_title, buf);
 
         self.across.render(across, buf, ctx, state);
@@ -95,7 +93,7 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(down);
 
         Text::from("   Down")
-            .fg(Color::Blue)
+            .style(ctx.theme.secondary)
             .render(down_title, buf);
 
         self.down.render(down, buf, ctx, state);

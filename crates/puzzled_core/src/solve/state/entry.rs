@@ -57,6 +57,7 @@ impl<E> Entry<E> {
     // Current styles
     check_style!(CellStyle::REVEALED, style, is_revealed());
     check_style!(CellStyle::INCORRECT, style, is_incorrect());
+    check_style!(CellStyle::CORRECT, style, is_correct());
     check_style!(CellStyle::PREVIOUSLY_INCORRECT, style, was_incorrect());
     check_style!(
         CellStyle::INITIALLY_REVEALED,

@@ -71,20 +71,26 @@ pub struct CluesListRender {
 impl ListRender<CrosswordApp> for CluesListRender {
     type State = PuzzleScreenState;
 
-    fn render_list<'a>(&self, list: List<'a>, state: &'a Self::State) -> List<'a> {
-        let base_style = Style::default();
-        let selected_style = base_style.fg(Color::Yellow).bold();
-
+    fn render_list<'a>(
+        &self,
+        list: List<'a>,
+        ctx: &AppContext<CrosswordApp>,
+        state: &'a Self::State,
+    ) -> List<'a> {
         let highlight_style = if self.dir == state.clue_dir {
-            selected_style
+            ctx.theme.primary
         } else {
-            base_style
+            Style::default()
         };
 
         list.highlight_style(highlight_style)
     }
 
-    fn render_items<'a>(&self, state: &'a Self::State) -> impl Iterator<Item = ListItem<'a>> {
+    fn render_items<'a>(
+        &self,
+        _ctx: &AppContext<CrosswordApp>,
+        state: &'a Self::State,
+    ) -> impl Iterator<Item = ListItem<'a>> {
         let max_num = state
             .clues(self.dir)
             .last()

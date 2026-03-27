@@ -35,7 +35,10 @@ impl<'a> CellRender<BinarioApp, GridRenderState> for Entry<RenderBit<'a>> {
         state: &GridRenderState,
         ctx: &AppContext<BinarioApp>,
     ) -> impl Widget {
-        let style = state.entry_style(self, pos, &ctx.theme);
+        let mut style = self.theme_style(&ctx.theme);
+
+        let cell_style = state.cell_style(pos, &ctx.theme);
+        style = style.patch(cell_style);
 
         let border_type = if self.is_initially_revealed() {
             BorderType::HeavyDoubleDashed

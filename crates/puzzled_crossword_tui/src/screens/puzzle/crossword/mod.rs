@@ -15,7 +15,7 @@ use puzzled_tui::{
 use ratatui::{
     layout::{Constraint, HorizontalAlignment, Layout, Size},
     prelude::{Buffer, Rect},
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, BorderType, Borders, StatefulWidget, Widget},
 };
 
@@ -45,7 +45,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let title = Crossword::title(puzzle.meta());
 
         let border_style = if focus.get() == &Focus::Crossword {
-            Style::default().fg(Color::Yellow)
+            ctx.theme.primary
         } else {
             Style::default()
         };
@@ -86,10 +86,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
             render: &render_c,
         };
 
-        let grid = solve.to_merged();
-        let grid = grid.map_ref(|entry| RenderSquareSolution {
-            solution_entry: entry,
-        });
+        let grid = solve.0.map_entries(|solution| RenderSolution { solution });
 
         let mut grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid, &cell_state);
         AppWidget::render(&mut grid_widget, area, buf, ctx, &mut state.render);

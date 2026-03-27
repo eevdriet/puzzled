@@ -95,9 +95,10 @@ where
     ) -> impl IntoIterator<Item = Position> {
         // Go to the first filled square in the given direction to perform the motion
         let mut pos = render.cursor;
+        let is_visual = render.mode.is_visual();
         let next_dir = motion.apply_to_dir(render.direction);
 
-        if count > 0 {
+        if count > 0 && !self.0.is_in_bounds(pos) {
             while let Some(next) = pos + next_dir
                 && self.0.is_in_bounds(next)
             {
@@ -112,8 +113,8 @@ where
 
         // Perform the motion by collecting all covered positions in the grid
         let iter = square_grid_motion(self.0, count, motion, pos, next_dir, render, custom_state);
-        perform_motion_from_iter(iter, next_dir, render, |pos: &Position| {
-            self.0.is_fill(*pos)
+        perform_motion_from_iter(iter, next_dir, render, move |pos: &Position| {
+            is_visual || self.0.is_fill(*pos)
         })
     }
 }
@@ -157,7 +158,7 @@ where
     }
     // Otherwise, move to the end and make sure it stays visible
     else if let Some(end) = iter.clone().map(|(pos, _)| pos).rfind(end_predicate) {
-        tracing::trace!(
+        tracing::info!(
             "Move to end {end:?}: {:?} ({:?})",
             render.to_app(end),
             render.selection

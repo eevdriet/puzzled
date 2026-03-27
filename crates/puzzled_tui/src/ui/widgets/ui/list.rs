@@ -14,9 +14,18 @@ use crate::{AppCommand, AppContext, AppResolver, AppTypes, Command, Motion, Widg
 pub trait ListRender<A: AppTypes>: Sized {
     type State;
 
-    fn render_items<'a>(&self, state: &'a Self::State) -> impl Iterator<Item = ListItem<'a>>;
+    fn render_items<'a>(
+        &self,
+        ctx: &AppContext<A>,
+        state: &'a Self::State,
+    ) -> impl Iterator<Item = ListItem<'a>>;
 
-    fn render_list<'a>(&self, list: List<'a>, _state: &'a Self::State) -> List<'a> {
+    fn render_list<'a>(
+        &self,
+        list: List<'a>,
+        _ctx: &AppContext<A>,
+        _state: &'a Self::State,
+    ) -> List<'a> {
         list
     }
 
@@ -24,6 +33,7 @@ pub trait ListRender<A: AppTypes>: Sized {
         &mut self,
         _command: AppCommand<A>,
         _resolver: AppResolver<A>,
+        _ctx: &AppContext<A>,
         _state: &mut Self::State,
     ) -> bool {
         false
@@ -171,16 +181,16 @@ where
         &mut self,
         area: Rect,
         buf: &mut Buffer,
-        _ctx: &mut AppContext<A>,
+        ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
         let mut list_state = state.get();
 
         {
             // We pass `state` which has the lifetime `'a` into `render_state`
-            let items = self.render.render_items(state);
+            let items = self.render.render_items(ctx, state);
             let list = self.create_list().items(items);
-            let list = self.render.render_list(list, state);
+            let list = self.render.render_list(list, ctx, state);
 
             // Now we use the correct `ListState` reference
             list.render(area, buf, &mut list_state);
@@ -189,8 +199,8 @@ where
         state.set(list_state);
     }
 
-    fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
-        let items = self.render.render_items(state);
+    fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+        let items = self.render.render_items(ctx, state);
 
         items.fold(Size::ZERO, |mut size, item| {
             size.width = size.width.max(item.width() as u16);
@@ -204,10 +214,13 @@ where
         &mut self,
         command: AppCommand<A>,
         resolver: AppResolver<A>,
-        _ctx: &mut AppContext<A>,
+        ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) -> bool {
-        if self.render.on_command(command.clone(), resolver, state) {
+        if self
+            .render
+            .on_command(command.clone(), resolver, ctx, state)
+        {
             return true;
         }
 

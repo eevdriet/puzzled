@@ -1,5 +1,5 @@
-use puzzled_core::Entry;
-use ratatui::style::{Modifier, Style};
+use puzzled_core::{Entry, Square};
+use ratatui::style::{Color, Modifier, Style};
 use serde::{Deserialize, Serialize};
 
 use crate::{Palette, ResolveTheme, Theme, ThemeColor};
@@ -80,12 +80,27 @@ where
                 if self.is_revealed() {
                     style = style.patch(theme.revealed);
                 }
+
                 if self.is_incorrect() {
                     style = style.patch(theme.incorrect);
+                } else if self.is_correct() {
+                    style = style.patch(theme.correct);
                 }
 
                 style
             }
+        }
+    }
+}
+
+impl<T> ThemeStyled for Square<T>
+where
+    T: ThemeStyled,
+{
+    fn theme_style(&self, theme: &Theme) -> Style {
+        match self.as_ref() {
+            Some(square) => square.theme_style(theme),
+            None => Style::default().fg(Color::Black).dim(),
         }
     }
 }

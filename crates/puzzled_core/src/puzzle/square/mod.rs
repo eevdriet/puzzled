@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Display};
 
 use derive_more::{Deref, DerefMut};
 
@@ -28,6 +28,16 @@ impl<T> Square<T> {
         };
 
         Square(mapped)
+    }
+
+    pub fn symbol(&self) -> String
+    where
+        T: Display,
+    {
+        match self.as_ref() {
+            Some(val) => val.to_string(),
+            _ => "".to_string(),
+        }
     }
 }
 

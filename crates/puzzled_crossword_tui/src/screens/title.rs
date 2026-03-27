@@ -89,6 +89,7 @@ impl ListRender<CrosswordApp> for TitleRender {
 
     fn render_items<'a>(
         &self,
+        _ctx: &AppContext<CrosswordApp>,
         _state: &'a Self::State,
     ) -> impl Iterator<Item = ratatui::widgets::ListItem<'a>> {
         ITEMS.into_iter().map(ListItem::new)
@@ -98,6 +99,7 @@ impl ListRender<CrosswordApp> for TitleRender {
         &mut self,
         command: AppCommand<CrosswordApp>,
         resolver: AppResolver<CrosswordApp>,
+        _ctx: &AppContext<CrosswordApp>,
         state: &mut Self::State,
     ) -> bool {
         use Action::*;

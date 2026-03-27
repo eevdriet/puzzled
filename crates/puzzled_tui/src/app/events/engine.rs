@@ -198,9 +198,6 @@ impl<A: AppTypes> EventEngine<A> {
                 )));
             }
 
-            // Start visual selection on mouse drag
-            // (Drag(Left), _, false, _) | (Down(Left), true, false, _) => {}
-
             // Update visual selection on additional mouse drag
             (Drag(Left), _, true, _) => {
                 tracing::debug!("[MOUSE] Update selection (left continue drag)");

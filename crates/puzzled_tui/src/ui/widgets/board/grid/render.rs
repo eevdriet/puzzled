@@ -1,11 +1,11 @@
-use puzzled_core::{Direction, Entry, Position};
+use puzzled_core::{Direction, Position};
 use ratatui::{
     layout::{Position as AppPosition, Rect},
     style::Style,
 };
 use tui_scrollview::ScrollViewState;
 
-use crate::{EventMode, GridOptions, MultiSelection, Theme, ThemeStyled};
+use crate::{EventMode, GridOptions, MultiSelection, Theme};
 
 #[derive(Debug, Default, Clone)]
 pub struct GridRenderState {
@@ -104,16 +104,8 @@ impl GridRenderState {
         vp.contains(app_pos).then_some(app_pos)
     }
 
-    pub fn entry_style<T>(&self, entry: &Entry<T>, pos: Position, theme: &Theme) -> Style
-    where
-        T: ThemeStyled,
-    {
-        let mut style = entry.theme_style(theme);
-
-        // Do not override certain entries
-        if entry.is_revealed() || entry.is_incorrect() {
-            return style;
-        }
+    pub fn cell_style(&self, pos: Position, theme: &Theme) -> Style {
+        let mut style = Style::default();
 
         // Cell is the at the current cursor position
         if pos == self.cursor {

@@ -1,11 +1,11 @@
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Position, SolutionEntry, Square};
+use puzzled_core::{Entry, Position, Square};
 use puzzled_crossword::{ClueDirection, Clues, Solution};
-use puzzled_tui::{AppContext, CellRender, GridRenderState, TextBlock};
+use puzzled_tui::{AppContext, CellRender, GridRenderState, TextBlock, Theme, ThemeStyled};
 
 use ratatui::{
     layout::HorizontalAlignment,
-    style::{Color, Modifier, Style, Stylize},
+    style::{Style, Stylize},
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
 };
@@ -13,8 +13,14 @@ use ratatui::{
 use crate::CrosswordApp;
 
 #[derive(Deref, DerefMut)]
-pub(crate) struct RenderSquareSolution<'a> {
-    pub solution_entry: &'a Square<SolutionEntry<'a, Solution>>,
+pub(crate) struct RenderSolution<'a> {
+    pub solution: &'a Solution,
+}
+
+impl<'a> ThemeStyled for RenderSolution<'a> {
+    fn theme_style(&self, theme: &Theme) -> Style {
+        Style::default().fg(theme.palette.dark0)
+    }
 }
 
 pub struct RenderSquareState<'a> {
@@ -22,82 +28,55 @@ pub struct RenderSquareState<'a> {
     pub render: &'a GridRenderState,
 }
 
-impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for RenderSquareSolution<'a> {
+impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<RenderSolution<'a>>> {
     fn render_cell(
         &self,
         pos: Position,
         state: &RenderSquareState,
-        _ctx: &AppContext<CrosswordApp>,
+        ctx: &AppContext<CrosswordApp>,
     ) -> impl Widget {
         // Determine the styles
-        let base_style = Style::default();
+        let palette = &ctx.theme.palette;
+        let base = self.theme_style(&ctx.theme);
+        let text_style = Style::default().fg(palette.light3);
 
-        let (border_style, clue_style, symbol) = match self.solution_entry.as_ref() {
-            Some(entry) => {
-                let mut border_style = base_style.fg(Color::DarkGray);
-                let mut clue_style = base_style.fg(Color::White).dim();
+        let mut border_style = base;
+        let mut clue_style = text_style.dim();
 
-                if !state.render.mode.is_visual()
-                    && let Some((across, down)) = state.clues.get_clues(state.render.cursor)
-                {
-                    let clue_dir = ClueDirection::from(state.render.direction);
-                    let active_clue_style = border_style.fg(Color::Cyan).bold();
-                    let alt_clue_style = border_style.fg(Color::White).dim();
+        if self.is_some()
+            && let Some((across, down)) = state.clues.get_clues(state.render.cursor)
+        {
+            if !state.render.mode.is_visual() {
+                let clue_dir = ClueDirection::from(state.render.direction);
+                let active_clue_style = border_style.fg(palette.cyan).bold();
+                let alt_clue_style = base;
 
-                    let (across_style, down_style) = match clue_dir {
-                        ClueDirection::Across => (active_clue_style, alt_clue_style),
-                        ClueDirection::Down => (alt_clue_style, active_clue_style),
-                    };
-
-                    if across.positions().any(|clue_pos| clue_pos == pos) {
-                        border_style = across_style;
-                    }
-                    if down.positions().any(|clue_pos| clue_pos == pos) {
-                        border_style = down_style;
-                    }
-
-                    clue_style = clue_style.not_dim();
-                }
-
-                // Cell style
-                if entry.entry.is_revealed() {
-                    border_style = border_style.fg(Color::Blue);
-                } else if entry.entry.is_incorrect() {
-                    border_style = border_style.fg(Color::Red);
-                }
-
-                if pos == state.render.cursor {
-                    border_style = if state.render.mode.is_visual() {
-                        base_style.fg(Color::LightGreen)
-                    } else {
-                        base_style.fg(Color::Yellow)
-                    }
-                    .add_modifier(Modifier::BOLD);
-                } else if let Some(app_pos) = state.render.to_app(pos)
-                    && state
-                        .render
-                        .selection
-                        .contains(app_pos, state.render.viewport)
-                {
-                    border_style = base_style.fg(Color::Green);
-                }
-
-                // Display the first letter of the solution
-                let symbol = match entry.get() {
-                    Some(Solution::Letter(l)) => l.to_string(),
-                    Some(sol @ Solution::Rebus(_)) => format!("{}…", sol.first_letter()),
-                    None => "".to_string(),
+                let (across_style, down_style) = match clue_dir {
+                    ClueDirection::Across => (active_clue_style, alt_clue_style),
+                    ClueDirection::Down => (alt_clue_style, active_clue_style),
                 };
 
-                (border_style, clue_style, symbol)
+                if across.positions().any(|clue_pos| clue_pos == pos) {
+                    border_style = across_style;
+                }
+                if down.positions().any(|clue_pos| clue_pos == pos) {
+                    border_style = down_style;
+                }
             }
-            None => {
-                let border_style = base_style.fg(Color::Black).dim();
-                let clue_style = base_style;
-                let symbol = "".to_string();
 
-                (border_style, clue_style, symbol)
-            }
+            let cell_style = state.render.cell_style(pos, &ctx.theme);
+            border_style = border_style.patch(cell_style);
+
+            clue_style = clue_style.not_dim();
+        }
+
+        // Display the first letter of the solution
+        let symbol = match self.as_ref().and_then(|sq| sq.entry()) {
+            Some(render) => match render.solution {
+                Solution::Letter(l) => l.to_string(),
+                sol @ Solution::Rebus(_) => format!("{}…", sol.first_letter()),
+            },
+            None => "".to_string(),
         };
 
         // Widgets
@@ -114,7 +93,7 @@ impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for RenderSquareSolutio
                 .title_alignment(HorizontalAlignment::Left);
         }
 
-        let text = Text::from(symbol).style(base_style.fg(Color::White));
+        let text = Text::from(symbol).style(text_style);
 
         // Render
         TextBlock {

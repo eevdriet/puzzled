@@ -36,6 +36,24 @@ where
             })
             .expect("Solutions and entries have the same size")
     }
+
+    pub fn map_entries<'a, T, F>(&'a self, f: F) -> Grid<Entry<T>>
+    where
+        F: Fn(&'a P::Value) -> T,
+    {
+        self.solutions
+            .join_ref(&self.entries, |solution, entry| {
+                let cell = if entry.is_initially_revealed() || entry.is_revealed() {
+                    solution.as_ref()
+                } else {
+                    entry.entry()
+                }
+                .map(&f);
+
+                Entry::new_with_style(cell, entry.style())
+            })
+            .expect("Solutions and entries have the same size")
+    }
 }
 
 impl<P> fmt::Display for GridState<P>
@@ -173,6 +191,30 @@ where
             .collect();
 
         Grid::from_vec(data, self.solutions.cols())
+            .expect("Solutions and entries have the same size")
+    }
+
+    pub fn map_entries<'a, T, F>(&'a self, f: F) -> Grid<Square<Entry<T>>>
+    where
+        F: Fn(&'a P::Value) -> T,
+    {
+        self.solutions
+            .join_ref(&self.entries, |solution, entry| {
+                match (solution.as_ref(), entry.as_ref()) {
+                    (Some(solution), Some(entry)) => {
+                        let cell = if entry.is_initially_revealed() || entry.is_revealed() {
+                            solution.as_ref()
+                        } else {
+                            entry.entry()
+                        }
+                        .map(&f);
+
+                        let entry = Entry::new_with_style(cell, entry.style());
+                        Square::new(entry)
+                    }
+                    _ => Square::new_empty(),
+                }
+            })
             .expect("Solutions and entries have the same size")
     }
 }

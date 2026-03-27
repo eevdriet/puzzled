@@ -41,12 +41,6 @@ impl MultiSelection {
         self.active = Some(sel);
     }
 
-    pub fn set(&mut self, start: Position, end: Position) {
-        if let Some(sel) = &mut self.active {
-            sel.set(start, end);
-        }
-    }
-
     pub fn update(&mut self, pos: Position) {
         if let Some(sel) = &mut self.active {
             sel.update(pos);

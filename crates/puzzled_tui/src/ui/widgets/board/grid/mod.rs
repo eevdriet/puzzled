@@ -78,6 +78,8 @@ where
         state: &mut Self::State,
     ) {
         state.viewport = root;
+        tracing::info!("Grid viewport: {root:?}");
+
         let size = AppWidget::<A>::render_size(self as &_, root, ctx, state);
         let mut scroll_view = ScrollView::new(size);
 
@@ -146,7 +148,7 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self.grid[pos];
-                tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
+                tracing::info!("Drawing at {pos:?} [({x}, {y}) on screen]");
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
                 let cell_widget = cell.render_cell(pos, self.cell_state, state.ctx);

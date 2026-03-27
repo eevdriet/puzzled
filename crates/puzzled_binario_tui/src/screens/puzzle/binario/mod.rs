@@ -2,7 +2,7 @@ mod render;
 
 use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
-use puzzled_core::{Entry, Solve};
+use puzzled_core::Solve;
 pub(crate) use render::*;
 
 use puzzled_tui::{
@@ -29,13 +29,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
 
         let render_c = render.clone();
 
-        let grid = solve.state.to_merged();
-
-        let grid = grid.map_ref(|solution_entry| {
-            let cell = solution_entry.get().map(|bit| RenderBit { bit });
-
-            Entry::new_with_style(cell, solution_entry.entry.style())
-        });
+        let grid = solve.state.map_entries(|bit| RenderBit { bit });
 
         let mut sided_grid_widget =
             SidedGridWidget::new(&grid, &solve.valid.sides, &render_c.grid, &render_c.sides);

@@ -9,7 +9,8 @@ use ratatui::{
 };
 
 use crate::{
-    AppContext, AppTypes, Command, KeyMap, Keys, Motion, Popup, TrieEntry, Widget as AppWidget,
+    AppContext, AppTypes, Command, KeyMap, Keys, Motion, Popup, Theme, TrieEntry,
+    Widget as AppWidget,
 };
 
 pub struct KeysTablePopup<'a, A: AppTypes> {
@@ -72,7 +73,7 @@ impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
     ) {
         let titles = self.titles(state);
         let header = Row::new(titles).style(Style::new().bold());
-        let (mut rows, widths) = self.rows_and_widths(&ctx.keys, state);
+        let (mut rows, widths) = self.rows_and_widths(&ctx.keys, state, &ctx.theme);
         let rows = rows.remove(&state.tab).unwrap_or_default();
 
         let widths = vec![
@@ -99,7 +100,7 @@ impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
     }
 
     fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
-        let (rows, widths) = self.rows_and_widths(&ctx.keys, state);
+        let (rows, widths) = self.rows_and_widths(&ctx.keys, state, &ctx.theme);
 
         let width = widths.total() as u16 + 2 + 4;
         let height = rows
@@ -149,6 +150,7 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
         &self,
         map: &'a KeyMap<A>,
         state: &KeysTablePopupState,
+        theme: &Theme,
     ) -> (HashMap<KeysTab, Vec<Row<'_>>>, TabWidths) {
         let [_, keys, desc] = self.titles(state);
         let mut widths = TabWidths {
@@ -165,6 +167,7 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
             map,
             &mut rows,
             &mut widths,
+            theme,
         );
         self.add_entries(
             self.keys.motions.iter(),
@@ -172,6 +175,7 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
             map,
             &mut rows,
             &mut widths,
+            theme,
         );
         self.add_entries(
             self.keys.text_objects.iter(),
@@ -179,6 +183,7 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
             map,
             &mut rows,
             &mut widths,
+            theme,
         );
 
         widths.name = rows
@@ -197,15 +202,16 @@ impl<'a, A: AppTypes> KeysTablePopup<'a, A> {
         map: &'a KeyMap<A>,
         rows: &mut HashMap<KeysTab, Vec<Row<'a>>>,
         widths: &mut TabWidths,
+        theme: &Theme,
     ) where
         I: Iterator<Item = &'a (String, String, T)>,
         T: Clone + Into<TrieEntry<A::Action, A::TextObject, A::Motion>> + 'a,
     {
         let base = Style::default();
         let entry_style = match tab {
-            KeysTab::Actions => base.fg(Color::Yellow),
-            KeysTab::Motions => base.fg(Color::Blue),
-            KeysTab::TextObjects => base.fg(Color::Green),
+            KeysTab::Actions => base.fg(theme.palette.yellow),
+            KeysTab::Motions => base.fg(theme.palette.blue),
+            KeysTab::TextObjects => base.fg(theme.palette.green),
         };
         let sep_style = base.fg(Color::White).dim();
 

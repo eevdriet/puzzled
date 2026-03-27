@@ -93,7 +93,11 @@ impl<A: AppTypes> Default for KeysListRender<A> {
 impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
     type State = ListState;
 
-    fn render_items<'a>(&self, _state: &'a Self::State) -> impl Iterator<Item = ListItem<'a>> {
+    fn render_items<'a>(
+        &self,
+        _ctx: &AppContext<A>,
+        _state: &'a Self::State,
+    ) -> impl Iterator<Item = ListItem<'a>> {
         self.keys
             .actions
             .iter()
@@ -104,6 +108,7 @@ impl<A: AppTypes> ListRender<A> for KeysListRender<A> {
         &mut self,
         command: AppCommand<A>,
         resolver: AppResolver<A>,
+        _ctx: &AppContext<A>,
         state: &mut Self::State,
     ) -> bool {
         match command {
