@@ -5,6 +5,7 @@ use ratatui::{
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(default)]
 pub struct GridOptions {
     pub cell_width: u16,
 
@@ -16,7 +17,6 @@ pub struct GridOptions {
     pub outer_border_style: Style,
 
     pub draw_inner_borders: bool,
-
     pub draw_outer_borders: bool,
 
     pub h_align: HorizontalAlignment,

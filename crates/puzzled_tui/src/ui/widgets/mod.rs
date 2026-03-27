@@ -1,6 +1,5 @@
 mod board;
 mod keys;
-mod size;
 mod timer;
 mod ui;
 
@@ -8,7 +7,6 @@ mod ui;
 
 pub use board::*;
 pub use keys::*;
-pub use size::*;
 pub use timer::*;
 pub use ui::*;
 // pub use settings::*;

@@ -15,4 +15,4 @@ crossterm = {workspace = true}
 puzzled_tui = {path = "../puzzled_tui/"}
 puzzled_binario = {path = "../puzzled_binario/", features = ["text"]}
 puzzled_io = {path = "../puzzled_io"}
-puzzled_core = {path = "../puzzled_core/"}
+puzzled_core = {path = "../puzzled_core/", features = ["serde"]}

@@ -19,18 +19,13 @@ async fn main() -> io::Result<()> {
     let puzzle = Binario::load_text("special").map_err(io::Error::other)?;
     let solve_state = BinarioState::from(&puzzle);
 
-    let mut render_state = GridRenderState::default();
-    let opts = &mut render_state.options;
-
-    opts.cell_width = 5;
-    // opts.inner = Some((3, 3).into());
-    opts.inner_borders = None;
-    opts.draw_inner_borders = true;
-    opts.draw_outer_borders = false;
-    opts.cell_height = 3;
-
     let state = AppState {};
     let mut app = App::<BinarioApp>::new(state)?;
+
+    let render_state = GridRenderState {
+        options: app.context.options.grid,
+        ..Default::default()
+    };
 
     let render_state = SidedGridRenderState {
         grid: render_state,
@@ -38,6 +33,7 @@ async fn main() -> io::Result<()> {
     };
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
+
     app.run(Box::new(screen)).await?;
 
     Ok(())

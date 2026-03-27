@@ -14,9 +14,7 @@ use ratatui::{
 };
 use tui_scrollview::ScrollView;
 
-use crate::{
-    AppTypes, CellRender, RenderSize, Widget as AppWidget, widgets::board::render_borders,
-};
+use crate::{AppTypes, CellRender, RenderSize, Widget as AppWidget, render_borders};
 
 pub struct GridRefMut<'a, T>(pub &'a mut Grid<T>);
 

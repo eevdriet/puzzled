@@ -7,8 +7,8 @@ pub trait RenderSize<S> {
     fn render_size(&self, area: Rect, state: &S) -> Size;
 }
 
-impl<'a> RenderSize<()> for Text<'a> {
-    fn render_size(&self, _area: Rect, _state: &()) -> Size {
+impl<'a, S> RenderSize<S> for Text<'a> {
+    fn render_size(&self, _area: Rect, _state: &S) -> Size {
         let (width, height) = self
             .lines
             .iter()

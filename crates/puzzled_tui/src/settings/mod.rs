@@ -1,8 +1,11 @@
 mod keys;
 mod options;
+mod theme;
+
+pub use options::*;
+pub use theme::*;
 
 use config::{Config, ConfigError, File};
-pub use options::*;
 
 use puzzled_core::Puzzle;
 use puzzled_io::{config_dir, puzzle_config_dir};
@@ -21,6 +24,7 @@ pub(crate) enum SingleOrMultiple<T> {
 pub struct Settings<A: AppTypes> {
     pub keys: EventTrie<A>,
     pub options: Options,
+    pub theme: Theme,
 }
 
 impl<A: AppTypes> Settings<A> {
@@ -28,8 +32,13 @@ impl<A: AppTypes> Settings<A> {
         let keys = EventTrie::<A>::load()?;
 
         let options = Options::load::<A::Puzzle>()?;
+        let theme = Theme::from_palette(&Palette::NORD);
 
-        Ok(Self { keys, options })
+        Ok(Self {
+            keys,
+            options,
+            theme,
+        })
     }
 }
 

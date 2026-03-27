@@ -91,10 +91,19 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EventTrieNode<A: AppTypes> {
     entry: Option<AppTrieEntry<A>>,
     children: HashMap<AppEvent, EventTrieNode<A>>,
+}
+
+impl<A: AppTypes> Clone for EventTrieNode<A> {
+    fn clone(&self) -> Self {
+        Self {
+            entry: self.entry.clone(),
+            children: self.children.clone(),
+        }
+    }
 }
 
 impl<A: AppTypes> Default for EventTrieNode<A> {
@@ -127,7 +136,7 @@ impl<A: AppTypes> EventSearchResult<A> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EventTrie<A: AppTypes> {
     root: EventTrieNode<A>,
 }
@@ -136,6 +145,14 @@ impl<A: AppTypes> Default for EventTrie<A> {
     fn default() -> Self {
         Self {
             root: EventTrieNode::<A>::default(),
+        }
+    }
+}
+
+impl<A: AppTypes> Clone for EventTrie<A> {
+    fn clone(&self) -> Self {
+        Self {
+            root: self.root.clone(),
         }
     }
 }

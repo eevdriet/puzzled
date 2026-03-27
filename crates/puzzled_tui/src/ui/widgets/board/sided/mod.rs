@@ -1,14 +1,12 @@
 mod side;
 mod state;
 
+pub use side::*;
 pub use state::*;
 
 use std::collections::HashMap;
 
-use crate::{
-    AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget,
-    widgets::board::sided::side::SideWidget,
-};
+use crate::{AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget};
 use derive_more::Debug;
 use puzzled_core::{Direction, Grid, SidedGrid};
 use ratatui::{

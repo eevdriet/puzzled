@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::{GridOptions, Load};
+use crate::{GridOptions, Load, NamedTheme};
 
 #[derive(Debug, Default, Deserialize)]
 pub struct OptionsConfig {
@@ -15,10 +15,12 @@ pub struct GridConfig {
     pub inner_borders: Option<u16>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct Options {
-    #[serde(default)]
     pub grid: GridOptions,
+
+    pub theme: NamedTheme,
 }
 
 impl Load<'_> for Options {

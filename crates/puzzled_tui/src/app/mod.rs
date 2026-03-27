@@ -26,7 +26,7 @@ const POLL_DURATION: Duration = Duration::from_millis(5);
 const TICK_DURATION: Duration = Duration::from_millis(200);
 
 pub struct App<A: AppTypes> {
-    context: AppContext<A>,
+    pub context: AppContext<A>,
 
     events_rx: mpsc::UnboundedReceiver<AppEvent>,
 
@@ -38,9 +38,8 @@ pub struct App<A: AppTypes> {
 impl<A: AppTypes> App<A> {
     pub fn new(state: A::State) -> io::Result<Self> {
         let settings = Settings::load().map_err(io::Error::other)?;
-        let keys = settings.keys.action_keys();
-        let context = AppContext::new(state, keys);
-        let engine = EventEngine::new(settings.keys, TICK_DURATION);
+        let engine = EventEngine::new(settings.keys.clone(), TICK_DURATION);
+        let context = AppContext::new(state, settings);
 
         let (events_tx, events_rx) = unbounded_channel();
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
