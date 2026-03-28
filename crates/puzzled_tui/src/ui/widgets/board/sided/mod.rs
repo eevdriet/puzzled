@@ -185,8 +185,4 @@ where
 
         size
     }
-
-    fn render_area(&self, area: Rect, _ctx: &AppContext<A>, _state: &Self::State) -> Rect {
-        area
-    }
 }

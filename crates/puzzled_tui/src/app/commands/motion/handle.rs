@@ -98,7 +98,7 @@ where
         let is_visual = render.mode.is_visual();
         let next_dir = motion.apply_to_dir(render.direction);
 
-        if count > 0 && !self.0.is_in_bounds(pos) {
+        if count > 0 {
             while let Some(next) = pos + next_dir
                 && self.0.is_in_bounds(next)
             {
