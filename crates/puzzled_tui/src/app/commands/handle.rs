@@ -3,9 +3,10 @@ use std::fmt::Debug;
 use puzzled_core::{
     Entry, Grid, GridState, Position, Puzzle, Square, SquareGridRef, SquareGridState,
 };
+use ratatui::layout::Rect;
 
 use crate::{
-    AppCommand, AppContext, AppResolver, AppTypes, Command, EntryAction, EventMode,
+    AppCommand, AppContext, AppResolver, AppTypes, AsCore, Command, EntryAction, EventMode,
     GridRenderState, HandleCustomMotion, HandleMotion, HandleOperator, Operator, Screen,
 };
 
@@ -114,10 +115,11 @@ where
         Command::Operator(op) => {
             // Use all visually selected positions
             if render.mode.is_visual() {
+                let area = Rect::from(render.size());
                 let positions: Vec<_> = render
                     .selection
-                    .positions(render.viewport)
-                    .filter_map(|pos| render.to_grid(pos))
+                    .positions(area)
+                    .map(|pos| pos.as_core())
                     .collect();
 
                 (positions, Some(op))

@@ -24,6 +24,8 @@ async fn main() -> io::Result<()> {
 
     let render_state = GridRenderState {
         options: app.context.options.grid,
+        rows: puzzle.cells().rows(),
+        cols: puzzle.cells().cols(),
         ..Default::default()
     };
 

@@ -17,6 +17,7 @@ where
     where
         I: IntoIterator<Item = Position>,
     {
+        tracing::info!("Applying {op:?} to");
         let changes = positions
             .into_iter()
             .filter_map(|pos| {
@@ -27,6 +28,7 @@ where
                     _ => None,
                 };
 
+                tracing::info!("\t {pos}");
                 Some(EntryChange { pos, before, after })
             })
             .collect();
@@ -43,6 +45,7 @@ where
     where
         I: IntoIterator<Item = Position>,
     {
+        tracing::info!("Applying {op:?} to");
         let changes = positions
             .into_iter()
             .filter_map(|pos| {
@@ -54,6 +57,7 @@ where
                     _ => None,
                 };
 
+                tracing::info!("\t {pos}");
                 Some(EntryChange { pos, before, after })
             })
             .collect();

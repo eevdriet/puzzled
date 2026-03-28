@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use puzzled_core::Grid;
 
-use crate::{Action, GridRenderState};
+use crate::{Action, AsApp, GridRenderState};
 
 pub trait HandleBaseAction<A, S, S2> {
     fn handle_action(&mut self, action: Action<A>, state: &mut S, custom_state: &mut S2) -> bool;
@@ -43,13 +43,12 @@ where
                 Some(start) => {
                     if let Some(cursor) = state.to_grid(start) {
                         state.cursor = cursor;
-                        state.selection.start(start, kind, additive);
+
+                        state.selection.start(cursor.as_app(), kind, additive);
                     }
                 }
                 None => {
-                    if let Some(start) = state.to_app(state.cursor) {
-                        state.selection.start(start, kind, additive);
-                    }
+                    state.selection.start(state.cursor.as_app(), kind, additive);
                 }
             },
             Action::EndSelection => {

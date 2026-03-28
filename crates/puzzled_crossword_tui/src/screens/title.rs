@@ -148,6 +148,8 @@ fn create_puzzle_screen() -> io::Result<PuzzleScreen> {
 
     let mut render_state = GridRenderState {
         use_direction: true,
+        rows: puzzle.rows(),
+        cols: puzzle.cols(),
         ..Default::default()
     };
 

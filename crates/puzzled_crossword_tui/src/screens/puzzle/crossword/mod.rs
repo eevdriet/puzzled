@@ -98,10 +98,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         _ctx: &AppContext<CrosswordApp>,
         state: &Self::State,
     ) -> Size {
-        let mut size = state
-            .puzzle
-            .squares()
-            .render_size(area, &state.render.options);
+        let mut size = state.puzzle.squares().render_size(area, &state.render);
 
         // Border around puzzle grid
         size.width += 2;

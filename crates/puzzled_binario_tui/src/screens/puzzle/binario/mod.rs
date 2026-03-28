@@ -38,10 +38,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     }
 
     fn render_size(&self, area: Rect, _ctx: &AppContext<BinarioApp>, state: &Self::State) -> Size {
-        let mut size = state
-            .puzzle
-            .cells()
-            .render_size(area, &state.render.grid.options);
+        let mut size = state.puzzle.cells().render_size(area, &state.render.grid);
 
         // Border around puzzle grid
         size.width += 2;

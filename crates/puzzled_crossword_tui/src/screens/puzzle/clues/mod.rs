@@ -83,7 +83,11 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(across);
 
         Text::from("   Across")
-            .style(ctx.theme.secondary)
+            .style(if state.clue_dir == Some(ClueDirection::Across) {
+                ctx.theme.primary
+            } else {
+                base_style
+            })
             .render(across_title, buf);
 
         self.across.render(across, buf, ctx, state);
@@ -93,7 +97,11 @@ impl AppWidget<CrosswordApp> for CluesWidget {
             Layout::vertical(vec![Constraint::Length(1), Constraint::Min(0)]).areas(down);
 
         Text::from("   Down")
-            .style(ctx.theme.secondary)
+            .style(if state.clue_dir == Some(ClueDirection::Down) {
+                ctx.theme.primary
+            } else {
+                base_style
+            })
             .render(down_title, buf);
 
         self.down.render(down, buf, ctx, state);

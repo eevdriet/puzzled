@@ -5,7 +5,7 @@ use puzzled_core::{
     GridState, Position, Puzzle, Square, SquareGridRef, SquareGridState, Word,
 };
 
-use crate::{GridRenderState, Motion, MotionBehavior};
+use crate::{AsApp, GridRenderState, Motion, MotionBehavior};
 
 pub trait HandleMotion<M, S, S2, P> {
     fn handle_motion(
@@ -158,7 +158,7 @@ where
     }
     // Otherwise, move to the end and make sure it stays visible
     else if let Some(end) = iter.clone().map(|(pos, _)| pos).rfind(end_predicate) {
-        tracing::info!(
+        tracing::trace!(
             "Move to end {end:?}: {:?} ({:?})",
             render.to_app(end),
             render.selection
@@ -166,10 +166,8 @@ where
         render.cursor = end;
         render.ensure_cursor_visible(end);
 
-        if let Some(app_end) = render.to_app(end) {
-            tracing::trace!("Update selection");
-            render.selection.update(app_end);
-        }
+        tracing::trace!("Update selection");
+        render.selection.update(end.as_app());
     }
 
     iter.map(|(pos, _)| pos)

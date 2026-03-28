@@ -34,25 +34,9 @@ impl<'a, A: AppTypes, T, C> GridWidget<'a, A, T, C> {
     }
 }
 
-impl<T> RenderSize<GridOptions> for Grid<T> {
-    fn render_size(&self, _area: Rect, opts: &GridOptions) -> Size {
-        let cols = self.cols() as u16;
-        let rows = self.rows() as u16;
-
-        let mut width = cols * opts.cell_width;
-        let mut height = rows * opts.cell_height;
-
-        if let Some(inner) = opts.inner_borders {
-            width += (cols - 1) / inner.width;
-            height += (rows - 1) / inner.height;
-        }
-
-        if opts.draw_outer_borders {
-            width += 2;
-            height += 2;
-        }
-
-        Size { width, height }
+impl<T> RenderSize<GridRenderState> for Grid<T> {
+    fn render_size(&self, _area: Rect, opts: &GridRenderState) -> Size {
+        opts.size()
     }
 }
 
@@ -78,7 +62,8 @@ where
         state: &mut Self::State,
     ) {
         state.viewport = root;
-        tracing::info!("Grid viewport: {root:?}");
+        state.rows = self.grid.rows();
+        state.cols = self.grid.cols();
 
         let size = AppWidget::<A>::render_size(self as &_, root, ctx, state);
         let mut scroll_view = ScrollView::new(size);
@@ -148,7 +133,7 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self.grid[pos];
-                tracing::info!("Drawing at {pos:?} [({x}, {y}) on screen]");
+                tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
                 let cell_widget = cell.render_cell(pos, self.cell_state, state.ctx);

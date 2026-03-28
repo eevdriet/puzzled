@@ -1,6 +1,6 @@
 use puzzled_core::{Direction, Position};
 use ratatui::{
-    layout::{Position as AppPosition, Rect},
+    layout::{Position as AppPosition, Rect, Size},
     style::Style,
 };
 use tui_scrollview::ScrollViewState;
@@ -9,6 +9,8 @@ use crate::{EventMode, GridOptions, MultiSelection, Theme};
 
 #[derive(Debug, Default, Clone)]
 pub struct GridRenderState {
+    pub rows: usize,
+    pub cols: usize,
     pub options: GridOptions,
 
     /// Visible area of the grid
@@ -72,7 +74,7 @@ impl GridRenderState {
         let row = usize::from(y / cell_h);
         let col = usize::from(x / cell_w);
 
-        tracing::debug!("\t Translated: {row},{col}");
+        tracing::trace!("\t Translated: {row},{col}");
         Some(Position::new(row, col))
     }
 
@@ -113,13 +115,32 @@ impl GridRenderState {
         }
 
         // Cell is visually selected
-        if let Some(app_pos) = self.to_app(pos)
-            && self.selection.contains(app_pos, self.viewport)
-        {
+        let area = Rect::from(self.size());
+        if self.selection.contains(pos, area) {
             style = style.patch(theme.selection);
         }
 
         style
+    }
+
+    pub fn size(&self) -> Size {
+        let cols = self.cols as u16;
+        let rows = self.rows as u16;
+
+        let mut width = cols * self.options.cell_width;
+        let mut height = rows * self.options.cell_height;
+
+        if let Some(inner) = self.options.inner_borders {
+            width += (cols - 1) / inner.width;
+            height += (rows - 1) / inner.height;
+        }
+
+        if self.options.draw_outer_borders {
+            width += 2;
+            height += 2;
+        }
+
+        Size { width, height }
     }
 
     pub fn ensure_cursor_visible(&mut self, cursor: Position) {
