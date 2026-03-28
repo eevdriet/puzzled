@@ -113,6 +113,7 @@ where
         } else {
             bordered_area
         };
+        tracing::info!("Render grid @ {}", state.render.cursor);
         tracing::trace!("Bordered area: {bordered_area:?}");
         tracing::trace!("Area: {area:?}");
 
