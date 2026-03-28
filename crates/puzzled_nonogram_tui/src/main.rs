@@ -1,50 +1,27 @@
 #![allow(dead_code)]
 mod actions;
-mod app;
-mod args;
+mod cli;
 mod config;
 mod error;
 mod events;
-mod log;
 mod widgets;
 
 pub use actions::*;
-pub use app::*;
-pub use args::*;
+pub use cli::*;
 pub use config::*;
 pub use error::*;
 pub use events::*;
-pub use log::*;
+use puzzled_tui::init_logging;
 pub use widgets::*;
-
-use std::path::Path;
 
 use clap::Parser;
 
+#[tokio::main]
 fn main() -> Result<()> {
     let args = Args::parse();
-    init_logging(&args)?;
+    init_logging(args.debug);
 
-    tracing::info!("Starting app");
-
-    let path = Path::new("config.toml");
-    if !path.exists() {
-        return Err(Error::Custom("Couldn't config file".to_string()));
-    }
-
-    let contents = std::fs::read_to_string(path)?;
-    let config: Config = toml::from_str(&contents)
-        .map_err(|err| Error::Custom(format!("Couldn't parse config file: {err}")))?;
-
-    let nonogram = args.parse_puzzle()?;
-
-    let style = PuzzleStyle {
-        grid_size: config.styles.grid_size,
-        ..Default::default()
-    };
-
-    let mut term = ratatui::init();
-    let mut app = App::new(nonogram, style, config);
+    let puzzle = 
 
     if let Err(err) = app.run(&mut term) {
         tracing::error!("{err:#?}");
