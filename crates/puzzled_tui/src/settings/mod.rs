@@ -48,20 +48,24 @@ pub trait Load<'de>: Deserialize<'de> {
     fn load<P: Puzzle>() -> Result<Self, ConfigError> {
         let global_path = config_dir()
             .map_err(|err| ConfigError::Message(err.to_string()))?
-            .with_file_name(Self::FILE_NAME)
+            .join(Self::FILE_NAME)
             .with_extension("toml")
             .to_str()
             .expect("Valid path")
             .to_string();
 
+        tracing::info!("Global path: {global_path}");
+
         let puzzle_path = puzzle_config_dir::<P>()
             .map_err(|err| ConfigError::Message(err.to_string()))?
-            .with_file_name(Self::FILE_NAME)
+            .join(Self::FILE_NAME)
             .with_extension("toml")
             .to_str()
             .to_owned()
             .expect("Valid path")
             .to_string();
+
+        tracing::info!("Puzzle path: {puzzle_path}");
 
         let settings = Config::builder()
             .add_source(File::with_name(&global_path).required(false))

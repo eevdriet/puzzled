@@ -1,5 +1,8 @@
-use puzzled_core::{Position as CorePosition, Size as CoreSize};
-use ratatui::layout::{Position as AppPosition, Size as AppSize};
+use puzzled_core::{Color as CoreColor, Position as CorePosition, Size as CoreSize};
+use ratatui::{
+    layout::{Position as AppPosition, Size as AppSize},
+    style::Color as AppColor,
+};
 
 pub trait AsApp<T> {
     fn as_app(&self) -> T;
@@ -9,8 +12,20 @@ pub trait AsCore<T> {
     fn as_core(&self) -> T;
 }
 
-impl AsApp<AppPosition> for AppPosition {
-    fn as_app(&self) -> AppPosition {
+impl<T> AsApp<T> for T
+where
+    T: Copy,
+{
+    fn as_app(&self) -> T {
+        *self
+    }
+}
+
+impl<T> AsCore<T> for T
+where
+    T: Copy,
+{
+    fn as_core(&self) -> T {
         *self
     }
 }
@@ -24,12 +39,6 @@ impl AsApp<AppPosition> for CorePosition {
     }
 }
 
-impl AsApp<AppSize> for AppSize {
-    fn as_app(&self) -> AppSize {
-        *self
-    }
-}
-
 impl AsApp<AppSize> for CoreSize {
     fn as_app(&self) -> AppSize {
         AppSize {
@@ -39,9 +48,9 @@ impl AsApp<AppSize> for CoreSize {
     }
 }
 
-impl AsCore<CorePosition> for CorePosition {
-    fn as_core(&self) -> CorePosition {
-        *self
+impl AsApp<AppColor> for CoreColor {
+    fn as_app(&self) -> AppColor {
+        AppColor::Rgb(self.red, self.green, self.blue)
     }
 }
 

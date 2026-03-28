@@ -1,23 +1,13 @@
 #![allow(dead_code)]
-// mod actions;
 mod cli;
 mod commands;
 mod screens;
-// mod config;
-// mod error;
-// mod events;
-// mod widgets;
 
 use std::io;
 
-// pub use actions::*;
 pub use cli::*;
 pub use commands::*;
 pub use screens::*;
-// pub use config::*;
-// pub use error::*;
-// pub use events::*;
-// pub use widgets::*;
 
 use clap::Parser;
 use puzzled_io::TxtPuzzle;

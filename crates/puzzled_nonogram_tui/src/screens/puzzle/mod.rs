@@ -1,16 +1,23 @@
+mod nonogram;
 mod state;
 
+pub use nonogram::*;
 pub use state::*;
 
-use puzzled_nonogram::{Nonogram, NonogramState};
-use puzzled_tui::{Action, ActionHistory, AppContext, Command, GridRenderState, Screen};
+use puzzled_nonogram::{Fill, Nonogram, NonogramState};
+use puzzled_tui::{
+    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
+    GridRenderState, HandleMode, Screen, Widget,
+};
 use ratatui::prelude::{Buffer, Rect};
 
 use crate::NonogramApp;
 
 pub struct PuzzleScreen {
     pub state: PuzzleScreenState,
+
     // Widgets
+    nonogram: NonogramWidget,
 }
 
 impl PuzzleScreen {
@@ -19,21 +26,27 @@ impl PuzzleScreen {
             puzzle,
             solve,
             render,
+            fill: Fill::Color(b'a' as u32),
             history: ActionHistory::default(),
         };
 
-        Self { state }
+        Self {
+            state,
+            nonogram: NonogramWidget,
+        }
     }
 }
 
 impl Screen<NonogramApp> for PuzzleScreen {
-    fn render(&mut self, _area: Rect, _buf: &mut Buffer, _ctx: &mut AppContext<NonogramApp>) {}
+    fn render(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut AppContext<NonogramApp>) {
+        self.nonogram.render(area, buf, ctx, &mut self.state);
+    }
 
     fn on_command(
         &mut self,
-        command: puzzled_tui::AppCommand<NonogramApp>,
-        resolver: puzzled_tui::AppResolver<NonogramApp>,
-        _ctx: &mut AppContext<NonogramApp>,
+        command: AppCommand<NonogramApp>,
+        resolver: AppResolver<NonogramApp>,
+        ctx: &mut AppContext<NonogramApp>,
     ) -> bool {
         let mut handled_action = false;
 
@@ -54,5 +67,34 @@ impl Screen<NonogramApp> for PuzzleScreen {
         }
 
         handled_action
+            || self
+                .nonogram
+                .on_command(command, resolver, ctx, &mut self.state)
+    }
+
+    fn on_mode(
+        &mut self,
+        mode: EventMode,
+        resolver: AppResolver<NonogramApp>,
+        ctx: &mut AppContext<NonogramApp>,
+    ) -> bool {
+        let solutions = &mut self.state.solve.state.solutions;
+        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+    }
+
+    fn override_mode(&self) -> Option<EventMode> {
+        self.nonogram.override_mode()
+    }
+
+    fn on_enter(&mut self, _ctx: &mut AppContext<NonogramApp>) {
+        self.state.solve.timer.start();
+    }
+
+    fn on_pause(&mut self, _ctx: &mut AppContext<NonogramApp>) {
+        self.state.solve.timer.pause();
+    }
+
+    fn on_resume(&mut self, _ctx: &mut AppContext<NonogramApp>) {
+        self.state.solve.timer.start();
     }
 }

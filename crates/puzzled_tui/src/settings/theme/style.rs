@@ -61,7 +61,9 @@ impl ResolveTheme<Style> for StyleDef {
 }
 
 pub trait ThemeStyled {
-    fn theme_style(&self, theme: &Theme) -> Style;
+    fn theme_style(&self, _theme: &Theme) -> Style {
+        Style::default()
+    }
 }
 
 impl<T> ThemeStyled for Entry<T>

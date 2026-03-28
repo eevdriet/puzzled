@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, VecDeque};
 
 use bitvec::{bitvec, vec::BitVec};
+use delegate::delegate;
 use derive_more::{Deref, DerefMut};
-use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Timer};
+use puzzled_core::{Entry, Grid, GridState, Line, LinePosition, Position, Solve, Timer};
 
 use crate::{Fill, LineMaskConstraint, LineValidation, Nonogram};
 
@@ -79,7 +80,7 @@ impl NonogramState {
 // }
 
 impl NonogramState {
-    pub fn clear(&mut self) {
+    pub fn _clear(&mut self) {
         self.frontier.clear();
         self.validations.clear();
         self.constraints.clear();
@@ -158,29 +159,19 @@ impl From<&Nonogram> for NonogramState {
     }
 }
 
-// impl Solve for NonogramState {
-//     type Puzzle = Nonogram;
-//     type Value = Fill;
-//     type Position = Position;
-//     type Error = String;
-//
-//     delegate! {
-//         to self.state {
-//             fn solve(&mut self, pos: &Self::Position, solution: Self::Value) -> bool;
-//             fn enter(&mut self, pos: &Self::Position, entry: Self::Value) -> bool;
-//             fn reveal(&mut self, pos: &Self::Position) -> bool;
-//             fn check(&mut self, pos: &Self::Position) -> Option<bool>;
-//
-//             fn reveal_all(&mut self);
-//             fn check_all(&mut self);
-//
-//             fn enter_checked(&mut self, pos: &Self::Position, entry: Self::Value) -> Option<bool>;
-//
-//             fn guess(&mut self, pos: &Self::Position, guess: Self::Value) -> bool;
-//
-//             fn guess_checked(&mut self, pos: &Self::Position, guess: Self::Value) -> Option<bool>;
-//
-//             fn try_finalize(&self) -> Result<Grid<Fill>, Self::Error>;
-//         }
-//     }
-// }
+impl Solve<Nonogram> for NonogramState {
+    delegate! {
+        to self.state {
+            fn solution(&self, pos: &Position) -> Option<&Fill>;
+            fn entry(&self, pos: &Position) -> Option<&Fill>;
+
+            fn enter(&mut self, pos: &Position, entry: Fill) -> bool;
+            fn clear(&mut self, pos: &Position) -> bool;
+            fn solve(&mut self, pos: &Position, solution: Fill) -> bool;
+            fn reveal(&mut self, pos: &Position) -> bool;
+            fn check(&mut self, pos: &Position) -> Option<bool>;
+
+            fn guess(&mut self, pos: &Position, guess: Fill) -> bool;
+        }
+    }
+}

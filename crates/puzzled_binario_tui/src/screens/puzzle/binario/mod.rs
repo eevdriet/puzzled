@@ -1,10 +1,10 @@
 mod render;
 
+pub(crate) use render::*;
+
 use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
 use puzzled_core::Solve;
-pub(crate) use render::*;
-
 use puzzled_tui::{
     Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction, RenderSize,
     SidedGridWidget, Widget as AppWidget, handle_grid_command,
