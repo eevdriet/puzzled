@@ -1,17 +1,19 @@
 mod cell;
 mod error;
-mod grid;
+mod geom;
 mod metadata;
 mod square;
+mod style;
 mod util;
 
 use std::{fs, path::Path};
 
 pub use cell::*;
 pub use error::*;
-pub use grid::*;
+pub use geom::*;
 pub use metadata::*;
 pub use square::*;
+pub use style::*;
 pub use util::*;
 
 use crate::text::TxtPuzzle;

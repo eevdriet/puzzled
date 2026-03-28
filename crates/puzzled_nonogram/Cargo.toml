@@ -8,6 +8,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+chumsky = {workspace = true, optional = true}
 bitvec = { workspace = true}
 derive_more = {workspace = true}
 delegate = {workspace = true}
@@ -33,7 +34,7 @@ default = ["macros", "text"]
 ## Enables support for creating nonograms and related types inline through declarative macros
 macros = []
 ## Enables reading and writing nonograms from plain text
-text = ["puzzled_io/text"]
+text = ["dep:chumsky", "puzzled_io/text"]
 ## Enables serializing and deserializing nonograms using [`serde`](https://docs.rs/serde/latest/serde/)
 serde = ["dep:serde", "puzzled_core/serde"]
 ## Enables reading and writing nonograms with the [Across Lite `*.puz` format](https://code.google.com/archive/p/puz/wikis/FileFormat.wiki)

@@ -16,6 +16,8 @@ pub use cli::*;
 // pub use widgets::*;
 
 use clap::Parser;
+use puzzled_io::TxtPuzzle;
+use puzzled_nonogram::Nonogram;
 use puzzled_tui::init_logging;
 
 #[tokio::main]
@@ -23,7 +25,7 @@ async fn main() -> io::Result<()> {
     let args = Args::parse();
     init_logging(args.debug);
 
-    // let puzzle =
+    let _puzzle = Nonogram::load_text("tower").map_err(io::Error::other)?;
 
     // if let Err(err) = app.run(&mut term) {
     //     tracing::error!("{err:#?}");

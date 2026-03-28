@@ -39,7 +39,7 @@ where
 
         while let Some(fill) = self.iter.next() {
             // Skip over blanks
-            let Some(fill) = fill.into() else {
+            let Some(fill) = fill else {
                 continue;
             };
 

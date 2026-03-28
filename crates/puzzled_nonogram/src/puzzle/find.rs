@@ -221,7 +221,7 @@ mod tests {
         //                       0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18
         let cells: Vec<_> = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B]
             .into_iter()
-            .map(|fill| Cell::new(fill))
+            .map(Cell::new)
             .collect();
         let cols = cells.len();
 

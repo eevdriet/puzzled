@@ -5,10 +5,10 @@ mod find;
 mod rule;
 mod run;
 
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use derive_more::{Index, IndexMut};
-use puzzled_core::{Cell, Grid, Metadata, Position, Puzzle};
+use puzzled_core::{Cell, Grid, Line, Metadata, Position, Puzzle};
 
 pub use cell::*;
 pub use colors::*;
@@ -53,14 +53,27 @@ impl fmt::Display for Nonogram {
 
 impl Nonogram {
     pub fn new(fills: Grid<Cell<Fill>>, colors: Colors, meta: Metadata) -> Self {
-        let rules = Rules::from_fills(&fills);
-
         Self {
             fills,
-            rules,
+            rules: Rules::default(),
             colors,
             meta,
         }
+    }
+
+    pub fn with_rules(mut self, rules: Rules) -> Self {
+        self.rules = rules;
+        self
+    }
+    pub fn with_line_runs(mut self, line_runs: HashMap<Line, Vec<Run>>) -> Self {
+        for (line, runs) in line_runs {
+            let line_len = self.fills.line_len(line);
+            let rule = Rule::new(runs, line_len);
+
+            self.rules.insert(line, rule);
+        }
+
+        self
     }
 
     pub fn fills(&self) -> &Grid<Cell<Fill>> {

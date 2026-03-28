@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use derive_more::Deref;
+use derive_more::{Deref, DerefMut};
 use puzzled_core::{Cell, Grid, Line};
 
 use crate::{Fill, Rule};
@@ -14,9 +14,10 @@ pub enum RulesError {
     InvalidColCount { found: usize, expected: usize },
 }
 
-#[derive(Debug, Default, PartialEq, Eq, Deref, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Deref, DerefMut, Clone)]
 pub struct Rules {
     #[deref]
+    #[deref_mut]
     rules: BTreeMap<Line, Rule>,
 
     rows: usize,
