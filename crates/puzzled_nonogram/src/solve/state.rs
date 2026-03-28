@@ -98,11 +98,6 @@ impl NonogramState {
             mask.set(pos, false)
         }
 
-        // Do not include blanks in the masks
-        if matches!(curr, Fill::Blank) {
-            return;
-        }
-
         // Set the current fill
         let empty_mask = bitvec![0; line_len];
         let mask = masks.entry(curr).or_insert(empty_mask);

@@ -35,9 +35,12 @@ impl ImagePuzzle<NonogramState> for Nonogram {
             let [r, g, b, a] = rgba.0;
             let color = Color::rgba(r, g, b, a);
 
-            let fill = match rgba.to_rgb().0 {
-                // Ignore fully filled/empty pixels
-                [0, 0, 0] | [255, 255, 255] => Fill::Blank,
+            let entry = match rgba.to_rgb().0 {
+                // Fully white pixels are considered blank
+                [255, 255, 255] => None,
+
+                // Fully black pixels are considered crosses
+                [0, 0, 0] => Some(Fill::Cross),
 
                 _ => {
                     let idx = colors
@@ -47,11 +50,11 @@ impl ImagePuzzle<NonogramState> for Nonogram {
                     let fill = Fill::Color(idx);
 
                     colors.insert(fill, color);
-                    fill
+                    Some(fill)
                 }
             };
 
-            Ok(Cell::new(Some(fill)))
+            Ok(Cell::new(entry))
         };
 
         let fills = reader.read_grid(image, &mut read_pixel)?;

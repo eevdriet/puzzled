@@ -11,10 +11,9 @@ pub struct Colors(pub(crate) BTreeMap<Fill, Color>);
 impl Colors {
     pub fn new(mut colors: BTreeMap<Fill, Color>) -> Self {
         // Add default colors for blanks and crosses
-        let white = Color::rgba(255, 255, 255, 255);
+        let black = Color::rgba(0, 0, 0, 255);
 
-        colors.entry(Fill::Blank).or_insert(white);
-        colors.entry(Fill::Cross).or_insert(white);
+        colors.entry(Fill::Cross).or_insert(black);
 
         Self(colors)
     }

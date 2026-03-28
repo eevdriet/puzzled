@@ -137,7 +137,7 @@ impl NonogramSolver {
         let n = puzzle.fills().line_len(line);
         let m = runs.len();
 
-        let fill_at = |pos: LinePosition| puzzle[pos.absolute()].solution.unwrap_or(Fill::Blank);
+        let fill_at = |pos: LinePosition| puzzle[pos.absolute()].solution;
 
         // dp[offset][r]: first offset cells can fit the first r runs
         let mut dp = vec![vec![false; m + 1]; n + 1];
@@ -145,7 +145,10 @@ impl NonogramSolver {
 
         for offset in 0..=n {
             let pos = LinePosition::new(line, offset);
-            let fill = fill_at(pos);
+            let Some(fill) = fill_at(pos) else {
+                // TODO: figure out how to resolve no solution fills
+                continue;
+            };
 
             #[allow(clippy::needless_range_loop)]
             for r in 0..=m {
@@ -155,7 +158,7 @@ impl NonogramSolver {
                 }
 
                 // Option 1: skip next position
-                if offset < n && matches!(fill, Fill::Cross | Fill::Blank) {
+                if offset < n && matches!(fill, Fill::Cross) {
                     dp[offset + 1][r] = true;
                 }
 
@@ -184,11 +187,16 @@ impl NonogramSolver {
 
                 for idx in 0..len {
                     match fill_at(pos + idx) {
-                        Fill::Cross => {
+                        // TODO: figure out
+                        None => {
                             ok = false;
                             break;
                         }
-                        col @ Fill::Color(_) if col != run.fill => {
+                        Some(Fill::Cross) => {
+                            ok = false;
+                            break;
+                        }
+                        Some(col @ Fill::Color(_)) if col != run.fill => {
                             ok = false;
                             break;
                         }
@@ -202,7 +210,7 @@ impl NonogramSolver {
 
                 // Make sure to leave a space between runs with the same (colored) fill
                 if next_offset < n
-                    && matches!(fill_at(next_pos), col @Fill::Color(_) if col == run.fill)
+                    && matches!(fill_at(next_pos), Some(col @ Fill::Color(_)) if col == run.fill)
                 {
                     continue;
                 }

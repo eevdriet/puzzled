@@ -66,14 +66,14 @@ impl Rules {
         let mut rules = BTreeMap::new();
 
         for (r, row) in fills.iter_rows().enumerate() {
-            let fills = row.filter_map(|cell| cell.solution.to_owned());
+            let fills = row.map(|cell| cell.solution.to_owned());
             let line = Line::Row(r);
 
             rules.insert(line, Rule::from_fills(fills));
         }
 
         for (c, col) in fills.iter_cols().enumerate() {
-            let fills = col.filter_map(|cell| cell.solution.to_owned());
+            let fills = col.map(|cell| cell.solution.to_owned());
             let line = Line::Col(c);
 
             rules.insert(line, Rule::from_fills(fills));

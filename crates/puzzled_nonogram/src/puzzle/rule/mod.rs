@@ -69,7 +69,7 @@ impl Rule {
 
     pub fn from_fills<I>(fills: I) -> Self
     where
-        I: IntoIterator<Item = Fill>,
+        I: IntoIterator<Item = Option<Fill>>,
     {
         let mut line_len = 0;
         let iter = fills.into_iter().inspect(|_| line_len += 1);
@@ -126,15 +126,18 @@ mod tests {
     use rstest::rstest;
     use tracing_test::traced_test;
 
-    const B: Fill = Fill::Blank;
-    const X: Fill = Fill::Cross;
-    const C1: Fill = Fill::Color(1);
-    const C2: Fill = Fill::Color(2);
+    const B: Option<Fill> = None;
+    const X: Option<Fill> = Some(Fill::Cross);
+    const C1: Option<Fill> = Some(Fill::Color(1));
+    const C2: Option<Fill> = Some(Fill::Color(2));
 
-    fn fill_counts_to_runs(fill_counts: Vec<(Fill, usize)>) -> Vec<Run> {
+    fn fill_counts_to_runs(fill_counts: Vec<(Option<Fill>, usize)>) -> Vec<Run> {
         fill_counts
-            .iter()
-            .map(|&val| val.into())
+            .into_iter()
+            .filter_map(|(opt_fill, count)| {
+                let fill = opt_fill?;
+                Some((fill, count).into())
+            })
             .collect::<Vec<Run>>()
     }
 
@@ -142,7 +145,10 @@ mod tests {
     #[case::single_color(vec![C1], vec![(C1, 1)])]
     #[case::single_blank(vec![B], vec![])]
     #[case::multiple(vec![B, X, C1], vec![(C1, 1)])]
-    fn test_from_fills_runs(#[case] fills: Vec<Fill>, #[case] expected: Vec<(Fill, usize)>) {
+    fn test_from_fills_runs(
+        #[case] fills: Vec<Option<Fill>>,
+        #[case] expected: Vec<(Option<Fill>, usize)>,
+    ) {
         let rule = Rule::from_fills(fills.into_iter());
         let runs = fill_counts_to_runs(expected);
 
@@ -153,7 +159,7 @@ mod tests {
     #[case::single_color(vec![C1], 1)]
     #[case::single_blank(vec![B], 1)]
     #[case::multiple(vec![B, X, C1], 3)]
-    fn test_from_fills_line_len(#[case] fills: Vec<Fill>, #[case] expected: usize) {
+    fn test_from_fills_line_len(#[case] fills: Vec<Option<Fill>>, #[case] expected: usize) {
         let rule = Rule::from_fills(fills.into_iter());
 
         assert_eq!(rule.line_len(), expected);
@@ -163,7 +169,7 @@ mod tests {
     #[rstest]
     #[case::no_space(vec![C1, C2], 2)]
     #[case::mono_color(vec![C1, C1, C1, B, C1, C1, C1, B], 7)]
-    fn test_from_fills_len(#[case] fills: Vec<Fill>, #[case] expected: usize) {
+    fn test_from_fills_len(#[case] fills: Vec<Option<Fill>>, #[case] expected: usize) {
         let rule = Rule::from_fills(fills.into_iter());
 
         assert_eq!(rule.len(), expected);

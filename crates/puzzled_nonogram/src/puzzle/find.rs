@@ -192,7 +192,7 @@ where
         direction: FindDirection,
     ) -> Option<LinePosition> {
         let mut iter = self.iter_line(line).enumerate();
-        let non_blank = |cell: Option<&Fill>| cell.is_some_and(|fill| !matches!(fill, Fill::Blank));
+        let non_blank = |cell: Option<&Fill>| cell.is_some();
 
         match direction {
             FindDirection::Forwards => iter.find(|(_, cell)| non_blank(cell.value())),
@@ -213,15 +213,15 @@ mod tests {
         LinePosition::new(Line::Row(0), pos)
     }
 
-    const B: Fill = Fill::Blank;
-    const C: Fill = Fill::Color(1);
+    const B: Option<Fill> = None;
+    const C: Option<Fill> = Some(Fill::Color(1));
 
     #[fixture]
     fn line_fills() -> Grid<Cell<Fill>> {
         //                       0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18
         let cells: Vec<_> = vec![C, B, C, C, B, C, B, C, C, C, B, B, B, C, B, B, C, C, B]
             .into_iter()
-            .map(|fill| Cell::new(Some(fill)))
+            .map(|fill| Cell::new(fill))
             .collect();
         let cols = cells.len();
 

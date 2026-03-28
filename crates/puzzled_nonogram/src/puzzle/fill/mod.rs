@@ -13,6 +13,9 @@ use crate::ColorId;
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("Fill error: {0}")]
 pub enum FillError {
+    #[error("Cannot create a fill from empty input")]
+    EmptyInput,
+
     #[error("Can only create fill from a single character")]
     InvalidLen,
 
@@ -25,12 +28,8 @@ pub enum FillError {
     InvalidId(u32),
 }
 
-#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fill {
-    /// Not yet filled out cell
-    #[default]
-    Blank,
-
     // Crossed out cell
     Cross,
 
@@ -42,7 +41,6 @@ impl Fill {
     pub const fn decode_char(ch: char) -> Result<Self, FillError> {
         match ch {
             // Non-colors
-            '.' => Ok(Fill::Blank),
             'x' | 'X' => Ok(Fill::Cross),
 
             id @ ('0'..='9' | 'a'..='z' | 'A'..='Z') => Ok(Fill::Color(id as u32)),
@@ -56,7 +54,7 @@ impl Fill {
         let bytes = str.as_bytes();
 
         if bytes.is_empty() {
-            return Ok(Fill::Blank);
+            return Err(FillError::EmptyInput);
         }
 
         if bytes.len() != 1 {
@@ -68,18 +66,16 @@ impl Fill {
 
     pub fn index(&self) -> Result<usize, FillError> {
         match *self {
-            Fill::Blank => Ok(0),
-            Fill::Cross => Ok(1),
+            Fill::Cross => Ok(0),
             Fill::Color(id) => {
                 let color_char = char::from_u32(id).ok_or(FillError::InvalidId(id))?;
 
                 let id = match color_char {
-                    '.' => 0,             // Blank
-                    '0' | 'x' | 'X' => 1, // Cross
+                    '0' | 'x' | 'X' => 0, // Cross
 
                     // Colors
                     // 1. Numbers
-                    col @ '1'..='9' => (col as u8 - b'1') as usize,
+                    col @ '1'..='9' => (col as u8 - b'0') as usize,
                     // 2. Lowercase letters
                     col @ 'a'..'x' => (col as u8 - b'a' + 9) as usize,
                     col @ 'y'..='z' => (col as u8 - b'y' + 9 + 23) as usize,
@@ -100,7 +96,6 @@ impl Fill {
 
     pub fn symbol(&self) -> char {
         match self {
-            Fill::Blank => '◦',
             Fill::Cross => '×',
             // Fill::Color(_) => '█',
             Fill::Color(_) => '■',
@@ -109,7 +104,6 @@ impl Fill {
 
     pub fn as_key(&self) -> u32 {
         match self {
-            Fill::Blank => 0,
             Fill::Cross => 1,
             Fill::Color(id) => id + 2,
         }
@@ -118,7 +112,6 @@ impl Fill {
     pub fn key(&self, color_count: Option<usize>) -> Option<char> {
         match self {
             // Default characters for blanks and crosses
-            Fill::Blank => Some('.'),
             Fill::Cross => Some('x'),
 
             // 0-9 for <=10 colors (most puzzles)
@@ -145,7 +138,6 @@ impl fmt::Display for Fill {
             f,
             "{}",
             match self {
-                Fill::Blank => '.',
                 Fill::Cross => 'x',
                 Fill::Color(id) => char::from_u32(*id).ok_or(fmt::Error)?,
             }
@@ -166,7 +158,6 @@ impl TryFrom<Fill> for char {
 
     fn try_from(fill: Fill) -> Result<Self, Self::Error> {
         match fill {
-            Fill::Blank => Ok('.'),
             Fill::Cross => Ok('X'),
             Fill::Color(id) => {
                 let color_char = char::from_u32(id).ok_or(FillError::InvalidId(id))?;
