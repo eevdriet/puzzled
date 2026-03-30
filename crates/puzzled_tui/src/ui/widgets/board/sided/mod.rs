@@ -75,11 +75,17 @@ where
     ) {
         // Collect widgets and their render areas
         let area = AppWidget::<A>::render_area(self, root, ctx, state);
+        tracing::info!("Root: {root:?}");
+        tracing::info!("Area: {area:?}");
 
         let (mut grid_widget, [top_widget, right_widget, bottom_widget, left_widget]) =
             self.widgets();
+
         let (grid_area, [top_area, right_area, bottom_area, left_area]) =
             self.areas(area, ctx, state);
+
+        // Render the grid
+        grid_widget.render(grid_area, buf, ctx, &mut state.grid);
 
         // Render all defined sides
         if let Some(mut widget) = top_widget {
@@ -94,9 +100,6 @@ where
         if let Some(mut widget) = left_widget {
             widget.render(left_area, buf, ctx, state);
         }
-
-        // Render the grid
-        grid_widget.render(grid_area, buf, ctx, &mut state.grid);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
@@ -117,6 +120,11 @@ where
 
         size
     }
+
+    // fn render_area(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Rect {
+    //     let size = self.render_size(area, ctx, state);
+    //     top_left_area(area, size)
+    // }
 }
 
 type Widgets<'a, A, T, U, C, E> = (GridWidget<'a, A, T, C>, Sides<SideWidget<'a, A, U, E>>);
@@ -163,53 +171,107 @@ where
         ctx: &AppContext<A>,
         state: &SidedGridRenderState,
     ) -> (Rect, [Rect; 4]) {
-        let (_, [top_size, right_size, bottom_size, left_size]) = self.sizes(area, ctx, state);
+        let (grid_size, [top_size, right_size, bottom_size, left_size]) =
+            self.sizes(area, ctx, state);
 
-        let top_area = Rect {
-            x: area.left() + left_size.width,
-            y: area.top(),
-            width: top_size.width,
-            height: top_size.height,
-        };
+        let max_top_height = state.sides.top.max_len.unwrap_or(u16::MAX);
+        let max_right_width = state.sides.right.max_len.unwrap_or(u16::MAX);
+        let max_bottom_height = state.sides.bottom.max_len.unwrap_or(u16::MAX);
+        let max_left_width = state.sides.left.max_len.unwrap_or(u16::MAX);
 
-        // - Right
-        let right_area = Rect {
-            x: area.right().saturating_sub(right_size.width),
-            y: area.top() + top_size.height,
-            width: right_size.width,
-            height: right_size.height,
-        };
-
-        // - Bottom
-        let bottom_area = Rect {
-            x: area.left() + left_size.width,
-            y: area.bottom().saturating_sub(bottom_size.height),
-            width: bottom_size.width,
-            height: bottom_size.height,
-        };
-
-        // - Left
-        let left_area = Rect {
-            x: area.left(),
-            y: area.top() + top_size.height,
-            width: left_size.width,
-            height: left_size.height,
-        };
-
-        // Compute the grid area from the sides
-        let [_, grid_area, _] = Layout::horizontal(vec![
-            Constraint::Length(left_size.width),
-            Constraint::Min(0),
-            Constraint::Length(right_size.width),
+        let [left_col, center_col, right_col] = Layout::horizontal([
+            Constraint::Length(left_size.width.min(max_left_width)),
+            Constraint::Max(grid_size.width),
+            Constraint::Length(right_size.width.min(max_right_width)),
         ])
         .areas(area);
 
-        let [_, grid_area, _] = Layout::vertical(vec![
-            Constraint::Length(top_size.height),
-            Constraint::Min(0),
-            Constraint::Length(bottom_size.height),
+        let [top_area, grid_area, bottom_area] = Layout::vertical([
+            Constraint::Length(top_size.height.min(max_top_height)),
+            Constraint::Max(grid_size.height),
+            Constraint::Length(bottom_size.height.min(max_bottom_height)),
         ])
-        .areas(grid_area);
+        .areas(center_col);
+
+        let left_area = Rect {
+            x: left_col.x,
+            y: grid_area.y,
+            width: left_col.width,
+            height: grid_area.height,
+        };
+
+        let right_area = Rect {
+            x: right_col.x,
+            y: grid_area.y,
+            width: right_col.width,
+            height: grid_area.height,
+        };
+
+        tracing::info!("\tSizes");
+        tracing::info!("\t\tGrid: {grid_size:?}");
+        tracing::info!("\t\tTop: {top_size:?}");
+        tracing::info!("\t\tRight: {right_size:?}");
+        tracing::info!("\t\tBottom: {bottom_size:?}");
+        tracing::info!("\t\tLeft: {left_size:?}");
+
+        // let top_area = Rect {
+        //     x: area.left() + left_size.width,
+        //     y: area.top(),
+        //     width: top_size.width,
+        //     height: top_size.height,
+        // };
+        //
+        // // - Right
+        // let right_area = Rect {
+        //     x: area.left() + left_size.width + grid_size.width,
+        //     y: area.top() + top_size.height,
+        //     width: right_size.width,
+        //     height: right_size.height,
+        // };
+        //
+        // // - Bottom
+        // let bottom_area = Rect {
+        //     x: area.left() + left_size.width,
+        //     y: area.top() + top_size.height + grid_size.height,
+        //     width: bottom_size.width,
+        //     height: bottom_size.height,
+        // };
+        //
+        // // - Left
+        // let left_area = Rect {
+        //     x: area.left(),
+        //     y: area.top() + top_size.height,
+        //     width: left_size.width,
+        //     height: left_size.height,
+        // };
+
+        // Compute the grid area from the sides
+        // let [_, grid_area, _] = Layout::horizontal(vec![
+        //     Constraint::Length(left_area.width),
+        //     Constraint::Min(0),
+        //     Constraint::Length(right_area.width),
+        // ])
+        // .areas(area);
+        //
+        // let [_, grid_area, _] = Layout::vertical(vec![
+        //     Constraint::Length(top_area.height),
+        //     Constraint::Min(0),
+        //     Constraint::Length(bottom_area.height),
+        // ])
+        // .areas(grid_area);
+        // let grid_area = Rect {
+        //     x: area.left() + left_size.width,
+        //     y: area.top() + top_size.height,
+        //     width: grid_size.width,
+        //     height: grid_size.height,
+        // };
+
+        tracing::info!("\tAreas");
+        tracing::info!("\t\tGrid: {grid_area:?}");
+        tracing::info!("\t\tTop: {top_area:?}");
+        tracing::info!("\t\tRight: {right_area:?}");
+        tracing::info!("\t\tBottom: {bottom_area:?}");
+        tracing::info!("\t\tLeft: {left_area:?}");
 
         (grid_area, [top_area, right_area, bottom_area, left_area])
     }

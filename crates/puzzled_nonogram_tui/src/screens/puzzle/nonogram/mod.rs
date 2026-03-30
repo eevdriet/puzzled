@@ -35,7 +35,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
 
         // Set the maximum display length for the rules
         render.sides.top.max_len = Some(4 * root.height / 10);
-        render.sides.left.max_len = Some(root.width / 4);
+        render.sides.left.max_len = Some(4 * root.width / 10);
 
         // Create the puzzle widget
         let render_c = render.clone();

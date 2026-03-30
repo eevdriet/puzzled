@@ -30,6 +30,15 @@ pub fn center_area(area: Rect, size: Size) -> Rect {
     )
 }
 
+pub fn top_left_area(area: Rect, size: Size) -> Rect {
+    align_area(
+        area,
+        size,
+        HorizontalAlignment::Left,
+        VerticalAlignment::Top,
+    )
+}
+
 pub fn align_horizontally(
     width: u16,
     left: u16,

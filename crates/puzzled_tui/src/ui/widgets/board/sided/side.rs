@@ -7,9 +7,10 @@ use crate::{
 
 use puzzled_core::Side;
 use ratatui::{
-    layout::{HorizontalAlignment, VerticalAlignment},
-    prelude::{Buffer, Rect, Size, Widget},
+    layout::{HorizontalAlignment, Position, VerticalAlignment},
+    prelude::{Buffer, Rect, Size, StatefulWidget, Widget},
 };
+use tui_scrollview::{ScrollView, ScrollbarVisibility};
 
 pub struct SideWidget<'a, A: AppTypes, U, E> {
     pub side: Side,
@@ -29,7 +30,7 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         }
     }
 
-    fn render_vertical_side(
+    fn render_cols(
         &self,
         area: Rect,
         buf: &mut Buffer,
@@ -48,7 +49,7 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
                 area.bottom() - margin,
             ),
             Side::Bottom => (VerticalAlignment::Top, area.top() + margin, area.bottom()),
-            dir => unreachable!("{dir:?} should not be render as a horizontal side"),
+            side => unreachable!("{side:?} should not render as a horizontal side"),
         };
 
         let mut x = area.x;
@@ -80,7 +81,7 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         }
     }
 
-    fn render_horizontal_side(
+    fn render_rows(
         &self,
         area: Rect,
         buf: &mut Buffer,
@@ -103,7 +104,7 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
                 area.left() + margin,
                 area.right(),
             ),
-            dir => unreachable!("{dir:?} should not be render as a vertical side"),
+            side => unreachable!("{side:?} should not render as a vertical side"),
         };
 
         let mut y = area.y;
@@ -151,18 +152,34 @@ where
         ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
+        let size = self.render_size(area, ctx, state);
+        let scroll_area = Rect::from(size);
+        let mut scroll_state = state.grid.scroll_state;
+        let offset = scroll_state.offset();
+
+        let mut scroll_view =
+            ScrollView::new(size).scrollbars_visibility(ScrollbarVisibility::Never);
+
         if self.side.is_vertical() {
-            self.render_vertical_side(area, buf, state, ctx);
+            scroll_state.set_offset(Position { y: 0, ..offset });
+            self.render_cols(scroll_area, scroll_view.buf_mut(), state, ctx);
         } else {
-            self.render_horizontal_side(area, buf, state, ctx);
+            scroll_state.set_offset(Position { x: 0, ..offset });
+            self.render_rows(scroll_area, scroll_view.buf_mut(), state, ctx);
         }
+
+        scroll_view.render(area, buf, &mut scroll_state);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
-        let mut size = Size::ZERO;
+        let mut len = 0;
+        let opts = &state.grid.options;
 
-        // Add edge sizes
-        let mut add_edge_size = |idx: usize, edge: &U| {
+        let cell_w = opts.cell_width;
+        let cell_h = opts.cell_height;
+
+        // Determine the maximum edge length
+        let mut max_edge_len = |idx: usize, edge: &U| {
             // Render the edge and compute its size
             let edge_text = if self.side.is_vertical() {
                 edge.render_col(idx, self.edge_state, ctx)
@@ -173,17 +190,31 @@ where
 
             // Add the edge size to the total size
             if self.side.is_vertical() {
-                size.height = edge_size.height.max(size.height);
-                size.width += edge_size.width;
+                len = edge_size.height.max(len);
             } else {
-                size.width = edge_size.width.max(size.width);
-                size.height += edge_size.height;
+                len = edge_size.width.max(len);
             }
         };
 
         for (idx, edge) in self.edges.iter().enumerate() {
-            add_edge_size(idx, edge);
+            max_edge_len(idx, edge);
         }
+
+        // Construct the side size from the cell dimensions
+        let edge_count = self.edges.len() as u16;
+        let mut width = edge_count * cell_w;
+        let mut height = edge_count * cell_h;
+
+        if let Some(inner) = opts.inner_borders {
+            width += edge_count / inner.width;
+            height += edge_count / inner.height;
+        }
+
+        let mut size = if self.side.is_vertical() {
+            Size { width, height: len }
+        } else {
+            Size { height, width: len }
+        };
 
         // Add side margin
         let margin = state.sides.get(self.side).margin;

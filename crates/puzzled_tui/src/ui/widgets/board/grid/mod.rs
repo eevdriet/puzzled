@@ -65,7 +65,7 @@ where
         state.rows = self.grid.rows();
         state.cols = self.grid.cols();
 
-        let size = AppWidget::<A>::render_size(self as &_, root, ctx, state);
+        let size = self.render_size(root, ctx, state);
         let mut scroll_view = ScrollView::new(size);
 
         self.render_all(Rect::from(size), scroll_view.buf_mut(), ctx, state);
@@ -144,8 +144,11 @@ where
                 cell_widget.render(cell_area, buf);
 
                 // Draw a background for the whole cell
-
                 x += cell_w;
+
+                if x >= area.right() {
+                    break;
+                }
 
                 // Draw inner vertical border if defined
                 let col = col as u16;
