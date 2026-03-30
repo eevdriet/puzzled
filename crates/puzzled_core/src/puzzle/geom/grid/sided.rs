@@ -5,7 +5,7 @@ use std::{
 
 use derive_more::{Deref, DerefMut};
 
-use crate::{Direction, Grid};
+use crate::{Grid, Side};
 
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum SidedGridError {
@@ -23,7 +23,7 @@ pub struct SidedGrid<T, U> {
     #[deref_mut]
     pub grid: Grid<T>,
 
-    pub sides: HashMap<Direction, Vec<U>>,
+    pub sides: HashMap<Side, Vec<U>>,
 }
 
 impl<T, U> SidedGrid<T, U> {
@@ -43,7 +43,7 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Direction::Up, top);
+        self.sides.insert(Side::Top, top);
         Ok(self)
     }
 
@@ -51,8 +51,7 @@ impl<T, U> SidedGrid<T, U> {
     where
         U: Clone,
     {
-        self.sides
-            .insert(Direction::Up, vec![val; self.grid.cols()]);
+        self.sides.insert(Side::Top, vec![val; self.grid.cols()]);
         self
     }
 
@@ -65,7 +64,7 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Direction::Down, bottom);
+        self.sides.insert(Side::Bottom, bottom);
         Ok(self)
     }
 
@@ -73,8 +72,7 @@ impl<T, U> SidedGrid<T, U> {
     where
         U: Clone,
     {
-        self.sides
-            .insert(Direction::Down, vec![val; self.grid.cols()]);
+        self.sides.insert(Side::Bottom, vec![val; self.grid.cols()]);
         self
     }
 
@@ -87,7 +85,7 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Direction::Left, left);
+        self.sides.insert(Side::Left, left);
         Ok(self)
     }
 
@@ -95,8 +93,7 @@ impl<T, U> SidedGrid<T, U> {
     where
         U: Clone,
     {
-        self.sides
-            .insert(Direction::Left, vec![val; self.grid.rows()]);
+        self.sides.insert(Side::Left, vec![val; self.grid.rows()]);
         self
     }
 
@@ -109,7 +106,7 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Direction::Right, right);
+        self.sides.insert(Side::Right, right);
         Ok(self)
     }
 
@@ -117,8 +114,7 @@ impl<T, U> SidedGrid<T, U> {
     where
         U: Clone,
     {
-        self.sides
-            .insert(Direction::Right, vec![val; self.grid.rows()]);
+        self.sides.insert(Side::Right, vec![val; self.grid.rows()]);
         self
     }
 }

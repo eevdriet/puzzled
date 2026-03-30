@@ -1,4 +1,4 @@
-use puzzled_core::{Direction, Entry, Position};
+use puzzled_core::{Entry, Position, Side};
 use puzzled_nonogram::{Colors, Fill, Rule};
 use puzzled_tui::{
     AppContext, AsApp, CellRender, GridRenderState, LineRender, SidesRenderState, ThemeStyled,
@@ -86,11 +86,7 @@ impl<'a> LineRender<NonogramApp, RenderRuleState<'a>> for RenderRule<'a> {
         _ctx: &AppContext<NonogramApp>,
     ) -> Text<'_> {
         let mut width = 0;
-        let max_width = state
-            .render
-            .get(Direction::Left)
-            .max_len
-            .unwrap_or(u16::MAX);
+        let max_width = state.render.get(Side::Left).max_len.unwrap_or(u16::MAX);
 
         let mut spans: Vec<Span> = Vec::new();
         let base = Style::default();
@@ -142,11 +138,7 @@ impl<'a> LineRender<NonogramApp, RenderRuleState<'a>> for RenderRule<'a> {
         _ctx: &AppContext<NonogramApp>,
     ) -> Text<'_> {
         let mut height = 0;
-        let max_height = state
-            .render
-            .get(Direction::Left)
-            .max_len
-            .unwrap_or(u16::MAX);
+        let max_height = state.render.get(Side::Top).max_len.unwrap_or(u16::MAX);
 
         let mut lines: Vec<Line> = Vec::new();
         let base = Style::default();

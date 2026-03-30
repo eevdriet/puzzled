@@ -11,7 +11,7 @@ use crate::{AppContext, AppTypes, CellRender, RenderSize, Widget as AppWidget, r
 
 use puzzled_core::{Grid, Position};
 use ratatui::{
-    layout::{Margin, Position as AppPosition, Rect, Size},
+    layout::{Margin, Rect, Size},
     prelude::Buffer,
     widgets::{StatefulWidget, Widget},
 };

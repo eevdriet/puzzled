@@ -2,18 +2,15 @@ mod render;
 
 use std::collections::HashMap;
 
+use puzzled_nonogram::{Nonogram, NonogramState};
 pub(crate) use render::*;
 
-use puzzled_core::{Direction, Solve};
+use puzzled_core::{Entry, Grid, Side, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, HandleBaseAction, RenderSize, SidedGridWidget,
+    Action, AppContext, Command, HandleBaseAction, SidedGridRenderState, SidedGridWidget,
     Widget as AppWidget, handle_grid_command,
 };
-use ratatui::{
-    layout::Margin,
-    prelude::{Buffer, Rect, Size},
-    widgets::{Block, Widget},
-};
+use ratatui::prelude::{Buffer, Rect, Size};
 
 use crate::{NonogramApp, PuzzleScreenState};
 
@@ -29,50 +26,25 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         ctx: &mut AppContext<NonogramApp>,
         state: &mut Self::State,
     ) {
-        let PuzzleScreenState { solve, render, .. } = state;
-
-        let render_c = render.clone();
-
-        // Create grid widget
-        let grid = solve.state.map_entries(|fill| RenderFill { fill });
-
-        let cell_state = RenderFillState {
-            colors: state.puzzle.colors(),
-            render: &render_c.grid,
-        };
-        let line_state = RenderRuleState {
-            colors: state.puzzle.colors(),
-            render: &render_c.sides,
-        };
-
-        let rules = state.puzzle.rules();
-        let sides: HashMap<Direction, Vec<RenderRule>> = HashMap::from([
-            (
-                Direction::Left,
-                rules
-                    .iter_rows()
-                    .map(|(_, rule)| RenderRule { rule })
-                    .collect(),
-            ),
-            (
-                Direction::Up,
-                rules
-                    .iter_cols()
-                    .map(|(_, rule)| RenderRule { rule })
-                    .collect(),
-            ),
-        ]);
+        let render_c = state.render.clone();
+        let (grid, sides, cell_state, line_state) =
+            self.grid_components(&state.puzzle, &state.solve, &render_c);
 
         let mut sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
 
         // Render
-        let title = format!("Nonogram: {}x{}", state.puzzle.rows(), state.puzzle.cols());
+        let _title = format!("Nonogram: {}x{}", state.puzzle.rows(), state.puzzle.cols());
 
         sided_grid_widget.render(root, buf, ctx, &mut state.render);
     }
 
-    fn render_size(&self, area: Rect, _ctx: &AppContext<NonogramApp>, state: &Self::State) -> Size {
-        let mut size = state.puzzle.fills().render_size(area, &state.render.grid);
+    fn render_size(&self, area: Rect, ctx: &AppContext<NonogramApp>, state: &Self::State) -> Size {
+        // Sided grid size
+        let (grid, sides, cell_state, line_state) =
+            self.grid_components(&state.puzzle, &state.solve, &state.render);
+        let sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
+
+        let mut size = sided_grid_widget.render_size(area, ctx, &state.render);
 
         // Border aroudn puzzle grid
         size.width += 2;
@@ -131,5 +103,53 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             },
             _ => false,
         }
+    }
+}
+
+type Components<'a> = (
+    Grid<Entry<RenderFill<'a>>>,
+    HashMap<Side, Vec<RenderRule<'a>>>,
+    RenderFillState<'a>,
+    RenderRuleState<'a>,
+);
+
+impl NonogramWidget {
+    fn grid_components<'a>(
+        &'a self,
+        puzzle: &'a Nonogram,
+        solve: &'a NonogramState,
+        render: &'a SidedGridRenderState,
+    ) -> Components<'a> {
+        // Create grid widget
+        let grid = solve.state.map_entries(|fill| RenderFill { fill });
+
+        let cell_state = RenderFillState {
+            colors: puzzle.colors(),
+            render: &render.grid,
+        };
+        let line_state = RenderRuleState {
+            colors: puzzle.colors(),
+            render: &render.sides,
+        };
+
+        let rules = puzzle.rules();
+        let sides: HashMap<Side, Vec<RenderRule>> = HashMap::from([
+            (
+                Side::Left,
+                rules
+                    .iter_rows()
+                    .map(|(_, rule)| RenderRule { rule })
+                    .collect(),
+            ),
+            (
+                Side::Top,
+                rules
+                    .iter_cols()
+                    .map(|(_, rule)| RenderRule { rule })
+                    .collect(),
+            ),
+        ]);
+
+        (grid, sides, cell_state, line_state)
     }
 }

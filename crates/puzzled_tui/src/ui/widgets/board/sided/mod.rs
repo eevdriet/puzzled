@@ -10,7 +10,7 @@ use crate::{
     AppContext, AppTypes, CellRender, GridRenderState, GridWidget, LineRender, Widget as AppWidget,
 };
 use derive_more::Debug;
-use puzzled_core::{Direction, Grid, SidedGrid};
+use puzzled_core::{Grid, Side, SidedGrid, Sides};
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect, Size},
@@ -24,7 +24,7 @@ pub struct SidedGridRenderState {
 
 pub struct SidedGridWidget<'a, A: AppTypes, T, U, C, E> {
     pub grid: &'a Grid<T>,
-    pub sides: &'a HashMap<Direction, Vec<U>>,
+    pub sides: &'a HashMap<Side, Vec<U>>,
 
     pub cell_state: &'a C,
     pub edge_state: &'a E,
@@ -34,7 +34,7 @@ pub struct SidedGridWidget<'a, A: AppTypes, T, U, C, E> {
 impl<'a, A: AppTypes, T, U, C, E> SidedGridWidget<'a, A, T, U, C, E> {
     pub fn new(
         grid: &'a Grid<T>,
-        sides: &'a HashMap<Direction, Vec<U>>,
+        sides: &'a HashMap<Side, Vec<U>>,
         cell_state: &'a C,
         edge_state: &'a E,
     ) -> Self {
@@ -73,98 +73,30 @@ where
         ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
+        // Collect widgets and their render areas
         let area = AppWidget::<A>::render_area(self, root, ctx, state);
 
-        // Collect side widgets and sizes
-        let mut top_size = Size::ZERO;
-        let mut right_size = Size::ZERO;
-        let mut bottom_size = Size::ZERO;
-        let mut left_size = Size::ZERO;
+        let (mut grid_widget, [top_widget, right_widget, bottom_widget, left_widget]) =
+            self.widgets();
+        let (grid_area, [top_area, right_area, bottom_area, left_area]) =
+            self.areas(area, ctx, state);
 
-        let mut top_widget = None;
-        let mut right_widget = None;
-        let mut bottom_widget = None;
-        let mut left_widget = None;
-
-        let get_widget_and_size =
-            |dir: Direction, widget: &mut Option<SideWidget<'a, A, U, E>>, size: &mut Size| {
-                if let Some(side) = self.sides.get(&dir) {
-                    let side_widget = SideWidget::<A, U, E>::new(dir, side, self.edge_state);
-                    let side_size = side_widget.render_size(area, ctx, state);
-
-                    *size = side_size;
-                    *widget = Some(side_widget);
-                }
-            };
-
-        get_widget_and_size(Direction::Up, &mut top_widget, &mut top_size);
-        get_widget_and_size(Direction::Right, &mut right_widget, &mut right_size);
-        get_widget_and_size(Direction::Down, &mut bottom_widget, &mut bottom_size);
-        get_widget_and_size(Direction::Left, &mut left_widget, &mut left_size);
-
-        // Then render the sides in the correct area
-        // - Top
-        if let Some(mut top) = top_widget {
-            let top_area = Rect {
-                x: area.left() + left_size.width,
-                y: area.top(),
-                width: top_size.width,
-                height: top_size.height,
-            };
-            AppWidget::<A>::render(&mut top, top_area, buf, ctx, state);
+        // Render all defined sides
+        if let Some(mut widget) = top_widget {
+            widget.render(top_area, buf, ctx, state);
         }
-
-        // - Right
-        if let Some(mut right) = right_widget {
-            let right_area = Rect {
-                x: area.right().saturating_sub(right_size.width),
-                y: area.top() + top_size.height,
-                width: right_size.width,
-                height: right_size.height,
-            };
-            AppWidget::<A>::render(&mut right, right_area, buf, ctx, state);
+        if let Some(mut widget) = right_widget {
+            widget.render(right_area, buf, ctx, state);
         }
-
-        // - Bottom
-        if let Some(mut bottom) = bottom_widget {
-            let bottom_area = Rect {
-                x: area.left() + left_size.width,
-                y: area.bottom().saturating_sub(bottom_size.height),
-                width: bottom_size.width,
-                height: bottom_size.height,
-            };
-            AppWidget::<A>::render(&mut bottom, bottom_area, buf, ctx, state);
+        if let Some(mut widget) = bottom_widget {
+            widget.render(bottom_area, buf, ctx, state);
         }
-
-        // - Left
-        if let Some(mut left) = left_widget {
-            let left_area = Rect {
-                x: area.left(),
-                y: area.top() + top_size.height,
-                width: left_size.width,
-                height: left_size.height,
-            };
-            AppWidget::<A>::render(&mut left, left_area, buf, ctx, state);
+        if let Some(mut widget) = left_widget {
+            widget.render(left_area, buf, ctx, state);
         }
-
-        // Compute the grid area from the sides
-        let [_, grid_area, _] = Layout::horizontal(vec![
-            Constraint::Length(left_size.width),
-            Constraint::Min(0),
-            Constraint::Length(right_size.width),
-        ])
-        .areas(area);
-
-        let [_, grid_area, _] = Layout::vertical(vec![
-            Constraint::Length(top_size.height),
-            Constraint::Min(0),
-            Constraint::Length(bottom_size.height),
-        ])
-        .areas(grid_area);
 
         // Render the grid
-        let mut grid_widget = GridWidget::new(self.grid, self.cell_state);
-        AppWidget::<A>::render(&mut grid_widget, grid_area, buf, ctx, &mut state.grid);
+        grid_widget.render(grid_area, buf, ctx, &mut state.grid);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
@@ -184,5 +116,101 @@ where
         }
 
         size
+    }
+}
+
+type Widgets<'a, A, T, U, C, E> = (GridWidget<'a, A, T, C>, Sides<SideWidget<'a, A, U, E>>);
+
+impl<'a, A, T, U, C, E> SidedGridWidget<'a, A, T, U, C, E>
+where
+    A: AppTypes,
+    T: CellRender<A, C>,
+    U: LineRender<A, E>,
+{
+    fn sizes(
+        &self,
+        area: Rect,
+        ctx: &AppContext<A>,
+        state: &SidedGridRenderState,
+    ) -> (Size, [Size; 4]) {
+        // Grid area
+        let (grid, sides) = self.widgets();
+
+        let grid_size = grid.render_size(area, ctx, &state.grid);
+        let side_sizes = sides.map(|side_widget| {
+            side_widget
+                .map(|widget| widget.render_size(area, ctx, state))
+                .unwrap_or_default()
+        });
+
+        (grid_size, side_sizes)
+    }
+
+    fn widgets(&self) -> Widgets<'a, A, T, U, C, E> {
+        let grid = GridWidget::<'a, A, T, C>::new(self.grid, self.cell_state);
+
+        let widget = |side: Side| {
+            let edges = self.sides.get(&side)?;
+            Some(SideWidget::<A, U, E>::new(side, edges, self.edge_state))
+        };
+
+        (grid, Side::ALL.map(widget))
+    }
+
+    fn areas(
+        &self,
+        area: Rect,
+        ctx: &AppContext<A>,
+        state: &SidedGridRenderState,
+    ) -> (Rect, [Rect; 4]) {
+        let (_, [top_size, right_size, bottom_size, left_size]) = self.sizes(area, ctx, state);
+
+        let top_area = Rect {
+            x: area.left() + left_size.width,
+            y: area.top(),
+            width: top_size.width,
+            height: top_size.height,
+        };
+
+        // - Right
+        let right_area = Rect {
+            x: area.right().saturating_sub(right_size.width),
+            y: area.top() + top_size.height,
+            width: right_size.width,
+            height: right_size.height,
+        };
+
+        // - Bottom
+        let bottom_area = Rect {
+            x: area.left() + left_size.width,
+            y: area.bottom().saturating_sub(bottom_size.height),
+            width: bottom_size.width,
+            height: bottom_size.height,
+        };
+
+        // - Left
+        let left_area = Rect {
+            x: area.left(),
+            y: area.top() + top_size.height,
+            width: left_size.width,
+            height: left_size.height,
+        };
+
+        // Compute the grid area from the sides
+        let [_, grid_area, _] = Layout::horizontal(vec![
+            Constraint::Length(left_size.width),
+            Constraint::Min(0),
+            Constraint::Length(right_size.width),
+        ])
+        .areas(area);
+
+        let [_, grid_area, _] = Layout::vertical(vec![
+            Constraint::Length(top_size.height),
+            Constraint::Min(0),
+            Constraint::Length(bottom_size.height),
+        ])
+        .areas(grid_area);
+
+        (grid_area, [top_area, right_area, bottom_area, left_area])
     }
 }

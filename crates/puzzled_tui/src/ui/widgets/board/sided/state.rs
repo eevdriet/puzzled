@@ -1,4 +1,4 @@
-use puzzled_core::Direction;
+use puzzled_core::{Direction, Side};
 use tui_scrollview::ScrollViewState;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -78,12 +78,12 @@ impl SidesRenderState {
         self.bottom(state).right(state)
     }
 
-    pub fn get(&self, dir: Direction) -> &SideRenderState {
+    pub fn get(&self, dir: Side) -> &SideRenderState {
         match dir {
-            Direction::Up => &self.top,
-            Direction::Right => &self.right,
-            Direction::Down => &self.bottom,
-            Direction::Left => &self.left,
+            Side::Top => &self.top,
+            Side::Right => &self.right,
+            Side::Bottom => &self.bottom,
+            Side::Left => &self.left,
         }
     }
 

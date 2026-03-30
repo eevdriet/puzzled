@@ -5,14 +5,14 @@ use crate::{
     align_vertically,
 };
 
-use puzzled_core::Direction;
+use puzzled_core::Side;
 use ratatui::{
     layout::{HorizontalAlignment, VerticalAlignment},
     prelude::{Buffer, Rect, Size, Widget},
 };
 
 pub struct SideWidget<'a, A: AppTypes, U, E> {
-    pub side: Direction,
+    pub side: Side,
     pub edges: &'a Vec<U>,
     pub edge_state: &'a E,
 
@@ -20,7 +20,7 @@ pub struct SideWidget<'a, A: AppTypes, U, E> {
 }
 
 impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
-    pub fn new(side: Direction, edges: &'a Vec<U>, edge_state: &'a E) -> Self {
+    pub fn new(side: Side, edges: &'a Vec<U>, edge_state: &'a E) -> Self {
         Self {
             side,
             edges,
@@ -42,12 +42,12 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         let margin = state.sides.get(self.side).margin.min(area.height);
 
         let (alignment, top, bottom) = match self.side {
-            Direction::Up => (
+            Side::Top => (
                 VerticalAlignment::Bottom,
                 area.top(),
                 area.bottom() - margin,
             ),
-            Direction::Down => (VerticalAlignment::Top, area.top() + margin, area.bottom()),
+            Side::Bottom => (VerticalAlignment::Top, area.top() + margin, area.bottom()),
             dir => unreachable!("{dir:?} should not be render as a horizontal side"),
         };
 
@@ -93,12 +93,12 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         let margin = state.sides.get(self.side).margin.min(area.width);
 
         let (alignment, left, right) = match self.side {
-            Direction::Left => (
+            Side::Left => (
                 HorizontalAlignment::Right,
                 area.left(),
                 area.right() - margin,
             ),
-            Direction::Right => (
+            Side::Right => (
                 HorizontalAlignment::Left,
                 area.left() + margin,
                 area.right(),

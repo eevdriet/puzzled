@@ -5,7 +5,7 @@ use chumsky::{
     extra::Err,
     prelude::{group, just},
 };
-use puzzled_core::{Direction, Grid, GridError, SidedGrid};
+use puzzled_core::{Grid, GridError, Side, SidedGrid};
 
 use crate::text::read::ParseError;
 
@@ -70,10 +70,7 @@ where
         let cols = rows.first().map(|row| row.len()).unwrap_or(0);
         let mut sides = HashMap::default();
 
-        for (side_str, side, dir) in [
-            ("top", top, Direction::Up),
-            ("bottom", bottom, Direction::Down),
-        ] {
+        for (side_str, side, dir) in [("top", top, Side::Top), ("bottom", bottom, Side::Bottom)] {
             if let Some(side) = side {
                 if side.len() != cols {
                     let err = GridError::InvalidSide {
@@ -89,10 +86,7 @@ where
             }
         }
 
-        for (side_str, side, dir) in [
-            ("left", left, Direction::Left),
-            ("right", right, Direction::Right),
-        ] {
+        for (side_str, side, dir) in [("left", left, Side::Left), ("right", right, Side::Right)] {
             if let Some(side) = side {
                 if side.len() != rows.len() {
                     let err = GridError::InvalidSide {
