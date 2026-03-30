@@ -161,15 +161,17 @@ where
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
         let mut size = Size::ZERO;
 
-        // Determine the edge size based on its edges
-        for edge_size in self.edges.iter().enumerate().map(|(idx, edge)| {
+        // Add edge sizes
+        let mut add_edge_size = |idx: usize, edge: &U| {
+            // Render the edge and compute its size
             let edge_text = if self.side.is_vertical() {
                 edge.render_col(idx, self.edge_state, ctx)
             } else {
                 edge.render_row(idx, self.edge_state, ctx)
             };
-            edge_text.render_size(area, &())
-        }) {
+            let edge_size = edge_text.render_size(area, &());
+
+            // Add the edge size to the total size
             if self.side.is_vertical() {
                 size.height = edge_size.height.max(size.height);
                 size.width += edge_size.width;
@@ -177,15 +179,30 @@ where
                 size.width = edge_size.width.max(size.width);
                 size.height += edge_size.height;
             }
+        };
+
+        for (idx, edge) in self.edges.iter().enumerate() {
+            add_edge_size(idx, edge);
         }
 
+        // Add side margin
         let margin = state.sides.get(self.side).margin;
 
-        // Add side margin
         if self.side.is_vertical() {
             size.height += margin;
         } else {
             size.width += margin;
+        }
+
+        // Apply the maximum allowed width and height
+        let side_state = state.sides.get(self.side);
+
+        if let Some(max_len) = side_state.max_len {
+            if self.side.is_vertical() {
+                size.height = size.height.min(max_len);
+            } else {
+                size.width = size.width.min(max_len);
+            }
         }
 
         size

@@ -12,10 +12,10 @@ pub struct SideRenderState {
 
 #[derive(Debug, Clone, Copy)]
 pub struct SidesRenderState {
-    top: SideRenderState,
-    right: SideRenderState,
-    bottom: SideRenderState,
-    left: SideRenderState,
+    pub top: SideRenderState,
+    pub right: SideRenderState,
+    pub bottom: SideRenderState,
+    pub left: SideRenderState,
 
     focus: Option<Direction>,
 }
@@ -87,12 +87,12 @@ impl SidesRenderState {
         }
     }
 
-    pub fn get_mut(&mut self, dir: Direction) -> &mut SideRenderState {
-        match dir {
-            Direction::Up => &mut self.top,
-            Direction::Right => &mut self.right,
-            Direction::Down => &mut self.bottom,
-            Direction::Left => &mut self.left,
+    pub fn get_mut(&mut self, side: Side) -> &mut SideRenderState {
+        match side {
+            Side::Top => &mut self.top,
+            Side::Right => &mut self.right,
+            Side::Bottom => &mut self.bottom,
+            Side::Left => &mut self.left,
         }
     }
 
