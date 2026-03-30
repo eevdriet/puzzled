@@ -42,6 +42,10 @@ impl Screen<NonogramApp> for PuzzleScreen {
         self.nonogram.render(area, buf, ctx, &mut self.state);
     }
 
+    fn on_tick(&self, _ctx: &AppContext<NonogramApp>) -> bool {
+        true
+    }
+
     fn on_command(
         &mut self,
         command: AppCommand<NonogramApp>,

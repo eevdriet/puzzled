@@ -1,5 +1,6 @@
 mod cell;
 mod colors;
+mod error;
 mod fill;
 mod find;
 mod rule;
@@ -12,6 +13,7 @@ use puzzled_core::{Cell, Grid, Line, Metadata, Position, Puzzle};
 
 pub use cell::*;
 pub use colors::*;
+pub use error::*;
 pub use fill::*;
 pub use find::*;
 pub use rule::*;
@@ -52,28 +54,69 @@ impl fmt::Display for Nonogram {
 }
 
 impl Nonogram {
-    pub fn new(fills: Grid<Cell<Fill>>, colors: Colors, meta: Metadata) -> Self {
-        Self {
+    pub fn new(
+        fills: Grid<Cell<Fill>>,
+        colors: Colors,
+        meta: Metadata,
+    ) -> Result<Self, NonogramError> {
+        // Verify all fills that are already placed have a defined color
+        for cell in fills.iter() {
+            if let Some(fill) = &cell.solution
+                && !colors.contains_key(fill)
+            {
+                return Err(NonogramError::UndefinedFill(*fill));
+            }
+        }
+
+        // If so, create the puzzle
+        Ok(Self {
             fills,
             rules: Rules::default(),
             colors,
             meta,
-        }
+        })
     }
 
-    pub fn with_rules(mut self, rules: Rules) -> Self {
+    pub fn with_rules(mut self, rules: Rules) -> Result<Self, NonogramError> {
+        // Verify all runs have defined fill colors
+        for rule in rules.values() {
+            for run in rule.runs() {
+                let fill = run.fill;
+
+                if !self.colors.contains_key(&fill) {
+                    return Err(NonogramError::UndefinedFill(fill));
+                }
+            }
+        }
+
+        // If so, set the rules
         self.rules = rules;
-        self
+
+        Ok(self)
     }
-    pub fn with_line_runs(mut self, line_runs: HashMap<Line, Vec<Run>>) -> Self {
+
+    pub fn with_line_runs(
+        mut self,
+        line_runs: HashMap<Line, Vec<Run>>,
+    ) -> Result<Self, NonogramError> {
         for (line, runs) in line_runs {
+            // Verify all run fills have a defined color
+            for run in &runs {
+                let fill = run.fill;
+
+                if !self.colors.contains_key(&fill) {
+                    return Err(NonogramError::UndefinedFill(fill));
+                }
+            }
+
+            // If so, create the corresponding rule and insert it
             let line_len = self.fills.line_len(line);
             let rule = Rule::new(runs, line_len);
 
             self.rules.insert(line, rule);
         }
 
-        self
+        Ok(self)
     }
 
     pub fn fills(&self) -> &Grid<Cell<Fill>> {
@@ -214,7 +257,8 @@ mod tests {
             author: "Eertze"
             copyright: " Yeet"
             title : "My first puzzle"
-        );
+        )
+        .expect("Valid puzzle");
         puzzle[Position::new(0, 0)].style |= CellStyle::INCORRECT | CellStyle::REVEALED;
 
         print!("{puzzle}");

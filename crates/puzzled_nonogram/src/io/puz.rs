@@ -113,7 +113,13 @@ impl BinaryPuzzle<NonogramState> for Nonogram {
         let colors = read_colors(&cells, &strings)?;
         let meta = read_metadata(&header, &strings);
 
-        let nonogram = Nonogram::new(cells, colors, meta);
+        let nonogram = match Nonogram::new(cells, colors, meta) {
+            Ok(puzzle) => puzzle,
+            Err(err) => {
+                let puzzle_err = format::Error::PuzzleSpecific(Box::new(err));
+                return Err(puzzle_err).context("Nonogram");
+            }
+        };
 
         let timer = extras.ltim.unwrap_or_default();
         let state = NonogramState::new(solutions, entries, timer);

@@ -5,6 +5,7 @@ use tui_scrollview::ScrollViewState;
 pub struct SideRenderState {
     pub margin: u16,
     pub direction: Direction,
+    pub max_len: Option<u16>,
 
     pub scroll: ScrollViewState,
 }
@@ -116,9 +117,8 @@ impl Default for SidesRenderState {
             top: base,
             right: base,
             bottom: base,
-            left: base,
+            left: state,
             focus: None,
         }
-        .upper(state)
     }
 }

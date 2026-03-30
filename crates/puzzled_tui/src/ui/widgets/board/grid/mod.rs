@@ -111,14 +111,14 @@ where
             root
         };
 
-        tracing::info!(
+        tracing::trace!(
             "Render grid @ {} ({}x{})",
             state.cursor,
             self.grid.rows(),
             self.grid.cols()
         );
-        tracing::info!("Bordered area: {area:?}");
-        tracing::info!("Area: {area:?}");
+        tracing::trace!("Bordered area: {area:?}");
+        tracing::trace!("Area: {area:?}");
 
         // Render the grid itself
         let opts = &state.options;
@@ -137,7 +137,7 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self.grid[pos];
-                tracing::info!("Drawing at {pos:?} [({x}, {y}) on screen]");
+                tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
                 let cell_widget = cell.render_cell(pos, self.cell_state, ctx);
@@ -155,9 +155,9 @@ where
                 {
                     if draw_inner {
                         for div_y in y..y + cell_h {
-                            tracing::info!("\tSetting │ at ({x}, {div_y}) on screen");
+                            tracing::trace!("\tSetting │ at ({x}, {div_y}) on screen");
                             buf.set_stringn(x, div_y, "│", 1, state.options.inner_border_style);
-                            tracing::info!("\tDone");
+                            tracing::trace!("\tDone");
                         }
                     }
 
@@ -187,21 +187,21 @@ where
                         let width = (area.right() - 1).saturating_sub(div_x).min(cell_w) as usize;
                         let text = "─".repeat(width);
 
-                        tracing::info!(
+                        tracing::trace!(
                             "\tSetting ─ at ({div_x}..{}, {y}) on screen",
                             div_x + width as u16
                         );
                         buf.set_stringn(div_x, y, text, width, state.options.inner_border_style);
-                        tracing::info!("\tDone");
+                        tracing::trace!("\tDone");
                     }
 
                     div_x += cell_w;
 
                     if (col + 1).is_multiple_of(size.width) {
                         if draw_inner && y < area.bottom() {
-                            tracing::info!("\tSetting ┼ at ({div_x}, {y}) on screen");
+                            tracing::trace!("\tSetting ┼ at ({div_x}, {y}) on screen");
                             buf.set_stringn(div_x, y, "┼", 1, state.options.inner_border_style);
-                            tracing::info!("\tDone");
+                            tracing::trace!("\tDone");
                         }
 
                         div_x += 1;

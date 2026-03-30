@@ -15,17 +15,11 @@ pub enum Error {
     #[error("Found invalid metadata property \"{found}\": {reason}")]
     InvalidMetaProperty { found: String, reason: String },
 
-    #[error("{format}")]
-    Format { format: format::Error, span: Span },
+    #[error("{0}")]
+    Format(#[from] format::Error),
 
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
-
-impl Error {
-    pub fn format(format: format::Error, span: Span) -> Self {
-        Self::Format { format, span }
-    }
-}

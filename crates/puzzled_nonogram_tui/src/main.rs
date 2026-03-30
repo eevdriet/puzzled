@@ -12,15 +12,15 @@ pub use cli::*;
 pub use commands::*;
 pub use screens::*;
 
-use clap::Parser;
+// use clap::Parser;
 use puzzled_io::puzzle_dir;
 use puzzled_nonogram::{Nonogram, NonogramState};
 use puzzled_tui::{App, GridRenderState, SidedGridRenderState, SidesRenderState, init_logging};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let args = Args::parse();
-    init_logging(args.debug);
+    // let args = Args::parse();
+    init_logging(true);
 
     let path = puzzle_dir::<Nonogram>()?.join("ladybug.json");
     let file = File::open(path)?;

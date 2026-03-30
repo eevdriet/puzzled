@@ -6,8 +6,8 @@ pub(crate) use render::*;
 
 use puzzled_core::{Direction, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, RenderSize, SidedGridWidget, Widget as AppWidget,
-    handle_grid_command,
+    Action, AppContext, Command, HandleBaseAction, RenderSize, SidedGridWidget,
+    Widget as AppWidget, handle_grid_command,
 };
 use ratatui::{
     layout::Margin,
@@ -35,16 +35,35 @@ impl AppWidget<NonogramApp> for NonogramWidget {
 
         // Create grid widget
         let grid = solve.state.map_entries(|fill| RenderFill { fill });
-        tracing::info!("Grid: {grid:?}");
 
         let cell_state = RenderFillState {
             colors: state.puzzle.colors(),
             render: &render_c.grid,
         };
-        let sides: HashMap<Direction, Vec<bool>> = HashMap::default();
+        let line_state = RenderRuleState {
+            colors: state.puzzle.colors(),
+            render: &render_c.sides,
+        };
 
-        let mut sided_grid_widget =
-            SidedGridWidget::new(&grid, &sides, &cell_state, &render_c.sides);
+        let rules = state.puzzle.rules();
+        let sides: HashMap<Direction, Vec<RenderRule>> = HashMap::from([
+            (
+                Direction::Left,
+                rules
+                    .iter_rows()
+                    .map(|(_, rule)| RenderRule { rule })
+                    .collect(),
+            ),
+            (
+                Direction::Up,
+                rules
+                    .iter_cols()
+                    .map(|(_, rule)| RenderRule { rule })
+                    .collect(),
+            ),
+        ]);
+
+        let mut sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
 
         // Render
         let title = format!("Nonogram: {}x{}", state.puzzle.rows(), state.puzzle.cols());
@@ -104,7 +123,11 @@ impl AppWidget<NonogramApp> for NonogramWidget {
                         None => false,
                     }
                 }
-                _ => false,
+                _ => state.solve.state.solutions.handle_action(
+                    action,
+                    &mut state.render.grid,
+                    &mut (),
+                ),
             },
             _ => false,
         }

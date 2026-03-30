@@ -60,7 +60,11 @@ impl ImagePuzzle<NonogramState> for Nonogram {
         let fills = reader.read_grid(image, &mut read_pixel)?;
         let metadata = Metadata::default();
 
-        let nonogram = Nonogram::new(fills, colors, metadata);
+        let nonogram = Nonogram::new(fills, colors, metadata).map_err(|err| {
+            let puzzle_err = format::Error::PuzzleSpecific(Box::new(err));
+            read::Error::Format(puzzle_err)
+        })?;
+
         let state = NonogramState::from(&nonogram);
         Ok((nonogram, state))
     }

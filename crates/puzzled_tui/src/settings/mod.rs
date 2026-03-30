@@ -54,8 +54,6 @@ pub trait Load<'de>: Deserialize<'de> {
             .expect("Valid path")
             .to_string();
 
-        tracing::info!("Global path: {global_path}");
-
         let puzzle_path = puzzle_config_dir::<P>()
             .map_err(|err| ConfigError::Message(err.to_string()))?
             .join(Self::FILE_NAME)
@@ -64,8 +62,6 @@ pub trait Load<'de>: Deserialize<'de> {
             .to_owned()
             .expect("Valid path")
             .to_string();
-
-        tracing::info!("Puzzle path: {puzzle_path}");
 
         let settings = Config::builder()
             .add_source(File::with_name(&global_path).required(false))

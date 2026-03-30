@@ -9,11 +9,11 @@ use chumsky::{
 };
 use puzzled_core::Line;
 use puzzled_io::{
-    TxtPuzzle,
+    TxtPuzzle, format,
     text::read::{self, ParseError, cell, color, grid, line, metadata_with_timer},
 };
 
-use crate::{Colors, Fill, Nonogram, Run};
+use crate::{Colors, Fill, Nonogram, NonogramError, Run};
 
 #[derive(Debug, thiserror::Error)]
 enum _Error {
@@ -61,6 +61,11 @@ pub fn colors<'a>() -> impl Parser<'a, &'a str, Colors, Err<ParseError<'a>>> + C
 
 impl TxtPuzzle for Nonogram {
     fn read_text(input: &str) -> read::Result<Self> {
+        let err = |err: NonogramError| {
+            let puzzle_err = format::Error::PuzzleSpecific(Box::new(err));
+            read::Error::Format(puzzle_err)
+        };
+
         let (cells, line_runs, colors, (meta, _)) = group((
             grid(cell(fill())),
             line_runs(),
@@ -73,7 +78,10 @@ impl TxtPuzzle for Nonogram {
             read::Error::Parse(errs.into_iter().map(|err| err.to_string()).collect())
         })?;
 
-        Ok(Nonogram::new(cells, colors, meta).with_line_runs(line_runs))
+        let mut puzzle = Nonogram::new(cells, colors, meta).map_err(err)?;
+        puzzle = puzzle.with_line_runs(line_runs).map_err(err)?;
+
+        Ok(puzzle)
     }
 
     fn write_text(&self) -> String {
