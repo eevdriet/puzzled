@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use puzzled_core::{Direction, Position};
 use ratatui::{
     layout::{Position as AppPosition, Rect, Size},
@@ -5,7 +7,7 @@ use ratatui::{
 };
 use tui_scrollview::ScrollViewState;
 
-use crate::{EventMode, GridOptions, MultiSelection, Theme};
+use crate::{EventMode, GridOptions, MultiSelection, ScrollWidget, Theme};
 
 #[derive(Debug, Default, Clone)]
 pub struct GridRenderState {
@@ -23,13 +25,16 @@ pub struct GridRenderState {
     /// Offset of the grid with its top-left most cell
     pub cursor: Position,
 
+    pub dirty: Vec<Position>,
+
     /// Current direction the cursor is facing in within the grid
     pub direction: Direction,
 
     /// Whether to use directed movements in the grid
     pub use_direction: bool,
 
-    pub scroll: ScrollViewState,
+    pub scroll: ScrollWidget,
+    pub scroll_state: ScrollViewState,
 }
 
 impl GridRenderState {
@@ -51,7 +56,7 @@ impl GridRenderState {
         let AppPosition {
             x: x_offset,
             y: y_offset,
-        } = self.scroll.offset();
+        } = self.scroll_state.offset();
         x += x_offset;
         y += y_offset;
 
@@ -76,6 +81,31 @@ impl GridRenderState {
 
         tracing::trace!("\t Translated: {row},{col}");
         Some(Position::new(row, col))
+    }
+
+    fn without_border_pos(&self, app_pos: AppPosition) -> Position {
+        let opts = self.options;
+
+        let AppPosition { mut x, mut y } = app_pos;
+        let cell_w = opts.cell_width;
+        let cell_h = opts.cell_height;
+
+        if let Some(inner) = opts.inner_borders {
+            let block_w = inner.width * cell_w + 1;
+            let block_h = inner.height * cell_h + 1;
+
+            let h_border_count = x / block_w;
+            let v_border_count = y / block_h;
+
+            x -= h_border_count;
+            y -= v_border_count;
+        }
+
+        // Adjust for variable cell size
+        let row = usize::from(y / cell_h);
+        let col = usize::from(x / cell_w);
+
+        Position::new(row, col)
     }
 
     pub fn to_app(&self, pos: Position) -> Option<AppPosition> {
@@ -104,6 +134,32 @@ impl GridRenderState {
 
         let app_pos = AppPosition::new(x, y);
         vp.contains(app_pos).then_some(app_pos)
+    }
+
+    pub fn visible_rows(&self, rows: usize) -> Range<usize> {
+        let vp = &self.viewport;
+        let offset = self.scroll_state.offset();
+
+        let top_left = offset;
+        let start = self.without_border_pos(top_left);
+
+        let bottom_right = AppPosition::new(top_left.x + vp.width - 1, top_left.y + vp.height - 1);
+        let end = self.without_border_pos(bottom_right);
+
+        start.row..end.row.min(rows)
+    }
+
+    pub fn visible_cols(&self, cols: usize) -> Range<usize> {
+        let vp = &self.viewport;
+        let offset = self.scroll_state.offset();
+
+        let top_left = offset;
+        let start = self.without_border_pos(top_left);
+
+        let bottom_right = AppPosition::new(top_left.x + vp.width - 1, top_left.y + vp.height - 1);
+        let end = self.without_border_pos(bottom_right);
+
+        start.col..end.col.min(cols)
     }
 
     pub fn cell_style(&self, pos: Position, theme: &Theme) -> Style {
@@ -150,7 +206,7 @@ impl GridRenderState {
             width: 1,
             height: 1,
         };
-        ensure_cells_visible(cells, self.options, self.viewport, &mut self.scroll);
+        ensure_cells_visible(cells, self.options, self.viewport, &mut self.scroll_state);
     }
 }
 

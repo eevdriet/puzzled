@@ -111,6 +111,8 @@ where
     Grid<Square<Entry<<A::Puzzle as Puzzle>::Value>>>:
         HandleCustomMotion<A::Motion, GridRenderState, S, Position>,
 {
+    render.dirty.clear();
+
     let (positions, op) = match command {
         Command::Operator(op) => {
             // Use all visually selected positions
@@ -143,8 +145,10 @@ where
         _ => return None,
     };
 
+    render.dirty = positions;
+
     op.map(|op| {
-        let action = solve.handle_operator(op, positions);
+        let action = solve.handle_operator(op, render.dirty.iter().cloned());
 
         // Possibly change the mode after applying the operator
         let mode = match op {

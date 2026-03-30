@@ -118,7 +118,7 @@ impl Nonogram {
 #[cfg(feature = "serde")]
 mod serde_impl {
     use puzzled_core::{Cell, Grid, Metadata};
-    use serde::{Deserialize, Serialize};
+    use serde::{Deserialize, Serialize, de};
 
     use crate::{Colors, Fill, Nonogram, Rules, SerdeRules};
 
@@ -127,10 +127,16 @@ mod serde_impl {
         rows: usize,
         cols: usize,
 
-        fills: Grid<Cell<Fill>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fills: Option<Grid<Cell<Fill>>>,
+
         rules: SerdeRules,
+
+        // #[serde(skip_serializing_if = "Colors::is_empty")]
         colors: Colors,
-        meta: Metadata,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        meta: Option<Metadata>,
     }
 
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -146,9 +152,9 @@ mod serde_impl {
 
             SerdeNonogram {
                 rules,
-                fills,
+                fills: Some(fills),
                 colors,
-                meta,
+                meta: Some(meta),
                 rows: self.rows(),
                 cols: self.cols(),
             }
@@ -165,11 +171,15 @@ mod serde_impl {
             let SerdeNonogram {
                 rows,
                 cols,
-                fills,
+                fills: opt_fills,
                 rules,
                 colors,
-                meta,
+                meta: opt_meta,
             } = SerdeNonogram::deserialize(deserializer)?;
+
+            let fills = opt_fills
+                .unwrap_or(Grid::new_from(rows, cols, Cell::default()).map_err(de::Error::custom)?);
+            let meta = opt_meta.unwrap_or_default();
 
             let rules = Rules::from_serde(rules, rows, cols);
             let nonogram = Self {

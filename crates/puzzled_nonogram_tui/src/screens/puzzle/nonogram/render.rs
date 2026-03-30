@@ -1,8 +1,10 @@
 use puzzled_core::{Entry, Position};
 use puzzled_nonogram::{Colors, Fill};
-use puzzled_tui::{AppContext, AsApp, CellRender, GridRenderState, Theme, ThemeStyled};
+use puzzled_tui::{
+    AppContext, AsApp, CellRender, GridRenderState, LineRender, SidesRenderState, ThemeStyled,
+};
 use ratatui::{
-    prelude::{Style, Widget},
+    prelude::Widget,
     text::{Line, Text},
 };
 
@@ -50,5 +52,24 @@ impl<'a> CellRender<NonogramApp, RenderFillState<'a>> for Entry<RenderFill<'a>> 
             state.render.options.cell_height as usize
         ];
         Text::from(text).style(style)
+    }
+}
+
+impl LineRender<NonogramApp, SidesRenderState> for bool {
+    fn render_row(
+        &self,
+        _row: usize,
+        _state: &SidesRenderState,
+        _ctx: &AppContext<NonogramApp>,
+    ) -> Text<'_> {
+        Text::from("R")
+    }
+    fn render_col(
+        &self,
+        _col: usize,
+        _state: &SidesRenderState,
+        _ctx: &AppContext<NonogramApp>,
+    ) -> Text<'_> {
+        Text::from("C")
     }
 }

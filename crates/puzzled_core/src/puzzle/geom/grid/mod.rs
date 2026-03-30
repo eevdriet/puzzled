@@ -297,11 +297,13 @@ where
     /// Create a new grid filled with the given value
     ///
     /// Returns [`None`] if the size overflows, i.e. when `rows * cols >= usize::MAX`
-    pub fn new_from(rows: usize, cols: usize, value: T) -> Option<Self> {
-        let size = rows.checked_mul(cols)?;
+    pub fn new_from(rows: usize, cols: usize, value: T) -> Result<Self, GridError> {
+        let size = rows
+            .checked_mul(cols)
+            .ok_or(GridError::SizeOverflow { rows, cols })?;
 
         let data = vec![value; size];
-        Some(Self { rows, cols, data })
+        Ok(Self { rows, cols, data })
     }
 }
 

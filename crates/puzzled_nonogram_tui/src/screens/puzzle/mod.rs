@@ -6,8 +6,8 @@ pub use state::*;
 
 use puzzled_nonogram::{Fill, Nonogram, NonogramState};
 use puzzled_tui::{
-    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode,
-    GridRenderState, HandleMode, Screen, Widget,
+    Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, EventMode, HandleMode,
+    Screen, SidedGridRenderState, Widget,
 };
 use ratatui::prelude::{Buffer, Rect};
 
@@ -21,7 +21,7 @@ pub struct PuzzleScreen {
 }
 
 impl PuzzleScreen {
-    pub fn new(puzzle: Nonogram, solve: NonogramState, render: GridRenderState) -> Self {
+    pub fn new(puzzle: Nonogram, solve: NonogramState, render: SidedGridRenderState) -> Self {
         let state = PuzzleScreenState {
             puzzle,
             solve,
@@ -79,7 +79,7 @@ impl Screen<NonogramApp> for PuzzleScreen {
         ctx: &mut AppContext<NonogramApp>,
     ) -> bool {
         let solutions = &mut self.state.solve.state.solutions;
-        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render)
+        solutions.handle_mode(mode, resolver, ctx, &mut self.state.render.grid)
     }
 
     fn override_mode(&self) -> Option<EventMode> {

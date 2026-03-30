@@ -1,12 +1,19 @@
 mod render;
 
+use std::collections::HashMap;
+
 pub(crate) use render::*;
 
-use puzzled_core::Solve;
+use puzzled_core::{Direction, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, GridWidget, RenderSize, Widget as AppWidget, handle_grid_command,
+    Action, AppContext, Command, RenderSize, SidedGridWidget, Widget as AppWidget,
+    handle_grid_command,
 };
-use ratatui::prelude::{Buffer, Rect, Size};
+use ratatui::{
+    layout::Margin,
+    prelude::{Buffer, Rect, Size},
+    widgets::{Block, Widget},
+};
 
 use crate::{NonogramApp, PuzzleScreenState};
 
@@ -22,25 +29,37 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         ctx: &mut AppContext<NonogramApp>,
         state: &mut Self::State,
     ) {
-        let render_c = state.render.clone();
+        let PuzzleScreenState { solve, render, .. } = state;
+
+        let render_c = render.clone();
 
         // Create grid widget
-        let grid = state.solve.state.map_entries(|fill| RenderFill { fill });
+        let grid = solve.state.map_entries(|fill| RenderFill { fill });
+        tracing::info!("Grid: {grid:?}");
 
         let cell_state = RenderFillState {
             colors: state.puzzle.colors(),
-            render: &render_c,
+            render: &render_c.grid,
         };
+        let sides: HashMap<Direction, Vec<bool>> = HashMap::default();
 
-        let mut grid_widget = GridWidget::new(&grid, &cell_state);
+        let mut sided_grid_widget =
+            SidedGridWidget::new(&grid, &sides, &cell_state, &render_c.sides);
 
         // Render
-        let area = self.render_area(root, ctx, state);
-        grid_widget.render(area, buf, ctx, &mut state.render);
+        let title = format!("Nonogram: {}x{}", state.puzzle.rows(), state.puzzle.cols());
+
+        sided_grid_widget.render(root, buf, ctx, &mut state.render);
     }
 
     fn render_size(&self, area: Rect, _ctx: &AppContext<NonogramApp>, state: &Self::State) -> Size {
-        state.puzzle.fills().render_size(area, &state.render)
+        let mut size = state.puzzle.fills().render_size(area, &state.render.grid);
+
+        // Border aroudn puzzle grid
+        size.width += 2;
+        size.height += 2;
+
+        size
     }
 
     fn on_command(
@@ -57,7 +76,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
                 match handle_grid_command(
                     command,
                     resolver,
-                    &mut state.render,
+                    &mut state.render.grid,
                     &mut state.solve.state,
                     &mut custom_state,
                 ) {
@@ -71,7 +90,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             Command::Action { action, .. } => match action {
                 Action::Click { pos, .. } => {
                     let fill = state.fill;
-                    match state.render.to_grid(pos) {
+                    match state.render.grid.to_grid(pos) {
                         Some(pos) => {
                             let entry = &state.solve.state.entries[pos];
 
@@ -85,7 +104,6 @@ impl AppWidget<NonogramApp> for NonogramWidget {
                         None => false,
                     }
                 }
-
                 _ => false,
             },
             _ => false,

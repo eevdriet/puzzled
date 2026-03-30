@@ -136,7 +136,7 @@ impl PuzzleScreenState {
                 cells,
                 self.render.options,
                 self.render.viewport,
-                &mut self.render.scroll,
+                &mut self.render.scroll_state,
             );
         }
     }

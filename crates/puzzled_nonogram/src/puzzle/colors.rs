@@ -6,7 +6,7 @@ use puzzled_core::Color;
 use crate::Fill;
 
 #[derive(Debug, Default, Clone, Deref, DerefMut)]
-pub struct Colors(pub(crate) BTreeMap<Fill, Color>);
+pub struct Colors(pub BTreeMap<Fill, Color>);
 
 impl Colors {
     pub fn new(mut colors: BTreeMap<Fill, Color>) -> Self {

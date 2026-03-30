@@ -5,16 +5,16 @@ use std::{marker::PhantomData, ops::Range};
 
 pub use options::*;
 pub use render::*;
-
-use puzzled_core::{Grid, Position};
-use ratatui::{
-    layout::{Margin, Rect, Size},
-    prelude::Buffer,
-    widgets::{StatefulWidget, Widget},
-};
 use tui_scrollview::ScrollView;
 
 use crate::{AppContext, AppTypes, CellRender, RenderSize, Widget as AppWidget, render_borders};
+
+use puzzled_core::{Grid, Position};
+use ratatui::{
+    layout::{Margin, Position as AppPosition, Rect, Size},
+    prelude::Buffer,
+    widgets::{StatefulWidget, Widget},
+};
 
 pub struct GridRefMut<'a, T>(pub &'a mut Grid<T>);
 
@@ -68,10 +68,8 @@ where
         let size = AppWidget::<A>::render_size(self as &_, root, ctx, state);
         let mut scroll_view = ScrollView::new(size);
 
-        let mut state = GridWidgetState { ctx, render: state };
-
-        scroll_view.render_stateful_widget(self as &_, Rect::from(size), &mut state);
-        scroll_view.render(root, buf, &mut state.render.scroll);
+        self.render_all(Rect::from(size), scroll_view.buf_mut(), ctx, state);
+        scroll_view.render(root, buf, &mut state.scroll_state);
     }
 
     fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
@@ -95,30 +93,35 @@ where
     }
 }
 
-pub struct GridWidgetState<'a, A: AppTypes> {
-    ctx: &'a AppContext<A>,
-    render: &'a mut GridRenderState,
-}
-
-impl<'a, A, T, C> StatefulWidget for &'a GridWidget<'a, A, T, C>
+impl<'a, A, T, C> GridWidget<'a, A, T, C>
 where
     A: AppTypes,
     T: CellRender<A, C>,
 {
-    type State = GridWidgetState<'a, A>;
-
-    fn render(self, bordered_area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let area = if state.render.options.draw_outer_borders {
-            bordered_area.inner(Margin::new(1, 1))
+    fn render_all(
+        &mut self,
+        root: Rect,
+        buf: &mut Buffer,
+        ctx: &AppContext<A>,
+        state: &mut GridRenderState,
+    ) {
+        let area = if state.options.draw_outer_borders {
+            root.inner(Margin::new(1, 1))
         } else {
-            bordered_area
+            root
         };
-        tracing::info!("Render grid @ {}", state.render.cursor);
-        tracing::trace!("Bordered area: {bordered_area:?}");
-        tracing::trace!("Area: {area:?}");
+
+        tracing::info!(
+            "Render grid @ {} ({}x{})",
+            state.cursor,
+            self.grid.rows(),
+            self.grid.cols()
+        );
+        tracing::info!("Bordered area: {area:?}");
+        tracing::info!("Area: {area:?}");
 
         // Render the grid itself
-        let opts = &state.render.options;
+        let opts = &state.options;
 
         let draw_inner = opts.draw_inner_borders;
         let cell_w = opts.cell_width;
@@ -134,10 +137,10 @@ where
                 // Draw the value at the current position in the grid
                 let pos = Position::new(row, col);
                 let cell = &self.grid[pos];
-                tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
+                tracing::info!("Drawing at {pos:?} [({x}, {y}) on screen]");
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
 
-                let cell_widget = cell.render_cell(pos, self.cell_state, state.ctx);
+                let cell_widget = cell.render_cell(pos, self.cell_state, ctx);
                 cell_widget.render(cell_area, buf);
 
                 // Draw a background for the whole cell
@@ -147,20 +150,14 @@ where
                 // Draw inner vertical border if defined
                 let col = col as u16;
 
-                if let Some(size) = state.render.options.inner_borders
+                if let Some(size) = state.options.inner_borders
                     && (col + 1).is_multiple_of(size.width)
                 {
                     if draw_inner {
                         for div_y in y..y + cell_h {
-                            tracing::trace!("\tSetting │ at ({x}, {div_y}) on screen");
-                            buf.set_stringn(
-                                x,
-                                div_y,
-                                "│",
-                                1,
-                                state.render.options.inner_border_style,
-                            );
-                            tracing::trace!("\tDone");
+                            tracing::info!("\tSetting │ at ({x}, {div_y}) on screen");
+                            buf.set_stringn(x, div_y, "│", 1, state.options.inner_border_style);
+                            tracing::info!("\tDone");
                         }
                     }
 
@@ -178,7 +175,7 @@ where
             // Draw horizontal divider
             let row = row as u16;
 
-            if let Some(size) = state.render.options.inner_borders
+            if let Some(size) = state.options.inner_borders
                 && (row + 1).is_multiple_of(size.height)
             {
                 let mut div_x = x_start;
@@ -190,33 +187,21 @@ where
                         let width = (area.right() - 1).saturating_sub(div_x).min(cell_w) as usize;
                         let text = "─".repeat(width);
 
-                        tracing::trace!(
+                        tracing::info!(
                             "\tSetting ─ at ({div_x}..{}, {y}) on screen",
                             div_x + width as u16
                         );
-                        buf.set_stringn(
-                            div_x,
-                            y,
-                            text,
-                            width,
-                            state.render.options.inner_border_style,
-                        );
-                        tracing::trace!("\tDone");
+                        buf.set_stringn(div_x, y, text, width, state.options.inner_border_style);
+                        tracing::info!("\tDone");
                     }
 
                     div_x += cell_w;
 
                     if (col + 1).is_multiple_of(size.width) {
                         if draw_inner && y < area.bottom() {
-                            tracing::trace!("\tSetting ┼ at ({div_x}, {y}) on screen");
-                            buf.set_stringn(
-                                div_x,
-                                y,
-                                "┼",
-                                1,
-                                state.render.options.inner_border_style,
-                            );
-                            tracing::trace!("\tDone");
+                            tracing::info!("\tSetting ┼ at ({div_x}, {y}) on screen");
+                            buf.set_stringn(div_x, y, "┼", 1, state.options.inner_border_style);
+                            tracing::info!("\tDone");
                         }
 
                         div_x += 1;
@@ -228,8 +213,8 @@ where
         }
 
         // Render borders
-        if state.render.options.draw_outer_borders {
-            render_borders(bordered_area, buf, state.render);
+        if state.options.draw_outer_borders {
+            render_borders(area, buf, state);
         }
     }
 }

@@ -133,7 +133,12 @@ impl ops::SubAssign<isize> for Line {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use serde::{Deserialize, Serialize};
+    use std::fmt;
+
+    use serde::{
+        Deserialize, Deserializer, Serialize,
+        de::{self, Visitor},
+    };
 
     use crate::Line;
 
@@ -151,8 +156,8 @@ mod serde_impl {
             S: serde::Serializer,
         {
             let data = match self {
-                Self::Row(row) => LineData::Row(*row),
-                Self::Col(col) => LineData::Col(*col),
+                Self::Row(row) => LineData::Row(*row + 1),
+                Self::Col(col) => LineData::Col(*col + 1),
             };
 
             data.serialize(serializer)
@@ -163,15 +168,42 @@ mod serde_impl {
     impl<'de> Deserialize<'de> for Line {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
-            D: serde::Deserializer<'de>,
+            D: Deserializer<'de>,
         {
-            let data = LineData::deserialize(deserializer)?;
-            let line = match data {
-                LineData::Row(row) => Line::Row(row),
-                LineData::Col(col) => Line::Col(col),
-            };
+            struct LineVisitor;
 
-            Ok(line)
+            impl<'de> Visitor<'de> for LineVisitor {
+                type Value = Line;
+
+                fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                    write!(f, r#"a string like "R10" or "C3""#)
+                }
+
+                fn visit_str<E>(self, v: &str) -> Result<Line, E>
+                where
+                    E: de::Error,
+                {
+                    if v.len() < 2 {
+                        return Err(E::custom("input too short"));
+                    }
+
+                    let (prefix, number_part) = v.split_at(1);
+
+                    let mut n: usize = number_part
+                        .parse()
+                        .map_err(|_| E::custom(format!("invalid number {number_part}")))?;
+
+                    n = n.saturating_sub(1);
+
+                    match prefix {
+                        "R" | "r" => Ok(Line::Row(n)),
+                        "C" | "c" => Ok(Line::Col(n)),
+                        _ => Err(E::custom("expected 'R' or 'C' prefix")),
+                    }
+                }
+            }
+
+            deserializer.deserialize_str(LineVisitor)
         }
     }
 }

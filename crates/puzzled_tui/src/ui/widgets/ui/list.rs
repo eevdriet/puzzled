@@ -57,7 +57,7 @@ impl ListRenderState for ListState {
 pub struct ListWidget<A, R> {
     // Render
     pub render: R,
-    pub _r: PhantomData<A>,
+    _marker: PhantomData<A>,
 
     // Style
     pub block: Option<Block<'static>>,
@@ -78,7 +78,7 @@ where
     pub fn new(render: R) -> Self {
         Self {
             render,
-            _r: PhantomData,
+            _marker: PhantomData,
 
             block: None,
             style: Style::default(),
