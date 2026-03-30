@@ -5,9 +5,8 @@ use ratatui::{
     layout::{Position as AppPosition, Rect, Size},
     style::Style,
 };
-use tui_scrollview::ScrollViewState;
 
-use crate::{EventMode, GridOptions, MultiSelection, ScrollWidget, Theme};
+use crate::{EventMode, GridOptions, MultiSelection, ScrollViewState, ScrollWidget, Theme};
 
 #[derive(Debug, Default, Clone)]
 pub struct GridRenderState {

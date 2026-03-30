@@ -109,6 +109,16 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         let crossword_size = self.crossword.render_size(root, ctx, &self.state);
         let clues_size = self.clues.render_size(root, ctx, &self.state);
 
+        let entry = TrieEntry::Action(Action::Cancel);
+        let pause_key = ctx.keys.get_merged_str(&entry).unwrap_or_default();
+
+        let mut footer_state = FooterState {
+            mode: self.state.render.mode,
+            timer: self.state.solve.timer,
+            pause_key,
+        };
+        let footer_size = self.footer.render_size(root, ctx, &footer_state);
+
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 
         let [area] = Layout::horizontal(vec![Constraint::Length(width)]).areas(root);
@@ -124,11 +134,10 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         ])
         .areas(area);
 
-        let footer_height = 5;
-        let clues_height = clues_size.height.min(right.height - footer_height);
+        let clues_height = clues_size.height.min(right.height - footer_size.height);
         let [clues, footer, _] = Layout::vertical(vec![
             Constraint::Length(clues_height),
-            Constraint::Length(footer_height),
+            Constraint::Length(footer_size.height),
             Constraint::Min(0),
         ])
         .areas(right);
@@ -139,20 +148,12 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         tracing::trace!("Clues: {clues:?}");
         tracing::trace!("Footer: {footer:?}");
 
-        // Render
+        // Render widgets
         self.crossword.render(crossword, buf, ctx, &mut self.state);
         self.clues.render(clues, buf, ctx, &mut self.state);
-
-        let entry = TrieEntry::Action(Action::Cancel);
-        let pause_key = ctx.keys.get_merged_str(&entry).unwrap_or_default();
-
-        let mut footer_state = FooterState {
-            mode: self.state.render.mode,
-            timer: self.state.solve.timer,
-            pause_key,
-        };
         self.footer.render(footer, buf, ctx, &mut footer_state);
 
+        // Render popups
         if let Some(popup) = self.state.popup {
             match popup {
                 PuzzlePopup::Pause => {

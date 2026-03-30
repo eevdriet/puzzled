@@ -1,7 +1,6 @@
 mod bar;
 mod state;
 
-pub use bar::*;
 pub use state::*;
 
 use ratatui::{
@@ -23,6 +22,17 @@ pub struct ScrollWidget {
 }
 
 impl ScrollWidget {
+    pub fn new(size: Size) -> Self {
+        let area = Rect::from(size);
+
+        Self {
+            buf: Buffer::empty(area),
+            size,
+            vertical_scrollbar_visibility: ScrollbarVisibility::default(),
+            horizontal_scrollbar_visibility: ScrollbarVisibility::default(),
+        }
+    }
+
     pub fn set_size(&mut self, size: Size) {
         if self.size != size {
             tracing::info!("NOPE NOEP: {} <-> {size}", self.size);
@@ -230,6 +240,10 @@ where
         _ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
+        tracing::info!("Scrollview");
+        tracing::info!("\tRender area: {area:?}");
+        tracing::info!("\tScroll buffer area: {:?}", self.buf.area());
+
         let (mut x, mut y) = state.offset.into();
         // ensure that we don't scroll past the end of the buffer in either direction
         let max_x_offset = self
@@ -252,6 +266,8 @@ where
         let visible_area = self
             .render_scrollbars(area, buf, state)
             .intersection(self.buf.area);
+
+        tracing::info!("\tVisible area: {visible_area:?}");
         self.render_visible_area(area, buf, visible_area);
     }
 

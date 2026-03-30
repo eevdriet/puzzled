@@ -22,7 +22,7 @@ async fn main() -> io::Result<()> {
     // let args = Args::parse();
     init_logging(true);
 
-    let path = puzzle_dir::<Nonogram>()?.join("ladybug.json");
+    let path = puzzle_dir::<Nonogram>()?.join("boat-trip.json");
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let puzzle: Nonogram = serde_json::from_reader(reader).map_err(io::Error::other)?;

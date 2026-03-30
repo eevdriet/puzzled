@@ -5,15 +5,16 @@ use std::{marker::PhantomData, ops::Range};
 
 pub use options::*;
 pub use render::*;
-use tui_scrollview::ScrollView;
 
-use crate::{AppContext, AppTypes, CellRender, RenderSize, Widget as AppWidget, render_borders};
+use crate::{
+    AppContext, AppTypes, CellRender, RenderSize, ScrollWidget, Widget as AppWidget, render_borders,
+};
 
 use puzzled_core::{Grid, Position};
 use ratatui::{
     layout::{Margin, Rect, Size},
     prelude::Buffer,
-    widgets::{StatefulWidget, Widget},
+    widgets::Widget,
 };
 
 pub struct GridRefMut<'a, T>(pub &'a mut Grid<T>);
@@ -66,10 +67,12 @@ where
         state.cols = self.grid.cols();
 
         let size = self.render_size(root, ctx, state);
-        let mut scroll_view = ScrollView::new(size);
+        let area = self.render_area(root, ctx, state);
+
+        let mut scroll_view = ScrollWidget::new(size);
 
         self.render_all(Rect::from(size), scroll_view.buf_mut(), ctx, state);
-        scroll_view.render(root, buf, &mut state.scroll_state);
+        scroll_view.render(area, buf, ctx, &mut state.scroll_state);
     }
 
     fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, state: &Self::State) -> Size {
@@ -146,10 +149,6 @@ where
                 // Draw a background for the whole cell
                 x += cell_w;
 
-                if x >= area.right() {
-                    break;
-                }
-
                 // Draw inner vertical border if defined
                 let col = col as u16;
 
@@ -187,7 +186,7 @@ where
                     let col = col as u16;
 
                     if draw_inner {
-                        let width = (area.right() - 1).saturating_sub(div_x).min(cell_w) as usize;
+                        let width = area.right().saturating_sub(div_x).min(cell_w) as usize;
                         let text = "─".repeat(width);
 
                         tracing::trace!(

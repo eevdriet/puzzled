@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 
 use crate::{
-    AppContext, AppTypes, LineRender, RenderSize, SidedGridRenderState, Widget as AppWidget,
-    align_vertically,
+    AppContext, AppTypes, LineRender, RenderSize, ScrollWidget, SidedGridRenderState,
+    Widget as AppWidget, align_vertically,
 };
 
 use puzzled_core::Side;
 use ratatui::{
     layout::{HorizontalAlignment, Position, VerticalAlignment},
-    prelude::{Buffer, Rect, Size, StatefulWidget, Widget},
+    prelude::{Buffer, Rect, Size, Widget},
 };
-use tui_scrollview::{ScrollView, ScrollbarVisibility};
+use tui_scrollview::ScrollbarVisibility;
 
 pub struct SideWidget<'a, A: AppTypes, U, E> {
     pub side: Side,
@@ -158,7 +158,7 @@ where
         let offset = scroll_state.offset();
 
         let mut scroll_view =
-            ScrollView::new(size).scrollbars_visibility(ScrollbarVisibility::Never);
+            ScrollWidget::new(size).scrollbars_visibility(ScrollbarVisibility::Never);
 
         if self.side.is_vertical() {
             scroll_state.set_offset(Position { y: 0, ..offset });
@@ -168,7 +168,7 @@ where
             self.render_rows(scroll_area, scroll_view.buf_mut(), state, ctx);
         }
 
-        scroll_view.render(area, buf, &mut scroll_state);
+        scroll_view.render(area, buf, ctx, &mut scroll_state);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {

@@ -89,7 +89,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let grid = solve.0.map_entries(|solution| RenderSolution { solution });
 
         let mut grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid, &cell_state);
-        AppWidget::render(&mut grid_widget, area, buf, ctx, &mut state.render);
+        grid_widget.render(area, buf, ctx, &mut state.render);
     }
 
     fn render_size(

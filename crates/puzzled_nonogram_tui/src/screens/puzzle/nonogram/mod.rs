@@ -26,6 +26,13 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         ctx: &mut AppContext<NonogramApp>,
         state: &mut Self::State,
     ) {
+        // Set the maximum display length for the rules
+        state.render.sides.top.max_len = Some(4 * root.height / 10);
+        state.render.sides.left.max_len = Some(4 * root.width / 10);
+
+        let area = self.render_area(root, ctx, state);
+
+        // Create the puzzle widget
         let PuzzleScreenState {
             puzzle,
             solve,
@@ -33,11 +40,6 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             ..
         } = state;
 
-        // Set the maximum display length for the rules
-        render.sides.top.max_len = Some(4 * root.height / 10);
-        render.sides.left.max_len = Some(4 * root.width / 10);
-
-        // Create the puzzle widget
         let render_c = render.clone();
         let (grid, sides, cell_state, line_state) = self.grid_components(puzzle, solve, &render_c);
 
@@ -46,7 +48,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         // Render
         let _title = format!("Nonogram: {}x{}", puzzle.rows(), puzzle.cols());
 
-        sided_grid_widget.render(root, buf, ctx, render);
+        sided_grid_widget.render(area, buf, ctx, render);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<NonogramApp>, state: &Self::State) -> Size {
@@ -55,13 +57,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             self.grid_components(&state.puzzle, &state.solve, &state.render);
         let sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
 
-        let mut size = sided_grid_widget.render_size(area, ctx, &state.render);
-
-        // Border aroudn puzzle grid
-        size.width += 2;
-        size.height += 2;
-
-        size
+        sided_grid_widget.render_size(area, ctx, &state.render)
     }
 
     fn on_command(
