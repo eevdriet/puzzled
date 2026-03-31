@@ -42,10 +42,10 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         let mut grid_widget_state = SidedGridWidgetState {
             grid: GridWidgetState {
                 render: &mut render.grid,
-                cell_state: puzzle.colors(),
+                cell_state: &mut puzzle.colors(),
             },
             sides: &mut render.sides,
-            edge_state: RenderRuleState {
+            edge_state: &mut RenderRuleState {
                 colors: puzzle.colors(),
                 is_active_rule: false,
             },
@@ -67,10 +67,10 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         let mut grid_widget_state = SidedGridWidgetState {
             grid: GridWidgetState {
                 render: &mut state.render.grid,
-                cell_state: state.puzzle.colors(),
+                cell_state: &mut state.puzzle.colors(),
             },
             sides: &mut state.render.sides,
-            edge_state: RenderRuleState {
+            edge_state: &mut RenderRuleState {
                 colors: state.puzzle.colors(),
                 is_active_rule: false,
             },

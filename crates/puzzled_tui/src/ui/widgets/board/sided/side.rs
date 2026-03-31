@@ -63,7 +63,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::info!("Col {col}");
 
             // Determine the area to render the value in
-            let height = edge.height(area, ctx, &render_state, &state.edge_state);
+            let height = edge.height(area, ctx, &render_state, state.edge_state);
             let (text_y, text_h) = align_vertically(height, top, bottom, alignment);
             let text_area = Rect::new(x, text_y, cell_w, text_h);
 
@@ -73,7 +73,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::info!("\tText area: {text_area:?}");
 
             // Draw the value at the current column of the side
-            edge.render_col(col, text_area, buf, ctx, &render_state, &state.edge_state);
+            edge.render_col(col, text_area, buf, ctx, &render_state, state.edge_state);
 
             // Advance y by cell height
             x += cell_w;
@@ -123,7 +123,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
         for (row, edge) in self.edges.iter().enumerate() {
             tracing::info!("Row {row}");
             // Determine the area to render the value in
-            let width = edge.width(area, ctx, &render_state, &state.edge_state);
+            let width = edge.width(area, ctx, &render_state, state.edge_state);
             let (text_x, text_w) = align_horizontally(width, left, right, alignment);
             let text_area = Rect::new(text_x, y, text_w, cell_h);
 
@@ -133,7 +133,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::info!("\tText area: {text_area:?}");
 
             // Draw the value at the current row of the side
-            edge.render_row(row, text_area, buf, ctx, &render_state, &state.edge_state);
+            edge.render_row(row, text_area, buf, ctx, &render_state, state.edge_state);
 
             // Advance y by cell height
             y += cell_h;
@@ -154,6 +154,8 @@ impl<'a, A, U, C, E> AppWidget<A> for SideWidget<'a, A, U, C, E>
 where
     A: AppTypes,
     U: EdgeRender<A, E>,
+    C: 'a,
+    E: 'a,
 {
     type State = SidedGridWidgetState<'a, C, E>;
 
@@ -197,10 +199,10 @@ where
         // Determine the maximum edge length
         for edge in self.edges.iter() {
             if self.side.is_vertical() {
-                let height = edge.height(area, ctx, &render_state, &state.edge_state);
+                let height = edge.height(area, ctx, &render_state, state.edge_state);
                 len = height.max(len);
             } else {
-                let width = edge.width(area, ctx, &render_state, &state.edge_state);
+                let width = edge.width(area, ctx, &render_state, state.edge_state);
                 len = width.max(len);
             }
         }

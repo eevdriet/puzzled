@@ -85,7 +85,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let mut grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid);
         let mut grid_state = GridWidgetState {
             render: &mut state.render,
-            cell_state: puzzle.clues(),
+            cell_state: &mut puzzle.clues(),
         };
 
         grid_widget.render(area, buf, ctx, &mut grid_state);
@@ -104,7 +104,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         let grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid);
         let mut grid_state = GridWidgetState {
             render: &mut state.render,
-            cell_state: state.puzzle.clues(),
+            cell_state: &mut state.puzzle.clues(),
         };
 
         let mut size = grid_widget.render_size(area, ctx, &mut grid_state);

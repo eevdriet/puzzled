@@ -6,9 +6,8 @@ use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
 use puzzled_core::Solve;
 use puzzled_tui::{
-    Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidgetState,
-    HandleBaseAction, SidedGridWidget, SidedGridWidgetState, Widget as AppWidget,
-    handle_grid_command,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction,
+    SidedGridWidget, SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
 
@@ -31,14 +30,11 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         let grid = solve.state.map_entries(|bit| RenderBit { bit });
 
         let mut grid = SidedGridWidget::new(&grid, &solve.valid.sides);
-        let mut grid_state = SidedGridWidgetState {
-            grid: GridWidgetState {
-                render: &mut state.render.grid,
-                cell_state: (),
-            },
-            sides: &mut state.render.sides,
-            edge_state: (),
-        };
+        let mut cell_state = ();
+        let mut edge_state = ();
+
+        let mut grid_state =
+            SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
         grid.render(area, buf, ctx, &mut grid_state);
     }
 
@@ -49,16 +45,12 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         state: &mut Self::State,
     ) -> Size {
         let grid = state.solve.state.map_entries(|bit| RenderBit { bit });
+        let mut cell_state = ();
+        let mut edge_state = ();
 
         let grid = SidedGridWidget::new(&grid, &state.solve.valid.sides);
-        let mut grid_state = SidedGridWidgetState {
-            grid: GridWidgetState {
-                render: &mut state.render.grid,
-                cell_state: (),
-            },
-            sides: &mut state.render.sides,
-            edge_state: (),
-        };
+        let mut grid_state =
+            SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
 
         grid.render_size(area, ctx, &mut grid_state)
     }

@@ -26,7 +26,13 @@ pub struct GridWidget<'a, A: AppTypes, T, C> {
 
 pub struct GridWidgetState<'a, C> {
     pub render: &'a mut GridRenderState,
-    pub cell_state: C,
+    pub cell_state: &'a mut C,
+}
+
+impl<'a, C> GridWidgetState<'a, C> {
+    pub fn new(render: &'a mut GridRenderState, cell_state: &'a mut C) -> Self {
+        Self { render, cell_state }
+    }
 }
 
 impl<'a, A: AppTypes, T, C> GridWidget<'a, A, T, C> {
@@ -43,6 +49,7 @@ impl<'a, A, T, C> AppWidget<A> for GridWidget<'a, A, T, C>
 where
     A: AppTypes,
     T: CellRender<A, C>,
+    C: 'a,
 {
     type State = GridWidgetState<'a, C>;
 
@@ -97,7 +104,7 @@ where
         let pos = state.render.cursor;
         let cell = &self.grid[pos];
 
-        cell.on_command(command, pos, ctx, state.render, &mut state.cell_state)
+        cell.on_command(command, pos, ctx, state.render, state.cell_state)
     }
 }
 
@@ -151,7 +158,7 @@ where
                 tracing::trace!("Drawing at {pos:?} [({x}, {y}) on screen]");
 
                 let cell_area = Rect::new(x, y, cell_w, cell_h);
-                cell.render_cell(pos, cell_area, buf, ctx, state.render, &state.cell_state);
+                cell.render_cell(pos, cell_area, buf, ctx, state.render, state.cell_state);
 
                 // Draw a background for the whole cell
                 x += cell_w;
