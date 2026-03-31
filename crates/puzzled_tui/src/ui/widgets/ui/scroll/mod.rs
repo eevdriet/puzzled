@@ -271,7 +271,7 @@ where
         self.render_visible_area(area, buf, visible_area);
     }
 
-    fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, _state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, _ctx: &AppContext<A>, _state: &mut Self::State) -> Size {
         self.size
     }
 }

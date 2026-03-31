@@ -1,32 +1,34 @@
 use std::marker::PhantomData;
 
 use crate::{
-    AppContext, AppTypes, LineRender, RenderSize, ScrollWidget, SidedGridRenderState,
-    Widget as AppWidget, align_vertically,
+    AppContext, AppTypes, EdgeRender, ScrollWidget, SideRenderState, SidedGridWidgetState,
+    Widget as AppWidget, align_horizontally, align_vertically,
 };
 
 use puzzled_core::Side;
 use ratatui::{
     layout::{HorizontalAlignment, Position, VerticalAlignment},
-    prelude::{Buffer, Rect, Size, Widget},
+    prelude::{Buffer, Rect, Size},
 };
 use tui_scrollview::ScrollbarVisibility;
 
-pub struct SideWidget<'a, A: AppTypes, U, E> {
+pub struct SideWidget<'a, A: AppTypes, U, C, E> {
     pub side: Side,
     pub edges: &'a Vec<U>,
-    pub edge_state: &'a E,
 
-    _marker: PhantomData<A>,
+    _app: PhantomData<A>,
+    _cell: PhantomData<C>,
+    _edge: PhantomData<E>,
 }
 
-impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
-    pub fn new(side: Side, edges: &'a Vec<U>, edge_state: &'a E) -> Self {
+impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
+    pub fn new(side: Side, edges: &'a Vec<U>) -> Self {
         Self {
             side,
             edges,
-            edge_state,
-            _marker: PhantomData,
+            _app: PhantomData,
+            _cell: PhantomData,
+            _edge: PhantomData,
         }
     }
 
@@ -34,13 +36,15 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         &self,
         area: Rect,
         buf: &mut Buffer,
-        state: &SidedGridRenderState,
         ctx: &AppContext<A>,
+        state: &SidedGridWidgetState<C, E>,
     ) where
-        U: LineRender<A, E>,
+        U: EdgeRender<A, E>,
     {
-        let opts = &state.grid.options;
-        let margin = state.sides.get(self.side).margin.min(area.height);
+        let opts = &state.grid.render.options;
+        let side_state = state.sides.get(self.side);
+        let render_state = state.render_state();
+        let margin = side_state.margin.min(area.height);
 
         let (alignment, top, bottom) = match self.side {
             Side::Top => (
@@ -56,16 +60,20 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         let cell_w = opts.cell_width;
 
         for (col, edge) in self.edges.iter().enumerate() {
-            // Draw the value at the current row of the side
-            let text = edge
-                .render_col(col, self.edge_state, ctx)
-                .alignment(opts.h_align);
+            tracing::info!("Col {col}");
 
             // Determine the area to render the value in
-            let (text_y, text_h) = align_vertically(text.height() as u16, top, bottom, alignment);
+            let height = edge.height(area, ctx, &render_state, &state.edge_state);
+            let (text_y, text_h) = align_vertically(height, top, bottom, alignment);
             let text_area = Rect::new(x, text_y, cell_w, text_h);
 
-            text.render(text_area, buf);
+            tracing::info!("\tEdge height: {height}");
+            tracing::info!("\tText x/y: ({x}, {text_y})");
+            tracing::info!("\tText height: {text_h}");
+            tracing::info!("\tText area: {text_area:?}");
+
+            // Draw the value at the current column of the side
+            edge.render_col(col, text_area, buf, ctx, &render_state, &state.edge_state);
 
             // Advance y by cell height
             x += cell_w;
@@ -85,13 +93,15 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         &self,
         area: Rect,
         buf: &mut Buffer,
-        state: &SidedGridRenderState,
         ctx: &AppContext<A>,
+        state: &SidedGridWidgetState<C, E>,
     ) where
-        U: LineRender<A, E>,
+        U: EdgeRender<A, E>,
     {
-        let opts = &state.grid.options;
-        let margin = state.sides.get(self.side).margin.min(area.width);
+        let opts = &state.grid.render.options;
+        let side_state = state.sides.get(self.side);
+        let render_state = state.render_state();
+        let margin = side_state.margin.min(area.width);
 
         let (alignment, left, right) = match self.side {
             Side::Left => (
@@ -111,17 +121,19 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
         let cell_h = opts.cell_height;
 
         for (row, edge) in self.edges.iter().enumerate() {
-            // Draw the value at the current row of the side
-            let text = edge
-                .render_row(row, self.edge_state, ctx)
-                .alignment(alignment);
-
+            tracing::info!("Row {row}");
             // Determine the area to render the value in
-            let (text_y, text_h) =
-                align_vertically(text.height() as u16, y, y + cell_h, opts.v_align);
-            let text_area = Rect::new(left, text_y, right - left, text_h);
+            let width = edge.width(area, ctx, &render_state, &state.edge_state);
+            let (text_x, text_w) = align_horizontally(width, left, right, alignment);
+            let text_area = Rect::new(text_x, y, text_w, cell_h);
 
-            text.render(text_area, buf);
+            tracing::info!("\tEdge width: {width}");
+            tracing::info!("\tText x/y: ({text_x}, {y})");
+            tracing::info!("\tText width: {text_w}");
+            tracing::info!("\tText area: {text_area:?}");
+
+            // Draw the value at the current row of the side
+            edge.render_row(row, text_area, buf, ctx, &render_state, &state.edge_state);
 
             // Advance y by cell height
             y += cell_h;
@@ -138,12 +150,12 @@ impl<'a, A: AppTypes, U, E> SideWidget<'a, A, U, E> {
     }
 }
 
-impl<'a, A, U, E> AppWidget<A> for SideWidget<'a, A, U, E>
+impl<'a, A, U, C, E> AppWidget<A> for SideWidget<'a, A, U, C, E>
 where
     A: AppTypes,
-    U: LineRender<A, E>,
+    U: EdgeRender<A, E>,
 {
-    type State = SidedGridRenderState;
+    type State = SidedGridWidgetState<'a, C, E>;
 
     fn render(
         &mut self,
@@ -152,9 +164,12 @@ where
         ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
+        let side_state = state.sides.get_mut(self.side);
+        side_state.viewport = area;
+
         let size = self.render_size(area, ctx, state);
         let scroll_area = Rect::from(size);
-        let mut scroll_state = state.grid.scroll_state;
+        let mut scroll_state = state.grid.render.scroll_state;
         let offset = scroll_state.offset();
 
         let mut scroll_view =
@@ -162,42 +177,32 @@ where
 
         if self.side.is_vertical() {
             scroll_state.set_offset(Position { y: 0, ..offset });
-            self.render_cols(scroll_area, scroll_view.buf_mut(), state, ctx);
+            self.render_cols(scroll_area, scroll_view.buf_mut(), ctx, state);
         } else {
             scroll_state.set_offset(Position { x: 0, ..offset });
-            self.render_rows(scroll_area, scroll_view.buf_mut(), state, ctx);
+            self.render_rows(scroll_area, scroll_view.buf_mut(), ctx, state);
         }
 
         scroll_view.render(area, buf, ctx, &mut scroll_state);
     }
 
-    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
         let mut len = 0;
-        let opts = &state.grid.options;
+        let render_state = state.render_state();
+        let opts = &state.grid.render.options;
 
         let cell_w = opts.cell_width;
         let cell_h = opts.cell_height;
 
         // Determine the maximum edge length
-        let mut max_edge_len = |idx: usize, edge: &U| {
-            // Render the edge and compute its size
-            let edge_text = if self.side.is_vertical() {
-                edge.render_col(idx, self.edge_state, ctx)
-            } else {
-                edge.render_row(idx, self.edge_state, ctx)
-            };
-            let edge_size = edge_text.render_size(area, &());
-
-            // Add the edge size to the total size
+        for edge in self.edges.iter() {
             if self.side.is_vertical() {
-                len = edge_size.height.max(len);
+                let height = edge.height(area, ctx, &render_state, &state.edge_state);
+                len = height.max(len);
             } else {
-                len = edge_size.width.max(len);
+                let width = edge.width(area, ctx, &render_state, &state.edge_state);
+                len = width.max(len);
             }
-        };
-
-        for (idx, edge) in self.edges.iter().enumerate() {
-            max_edge_len(idx, edge);
         }
 
         // Construct the side size from the cell dimensions
@@ -217,7 +222,9 @@ where
         };
 
         // Add side margin
-        let margin = state.sides.get(self.side).margin;
+        let SideRenderState {
+            margin, max_len, ..
+        } = state.sides.get(self.side);
 
         if self.side.is_vertical() {
             size.height += margin;
@@ -226,13 +233,11 @@ where
         }
 
         // Apply the maximum allowed width and height
-        let side_state = state.sides.get(self.side);
-
-        if let Some(max_len) = side_state.max_len {
+        if let Some(max_len) = max_len {
             if self.side.is_vertical() {
-                size.height = size.height.min(max_len);
+                size.height = size.height.min(*max_len);
             } else {
-                size.width = size.width.min(max_len);
+                size.width = size.width.min(*max_len);
             }
         }
 

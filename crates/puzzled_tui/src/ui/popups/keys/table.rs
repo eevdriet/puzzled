@@ -99,7 +99,7 @@ impl<'a, A: AppTypes> AppWidget<A> for KeysTablePopup<'a, A> {
         StatefulWidget::render(table, table_area, buf, &mut state.table);
     }
 
-    fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
         let (rows, widths) = self.rows_and_widths(&ctx.keys, state, &ctx.theme);
 
         let width = widths.total() as u16 + 2 + 4;

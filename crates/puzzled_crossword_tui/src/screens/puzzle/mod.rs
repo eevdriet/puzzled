@@ -106,8 +106,8 @@ impl Screen<CrosswordApp> for PuzzleScreen {
         // Compute sizes
         let gap = 2;
 
-        let crossword_size = self.crossword.render_size(root, ctx, &self.state);
-        let clues_size = self.clues.render_size(root, ctx, &self.state);
+        let crossword_size = self.crossword.render_size(root, ctx, &mut self.state);
+        let clues_size = self.clues.render_size(root, ctx, &mut self.state);
 
         let entry = TrieEntry::Action(Action::Cancel);
         let pause_key = ctx.keys.get_merged_str(&entry).unwrap_or_default();
@@ -117,7 +117,7 @@ impl Screen<CrosswordApp> for PuzzleScreen {
             timer: self.state.solve.timer,
             pause_key,
         };
-        let footer_size = self.footer.render_size(root, ctx, &footer_state);
+        let footer_size = self.footer.render_size(root, ctx, &mut footer_state);
 
         let width = (crossword_size.width + gap + clues_size.width).min(root.width);
 

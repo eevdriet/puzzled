@@ -4,7 +4,8 @@ use puzzled_crossword::{ClueDirection, Clues, Solution};
 use puzzled_tui::{AppContext, CellRender, GridRenderState, TextBlock, Theme, ThemeStyled};
 
 use ratatui::{
-    layout::HorizontalAlignment,
+    buffer::Buffer,
+    layout::{HorizontalAlignment, Rect},
     style::{Style, Stylize},
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
@@ -23,18 +24,16 @@ impl<'a> ThemeStyled for RenderSolution<'a> {
     }
 }
 
-pub struct RenderSquareState<'a> {
-    pub clues: &'a Clues,
-    pub render: &'a GridRenderState,
-}
-
-impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<RenderSolution<'a>>> {
+impl<'a> CellRender<CrosswordApp, &Clues> for Square<Entry<RenderSolution<'a>>> {
     fn render_cell(
         &self,
         pos: Position,
-        state: &RenderSquareState,
+        area: Rect,
+        buf: &mut Buffer,
         ctx: &AppContext<CrosswordApp>,
-    ) -> impl Widget {
+        state: &GridRenderState,
+        clues: &&Clues,
+    ) {
         // Determine the base styles
         let palette = &ctx.theme.palette;
         let base = self.theme_style(&ctx.theme);
@@ -44,10 +43,10 @@ impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<Render
         let clue_style = text_style;
 
         // Style the cells that cover the clues at the cursor position
-        if !state.render.mode.is_visual()
-            && let Some((across, down)) = state.clues.get_clues(state.render.cursor)
+        if !state.mode.is_visual()
+            && let Some((across, down)) = clues.get_clues(state.cursor)
         {
-            let clue_dir = ClueDirection::from(state.render.direction);
+            let clue_dir = ClueDirection::from(state.direction);
             let active_clue_style = border_style.fg(palette.cyan).bold();
             let alt_clue_style = base;
 
@@ -65,7 +64,7 @@ impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<Render
         }
 
         // Apply general cell styling
-        let cell_style = state.render.cell_style(pos, &ctx.theme);
+        let cell_style = state.cell_style(pos, &ctx.theme);
         border_style = border_style.patch(cell_style);
 
         // Display the first letter of the solution
@@ -83,7 +82,7 @@ impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<Render
             .border_style(border_style)
             .border_type(BorderType::Rounded);
 
-        if let Some(num) = state.clues.get_num(pos) {
+        if let Some(num) = clues.get_num(pos) {
             block = block
                 .title(num.to_string())
                 .title_style(clue_style)
@@ -97,8 +96,9 @@ impl<'a> CellRender<CrosswordApp, RenderSquareState<'a>> for Square<Entry<Render
         TextBlock {
             text,
             block,
-            h_align: state.render.options.h_align,
-            v_align: state.render.options.v_align,
+            h_align: state.options.h_align,
+            v_align: state.options.v_align,
         }
+        .render(area, buf);
     }
 }

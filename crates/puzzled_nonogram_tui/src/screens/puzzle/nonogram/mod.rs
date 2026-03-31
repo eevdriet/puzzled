@@ -7,12 +7,12 @@ pub(crate) use render::*;
 
 use puzzled_core::{Entry, Grid, Side, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, HandleBaseAction, SidedGridRenderState, SidedGridWidget,
-    Widget as AppWidget, handle_grid_command,
+    Action, AppContext, Command, GridWidgetState, HandleBaseAction, SidedGridWidget,
+    SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
 
-use crate::{NonogramApp, PuzzleScreenState};
+use crate::{NonogramApp, PuzzleScreenState, RenderRule, RenderRuleState};
 
 pub struct NonogramWidget;
 
@@ -26,10 +26,6 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         ctx: &mut AppContext<NonogramApp>,
         state: &mut Self::State,
     ) {
-        // Set the maximum display length for the rules
-        state.render.sides.top.max_len = Some(4 * root.height / 10);
-        state.render.sides.left.max_len = Some(4 * root.width / 10);
-
         let area = self.render_area(root, ctx, state);
 
         // Create the puzzle widget
@@ -40,24 +36,47 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             ..
         } = state;
 
-        let render_c = render.clone();
-        let (grid, sides, cell_state, line_state) = self.grid_components(puzzle, solve, &render_c);
+        let (grid, sides) = self.grid_components(puzzle, solve);
 
-        let mut sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
+        let mut grid_widget = SidedGridWidget::new(&grid, &sides);
+        let mut grid_widget_state = SidedGridWidgetState {
+            grid: GridWidgetState {
+                render: &mut render.grid,
+                cell_state: puzzle.colors(),
+            },
+            sides: &mut render.sides,
+            edge_state: RenderRuleState {
+                colors: puzzle.colors(),
+                is_active_rule: false,
+            },
+        };
 
         // Render
-        let _title = format!("Nonogram: {}x{}", puzzle.rows(), puzzle.cols());
-
-        sided_grid_widget.render(area, buf, ctx, render);
+        grid_widget.render(area, buf, ctx, &mut grid_widget_state);
     }
 
-    fn render_size(&self, area: Rect, ctx: &AppContext<NonogramApp>, state: &Self::State) -> Size {
+    fn render_size(
+        &self,
+        area: Rect,
+        ctx: &AppContext<NonogramApp>,
+        state: &mut Self::State,
+    ) -> Size {
         // Sided grid size
-        let (grid, sides, cell_state, line_state) =
-            self.grid_components(&state.puzzle, &state.solve, &state.render);
-        let sided_grid_widget = SidedGridWidget::new(&grid, &sides, &cell_state, &line_state);
+        let (grid, sides) = self.grid_components(&state.puzzle, &state.solve);
+        let sided_grid_widget = SidedGridWidget::new(&grid, &sides);
+        let mut grid_widget_state = SidedGridWidgetState {
+            grid: GridWidgetState {
+                render: &mut state.render.grid,
+                cell_state: state.puzzle.colors(),
+            },
+            sides: &mut state.render.sides,
+            edge_state: RenderRuleState {
+                colors: state.puzzle.colors(),
+                is_active_rule: false,
+            },
+        };
 
-        sided_grid_widget.render_size(area, ctx, &state.render)
+        sided_grid_widget.render_size(area, ctx, &mut grid_widget_state)
     }
 
     fn on_command(
@@ -116,8 +135,6 @@ impl AppWidget<NonogramApp> for NonogramWidget {
 type Components<'a> = (
     Grid<Entry<RenderFill<'a>>>,
     HashMap<Side, Vec<RenderRule<'a>>>,
-    RenderFillState<'a>,
-    RenderRuleState<'a>,
 );
 
 impl NonogramWidget {
@@ -125,19 +142,9 @@ impl NonogramWidget {
         &'a self,
         puzzle: &'a Nonogram,
         solve: &'a NonogramState,
-        render: &'a SidedGridRenderState,
     ) -> Components<'a> {
         // Create grid widget
         let grid = solve.state.map_entries(|fill| RenderFill { fill });
-
-        let cell_state = RenderFillState {
-            colors: puzzle.colors(),
-            render: &render.grid,
-        };
-        let line_state = RenderRuleState {
-            colors: puzzle.colors(),
-            render: &render.sides,
-        };
 
         let rules = puzzle.rules();
         let sides: HashMap<Side, Vec<RenderRule>> = HashMap::from([
@@ -157,6 +164,6 @@ impl NonogramWidget {
             ),
         ]);
 
-        (grid, sides, cell_state, line_state)
+        (grid, sides)
     }
 }

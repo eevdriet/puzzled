@@ -199,7 +199,7 @@ where
         state.set(list_state);
     }
 
-    fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+    fn render_size(&self, _area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
         let items = self.render.render_items(ctx, state);
 
         items.fold(Size::ZERO, |mut size, item| {

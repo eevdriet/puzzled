@@ -8,22 +8,78 @@ pub use grid::*;
 pub use sided::*;
 pub use viewport::*;
 
-use puzzled_core::Position;
-use ratatui::{
-    prelude::{Buffer, Rect},
-    text::Text,
-    widgets::Widget,
-};
+use puzzled_core::{Line, Position};
+use ratatui::prelude::{Buffer, Rect};
 
-use crate::{AppContext, AppTypes};
+use crate::{AppCommand, AppContext, AppTypes};
 
-pub trait CellRender<A: AppTypes, S> {
-    fn render_cell(&self, pos: Position, state: &S, ctx: &AppContext<A>) -> impl Widget;
+pub trait CellRender<A: AppTypes, C> {
+    fn render_cell(
+        &self,
+        pos: Position,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &AppContext<A>,
+        render: &GridRenderState,
+        state: &C,
+    );
+
+    fn on_command(
+        &self,
+        _command: AppCommand<A>,
+        _pos: Position,
+        _ctx: &mut AppContext<A>,
+        _render: &mut GridRenderState,
+        _state: &mut C,
+    ) -> bool {
+        false
+    }
 }
-pub trait LineRender<A: AppTypes, S> {
-    fn render_row(&self, row: usize, state: &S, ctx: &AppContext<A>) -> Text<'_>;
+pub trait EdgeRender<A: AppTypes, E> {
+    fn render_row(
+        &self,
+        row: usize,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &AppContext<A>,
+        render: &SidedGridRenderState,
+        state: &E,
+    );
+    fn render_col(
+        &self,
+        col: usize,
+        area: Rect,
+        buf: &mut Buffer,
+        ctx: &AppContext<A>,
+        render: &SidedGridRenderState,
+        state: &E,
+    );
 
-    fn render_col(&self, col: usize, state: &S, ctx: &AppContext<A>) -> Text<'_>;
+    fn height(
+        &self,
+        area: Rect,
+        ctx: &AppContext<A>,
+        render: &SidedGridRenderState,
+        state: &E,
+    ) -> u16;
+
+    fn width(
+        &self,
+        area: Rect,
+        ctx: &AppContext<A>,
+        render: &SidedGridRenderState,
+        state: &E,
+    ) -> u16;
+
+    fn on_command(
+        &mut self,
+        _command: AppCommand<A>,
+        _line: Line,
+        _ctx: &mut AppContext<A>,
+        _state: &mut E,
+    ) -> bool {
+        false
+    }
 }
 
 pub fn render_borders(area: Rect, buf: &mut Buffer, state: &GridRenderState) {

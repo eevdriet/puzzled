@@ -99,6 +99,20 @@ impl Rule {
         }
     }
 
+    pub fn display_len(&self) -> usize {
+        let mut len = 0;
+
+        for (idx, run) in self.runs().iter().enumerate() {
+            if idx > 0 {
+                len += 1;
+            }
+
+            len += run.count.to_string().len();
+        }
+
+        len
+    }
+
     pub fn min_run(&self, pos: usize) -> usize {
         let run_pos = match self.prefix_lens.binary_search(&pos) {
             Ok(pos) => pos,

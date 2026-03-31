@@ -56,7 +56,7 @@ impl AppWidget<CrosswordApp> for FooterWidget {
         &self,
         area: Rect,
         _ctx: &AppContext<CrosswordApp>,
-        _state: &Self::State,
+        _state: &mut Self::State,
     ) -> Size {
         Size::new(area.width, 3)
     }

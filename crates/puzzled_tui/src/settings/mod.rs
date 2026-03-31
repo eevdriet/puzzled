@@ -32,7 +32,7 @@ impl<A: AppTypes> Settings<A> {
         let keys = EventTrie::<A>::load()?;
 
         let options = Options::load::<A::Puzzle>()?;
-        let theme = Theme::from_palette(Palette::SOLARIZED);
+        let theme = Theme::from_palette(Palette::default());
 
         Ok(Self {
             keys,

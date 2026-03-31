@@ -30,11 +30,11 @@ pub trait Widget<A: AppTypes> {
         state: &mut Self::State,
     );
 
-    fn render_size(&self, area: Rect, _ctx: &AppContext<A>, _state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, _ctx: &AppContext<A>, _state: &mut Self::State) -> Size {
         area.as_size()
     }
 
-    fn render_area(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Rect {
+    fn render_area(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Rect {
         center_area(area, self.render_size(area, ctx, state))
     }
 

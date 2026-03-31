@@ -47,7 +47,7 @@ impl<A: AppTypes> AppWidget<A> for KeysListPopup<A> {
         self.list.render(inner, buf, ctx, state);
     }
 
-    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &Self::State) -> Size {
+    fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
         let mut size = self.list.render_size(area, ctx, state);
 
         size.width += 10;

@@ -6,8 +6,9 @@ use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::Bit;
 use puzzled_core::Solve;
 use puzzled_tui::{
-    Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction, RenderSize,
-    SidedGridWidget, Widget as AppWidget, handle_grid_command,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidgetState,
+    HandleBaseAction, SidedGridWidget, SidedGridWidgetState, Widget as AppWidget,
+    handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
 
@@ -25,26 +26,41 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         ctx: &mut AppContext<BinarioApp>,
         state: &mut Self::State,
     ) {
-        let PuzzleScreenState { solve, render, .. } = state;
-
-        let render_c = render.clone();
+        let PuzzleScreenState { solve, .. } = state;
 
         let grid = solve.state.map_entries(|bit| RenderBit { bit });
 
-        let mut sided_grid_widget =
-            SidedGridWidget::new(&grid, &solve.valid.sides, &render_c.grid, &render_c.sides);
-
-        AppWidget::<BinarioApp>::render(&mut sided_grid_widget, area, buf, ctx, &mut state.render);
+        let mut grid = SidedGridWidget::new(&grid, &solve.valid.sides);
+        let mut grid_state = SidedGridWidgetState {
+            grid: GridWidgetState {
+                render: &mut state.render.grid,
+                cell_state: (),
+            },
+            sides: &mut state.render.sides,
+            edge_state: (),
+        };
+        grid.render(area, buf, ctx, &mut grid_state);
     }
 
-    fn render_size(&self, area: Rect, _ctx: &AppContext<BinarioApp>, state: &Self::State) -> Size {
-        let mut size = state.puzzle.cells().render_size(area, &state.render.grid);
+    fn render_size(
+        &self,
+        area: Rect,
+        ctx: &AppContext<BinarioApp>,
+        state: &mut Self::State,
+    ) -> Size {
+        let grid = state.solve.state.map_entries(|bit| RenderBit { bit });
 
-        // Border around puzzle grid
-        size.width += 2;
-        size.height += 2;
+        let grid = SidedGridWidget::new(&grid, &state.solve.valid.sides);
+        let mut grid_state = SidedGridWidgetState {
+            grid: GridWidgetState {
+                render: &mut state.render.grid,
+                cell_state: (),
+            },
+            sides: &mut state.render.sides,
+            edge_state: (),
+        };
 
-        size
+        grid.render_size(area, ctx, &mut grid_state)
     }
 
     fn on_command(

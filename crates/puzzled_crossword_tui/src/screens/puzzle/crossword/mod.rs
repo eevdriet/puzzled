@@ -8,8 +8,8 @@ pub(crate) use render::*;
 use puzzled_core::{Direction, Puzzle, Solve};
 use puzzled_crossword::{ClueDirection, Crossword, Solution};
 use puzzled_tui::{
-    Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidget, HandleBaseAction,
-    RenderSize, Widget as AppWidget, handle_square_grid_command,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, GridWidget, GridWidgetState,
+    HandleBaseAction, RenderSize, Widget as AppWidget, handle_square_grid_command,
 };
 
 use ratatui::{
@@ -80,29 +80,34 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
         // Set up the squares grid
         render.viewport = grid_area;
 
-        let render_c = render.clone();
-        let cell_state = RenderSquareState {
-            clues: puzzle.clues(),
-            render: &render_c,
-        };
-
         let grid = solve.0.map_entries(|solution| RenderSolution { solution });
 
-        let mut grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid, &cell_state);
-        grid_widget.render(area, buf, ctx, &mut state.render);
+        let mut grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid);
+        let mut grid_state = GridWidgetState {
+            render: &mut state.render,
+            cell_state: puzzle.clues(),
+        };
+
+        grid_widget.render(area, buf, ctx, &mut grid_state);
     }
 
     fn render_size(
         &self,
         area: Rect,
-        _ctx: &AppContext<CrosswordApp>,
-        state: &Self::State,
+        ctx: &AppContext<CrosswordApp>,
+        state: &mut Self::State,
     ) -> Size {
-        let mut size = state.puzzle.squares().render_size(area, &state.render);
+        let grid = state
+            .solve
+            .0
+            .map_entries(|solution| RenderSolution { solution });
+        let grid_widget = GridWidget::<CrosswordApp, _, _>::new(&grid);
+        let mut grid_state = GridWidgetState {
+            render: &mut state.render,
+            cell_state: state.puzzle.clues(),
+        };
 
-        // Border around puzzle grid
-        size.width += 2;
-        size.height += 2;
+        let mut size = grid_widget.render_size(area, ctx, &mut grid_state);
 
         // Current clue
         size.height += 2;

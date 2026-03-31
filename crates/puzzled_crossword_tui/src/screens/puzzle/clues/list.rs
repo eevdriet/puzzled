@@ -38,7 +38,12 @@ impl AppWidget<CrosswordApp> for CluesListWidget {
         self.list.render(area, buf, ctx, state);
     }
 
-    fn render_size(&self, area: Rect, ctx: &AppContext<CrosswordApp>, state: &Self::State) -> Size {
+    fn render_size(
+        &self,
+        area: Rect,
+        ctx: &AppContext<CrosswordApp>,
+        state: &mut Self::State,
+    ) -> Size {
         self.list.render_size(area, ctx, state)
     }
 

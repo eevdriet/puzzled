@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use puzzled_core::{Direction, Position};
 use ratatui::{
-    layout::{Position as AppPosition, Rect, Size},
+    layout::{Offset, Position as AppPosition, Rect, Size},
     style::Style,
 };
 
@@ -135,30 +135,48 @@ impl GridRenderState {
         vp.contains(app_pos).then_some(app_pos)
     }
 
-    pub fn visible_rows(&self, rows: usize) -> Range<usize> {
-        let vp = &self.viewport;
-        let offset = self.scroll_state.offset();
+    pub fn visible_ranges(&self) -> (Range<usize>, Range<usize>) {
+        let AppPosition {
+            x: offset_x,
+            y: offset_y,
+        } = self.scroll_state.offset();
+        let cell_w = self.options.cell_width;
+        let cell_h = self.options.cell_height;
 
-        let top_left = offset;
-        let start = self.without_border_pos(top_left);
+        // Starting indices
+        let start_col = (offset_x / cell_w) as usize;
+        let start_row = (offset_y / cell_h) as usize;
 
-        let bottom_right = AppPosition::new(top_left.x + vp.width - 1, top_left.y + vp.height - 1);
-        let end = self.without_border_pos(bottom_right);
+        // How many cells fit in the viewport
+        let visible_cols = (self.viewport.width as f64 / cell_w as f64).ceil() as usize;
+        let visible_rows = (self.viewport.height as f64 / cell_h as f64).ceil() as usize;
 
-        start.row..end.row.min(rows)
+        // End indices (clamped to grid maxima)
+        let end_col = (start_col + visible_cols).min(self.cols);
+        let end_row = (start_row + visible_rows).min(self.rows);
+
+        (start_row..end_row, start_col..end_col)
     }
 
-    pub fn visible_cols(&self, cols: usize) -> Range<usize> {
-        let vp = &self.viewport;
-        let offset = self.scroll_state.offset();
+    pub fn visible_ranges2(&self) -> (Range<usize>, Range<usize>) {
+        let start = self.scroll_state.offset();
 
-        let top_left = offset;
-        let start = self.without_border_pos(top_left);
+        // Starting indices
+        let Position {
+            col: start_col,
+            row: start_row,
+        } = self.without_border_pos(start);
 
-        let bottom_right = AppPosition::new(top_left.x + vp.width - 1, top_left.y + vp.height - 1);
-        let end = self.without_border_pos(bottom_right);
+        // How many cells fit in the viewport
+        let offset = Offset::new(self.viewport.width as i32, self.viewport.height as i32);
+        let end = start + offset;
 
-        start.col..end.col.min(cols)
+        let Position {
+            col: end_col,
+            row: end_row,
+        } = self.without_border_pos(end);
+
+        (start_row..end_row, start_col..end_col)
     }
 
     pub fn cell_style(&self, pos: Position, theme: &Theme) -> Style {

@@ -1,31 +1,40 @@
-use puzzled_core::{Direction, Side};
+use puzzled_core::{Direction, Position, Side};
+use ratatui::layout::Rect;
 use tui_scrollview::ScrollViewState;
 
+use crate::Selection;
+
 #[derive(Debug, Clone, Copy, Default)]
-pub struct SideRenderState {
+pub struct SideRenderState<E = ()> {
+    pub edge_state: E,
+
     pub margin: u16,
     pub direction: Direction,
     pub max_len: Option<u16>,
+
+    pub selection: Selection,
+    pub cursor: Position,
+    pub viewport: Rect,
 
     pub scroll: ScrollViewState,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct SidesRenderState {
-    pub top: SideRenderState,
-    pub right: SideRenderState,
-    pub bottom: SideRenderState,
-    pub left: SideRenderState,
+pub struct SidesRenderState<E = ()> {
+    pub top: SideRenderState<E>,
+    pub right: SideRenderState<E>,
+    pub bottom: SideRenderState<E>,
+    pub left: SideRenderState<E>,
 
     focus: Option<Direction>,
 }
 
-impl SidesRenderState {
+impl<E> SidesRenderState<E> {
     pub fn new(
-        top: SideRenderState,
-        right: SideRenderState,
-        bottom: SideRenderState,
-        left: SideRenderState,
+        top: SideRenderState<E>,
+        right: SideRenderState<E>,
+        bottom: SideRenderState<E>,
+        left: SideRenderState<E>,
     ) -> Self {
         Self {
             top,
@@ -36,49 +45,33 @@ impl SidesRenderState {
         }
     }
 
-    pub fn top(mut self, mut state: SideRenderState) -> Self {
+    pub fn top(mut self, mut state: SideRenderState<E>) -> Self {
         state.direction = Direction::Up;
         self.top = state;
 
         self
     }
 
-    pub fn right(mut self, mut state: SideRenderState) -> Self {
+    pub fn right(mut self, mut state: SideRenderState<E>) -> Self {
         state.direction = Direction::Right;
         self.right = state;
 
         self
     }
-    pub fn bottom(mut self, mut state: SideRenderState) -> Self {
+    pub fn bottom(mut self, mut state: SideRenderState<E>) -> Self {
         state.direction = Direction::Down;
         self.bottom = state;
 
         self
     }
-    pub fn left(mut self, mut state: SideRenderState) -> Self {
+    pub fn left(mut self, mut state: SideRenderState<E>) -> Self {
         state.direction = Direction::Left;
         self.left = state;
 
         self
     }
 
-    pub fn vertical(self, state: SideRenderState) -> Self {
-        self.top(state).bottom(state)
-    }
-
-    pub fn horizontal(self, state: SideRenderState) -> Self {
-        self.left(state).right(state)
-    }
-
-    pub fn upper(self, state: SideRenderState) -> Self {
-        self.top(state).left(state)
-    }
-
-    pub fn lower(self, state: SideRenderState) -> Self {
-        self.bottom(state).right(state)
-    }
-
-    pub fn get(&self, dir: Side) -> &SideRenderState {
+    pub fn get(&self, dir: Side) -> &SideRenderState<E> {
         match dir {
             Side::Top => &self.top,
             Side::Right => &self.right,
@@ -87,7 +80,7 @@ impl SidesRenderState {
         }
     }
 
-    pub fn get_mut(&mut self, side: Side) -> &mut SideRenderState {
+    pub fn get_mut(&mut self, side: Side) -> &mut SideRenderState<E> {
         match side {
             Side::Top => &mut self.top,
             Side::Right => &mut self.right,

@@ -1,10 +1,12 @@
 use puzzled_binario::Bit;
 use puzzled_core::{Entry, Position};
 use puzzled_tui::{
-    AppContext, CellRender, GridRenderState, LineRender, SidesRenderState, TextBlock, Theme,
+    AppContext, CellRender, EdgeRender, GridRenderState, SidedGridRenderState, TextBlock, Theme,
     ThemeStyled,
 };
 use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
     style::Style,
     text::Text,
     widgets::{Block, BorderType, Borders, Widget},
@@ -28,16 +30,19 @@ impl<'a> ThemeStyled for RenderBit<'a> {
     }
 }
 
-impl<'a> CellRender<BinarioApp, GridRenderState> for Entry<RenderBit<'a>> {
+impl<'a> CellRender<BinarioApp, ()> for Entry<RenderBit<'a>> {
     fn render_cell(
         &self,
         pos: Position,
-        state: &GridRenderState,
+        area: Rect,
+        buf: &mut Buffer,
         ctx: &AppContext<BinarioApp>,
-    ) -> impl Widget {
+        render: &GridRenderState,
+        _state: &(),
+    ) {
         let mut style = self.theme_style(&ctx.theme);
 
-        let cell_style = state.cell_style(pos, &ctx.theme);
+        let cell_style = render.cell_style(pos, &ctx.theme);
         style = style.patch(cell_style);
 
         let border_type = if self.is_initially_revealed() {
@@ -61,27 +66,54 @@ impl<'a> CellRender<BinarioApp, GridRenderState> for Entry<RenderBit<'a>> {
         TextBlock {
             text,
             block,
-            h_align: state.options.h_align,
-            v_align: state.options.v_align,
+            h_align: render.options.h_align,
+            v_align: render.options.v_align,
         }
+        .render(area, buf);
     }
 }
 
-impl LineRender<BinarioApp, SidesRenderState> for bool {
+impl EdgeRender<BinarioApp, ()> for bool {
     fn render_row(
         &self,
         _row: usize,
-        _state: &SidesRenderState,
+        area: Rect,
+        buf: &mut Buffer,
         _ctx: &AppContext<BinarioApp>,
-    ) -> Text<'_> {
-        Text::from("R")
+        _render: &SidedGridRenderState,
+        _state: &(),
+    ) {
+        Text::from("R").render(area, buf);
     }
     fn render_col(
         &self,
         _col: usize,
-        _state: &SidesRenderState,
+        area: Rect,
+        buf: &mut Buffer,
         _ctx: &AppContext<BinarioApp>,
-    ) -> Text<'_> {
-        Text::from("C")
+        _render: &SidedGridRenderState,
+        _state: &(),
+    ) {
+        Text::from("C").render(area, buf);
+    }
+
+    fn height(
+        &self,
+        _area: Rect,
+        _ctx: &AppContext<BinarioApp>,
+        _render: &SidedGridRenderState,
+        _state: &(),
+    ) -> u16 {
+        1
+    }
+
+    fn width(
+        &self,
+        _area: Rect,
+        _ctx: &AppContext<BinarioApp>,
+        _render: &SidedGridRenderState,
+        _state: &(),
+    ) -> u16 {
+        1
     }
 }
