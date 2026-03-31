@@ -1,10 +1,13 @@
 mod options;
 mod render;
+mod state;
 
 use std::marker::PhantomData;
 
 pub use options::*;
 pub use render::*;
+pub use state::*;
+
 use tui_scrollview::ScrollbarVisibility;
 
 use crate::{AppContext, AppTypes, CellRender, ScrollWidget, Widget as AppWidget, render_borders};
@@ -22,17 +25,6 @@ pub struct GridWidget<'a, A: AppTypes, T, C> {
 
     _app: PhantomData<A>,
     _cell: PhantomData<C>,
-}
-
-pub struct GridWidgetState<'a, C> {
-    pub render: &'a mut GridRenderState,
-    pub cell_state: &'a mut C,
-}
-
-impl<'a, C> GridWidgetState<'a, C> {
-    pub fn new(render: &'a mut GridRenderState, cell_state: &'a mut C) -> Self {
-        Self { render, cell_state }
-    }
 }
 
 impl<'a, A: AppTypes, T, C> GridWidget<'a, A, T, C> {

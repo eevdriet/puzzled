@@ -1,54 +1,19 @@
+mod render;
 mod side;
 mod state;
 
+pub use render::*;
 pub use side::*;
 pub use state::*;
 
 use std::{collections::HashMap, marker::PhantomData};
 
-use crate::{
-    AppContext, AppTypes, CellRender, EdgeRender, GridRenderState, GridWidget, GridWidgetState,
-    Widget as AppWidget,
-};
-use derive_more::Debug;
+use crate::{AppContext, AppTypes, CellRender, EdgeRender, GridWidget, Widget as AppWidget};
 use puzzled_core::{Grid, Side, SidedGrid, Sides};
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect, Size},
 };
-
-#[derive(Debug)]
-pub struct SidedGridWidgetState<'a, C, E> {
-    pub grid: GridWidgetState<'a, C>,
-    pub sides: &'a mut SidesRenderState,
-    pub edge_state: &'a mut E,
-}
-
-impl<'a, C, E> SidedGridWidgetState<'a, C, E> {
-    pub fn new(
-        render: &'a mut SidedGridRenderState,
-        cell_state: &'a mut C,
-        edge_state: &'a mut E,
-    ) -> Self {
-        Self {
-            grid: GridWidgetState::new(&mut render.grid, cell_state),
-            sides: &mut render.sides,
-            edge_state,
-        }
-    }
-
-    fn render_state(&self) -> SidedGridRenderState {
-        SidedGridRenderState {
-            grid: self.grid.render.clone(),
-            sides: *self.sides,
-        }
-    }
-}
-
-pub struct SidedGridRenderState {
-    pub grid: GridRenderState,
-    pub sides: SidesRenderState,
-}
 
 pub struct SidedGridWidget<'a, A: AppTypes, T, U, C, E> {
     pub grid: &'a Grid<T>,
