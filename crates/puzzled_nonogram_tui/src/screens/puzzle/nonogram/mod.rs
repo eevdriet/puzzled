@@ -4,9 +4,9 @@ use crossterm::event::MouseButton;
 use puzzled_nonogram::{Fill, Nonogram, NonogramState};
 pub(crate) use render::*;
 
-use puzzled_core::{Entry, Grid, Solve};
+use puzzled_core::{Entry, Grid, Side, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, GridWidgetState, HandleBaseAction, SidedGridWidget,
+    Action, AppContext, Command, GridWidgetState, HandleBaseAction, SideWidget, SidedGridWidget,
     SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
@@ -149,6 +149,37 @@ type Components<'a> = (
 );
 
 impl NonogramWidget {
+    pub fn left_width(
+        &self,
+        area: Rect,
+        ctx: &AppContext<NonogramApp>,
+        state: &mut PuzzleScreenState,
+    ) -> u16 {
+        let col_rules = state
+            .puzzle
+            .rules()
+            .iter_cols()
+            .map(|(_, rule)| RenderRule { rule })
+            .collect();
+
+        let side_widget = SideWidget::new(Side::Left, &col_rules);
+        let mut grid_widget_state = SidedGridWidgetState {
+            grid: GridWidgetState {
+                render: &mut state.render.grid,
+                cell_state: &mut state.puzzle.colors(),
+            },
+            sides: &mut state.render.sides,
+            edge_state: &mut RenderRuleState {
+                colors: state.puzzle.colors(),
+                is_active_rule: false,
+            },
+        };
+
+        side_widget
+            .render_size(area, ctx, &mut grid_widget_state)
+            .width
+    }
+
     fn grid_components<'a>(
         &'a self,
         puzzle: &'a Nonogram,

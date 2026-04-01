@@ -14,7 +14,7 @@ use puzzled_tui::{
     FocusManager, HandleMode, Screen, SidedGridRenderState, Widget as AppWidget,
 };
 use ratatui::{
-    layout::{Constraint, Layout, Size},
+    layout::{Constraint, Flex, Layout, Size},
     prelude::{Buffer, Rect},
 };
 
@@ -68,19 +68,30 @@ impl Screen<NonogramApp> for PuzzleScreen {
         );
         let rules_size = state.max_rule_size(rules_size);
 
+        let left_width = nonogram.left_width(root, ctx, state);
         let puzzle_width = puzzle_size.width.min(root.width - rules_size.width - 1);
         let puzzle_height = puzzle_size
             .height
             .min(root.height - rules_size.height - FooterWidget::HEIGHT);
 
+        // Vertical
         let [puzzle_area, row_rule_area, footer_area] = Layout::vertical([
             Constraint::Length(puzzle_height),
             Constraint::Length(rules_size.height),
             Constraint::Length(FooterWidget::HEIGHT),
         ])
+        .flex(Flex::Center)
         .areas(root);
 
-        let [puzzle_area, _, col_rule_area] = Layout::horizontal([
+        // Horizontal
+        let center_offset_width = root
+            .width
+            .saturating_sub(puzzle_width)
+            .saturating_sub(left_width)
+            / 2;
+
+        let [_, puzzle_area, _, col_rule_area] = Layout::horizontal([
+            Constraint::Length(center_offset_width),
             Constraint::Length(puzzle_width),
             Constraint::Length(1),
             Constraint::Length(rules_size.width),

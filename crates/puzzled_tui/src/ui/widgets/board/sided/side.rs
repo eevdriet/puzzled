@@ -186,13 +186,13 @@ where
 
         if self.side.is_vertical() {
             scroll_state.set_offset(Position { y: 0, ..offset });
-            self.render_cols(area, buf, ctx, state);
+            self.render_cols(scroll_area, scroll_view.buf_mut(), ctx, state);
         } else {
             scroll_state.set_offset(Position { x: 0, ..offset });
-            self.render_rows(area, buf, ctx, state);
+            self.render_rows(scroll_area, scroll_view.buf_mut(), ctx, state);
         }
 
-        // scroll_view.render(area, buf, ctx, &mut scroll_state);
+        scroll_view.render(area, buf, ctx, &mut scroll_state);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
