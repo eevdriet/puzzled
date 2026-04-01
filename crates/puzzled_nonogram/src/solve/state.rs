@@ -87,23 +87,43 @@ impl NonogramState {
         self.masks.clear();
     }
 
-    fn _set_mask(&mut self, pos: LinePosition, line_len: usize, prev: Fill, curr: Fill) {
+    fn set_mask(&mut self, pos: LinePosition, before: Option<Fill>, after: Option<Fill>) {
         // Retrieve the masks for the given line
         let line = pos.line;
         let pos = pos.pos;
+        let line_len = self.entries.line_len(line);
 
         let masks = self.masks.entry(line).or_default();
 
-        // Unset the previous fill
-        if let Some(mask) = masks.get_mut(&prev) {
+        // Unset the previous fill if one was set
+        if let Some(prev) = before
+            && let Some(mask) = masks.get_mut(&prev)
+        {
             mask.set(pos, false)
         }
 
         // Set the current fill
-        let empty_mask = bitvec![0; line_len];
-        let mask = masks.entry(curr).or_insert(empty_mask);
+        if let Some(curr) = after {
+            let empty_mask = bitvec![0; line_len];
+            let mask = masks.entry(curr).or_insert(empty_mask);
 
-        mask.set(pos, true);
+            mask.set(pos, true);
+        }
+    }
+
+    fn set_pos_masks(&mut self, pos: &Position, after: Option<Fill>) {
+        // Determine the previous entry if any was set
+        let prev = self
+            .state
+            .entries
+            .get(*pos)
+            .and_then(|entry| entry.entry())
+            .cloned();
+
+        // Update the fill mask in both lines the position crosses
+        let (row_pos, col_pos) = pos.relative();
+        self.set_mask(row_pos, prev, after);
+        self.set_mask(col_pos, prev, after);
     }
 
     pub fn validate_masks(&self, line: Line) -> LineValidation {
@@ -160,13 +180,27 @@ impl From<&Nonogram> for NonogramState {
 }
 
 impl Solve<Nonogram> for NonogramState {
+    fn enter(&mut self, pos: &Position, entry: Fill) -> bool {
+        // Update the fill masks
+        self.set_pos_masks(pos, Some(entry));
+
+        // Enter the new fill
+        self.state.enter(pos, entry)
+    }
+
+    fn clear(&mut self, pos: &Position) -> bool {
+        // Update the fill masks
+        self.set_pos_masks(pos, None);
+
+        // Clear the existing fill
+        self.state.clear(pos)
+    }
+
     delegate! {
         to self.state {
             fn solution(&self, pos: &Position) -> Option<&Fill>;
             fn entry(&self, pos: &Position) -> Option<&Fill>;
 
-            fn enter(&mut self, pos: &Position, entry: Fill) -> bool;
-            fn clear(&mut self, pos: &Position) -> bool;
             fn solve(&mut self, pos: &Position, solution: Fill) -> bool;
             fn reveal(&mut self, pos: &Position) -> bool;
             fn check(&mut self, pos: &Position) -> Option<bool>;

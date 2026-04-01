@@ -29,7 +29,7 @@ macro_rules! nonogram {
 
         // Create the colors colors
         #[allow(unused_mut)]
-        let mut colors = $crate::Colors::default();
+        let mut colors = std::collections::btree_map::BTreeMap::default();
         $(
             if let Some(fill) = $crate::fill!($color_id) {
                 let color = $crate::color!($color);
@@ -37,6 +37,7 @@ macro_rules! nonogram {
                 colors.insert(fill, color);
             }
         )*
+        let colors = $crate::Colors::new(colors);
 
         // Add metadata
         let meta = $crate::metadata!($( $meta_key : $meta_value),*);

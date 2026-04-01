@@ -1,12 +1,16 @@
 use std::{collections::BTreeMap, fmt};
 
-use derive_more::{Deref, DerefMut};
+use derive_more::Deref;
 use puzzled_core::Color;
 
 use crate::Fill;
 
-#[derive(Debug, Default, Clone, Deref, DerefMut)]
-pub struct Colors(pub BTreeMap<Fill, Color>);
+#[derive(Debug, Default, Clone, Deref)]
+pub struct Colors {
+    #[deref]
+    colors: BTreeMap<Fill, Color>,
+    fills: Vec<Fill>,
+}
 
 impl Colors {
     pub fn new(mut colors: BTreeMap<Fill, Color>) -> Self {
@@ -15,7 +19,10 @@ impl Colors {
 
         colors.entry(Fill::Cross).or_insert(black);
 
-        Self(colors)
+        // Store the fill keys separately for linear access
+        let fills: Vec<_> = colors.keys().cloned().collect();
+
+        Self { colors, fills }
     }
 
     pub fn prev(&self, fill: Fill) -> Option<Fill> {
@@ -23,7 +30,7 @@ impl Colors {
             return None;
         };
 
-        self.0.range(..fill).next_back().map(|(prev, _)| *prev)
+        self.colors.range(..fill).next_back().map(|(prev, _)| *prev)
     }
 
     pub fn next(&self, fill: Fill) -> Option<Fill> {
@@ -32,7 +39,11 @@ impl Colors {
         };
         let next = Fill::Color(id + 1);
 
-        self.0.range(next..).next().map(|(next, _)| *next)
+        self.colors.range(next..).next().map(|(next, _)| *next)
+    }
+
+    pub fn index(&self, fill: Fill) -> Option<usize> {
+        self.fills.binary_search(&fill).ok()
     }
 }
 
@@ -61,7 +72,7 @@ mod serde_impl {
         where
             S: serde::Serializer,
         {
-            self.0.serialize(serializer)
+            self.colors.serialize(serializer)
         }
     }
 
@@ -72,7 +83,7 @@ mod serde_impl {
             D: serde::Deserializer<'de>,
         {
             let colors = BTreeMap::<Fill, Color>::deserialize(deserializer)?;
-            let colors = Colors(colors);
+            let colors = Colors::new(colors);
 
             Ok(colors)
         }

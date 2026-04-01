@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use puzzled_core::{Color, Grid, Metadata};
 use puzzled_io::{
     Context,
@@ -144,7 +146,7 @@ fn read_colors(fills: &impl Fills, strings: &Strings) -> read::Result<Colors> {
 
     // Then construct the colors
     fn get_colors(ids: Vec<u32>, clues: &[ByteStr]) -> format::Result<Colors> {
-        let mut colors = Colors::default();
+        let mut colors = BTreeMap::default();
 
         for (id, color_byte_str) in ids.into_iter().zip(clues.iter()) {
             let color_str = str::from_utf8(color_byte_str.bytes(false))
@@ -156,7 +158,7 @@ fn read_colors(fills: &impl Fills, strings: &Strings) -> read::Result<Colors> {
             colors.insert(fill, color);
         }
 
-        Ok(colors)
+        Ok(Colors::new(colors))
     }
 
     let colors = get_colors(ids, clues).context("Color clues")?;

@@ -23,6 +23,7 @@ where
             Motion::Up => "Move up in the active widget",
 
             // Custom
+            Motion::Search(search) => return search.description(state),
             Motion::Custom(custom) => return custom.description(state),
             _ => return None,
         };

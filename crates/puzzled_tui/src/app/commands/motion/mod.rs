@@ -1,10 +1,12 @@
 mod behavior;
 mod description;
 mod handle;
+mod search;
 mod selection;
 
 pub use behavior::*;
 pub use handle::*;
+pub use search::*;
 pub use selection::*;
 
 use crossterm::event::MouseEvent;
@@ -41,6 +43,8 @@ pub enum Motion<M> {
     Backwards,
 
     // Word
+    Search(SearchMotion),
+
     WordEndBackwards,
     WordEndForwards,
     WordStartBackwards,

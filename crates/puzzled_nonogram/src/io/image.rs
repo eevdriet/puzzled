@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use image::{DynamicImage, Pixel, Rgba};
 use puzzled_core::{Cell, Color, Metadata};
 use puzzled_io::{
@@ -29,7 +31,7 @@ impl ImagePuzzle<NonogramState> for Nonogram {
         image: &DynamicImage,
         reader: &ImageReader,
     ) -> read::Result<(Self, NonogramState)> {
-        let mut colors = Colors::default();
+        let mut colors = BTreeMap::default();
 
         let mut read_pixel = |rgba: Rgba<u8>| {
             let [r, g, b, a] = rgba.0;
@@ -58,6 +60,7 @@ impl ImagePuzzle<NonogramState> for Nonogram {
         };
 
         let fills = reader.read_grid(image, &mut read_pixel)?;
+        let colors = Colors::new(colors);
         let metadata = Metadata::default();
 
         let nonogram = Nonogram::new(fills, colors, metadata).map_err(|err| {

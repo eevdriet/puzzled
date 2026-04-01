@@ -264,6 +264,7 @@ where
                 .collect();
             iter_positions(positions)
         }
+        _ => iter_empty(),
     };
 
     GridIndexedIter::new(iter)
