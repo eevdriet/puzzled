@@ -18,6 +18,7 @@ use ratatui::{
     prelude::Buffer,
 };
 
+pub struct GridRef<'a, T>(pub &'a Grid<T>);
 pub struct GridRefMut<'a, T>(pub &'a mut Grid<T>);
 
 pub struct GridWidget<'a, A: AppTypes, T, C> {

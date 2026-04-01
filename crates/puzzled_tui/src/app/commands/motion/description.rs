@@ -1,6 +1,6 @@
-use puzzled_core::Grid;
+use puzzled_core::SquareGridRef;
 
-use crate::{Description, Motion};
+use crate::{Description, GridRef, Motion};
 
 impl<M> Description<()> for Motion<M>
 where
@@ -32,21 +32,53 @@ where
     }
 }
 
-impl<T, M> Description<Grid<T>> for Motion<M>
+impl<T, M> Description<(Option<String>, GridRef<'_, T>)> for Motion<M>
 where
     M: Description<()>,
 {
-    fn description(&self, _state: &Grid<T>) -> Option<String> {
+    fn description(&self, (fill, _grid): &(Option<String>, GridRef<'_, T>)) -> Option<String> {
+        let fill = fill
+            .as_ref()
+            .map(|f| f.to_owned())
+            .unwrap_or("cell".to_string());
+
         let description = match self {
-            Motion::ColEnd => "Move to the last square in the column",
-            Motion::ColStart => "Move to the first square in the column",
-            Motion::Left => "Move to the square left of the cursor",
-            Motion::Right => "Move to the square right of the cursor",
-            Motion::RowEnd => "Move to the last square in the row",
-            Motion::RowStart => "Move to the first square in the row",
+            Motion::ColEnd => format!("Move to the last {fill} in the column"),
+            Motion::ColStart => format!("Move to the first {fill} in the column"),
+            Motion::Left => format!("Move to the {fill} left of the cursor"),
+            Motion::Right => format!("Move to the {fill} right of the cursor"),
+            Motion::RowEnd => format!("Move to the last {fill} in the row"),
+            Motion::RowStart => format!("Move to the first {fill} in the row"),
             motion => return motion.description(&()),
         };
 
-        Some(description.to_string())
+        Some(description)
+    }
+}
+
+impl<T, M> Description<(Option<String>, SquareGridRef<'_, T>)> for Motion<M>
+where
+    M: Description<()>,
+{
+    fn description(
+        &self,
+        (fill, _grid): &(Option<String>, SquareGridRef<'_, T>),
+    ) -> Option<String> {
+        let fill = match fill {
+            Some(fill) => format!("{fill} square"),
+            _ => "square".to_string(),
+        };
+
+        let description = match self {
+            Motion::ColEnd => format!("Move to the last {fill} in the column"),
+            Motion::ColStart => format!("Move to the first {fill} in the column"),
+            Motion::Left => format!("Move to the {fill} left of the cursor"),
+            Motion::Right => format!("Move to the {fill} right of the cursor"),
+            Motion::RowEnd => format!("Move to the last {fill} in the row"),
+            Motion::RowStart => format!("Move to the first {fill} in the row"),
+            motion => return motion.description(&()),
+        };
+
+        Some(description)
     }
 }

@@ -1,3 +1,4 @@
+mod description;
 mod footer;
 mod nonogram;
 mod rules;
@@ -11,11 +12,13 @@ pub use state::*;
 use puzzled_nonogram::{Nonogram, NonogramState};
 use puzzled_tui::{
     Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, EdgeRender, EventMode,
-    FocusManager, HandleMode, Screen, SidedGridRenderState, Widget as AppWidget,
+    FocusManager, HandleMode, Keys, KeysListPopup, KeysTablePopup, KeysTablePopupState, Popup,
+    Screen, SidedGridRenderState, Widget as AppWidget,
 };
 use ratatui::{
     layout::{Constraint, Flex, Layout, Size},
     prelude::{Buffer, Rect},
+    widgets::ListState,
 };
 
 use crate::NonogramApp;
@@ -25,6 +28,9 @@ pub struct PuzzleScreen {
 
     // Widgets
     nonogram: NonogramWidget,
+
+    // Popups
+    pause: KeysListPopup<NonogramApp>,
 }
 
 impl PuzzleScreen {
@@ -35,25 +41,39 @@ impl PuzzleScreen {
             .expect("At least one color should be present");
         let fill = *fill;
 
+        let pause_keys = Keys::default()
+            .action(Action::Quit, &())
+            .action(Action::Cancel, &());
+
+        let mut pause_state = ListState::default();
+        pause_state.select_first();
+
         let state = PuzzleScreenState {
             puzzle,
             solve,
             render,
             fill,
             focus: FocusManager::default(),
+            popup: None,
             history: ActionHistory::default(),
+            pause_keys,
+            pause_state,
+            help_state: KeysTablePopupState::default(),
         };
 
         Self {
             state,
             nonogram: NonogramWidget,
+            pause: KeysListPopup::new("Paused puzzle"),
         }
     }
 }
 
 impl Screen<NonogramApp> for PuzzleScreen {
     fn render(&mut self, root: Rect, buf: &mut Buffer, ctx: &mut AppContext<NonogramApp>) {
-        let PuzzleScreen { state, nonogram } = self;
+        let PuzzleScreen {
+            state, nonogram, ..
+        } = self;
 
         // Set the maximum display length for the rules
         state.render.sides.top.max_len = Some(4 * root.height / 10);
@@ -152,10 +172,22 @@ impl Screen<NonogramApp> for PuzzleScreen {
         };
         let mut footer = FooterWidget::new();
         footer.render(footer_area, buf, ctx, &mut footer_state);
-    }
 
-    fn on_tick(&self, _ctx: &AppContext<NonogramApp>) -> bool {
-        true
+        // Popups
+        if let Some(popup) = self.state.popup {
+            match popup {
+                PuzzlePopup::Pause => {
+                    self.pause
+                        .render_popup(root, buf, ctx, &mut self.state.pause_state);
+                }
+                PuzzlePopup::Help => {
+                    let keys = Keys::new().all(&self.state);
+                    let mut help = KeysTablePopup::new(&keys);
+
+                    help.render_popup(root, buf, ctx, &mut self.state.help_state);
+                }
+            }
+        }
     }
 
     fn on_command(
@@ -164,6 +196,26 @@ impl Screen<NonogramApp> for PuzzleScreen {
         resolver: AppResolver<NonogramApp>,
         ctx: &mut AppContext<NonogramApp>,
     ) -> bool {
+        // Handle popup commands
+        if let Some(popup) = self.state.popup {
+            match popup {
+                PuzzlePopup::Pause => {
+                    return self.pause.on_popup_command(
+                        command,
+                        resolver,
+                        ctx,
+                        &mut self.state.pause_state,
+                    );
+                }
+                PuzzlePopup::Help => {
+                    let keys = Keys::new().all(&self.state);
+                    let mut help = KeysTablePopup::new(&keys);
+
+                    return help.on_command(command, resolver, ctx, &mut self.state.help_state);
+                }
+            }
+        }
+
         let mut handled_action = false;
 
         if let Command::Action { count, action } = &command {
@@ -171,8 +223,14 @@ impl Screen<NonogramApp> for PuzzleScreen {
 
             match action {
                 // Lifetime actions
-                Action::Cancel => resolver.prev_screen(),
-                Action::ShowHelp => resolver.open_popup(),
+                Action::Cancel => {
+                    self.state.popup = Some(PuzzlePopup::Pause);
+                    resolver.open_popup();
+                }
+                Action::ShowHelp => {
+                    self.state.popup = Some(PuzzlePopup::Help);
+                    resolver.open_popup();
+                }
                 Action::Quit => resolver.quit(),
                 Action::Undo => self.state.history.undo(*count, &mut self.state.solve),
                 Action::Redo => self.state.history.redo(*count, &mut self.state.solve),
@@ -200,6 +258,10 @@ impl Screen<NonogramApp> for PuzzleScreen {
 
     fn override_mode(&self) -> Option<EventMode> {
         self.nonogram.override_mode()
+    }
+
+    fn on_popup_close(&mut self, _ctx: &mut AppContext<NonogramApp>) {
+        self.state.popup = None;
     }
 
     fn on_enter(&mut self, _ctx: &mut AppContext<NonogramApp>) {

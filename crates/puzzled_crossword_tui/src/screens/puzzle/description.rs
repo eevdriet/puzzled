@@ -1,3 +1,4 @@
+use puzzled_core::SquareGridRef;
 use puzzled_tui::{Action, Description, Motion, TextObject};
 
 use crate::{CrosswordAction, CrosswordMotion, CrosswordTextObject, Focus, PuzzleScreenState};
@@ -30,9 +31,12 @@ impl Description<PuzzleScreenState> for Action<CrosswordAction> {
 
 impl Description<PuzzleScreenState> for Motion<CrosswordMotion> {
     fn description(&self, state: &PuzzleScreenState) -> Option<String> {
+        let grid = SquareGridRef(state.puzzle.squares());
+        let desc_state = (None, grid);
+
         let description = match (self, state.focus.get()) {
             // Crossword
-            (motion, Focus::Crossword) => return motion.description(state.puzzle.squares()),
+            (motion, Focus::Crossword) => return motion.description(&desc_state),
 
             // Clues
             (Motion::ColEnd, Focus::Clues) => "Focus the last clue",

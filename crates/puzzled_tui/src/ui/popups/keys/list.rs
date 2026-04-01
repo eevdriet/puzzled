@@ -15,12 +15,15 @@ pub struct KeysListPopup<A: AppTypes> {
 }
 
 impl<A: AppTypes> KeysListPopup<A> {
-    pub fn new(title: String) -> Self {
+    pub fn new<S>(title: S) -> Self
+    where
+        S: Into<String>,
+    {
         let render = KeysListRender::default();
         let list = ListWidget::new(render);
 
         let block = Block::bordered()
-            .title(format!(" {} ", title))
+            .title(format!(" {} ", title.into()))
             .title_alignment(Alignment::Center)
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);

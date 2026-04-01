@@ -1,6 +1,8 @@
 use puzzled_nonogram::{Fill, Nonogram, NonogramState};
-use puzzled_tui::{ActionHistory, FocusManager, SidedGridRenderState};
-use ratatui::layout::Size;
+use puzzled_tui::{ActionHistory, FocusManager, Keys, KeysTablePopupState, SidedGridRenderState};
+use ratatui::{layout::Size, widgets::ListState};
+
+use crate::NonogramApp;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Focus {
@@ -11,6 +13,12 @@ pub enum Focus {
     ColRules,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum PuzzlePopup {
+    Pause,
+    Help,
+}
+
 pub struct PuzzleScreenState {
     // Nonogram state
     pub puzzle: Nonogram,
@@ -18,7 +26,15 @@ pub struct PuzzleScreenState {
     pub render: SidedGridRenderState,
 
     pub fill: Fill,
+
+    // UI state
     pub focus: FocusManager<Focus>,
+    pub popup: Option<PuzzlePopup>,
+
+    pub pause_state: ListState,
+    pub pause_keys: Keys<NonogramApp>,
+
+    pub help_state: KeysTablePopupState,
 
     // Commands
     pub history: ActionHistory<NonogramState>,
