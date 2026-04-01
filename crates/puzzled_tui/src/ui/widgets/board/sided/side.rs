@@ -41,7 +41,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
     ) where
         U: EdgeRender<A, E>,
     {
-        let opts = &state.grid.render.options;
+        let render = &state.grid.render;
         let side_state = state.sides.get(self.side);
         let render_state = state.render_state();
         let margin = side_state.margin.min(area.height);
@@ -56,21 +56,24 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             side => unreachable!("{side:?} should not render as a horizontal side"),
         };
 
-        let mut x = area.x;
-        let cell_w = opts.cell_width;
+        let offset = render.scroll_state.offset();
+        let cell_w = render.options.cell_width;
+        let (_, cols) = state.grid.render.visible_ranges();
 
-        for (col, edge) in self.edges.iter().enumerate() {
-            tracing::info!("Col {col}");
+        let mut x = area.x + offset.x;
+
+        for (col, edge) in self.edges.iter().enumerate().skip(cols.start) {
+            tracing::trace!("Col {col}");
 
             // Determine the area to render the value in
             let height = edge.height(area, ctx, &render_state, state.edge_state);
             let (text_y, text_h) = align_vertically(height, top, bottom, alignment);
             let text_area = Rect::new(x, text_y, cell_w, text_h);
 
-            tracing::info!("\tEdge height: {height}");
-            tracing::info!("\tText x/y: ({x}, {text_y})");
-            tracing::info!("\tText height: {text_h}");
-            tracing::info!("\tText area: {text_area:?}");
+            tracing::trace!("\tEdge height: {height}");
+            tracing::trace!("\tText x/y: ({x}, {text_y})");
+            tracing::trace!("\tText height: {text_h}");
+            tracing::trace!("\tText area: {text_area:?}");
 
             // Draw the value at the current column of the side
             edge.render_col(col, text_area, buf, ctx, &render_state, state.edge_state);
@@ -81,7 +84,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             // Skip over vertical divider
             let col = col as u16;
 
-            if let Some(size) = opts.inner_borders
+            if let Some(size) = render.options.inner_borders
                 && (col + 1).is_multiple_of(size.width)
             {
                 x += 1;
@@ -98,7 +101,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
     ) where
         U: EdgeRender<A, E>,
     {
-        let opts = &state.grid.render.options;
+        let render = &state.grid.render;
         let side_state = state.sides.get(self.side);
         let render_state = state.render_state();
         let margin = side_state.margin.min(area.width);
@@ -117,20 +120,23 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             side => unreachable!("{side:?} should not render as a vertical side"),
         };
 
-        let mut y = area.y;
-        let cell_h = opts.cell_height;
+        let _offset = render.scroll_state.offset();
+        let cell_h = render.options.cell_height;
+        let (_, rows) = state.grid.render.visible_ranges();
 
-        for (row, edge) in self.edges.iter().enumerate() {
-            tracing::info!("Row {row}");
+        let mut y = area.y;
+
+        for (row, edge) in self.edges.iter().enumerate().skip(rows.start) {
+            tracing::trace!("Row {row}");
             // Determine the area to render the value in
             let width = edge.width(area, ctx, &render_state, state.edge_state);
             let (text_x, text_w) = align_horizontally(width, left, right, alignment);
             let text_area = Rect::new(text_x, y, text_w, cell_h);
 
-            tracing::info!("\tEdge width: {width}");
-            tracing::info!("\tText x/y: ({text_x}, {y})");
-            tracing::info!("\tText width: {text_w}");
-            tracing::info!("\tText area: {text_area:?}");
+            tracing::trace!("\tEdge width: {width}");
+            tracing::trace!("\tText x/y: ({text_x}, {y})");
+            tracing::trace!("\tText width: {text_w}");
+            tracing::trace!("\tText area: {text_area:?}");
 
             // Draw the value at the current row of the side
             edge.render_row(row, text_area, buf, ctx, &render_state, state.edge_state);
@@ -141,7 +147,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             // Skip over horizontal divider
             let row = row as u16;
 
-            if let Some(size) = opts.inner_borders
+            if let Some(size) = render.options.inner_borders
                 && (row + 1).is_multiple_of(size.height)
             {
                 y += 1;
@@ -156,6 +162,7 @@ where
     U: EdgeRender<A, E>,
     C: 'a,
     E: 'a,
+    U: 'a,
 {
     type State = SidedGridWidgetState<'a, C, E>;
 
@@ -179,13 +186,13 @@ where
 
         if self.side.is_vertical() {
             scroll_state.set_offset(Position { y: 0, ..offset });
-            self.render_cols(scroll_area, scroll_view.buf_mut(), ctx, state);
+            self.render_cols(area, buf, ctx, state);
         } else {
             scroll_state.set_offset(Position { x: 0, ..offset });
-            self.render_rows(scroll_area, scroll_view.buf_mut(), ctx, state);
+            self.render_rows(area, buf, ctx, state);
         }
 
-        scroll_view.render(area, buf, ctx, &mut scroll_state);
+        // scroll_view.render(area, buf, ctx, &mut scroll_state);
     }
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {

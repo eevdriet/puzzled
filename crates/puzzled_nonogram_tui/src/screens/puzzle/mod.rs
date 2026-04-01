@@ -87,16 +87,16 @@ impl Screen<NonogramApp> for PuzzleScreen {
         ])
         .areas(puzzle_area);
 
-        tracing::info!("Layout");
-        tracing::info!("\tRoot: {root:?}");
-        tracing::info!("\tPuzzle size: {puzzle_size:?}");
-        tracing::info!("\tRules size: {rules_size:?}");
-        tracing::info!("\tFooter height: {:?}", FooterWidget::HEIGHT);
-        tracing::info!("");
-        tracing::info!("\tPuzzle area: {puzzle_area:?}");
-        tracing::info!("\tRow rule area: {row_rule_area:?}");
-        tracing::info!("\tCol rule area: {col_rule_area:?}");
-        tracing::info!("\tFooter area: {footer_area:?}");
+        tracing::trace!("Layout");
+        tracing::trace!("\tRoot: {root:?}");
+        tracing::trace!("\tPuzzle size: {puzzle_size:?}");
+        tracing::trace!("\tRules size: {rules_size:?}");
+        tracing::trace!("\tFooter height: {:?}", FooterWidget::HEIGHT);
+        tracing::trace!("");
+        tracing::trace!("\tPuzzle area: {puzzle_area:?}");
+        tracing::trace!("\tRow rule area: {row_rule_area:?}");
+        tracing::trace!("\tCol rule area: {col_rule_area:?}");
+        tracing::trace!("\tFooter area: {footer_area:?}");
 
         // Render
         // - Puzzle

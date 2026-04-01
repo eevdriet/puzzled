@@ -29,7 +29,7 @@ impl<'a> CellRender<NonogramApp, &Colors> for Entry<RenderFill<'a>> {
         area: Rect,
         buf: &mut Buffer,
         ctx: &AppContext<NonogramApp>,
-        state: &GridRenderState,
+        render: &GridRenderState,
         colors: &&Colors,
     ) {
         let mut style = self.theme_style(&ctx.theme);
@@ -41,11 +41,12 @@ impl<'a> CellRender<NonogramApp, &Colors> for Entry<RenderFill<'a>> {
             style = style.fg(color.as_app());
         }
 
-        if state.selection.contains(pos, area) {
+        let grid_area = Rect::from(render.size());
+        if render.selection.contains(pos, grid_area) {
             style = style.patch(ctx.theme.selection);
         }
 
-        let symbol = if state.cursor == pos {
+        let symbol = if render.cursor == pos {
             'E'
         } else {
             match self.entry() {
@@ -57,8 +58,8 @@ impl<'a> CellRender<NonogramApp, &Colors> for Entry<RenderFill<'a>> {
 
         // Render
         let text = vec![
-            Line::from(symbol.repeat(state.options.cell_width as usize));
-            state.options.cell_height as usize
+            Line::from(symbol.repeat(render.options.cell_width as usize));
+            render.options.cell_height as usize
         ];
         Text::from(text).style(style).render(area, buf);
     }

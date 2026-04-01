@@ -29,10 +29,7 @@ async fn main() -> io::Result<()> {
         ..Default::default()
     };
 
-    let render_state = SidedGridRenderState {
-        grid: render_state,
-        sides: SidesRenderState::default(),
-    };
+    let render_state = SidedGridRenderState::new(render_state, SidesRenderState::default());
 
     let screen = PuzzleScreen::new(puzzle, solve_state, render_state);
 

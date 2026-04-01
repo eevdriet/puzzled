@@ -36,6 +36,7 @@ where
                 Operator::Change
                 | Operator::ChangeSingle
                 | Operator::Delete
+                | Operator::Fill
                 | Operator::DeleteLeft
                 | Operator::DeleteRight => match change.after {
                     Some(ref entry) => {

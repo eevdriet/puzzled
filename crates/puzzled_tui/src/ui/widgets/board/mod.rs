@@ -45,6 +45,7 @@ pub trait EdgeRender<A: AppTypes, E> {
         render: &SidedGridRenderState,
         state: &E,
     );
+
     fn render_col(
         &self,
         col: usize,
@@ -79,6 +80,49 @@ pub trait EdgeRender<A: AppTypes, E> {
         _state: &mut E,
     ) -> bool {
         false
+    }
+}
+
+impl<A: AppTypes, E> EdgeRender<A, E> for () {
+    fn render_row(
+        &self,
+        _row: usize,
+        _area: Rect,
+        _buf: &mut Buffer,
+        _ctx: &AppContext<A>,
+        _render: &SidedGridRenderState,
+        _state: &E,
+    ) {
+    }
+    fn render_col(
+        &self,
+        _col: usize,
+        _area: Rect,
+        _buf: &mut Buffer,
+        _ctx: &AppContext<A>,
+        _render: &SidedGridRenderState,
+        _state: &E,
+    ) {
+    }
+
+    fn height(
+        &self,
+        _area: Rect,
+        _ctx: &AppContext<A>,
+        _render: &SidedGridRenderState,
+        _state: &E,
+    ) -> u16 {
+        0
+    }
+
+    fn width(
+        &self,
+        _area: Rect,
+        _ctx: &AppContext<A>,
+        _render: &SidedGridRenderState,
+        _state: &E,
+    ) -> u16 {
+        0
     }
 }
 

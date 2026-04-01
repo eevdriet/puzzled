@@ -138,7 +138,7 @@ where
         let x_start = area.x + offset.x;
         let mut y = area.y + offset.y;
 
-        let (rows, cols) = state.render.visible_ranges2();
+        let (rows, cols) = state.render.visible_ranges();
 
         for row in rows {
             let mut x = x_start;

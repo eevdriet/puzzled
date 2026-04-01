@@ -4,7 +4,7 @@ mod state;
 pub use binario::*;
 pub use state::*;
 
-use puzzled_binario::{Binario, BinarioState};
+use puzzled_binario::{Binario, BinarioState, Bit};
 use puzzled_tui::{
     Action, ActionHistory, AppCommand, AppContext, AppResolver, Command, HandleMode, Screen,
     SidedGridRenderState, Widget,
@@ -30,6 +30,7 @@ impl PuzzleScreen {
             puzzle,
             solve: solve_state,
             render: render_state,
+            bit: Bit::default(),
             history: ActionHistory::default(),
         };
 

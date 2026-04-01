@@ -117,6 +117,10 @@ impl<T, U> SidedGrid<T, U> {
         self.sides.insert(Side::Right, vec![val; self.grid.rows()]);
         self
     }
+
+    pub fn get_side(&self, side: Side) -> Option<&Vec<U>> {
+        self.sides.get(&side)
+    }
 }
 
 pub struct SidedGridDisplay<'a, T, U> {

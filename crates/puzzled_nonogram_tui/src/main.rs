@@ -20,7 +20,7 @@ use puzzled_tui::{App, GridRenderState, SidedGridRenderState, SidesRenderState, 
 async fn main() -> io::Result<()> {
     init_logging(true);
 
-    let path = puzzle_dir::<Nonogram>()?.join("beach-day.json");
+    let path = puzzle_dir::<Nonogram>()?.join("ladybug.json");
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let puzzle: Nonogram = serde_json::from_reader(reader).map_err(io::Error::other)?;

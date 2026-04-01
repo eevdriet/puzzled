@@ -1,11 +1,10 @@
 mod render;
 
-use std::collections::HashMap;
-
-use puzzled_nonogram::{Nonogram, NonogramState};
+use crossterm::event::MouseButton;
+use puzzled_nonogram::{Fill, Nonogram, NonogramState};
 pub(crate) use render::*;
 
-use puzzled_core::{Entry, Grid, Side, Solve};
+use puzzled_core::{Entry, Grid, Solve};
 use puzzled_tui::{
     Action, AppContext, Command, GridWidgetState, HandleBaseAction, SidedGridWidget,
     SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
@@ -36,9 +35,12 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             ..
         } = state;
 
-        let (grid, sides) = self.grid_components(puzzle, solve);
+        let (grid, row_rules, col_rules) = self.grid_components(puzzle, solve);
 
-        let mut grid_widget = SidedGridWidget::new(&grid, &sides);
+        let mut grid_widget = SidedGridWidget::from_grid(&grid)
+            .with_top(&col_rules)
+            .with_left(&row_rules);
+
         let mut grid_widget_state = SidedGridWidgetState {
             grid: GridWidgetState {
                 render: &mut render.grid,
@@ -62,8 +64,11 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         state: &mut Self::State,
     ) -> Size {
         // Sided grid size
-        let (grid, sides) = self.grid_components(&state.puzzle, &state.solve);
-        let sided_grid_widget = SidedGridWidget::new(&grid, &sides);
+        let (grid, row_rules, col_rules) = self.grid_components(&state.puzzle, &state.solve);
+        let sided_grid_widget = SidedGridWidget::from_grid(&grid)
+            .with_left(&row_rules)
+            .with_top(&col_rules);
+
         let mut grid_widget_state = SidedGridWidgetState {
             grid: GridWidgetState {
                 render: &mut state.render.grid,
@@ -96,6 +101,7 @@ impl AppWidget<NonogramApp> for NonogramWidget {
                     &mut state.render.grid,
                     &mut state.solve.state,
                     &mut custom_state,
+                    Some(state.fill),
                 ) {
                     Some(action) => {
                         state.history.execute(action, &mut state.solve);
@@ -105,8 +111,12 @@ impl AppWidget<NonogramApp> for NonogramWidget {
                 }
             }
             Command::Action { action, .. } => match action {
-                Action::Click { pos, .. } => {
-                    let fill = state.fill;
+                Action::Click { button, pos } => {
+                    let fill = match button {
+                        MouseButton::Right => Fill::Cross,
+                        _ => state.fill,
+                    };
+
                     match state.render.grid.to_grid(pos) {
                         Some(pos) => {
                             let entry = &state.solve.state.entries[pos];
@@ -134,7 +144,8 @@ impl AppWidget<NonogramApp> for NonogramWidget {
 
 type Components<'a> = (
     Grid<Entry<RenderFill<'a>>>,
-    HashMap<Side, Vec<RenderRule<'a>>>,
+    Vec<RenderRule<'a>>,
+    Vec<RenderRule<'a>>,
 );
 
 impl NonogramWidget {
@@ -145,25 +156,18 @@ impl NonogramWidget {
     ) -> Components<'a> {
         // Create grid widget
         let grid = solve.state.map_entries(|fill| RenderFill { fill });
+        let row_rules = puzzle
+            .rules()
+            .iter_rows()
+            .map(|(_, rule)| RenderRule { rule })
+            .collect();
 
-        let rules = puzzle.rules();
-        let sides: HashMap<Side, Vec<RenderRule>> = HashMap::from([
-            (
-                Side::Left,
-                rules
-                    .iter_rows()
-                    .map(|(_, rule)| RenderRule { rule })
-                    .collect(),
-            ),
-            (
-                Side::Top,
-                rules
-                    .iter_cols()
-                    .map(|(_, rule)| RenderRule { rule })
-                    .collect(),
-            ),
-        ]);
+        let col_rules = puzzle
+            .rules()
+            .iter_cols()
+            .map(|(_, rule)| RenderRule { rule })
+            .collect();
 
-        (grid, sides)
+        (grid, row_rules, col_rules)
     }
 }

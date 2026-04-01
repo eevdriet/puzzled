@@ -23,7 +23,7 @@ pub trait Puzzle: Sized {
 
     type Solution;
     type Position: Debug;
-    type Value: Clone + Eq + Word;
+    type Value: Debug + Clone + Eq + Word;
 
     fn title(meta: &Metadata) -> String {
         let title = meta.title().unwrap_or(Self::NAME);

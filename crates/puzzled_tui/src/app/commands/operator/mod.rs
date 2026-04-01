@@ -20,7 +20,7 @@ pub enum Operator {
     YankSingle,
 
     // Puzzle
-    Fill(usize),
+    Fill,
     Reveal,
     RevealSingle,
     Check,

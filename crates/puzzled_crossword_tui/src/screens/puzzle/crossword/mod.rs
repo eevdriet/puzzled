@@ -134,6 +134,7 @@ impl AppWidget<CrosswordApp> for CrosswordWidget {
                     &mut state.render,
                     &mut state.solve.0,
                     &mut custom_state,
+                    None,
                 ) {
                     state.history.execute(action, &mut state.solve);
                 }

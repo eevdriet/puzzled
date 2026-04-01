@@ -3,8 +3,8 @@ mod render;
 pub(crate) use render::*;
 
 use crossterm::event::{KeyCode, MouseButton};
-use puzzled_binario::Bit;
-use puzzled_core::Solve;
+use puzzled_binario::{BinarioState, Bit};
+use puzzled_core::{Entry, Grid, Side, Solve};
 use puzzled_tui::{
     Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction,
     SidedGridWidget, SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
@@ -25,13 +25,13 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         ctx: &mut AppContext<BinarioApp>,
         state: &mut Self::State,
     ) {
-        let PuzzleScreenState { solve, .. } = state;
-
-        let grid = solve.state.map_entries(|bit| RenderBit { bit });
-
-        let mut grid = SidedGridWidget::new(&grid, &solve.valid.sides);
         let mut cell_state = ();
         let mut edge_state = ();
+
+        let (grid, row_bits, col_bits) = self.grid_components(&state.solve);
+        let mut grid = SidedGridWidget::from_grid(&grid)
+            .with_left(row_bits)
+            .with_top(col_bits);
 
         let mut grid_state =
             SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
@@ -44,11 +44,13 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         ctx: &AppContext<BinarioApp>,
         state: &mut Self::State,
     ) -> Size {
-        let grid = state.solve.state.map_entries(|bit| RenderBit { bit });
         let mut cell_state = ();
         let mut edge_state = ();
 
-        let grid = SidedGridWidget::new(&grid, &state.solve.valid.sides);
+        let (grid, row_bits, col_bits) = self.grid_components(&state.solve);
+        let grid = SidedGridWidget::from_grid(&grid)
+            .with_left(row_bits)
+            .with_top(col_bits);
         let mut grid_state =
             SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
 
@@ -72,6 +74,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
                     &mut state.render.grid,
                     &mut state.solve.state,
                     &mut custom_state,
+                    Some(state.bit),
                 ) {
                     Some(action) => {
                         state.history.execute(action, &mut state.solve);
@@ -131,5 +134,18 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     fn override_mode(&self) -> Option<EventMode> {
         // Some(EventMode::Normal)
         None
+    }
+}
+
+type Components<'a> = (Grid<Entry<RenderBit<'a>>>, &'a Vec<bool>, &'a Vec<bool>);
+
+impl BinarioWidget {
+    fn grid_components<'a>(&'a self, solve: &'a BinarioState) -> Components<'a> {
+        // Create grid widget
+        let grid = solve.state.map_entries(|bit| RenderBit { bit });
+        let row_bits = solve.valid.get_side(Side::Left).expect("Should be defined");
+        let col_bits = solve.valid.get_side(Side::Top).expect("Should be defined");
+
+        (grid, row_bits, col_bits)
     }
 }

@@ -136,29 +136,6 @@ impl GridRenderState {
     }
 
     pub fn visible_ranges(&self) -> (Range<usize>, Range<usize>) {
-        let AppPosition {
-            x: offset_x,
-            y: offset_y,
-        } = self.scroll_state.offset();
-        let cell_w = self.options.cell_width;
-        let cell_h = self.options.cell_height;
-
-        // Starting indices
-        let start_col = (offset_x / cell_w) as usize;
-        let start_row = (offset_y / cell_h) as usize;
-
-        // How many cells fit in the viewport
-        let visible_cols = (self.viewport.width as f64 / cell_w as f64).ceil() as usize;
-        let visible_rows = (self.viewport.height as f64 / cell_h as f64).ceil() as usize;
-
-        // End indices (clamped to grid maxima)
-        let end_col = (start_col + visible_cols).min(self.cols);
-        let end_row = (start_row + visible_rows).min(self.rows);
-
-        (start_row..end_row, start_col..end_col)
-    }
-
-    pub fn visible_ranges2(&self) -> (Range<usize>, Range<usize>) {
         let start = self.scroll_state.offset();
 
         // Starting indices
