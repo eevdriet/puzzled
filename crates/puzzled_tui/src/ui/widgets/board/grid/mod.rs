@@ -96,7 +96,7 @@ where
         let pos = state.render.cursor;
         let cell = &self.grid[pos];
 
-        cell.on_command(command, pos, ctx, state.render, state.cell_state)
+        cell.on_command(pos, command, ctx, state.render, state.cell_state)
     }
 }
 

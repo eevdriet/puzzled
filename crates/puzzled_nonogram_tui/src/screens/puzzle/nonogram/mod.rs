@@ -6,7 +6,7 @@ pub(crate) use render::*;
 
 use puzzled_core::{Entry, Grid, Side, Solve};
 use puzzled_tui::{
-    Action, AppContext, Command, GridWidgetState, HandleBaseAction, SideWidget, SidedGridWidget,
+    Action, AppContext, Command, HandleBaseAction, SideWidget, SidedGridWidget,
     SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
@@ -42,15 +42,13 @@ impl AppWidget<NonogramApp> for NonogramWidget {
             .with_left(&row_rules);
 
         let mut grid_widget_state = SidedGridWidgetState {
-            grid: GridWidgetState {
-                render: &mut render.grid,
-                cell_state: &mut puzzle.colors(),
-            },
-            sides: &mut render.sides,
+            render,
+            cell_state: &mut puzzle.colors(),
             edge_state: &mut RenderRuleState {
                 colors: puzzle.colors(),
                 is_active_rule: false,
             },
+            focus: None,
         };
 
         // Render
@@ -63,22 +61,27 @@ impl AppWidget<NonogramApp> for NonogramWidget {
         ctx: &AppContext<NonogramApp>,
         state: &mut Self::State,
     ) -> Size {
+        let PuzzleScreenState {
+            puzzle,
+            solve,
+            render,
+            ..
+        } = state;
+
         // Sided grid size
-        let (grid, row_rules, col_rules) = self.grid_components(&state.puzzle, &state.solve);
+        let (grid, row_rules, col_rules) = self.grid_components(puzzle, solve);
         let sided_grid_widget = SidedGridWidget::from_grid(&grid)
             .with_left(&row_rules)
             .with_top(&col_rules);
 
         let mut grid_widget_state = SidedGridWidgetState {
-            grid: GridWidgetState {
-                render: &mut state.render.grid,
-                cell_state: &mut state.puzzle.colors(),
-            },
-            sides: &mut state.render.sides,
+            render,
+            cell_state: &mut puzzle.colors(),
             edge_state: &mut RenderRuleState {
-                colors: state.puzzle.colors(),
+                colors: puzzle.colors(),
                 is_active_rule: false,
             },
+            focus: None,
         };
 
         sided_grid_widget.render_size(area, ctx, &mut grid_widget_state)
@@ -155,8 +158,9 @@ impl NonogramWidget {
         ctx: &AppContext<NonogramApp>,
         state: &mut PuzzleScreenState,
     ) -> u16 {
-        let col_rules = state
-            .puzzle
+        let PuzzleScreenState { puzzle, render, .. } = state;
+
+        let col_rules = puzzle
             .rules()
             .iter_cols()
             .map(|(_, rule)| RenderRule { rule })
@@ -164,15 +168,13 @@ impl NonogramWidget {
 
         let side_widget = SideWidget::new(Side::Left, &col_rules);
         let mut grid_widget_state = SidedGridWidgetState {
-            grid: GridWidgetState {
-                render: &mut state.render.grid,
-                cell_state: &mut state.puzzle.colors(),
-            },
-            sides: &mut state.render.sides,
+            render,
+            cell_state: &mut puzzle.colors(),
             edge_state: &mut RenderRuleState {
-                colors: state.puzzle.colors(),
+                colors: puzzle.colors(),
                 is_active_rule: false,
             },
+            focus: None,
         };
 
         side_widget

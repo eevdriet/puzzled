@@ -5,7 +5,7 @@ use crate::{
     Widget as AppWidget, align_horizontally, align_vertically,
 };
 
-use puzzled_core::Side;
+use puzzled_core::{Line, Side};
 use ratatui::{
     layout::{HorizontalAlignment, Position, VerticalAlignment},
     prelude::{Buffer, Rect, Size},
@@ -41,9 +41,8 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
     ) where
         U: EdgeRender<A, E>,
     {
-        let render = &state.grid.render;
-        let side_state = state.sides.get(self.side);
-        let render_state = state.render_state();
+        let render = &state.render.grid;
+        let side_state = state.render.sides.get(self.side);
         let margin = side_state.margin.min(area.height);
 
         let (alignment, top, bottom) = match self.side {
@@ -58,7 +57,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
 
         let offset = render.scroll_state.offset();
         let cell_w = render.options.cell_width;
-        let (_, cols) = state.grid.render.visible_ranges();
+        let (_, cols) = render.visible_ranges();
 
         let mut x = area.x + offset.x;
 
@@ -66,7 +65,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::trace!("Col {col}");
 
             // Determine the area to render the value in
-            let height = edge.height(area, ctx, &render_state, state.edge_state);
+            let height = edge.height(area, ctx, state.render, state.edge_state);
             let (text_y, text_h) = align_vertically(height, top, bottom, alignment);
             let text_area = Rect::new(x, text_y, cell_w, text_h);
 
@@ -76,7 +75,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::trace!("\tText area: {text_area:?}");
 
             // Draw the value at the current column of the side
-            edge.render_col(col, text_area, buf, ctx, &render_state, state.edge_state);
+            edge.render_col(col, text_area, buf, ctx, state.render, state.edge_state);
 
             // Advance y by cell height
             x += cell_w;
@@ -101,9 +100,8 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
     ) where
         U: EdgeRender<A, E>,
     {
-        let render = &state.grid.render;
-        let side_state = state.sides.get(self.side);
-        let render_state = state.render_state();
+        let render = &state.render.grid;
+        let side_state = state.render.sides.get(self.side);
         let margin = side_state.margin.min(area.width);
 
         let (alignment, left, right) = match self.side {
@@ -122,14 +120,14 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
 
         let _offset = render.scroll_state.offset();
         let cell_h = render.options.cell_height;
-        let (_, rows) = state.grid.render.visible_ranges();
+        let (_, rows) = render.visible_ranges();
 
         let mut y = area.y;
 
         for (row, edge) in self.edges.iter().enumerate().skip(rows.start) {
             tracing::trace!("Row {row}");
             // Determine the area to render the value in
-            let width = edge.width(area, ctx, &render_state, state.edge_state);
+            let width = edge.width(area, ctx, state.render, state.edge_state);
             let (text_x, text_w) = align_horizontally(width, left, right, alignment);
             let text_area = Rect::new(text_x, y, text_w, cell_h);
 
@@ -139,7 +137,7 @@ impl<'a, A: AppTypes, U, C, E> SideWidget<'a, A, U, C, E> {
             tracing::trace!("\tText area: {text_area:?}");
 
             // Draw the value at the current row of the side
-            edge.render_row(row, text_area, buf, ctx, &render_state, state.edge_state);
+            edge.render_row(row, text_area, buf, ctx, state.render, state.edge_state);
 
             // Advance y by cell height
             y += cell_h;
@@ -173,12 +171,12 @@ where
         ctx: &mut AppContext<A>,
         state: &mut Self::State,
     ) {
-        let side_state = state.sides.get_mut(self.side);
+        let side_state = state.render.sides.get_mut(self.side);
         side_state.viewport = area;
 
         let size = self.render_size(area, ctx, state);
         let scroll_area = Rect::from(size);
-        let mut scroll_state = state.grid.render.scroll_state;
+        let mut scroll_state = state.render.grid.scroll_state;
         let offset = scroll_state.offset();
 
         let mut scroll_view =
@@ -197,8 +195,7 @@ where
 
     fn render_size(&self, area: Rect, ctx: &AppContext<A>, state: &mut Self::State) -> Size {
         let mut len = 0;
-        let render_state = state.render_state();
-        let opts = &state.grid.render.options;
+        let opts = &state.render.grid.options;
 
         let cell_w = opts.cell_width;
         let cell_h = opts.cell_height;
@@ -206,10 +203,10 @@ where
         // Determine the maximum edge length
         for edge in self.edges.iter() {
             if self.side.is_vertical() {
-                let height = edge.height(area, ctx, &render_state, state.edge_state);
+                let height = edge.height(area, ctx, state.render, state.edge_state);
                 len = height.max(len);
             } else {
-                let width = edge.width(area, ctx, &render_state, state.edge_state);
+                let width = edge.width(area, ctx, state.render, state.edge_state);
                 len = width.max(len);
             }
         }
@@ -233,7 +230,7 @@ where
         // Add side margin
         let SideRenderState {
             margin, max_len, ..
-        } = state.sides.get(self.side);
+        } = state.render.sides.get(self.side);
 
         if self.side.is_vertical() {
             size.height += margin;
@@ -251,5 +248,23 @@ where
         }
 
         size
+    }
+
+    fn on_command(
+        &mut self,
+        command: crate::AppCommand<A>,
+        resolver: crate::AppResolver<A>,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) -> bool {
+        let pos = state.render.grid.cursor;
+        let line = if self.side.is_vertical() {
+            Line::Col(pos.col)
+        } else {
+            Line::Row(pos.row)
+        };
+        let edge = &self.edges[line.line()];
+
+        edge.on_command(line, command, resolver, ctx, state.render, state.edge_state)
     }
 }

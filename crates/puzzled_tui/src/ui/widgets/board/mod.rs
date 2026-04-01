@@ -11,7 +11,7 @@ pub use viewport::*;
 use puzzled_core::{Line, Position};
 use ratatui::prelude::{Buffer, Rect};
 
-use crate::{AppCommand, AppContext, AppTypes};
+use crate::{AppCommand, AppContext, AppResolver, AppTypes};
 
 pub trait CellRender<A: AppTypes, C> {
     fn render_cell(
@@ -26,8 +26,8 @@ pub trait CellRender<A: AppTypes, C> {
 
     fn on_command(
         &self,
-        _command: AppCommand<A>,
         _pos: Position,
+        _command: AppCommand<A>,
         _ctx: &mut AppContext<A>,
         _render: &mut GridRenderState,
         _state: &mut C,
@@ -73,10 +73,12 @@ pub trait EdgeRender<A: AppTypes, E> {
     ) -> u16;
 
     fn on_command(
-        &mut self,
-        _command: AppCommand<A>,
+        &self,
         _line: Line,
+        _command: AppCommand<A>,
+        _resolver: AppResolver<A>,
         _ctx: &mut AppContext<A>,
+        _render: &mut SidedGridRenderState,
         _state: &mut E,
     ) -> bool {
         false

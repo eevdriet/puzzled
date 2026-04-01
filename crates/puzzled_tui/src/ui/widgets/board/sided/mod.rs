@@ -89,16 +89,17 @@ where
         let left_widget = self.side_widget(Side::Left, self.left);
 
         // Sizes
-        let grid_size = grid_widget.render_size(area, ctx, &mut state.grid);
         let top_size = self.side_size(Side::Top, self.top, area, ctx, state);
         let right_size = self.side_size(Side::Right, self.right, area, ctx, state);
         let bottom_size = self.side_size(Side::Bottom, self.bottom, area, ctx, state);
         let left_size = self.side_size(Side::Left, self.left, area, ctx, state);
 
-        let max_top_height = state.sides.top.max_len.unwrap_or(u16::MAX);
-        let max_right_width = state.sides.right.max_len.unwrap_or(u16::MAX);
-        let max_bottom_height = state.sides.bottom.max_len.unwrap_or(u16::MAX);
-        let max_left_width = state.sides.left.max_len.unwrap_or(u16::MAX);
+        let max_top_height = state.render.sides.top.max_len.unwrap_or(u16::MAX);
+        let max_right_width = state.render.sides.right.max_len.unwrap_or(u16::MAX);
+        let max_bottom_height = state.render.sides.bottom.max_len.unwrap_or(u16::MAX);
+        let max_left_width = state.render.sides.left.max_len.unwrap_or(u16::MAX);
+
+        let grid_size = grid_widget.render_size(area, ctx, &mut state.grid_state());
 
         let [left_col, center_col, right_col] = Layout::horizontal([
             Constraint::Length(left_size.width.min(max_left_width)),
@@ -147,7 +148,8 @@ where
         // Render the grid
         tracing::trace!("\tRendering");
         tracing::trace!("\t\tGrid");
-        grid_widget.render(grid_area, buf, ctx, &mut state.grid);
+
+        grid_widget.render(grid_area, buf, ctx, &mut state.grid_state());
 
         // Render all defined sides
         if let Some(mut widget) = top_widget {
@@ -172,7 +174,7 @@ where
         let mut size = Size::ZERO;
 
         let grid_widget = GridWidget::new(self.grid);
-        let grid_size = grid_widget.render_size(area, ctx, &mut state.grid);
+        let grid_size = grid_widget.render_size(area, ctx, &mut state.grid_state());
 
         let top_size = self.side_size(Side::Top, self.top, area, ctx, state);
         let right_size = self.side_size(Side::Right, self.right, area, ctx, state);
@@ -188,6 +190,49 @@ where
         size.height += bottom_size.height;
 
         size
+    }
+
+    fn on_command(
+        &mut self,
+        command: crate::AppCommand<A>,
+        resolver: crate::AppResolver<A>,
+        ctx: &mut AppContext<A>,
+        state: &mut Self::State,
+    ) -> bool {
+        let mut result = false;
+
+        match state.focus {
+            Some(side @ Side::Top) => {
+                if let Some(top) = self.top {
+                    let mut widget = SideWidget::new(side, top);
+                    result = widget.on_command(command, resolver, ctx, state);
+                }
+            }
+            Some(side @ Side::Right) => {
+                if let Some(right) = self.right {
+                    let mut widget = SideWidget::new(side, right);
+                    result = widget.on_command(command, resolver, ctx, state);
+                }
+            }
+            Some(side @ Side::Bottom) => {
+                if let Some(bottom) = self.bottom {
+                    let mut widget = SideWidget::new(side, bottom);
+                    result = widget.on_command(command, resolver, ctx, state);
+                }
+            }
+            Some(side @ Side::Left) => {
+                if let Some(left) = self.left {
+                    let mut widget = SideWidget::new(side, left);
+                    result = widget.on_command(command, resolver, ctx, state);
+                }
+            }
+            None => {
+                let mut widget = GridWidget::new(self.grid);
+                result = widget.on_command(command, resolver, ctx, &mut state.grid_state());
+            }
+        }
+
+        result
     }
 }
 
