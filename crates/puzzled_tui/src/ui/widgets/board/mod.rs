@@ -9,7 +9,10 @@ pub use sided::*;
 pub use viewport::*;
 
 use puzzled_core::{Line, Position};
-use ratatui::prelude::{Buffer, Rect};
+use ratatui::{
+    layout::Size,
+    prelude::{Buffer, Rect},
+};
 
 use crate::{AppCommand, AppContext, AppResolver, AppTypes};
 
@@ -71,6 +74,19 @@ pub trait EdgeRender<A: AppTypes, E> {
         render: &SidedGridRenderState,
         state: &E,
     ) -> u16;
+
+    fn size(
+        &self,
+        area: Rect,
+        ctx: &AppContext<A>,
+        render: &SidedGridRenderState,
+        state: &E,
+    ) -> Size {
+        Size::new(
+            self.width(area, ctx, render, state),
+            self.height(area, ctx, render, state),
+        )
+    }
 
     fn on_command(
         &self,

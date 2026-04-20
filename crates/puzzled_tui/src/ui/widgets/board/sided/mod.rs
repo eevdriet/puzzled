@@ -43,14 +43,14 @@ impl<'a, A: AppTypes, CT, C, E> SidedGridWidget<'a, A, CT, (), (), (), (), C, E>
     }
 }
 
-impl<'a, A: AppTypes, CT, U, C, E> SidedGridWidget<'a, A, CT, U, U, U, U, C, E> {
-    pub fn from_sided(sided: &'a SidedGrid<CT, U>) -> Self {
+impl<'a, A: AppTypes, CT, TT, RT, BT, LT, C, E> SidedGridWidget<'a, A, CT, TT, RT, BT, LT, C, E> {
+    pub fn from_sided(sided: &'a SidedGrid<CT, TT, RT, BT, LT>) -> Self {
         Self {
             grid: &sided.grid,
-            top: sided.get_side(Side::Top),
-            right: sided.get_side(Side::Right),
-            bottom: sided.get_side(Side::Bottom),
-            left: sided.get_side(Side::Left),
+            top: sided.top.as_ref(),
+            right: sided.right.as_ref(),
+            bottom: sided.bottom.as_ref(),
+            left: sided.left.as_ref(),
             _marker: PhantomData,
             _cell: PhantomData,
             _edge: PhantomData,

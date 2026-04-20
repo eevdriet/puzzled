@@ -4,7 +4,7 @@ pub(crate) use render::*;
 
 use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::{BinarioState, Bit};
-use puzzled_core::{Entry, Grid, Side, Solve};
+use puzzled_core::{Entry, Grid, Solve};
 use puzzled_tui::{
     Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction,
     SidedGridWidget, SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
@@ -25,13 +25,15 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         ctx: &mut AppContext<BinarioApp>,
         state: &mut Self::State,
     ) {
+        let (grid, top, right, bottom, left) = self.grid_components(&state.solve);
         let mut cell_state = ();
-        let mut edge_state = ();
+        let mut edge_state = (grid.rows(), grid.cols());
 
-        let (grid, row_bits, col_bits) = self.grid_components(&state.solve);
         let mut grid = SidedGridWidget::from_grid(&grid)
-            .with_left(row_bits)
-            .with_top(col_bits);
+            .with_top(top)
+            .with_right(right)
+            .with_bottom(bottom)
+            .with_left(left);
 
         let mut grid_state =
             SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
@@ -44,13 +46,16 @@ impl AppWidget<BinarioApp> for BinarioWidget {
         ctx: &AppContext<BinarioApp>,
         state: &mut Self::State,
     ) -> Size {
+        let (grid, top, right, bottom, left) = self.grid_components(&state.solve);
         let mut cell_state = ();
-        let mut edge_state = ();
+        let mut edge_state = (grid.rows(), grid.cols());
 
-        let (grid, row_bits, col_bits) = self.grid_components(&state.solve);
         let grid = SidedGridWidget::from_grid(&grid)
-            .with_left(row_bits)
-            .with_top(col_bits);
+            .with_top(top)
+            .with_right(right)
+            .with_bottom(bottom)
+            .with_left(left);
+
         let mut grid_state =
             SidedGridWidgetState::new(&mut state.render, &mut cell_state, &mut edge_state);
 
@@ -137,15 +142,23 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     }
 }
 
-type Components<'a> = (Grid<Entry<RenderBit<'a>>>, &'a Vec<bool>, &'a Vec<bool>);
+type Components<'a> = (
+    Grid<Entry<RenderBit<'a>>>,
+    &'a Vec<bool>,
+    &'a Vec<(isize, isize)>,
+    &'a Vec<(isize, isize)>,
+    &'a Vec<bool>,
+);
 
 impl BinarioWidget {
     fn grid_components<'a>(&'a self, solve: &'a BinarioState) -> Components<'a> {
         // Create grid widget
         let grid = solve.state.map_entries(|bit| RenderBit { bit });
-        let row_bits = solve.valid.get_side(Side::Left).expect("Should be defined");
-        let col_bits = solve.valid.get_side(Side::Top).expect("Should be defined");
+        let col_bits = solve.valid.top.as_ref().expect("Should be defined");
+        let row_counts = solve.valid.right.as_ref().expect("Should be defined");
+        let col_counts = solve.valid.bottom.as_ref().expect("Should be defined");
+        let row_bits = solve.valid.left.as_ref().expect("Should be defined");
 
-        (grid, row_bits, col_bits)
+        (grid, col_bits, row_counts, col_counts, row_bits)
     }
 }

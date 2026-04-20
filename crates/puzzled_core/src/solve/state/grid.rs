@@ -110,6 +110,10 @@ where
     }
 
     fn reveal(&mut self, pos: &Position) -> bool {
+        if self.solutions.get(*pos).is_none() {
+            return false;
+        }
+
         let Some(entry) = self.entries.get_mut(*pos) else {
             return false;
         };
@@ -273,6 +277,10 @@ where
     }
 
     fn reveal(&mut self, pos: &Position) -> bool {
+        if self.solutions.get(*pos).is_none() {
+            return false;
+        }
+
         let Some(entry) = self.entries.get_fill_mut(*pos) else {
             return false;
         };

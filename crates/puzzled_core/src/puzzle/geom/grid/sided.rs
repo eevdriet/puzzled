@@ -1,11 +1,8 @@
-use std::{
-    collections::HashMap,
-    fmt::{self, Display},
-};
+use std::fmt::{self, Display};
 
 use derive_more::{Deref, DerefMut};
 
-use crate::{Grid, Side};
+use crate::Grid;
 
 #[derive(Debug, thiserror::Error, Clone)]
 pub enum SidedGridError {
@@ -17,24 +14,28 @@ pub enum SidedGridError {
     },
 }
 
-#[derive(Debug, Deref, DerefMut)]
-pub struct SidedGrid<T, U> {
-    #[deref]
-    #[deref_mut]
-    pub grid: Grid<T>,
+#[derive(Debug)]
+pub struct SidedGrid<C, T, R, B, L> {
+    pub grid: Grid<C>,
 
-    pub sides: HashMap<Side, Vec<U>>,
+    pub top: Option<Vec<T>>,
+    pub right: Option<Vec<R>>,
+    pub bottom: Option<Vec<B>>,
+    pub left: Option<Vec<L>>,
 }
 
-impl<T, U> SidedGrid<T, U> {
-    pub fn new(grid: Grid<T>) -> Self {
+impl<C, T, R, B, L> SidedGrid<C, T, R, B, L> {
+    pub fn new(grid: Grid<C>) -> Self {
         SidedGrid {
             grid,
-            sides: HashMap::default(),
+            top: None,
+            right: None,
+            bottom: None,
+            left: None,
         }
     }
 
-    pub fn with_top(mut self, top: Vec<U>) -> Result<Self, SidedGridError> {
+    pub fn with_top(mut self, top: Vec<T>) -> Result<Self, SidedGridError> {
         if top.len() != self.grid.cols() {
             return Err(SidedGridError::InvalidColCount {
                 side: "top".to_string(),
@@ -43,19 +44,19 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Side::Top, top);
+        self.top = Some(top);
         Ok(self)
     }
 
-    pub fn with_top_value(mut self, val: U) -> Self
+    pub fn with_top_value(mut self, val: T) -> Self
     where
-        U: Clone,
+        T: Clone,
     {
-        self.sides.insert(Side::Top, vec![val; self.grid.cols()]);
+        self.top = Some(vec![val; self.grid.cols()]);
         self
     }
 
-    pub fn with_bottom(mut self, bottom: Vec<U>) -> Result<Self, SidedGridError> {
+    pub fn with_bottom(mut self, bottom: Vec<B>) -> Result<Self, SidedGridError> {
         if bottom.len() != self.grid.cols() {
             return Err(SidedGridError::InvalidColCount {
                 side: "bottom".to_string(),
@@ -64,62 +65,77 @@ impl<T, U> SidedGrid<T, U> {
             });
         }
 
-        self.sides.insert(Side::Bottom, bottom);
+        self.bottom = Some(bottom);
         Ok(self)
     }
 
-    pub fn with_bottom_value(mut self, val: U) -> Self
+    pub fn with_bottom_value(mut self, val: B) -> Self
     where
-        U: Clone,
+        B: Clone,
     {
-        self.sides.insert(Side::Bottom, vec![val; self.grid.cols()]);
+        self.bottom = Some(vec![val; self.grid.cols()]);
         self
     }
 
-    pub fn with_left(mut self, left: Vec<U>) -> Result<Self, SidedGridError> {
+    pub fn with_left(mut self, left: Vec<L>) -> Result<Self, SidedGridError> {
         if left.len() != self.grid.rows() {
             return Err(SidedGridError::InvalidColCount {
                 side: "left".to_string(),
                 found: left.len(),
-                expected: self.grid.cols(),
+                expected: self.grid.rows(),
             });
         }
 
-        self.sides.insert(Side::Left, left);
+        self.left = Some(left);
         Ok(self)
     }
 
-    pub fn with_left_value(mut self, val: U) -> Self
+    pub fn with_left_value(mut self, val: L) -> Self
     where
-        U: Clone,
+        L: Clone,
     {
-        self.sides.insert(Side::Left, vec![val; self.grid.rows()]);
+        self.left = Some(vec![val; self.grid.rows()]);
         self
     }
 
-    pub fn with_right(mut self, right: Vec<U>) -> Result<Self, SidedGridError> {
+    pub fn with_right(mut self, right: Vec<R>) -> Result<Self, SidedGridError> {
         if right.len() != self.grid.rows() {
             return Err(SidedGridError::InvalidColCount {
                 side: "right".to_string(),
                 found: right.len(),
-                expected: self.grid.cols(),
+                expected: self.grid.rows(),
             });
         }
 
-        self.sides.insert(Side::Right, right);
+        self.right = Some(right);
         Ok(self)
     }
 
-    pub fn with_right_value(mut self, val: U) -> Self
+    pub fn with_right_value(mut self, val: R) -> Self
     where
-        U: Clone,
+        R: Clone,
     {
-        self.sides.insert(Side::Right, vec![val; self.grid.rows()]);
+        self.right = Some(vec![val; self.grid.rows()]);
         self
     }
 
-    pub fn get_side(&self, side: Side) -> Option<&Vec<U>> {
-        self.sides.get(&side)
+    pub fn map_grid_ref<'a, U, F>(&'a self, f: F) -> SidedGrid<U, T, R, B, L>
+    where
+        F: FnMut(&'a C) -> U,
+        T: Clone,
+        R: Clone,
+        B: Clone,
+        L: Clone,
+    {
+        let grid = self.grid.map_ref(f);
+
+        SidedGrid {
+            grid,
+            top: self.top.clone(),
+            right: self.right.clone(),
+            bottom: self.bottom.clone(),
+            left: self.left.clone(),
+        }
     }
 }
 
