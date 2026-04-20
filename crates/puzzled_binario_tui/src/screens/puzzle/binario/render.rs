@@ -1,12 +1,12 @@
-use puzzled_binario::Bit;
-use puzzled_core::{Entry, Position};
+use puzzled_binario::{Bit, LineBits};
+use puzzled_core::{Algerbraic, Entry, Position, Size};
 use puzzled_tui::{
     AppContext, CellRender, EdgeRender, GridRenderState, SidedGridRenderState, TextBlock, Theme,
     ThemeStyled, center_area,
 };
 use ratatui::{
     buffer::Buffer,
-    layout::{Rect, Size},
+    layout::{Rect, Size as AppSize},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Widget},
@@ -20,10 +20,10 @@ pub struct RenderBit<'a> {
 }
 
 impl<'a> RenderBit<'a> {
-    pub fn count_style(&self, count: isize, limit: usize, theme: &Theme) -> Style {
+    pub fn count_style(&self, count: isize, line_len: usize, theme: &Theme) -> Style {
         match count {
             // Valid count
-            count if count > 0 && count <= limit as isize => self.theme_style(theme),
+            count if count > 0 && count <= (line_len / 2) as isize => self.theme_style(theme),
 
             // Zero count
             0 => Style::default().fg(theme.palette.dark2).dim().crossed_out(),
@@ -88,28 +88,44 @@ impl<'a> CellRender<BinarioApp, ()> for Entry<RenderBit<'a>> {
     }
 }
 
-impl EdgeRender<BinarioApp, (usize, usize)> for bool {
+impl EdgeRender<BinarioApp, Size> for bool {
     fn render_row(
         &self,
-        _row: usize,
+        row: usize,
         area: Rect,
         buf: &mut Buffer,
-        _ctx: &AppContext<BinarioApp>,
+        ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        _state: &(usize, usize),
+        state: &Size,
     ) {
-        Text::from("R").render(area, buf);
+        let style = if *self {
+            Style::default()
+        } else {
+            ctx.theme.incorrect
+        };
+        let width = state.rows.to_string().len() as u16;
+        let area = center_area(area, AppSize::new(width, 1));
+
+        Text::styled((row + 1).to_string(), style).render(area, buf);
     }
     fn render_col(
         &self,
-        _col: usize,
+        col: usize,
         area: Rect,
         buf: &mut Buffer,
-        _ctx: &AppContext<BinarioApp>,
+        ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        _state: &(usize, usize),
+        state: &Size,
     ) {
-        Text::from("C").render(area, buf);
+        let style = if *self {
+            Style::default()
+        } else {
+            ctx.theme.incorrect
+        };
+        let width = state.cols.to_algebraic().len() as u16;
+        let area = center_area(area, AppSize::new(width, 1));
+
+        Text::styled(col.to_algebraic(), style).render(area, buf);
     }
 
     fn height(
@@ -117,7 +133,7 @@ impl EdgeRender<BinarioApp, (usize, usize)> for bool {
         _area: Rect,
         _ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        _state: &(usize, usize),
+        _state: &Size,
     ) -> u16 {
         1
     }
@@ -127,13 +143,13 @@ impl EdgeRender<BinarioApp, (usize, usize)> for bool {
         _area: Rect,
         _ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        _state: &(usize, usize),
+        state: &Size,
     ) -> u16 {
-        1
+        state.rows.to_string().len() as u16
     }
 }
 
-impl EdgeRender<BinarioApp, (usize, usize)> for (isize, isize) {
+impl EdgeRender<BinarioApp, Size> for LineBits {
     fn render_row(
         &self,
         _row: usize,
@@ -141,17 +157,18 @@ impl EdgeRender<BinarioApp, (usize, usize)> for (isize, isize) {
         buf: &mut Buffer,
         ctx: &AppContext<BinarioApp>,
         render: &SidedGridRenderState,
-        state: &(usize, usize),
+        state: &Size,
     ) {
-        let zero_style = RenderBit { bit: &Bit::Zero }.count_style(self.0, state.1 / 2, &ctx.theme);
-        let one_style = RenderBit { bit: &Bit::One }.count_style(self.1, state.1 / 2, &ctx.theme);
-        let area = center_area(area, Size::new(self.width(area, ctx, render, state), 1));
+        let zero_style =
+            RenderBit { bit: &Bit::Zero }.count_style(self.zeroes, state.cols, &ctx.theme);
+        let one_style = RenderBit { bit: &Bit::One }.count_style(self.ones, state.cols, &ctx.theme);
+        let area = center_area(area, AppSize::new(self.width(area, ctx, render, state), 1));
 
         Line::default()
             .spans(vec![
-                Span::styled(self.0.to_string(), zero_style),
+                Span::styled(self.zeroes.to_string(), zero_style),
                 Span::raw(" "),
-                Span::styled(self.1.to_string(), one_style),
+                Span::styled(self.ones.to_string(), one_style),
             ])
             .render(area, buf);
     }
@@ -162,18 +179,19 @@ impl EdgeRender<BinarioApp, (usize, usize)> for (isize, isize) {
         buf: &mut Buffer,
         ctx: &AppContext<BinarioApp>,
         render: &SidedGridRenderState,
-        state: &(usize, usize),
+        state: &Size,
     ) {
-        let zeroes = self.0.to_string();
-        let ones = self.1.to_string();
+        let zeroes = self.zeroes.to_string();
+        let ones = self.ones.to_string();
         let width = zeroes.len().max(ones.len()) as u16;
         let area = center_area(
             area,
-            Size::new(width, self.height(area, ctx, render, state)),
+            AppSize::new(width, self.height(area, ctx, render, state)),
         );
 
-        let zero_style = RenderBit { bit: &Bit::Zero }.count_style(self.0, state.0 / 2, &ctx.theme);
-        let one_style = RenderBit { bit: &Bit::One }.count_style(self.1, state.0 / 2, &ctx.theme);
+        let zero_style =
+            RenderBit { bit: &Bit::Zero }.count_style(self.zeroes, state.rows, &ctx.theme);
+        let one_style = RenderBit { bit: &Bit::One }.count_style(self.ones, state.rows, &ctx.theme);
 
         Text::from(vec![
             Line::styled(zeroes, zero_style),
@@ -187,7 +205,7 @@ impl EdgeRender<BinarioApp, (usize, usize)> for (isize, isize) {
         _area: Rect,
         _ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        _state: &(usize, usize),
+        _state: &Size,
     ) -> u16 {
         2
     }
@@ -197,8 +215,8 @@ impl EdgeRender<BinarioApp, (usize, usize)> for (isize, isize) {
         _area: Rect,
         _ctx: &AppContext<BinarioApp>,
         _render: &SidedGridRenderState,
-        state: &(usize, usize),
+        state: &Size,
     ) -> u16 {
-        (state.0.to_string().len() + 1 + state.1.to_string().len()) as u16
+        (state.rows.to_string().len() + 1 + state.cols.to_string().len()) as u16
     }
 }

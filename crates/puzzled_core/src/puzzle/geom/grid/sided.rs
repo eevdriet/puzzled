@@ -1,7 +1,5 @@
 use std::fmt::{self, Display};
 
-use derive_more::{Deref, DerefMut};
-
 use crate::Grid;
 
 #[derive(Debug, thiserror::Error, Clone)]

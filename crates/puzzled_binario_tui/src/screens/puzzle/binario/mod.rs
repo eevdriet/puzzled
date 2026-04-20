@@ -3,7 +3,7 @@ mod render;
 pub(crate) use render::*;
 
 use crossterm::event::{KeyCode, MouseButton};
-use puzzled_binario::{BinarioState, Bit};
+use puzzled_binario::{BinarioState, Bit, LineBits};
 use puzzled_core::{Entry, Grid, Solve};
 use puzzled_tui::{
     Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction,
@@ -27,7 +27,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     ) {
         let (grid, top, right, bottom, left) = self.grid_components(&state.solve);
         let mut cell_state = ();
-        let mut edge_state = (grid.rows(), grid.cols());
+        let mut edge_state = grid.size();
 
         let mut grid = SidedGridWidget::from_grid(&grid)
             .with_top(top)
@@ -48,7 +48,7 @@ impl AppWidget<BinarioApp> for BinarioWidget {
     ) -> Size {
         let (grid, top, right, bottom, left) = self.grid_components(&state.solve);
         let mut cell_state = ();
-        let mut edge_state = (grid.rows(), grid.cols());
+        let mut edge_state = grid.size();
 
         let grid = SidedGridWidget::from_grid(&grid)
             .with_top(top)
@@ -145,8 +145,8 @@ impl AppWidget<BinarioApp> for BinarioWidget {
 type Components<'a> = (
     Grid<Entry<RenderBit<'a>>>,
     &'a Vec<bool>,
-    &'a Vec<(isize, isize)>,
-    &'a Vec<(isize, isize)>,
+    &'a Vec<LineBits>,
+    &'a Vec<LineBits>,
     &'a Vec<bool>,
 );
 

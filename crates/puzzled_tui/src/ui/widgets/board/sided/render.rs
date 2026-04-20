@@ -105,7 +105,7 @@ impl Default for SidesRenderState {
 
         Self {
             top: base,
-            right: base,
+            right: state,
             bottom: base,
             left: state,
         }

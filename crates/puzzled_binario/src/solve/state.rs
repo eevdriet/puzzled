@@ -1,7 +1,5 @@
 use delegate::delegate;
-use puzzled_core::{
-    Entry, Grid, GridLinearIter, GridState, Line, Order, Position, SidedGrid, Solve, Timer,
-};
+use puzzled_core::{Entry, Grid, GridState, Line, Order, Position, SidedGrid, Solve, Timer};
 
 use crate::{Binario, Bit, Bits};
 
@@ -9,18 +7,60 @@ use crate::{Binario, Bit, Bits};
 pub struct BinarioState {
     pub state: GridState<Binario>,
 
-    pub valid: SidedGrid<u8, bool, (isize, isize), (isize, isize), bool>,
+    pub valid: SidedGrid<u8, bool, LineBits, LineBits, bool>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct LineBits {
+    pub zeroes: isize,
+    pub ones: isize,
+}
+
+impl LineBits {
+    pub fn new(line_len: usize) -> Self {
+        let count = (line_len / 2) as isize;
+
+        Self {
+            zeroes: count,
+            ones: count,
+        }
+    }
+
+    pub fn from_bits<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Option<Bit>>,
+    {
+        let mut zeroes = 0;
+        let mut ones = 0;
+        let mut total = 0;
+
+        for opt_bit in iter {
+            total += 1;
+
+            if let Some(bit) = opt_bit {
+                match bit {
+                    Bit::Zero => zeroes += 1,
+                    Bit::One => ones += 1,
+                }
+            }
+        }
+
+        Self {
+            zeroes: (total / 2) - zeroes,
+            ones: (total / 2) - ones,
+        }
+    }
 }
 
 impl BinarioState {
     pub fn new(solutions: Grid<Option<Bit>>, entries: Grid<Entry<Bit>>, timer: Timer) -> Self {
         let right: Vec<_> = solutions
             .iter_rows()
-            .map(|row| BinarioState::count_bits(row, entries.cols() / 2))
+            .map(|row| LineBits::from_bits(row.cloned()))
             .collect();
         let bottom: Vec<_> = solutions
             .iter_cols()
-            .map(|col| BinarioState::count_bits(col, entries.rows() / 2))
+            .map(|col| LineBits::from_bits(col.cloned()))
             .collect();
 
         let state = GridState::new(solutions, entries, timer);
@@ -72,54 +112,78 @@ impl BinarioState {
     }
 
     pub fn validate_line(&mut self, line: Line) {
-        let entries = &mut self.state.entries;
+        // Retrieve the line validity and counts
+        let valid = if line.is_row() {
+            self.valid.left.as_mut()
+        } else {
+            self.valid.top.as_mut()
+        }
+        .expect("Should be defined")
+        .get_mut(line.line())
+        .expect("Should be valid line");
+
+        let counts = if line.is_row() {
+            self.valid.right.as_ref()
+        } else {
+            self.valid.bottom.as_ref()
+        }
+        .expect("Should be defined")
+        .get(line.line())
+        .expect("Should be valid line");
+
+        *valid = true;
+
+        // Mark the line as incorrect if any of its entries are incorrect
+        if self
+            .state
+            .entries
+            .iter_line(line)
+            .any(|entry| entry.is_incorrect())
+        {
+            *valid = false;
+            return;
+        }
+
+        // Mark the line as incorrect if either count is incorrect
+        let limit = (self.valid.grid.line_len(line) / 2) as isize;
+        let valid_range = 0..=limit;
+
+        if !valid_range.contains(&counts.zeroes) || !valid_range.contains(&counts.ones) {
+            *valid = false;
+            return;
+        }
 
         // Mark the line as incorrect if it is equal to another
+        let entries = &mut self.state.entries;
+
         let order = Order::from(line);
         let iter = entries.iter_line(line);
         let pos = line.line();
 
         for (idx, other_iter) in entries.iter_lines(order).enumerate() {
             if idx != pos && iter.eq(other_iter) {
+                *valid = false;
                 return;
             }
         }
-
-        // Mark the line as incorrect if it is full
-        // but doesn't have the same number of zeroes and ones
     }
 
     pub fn update_count(&mut self, line: Line, bit: Bit, is_added: bool) {
         let counts = if line.is_row() {
-            self.valid.right.as_mut().expect("Should be defined")
+            self.valid.right.as_mut()
         } else {
-            self.valid.bottom.as_mut().expect("Should be defined")
-        };
-
-        let Some((zeroes, ones)) = counts.get_mut(line.line()) else {
-            return;
-        };
+            self.valid.bottom.as_mut()
+        }
+        .expect("Should be defined")
+        .get_mut(line.line())
+        .expect("Should be defined");
 
         match (bit, is_added) {
-            (Bit::Zero, false) => *zeroes += 1,
-            (Bit::Zero, true) => *zeroes -= 1,
-            (Bit::One, false) => *ones += 1,
-            (Bit::One, true) => *ones -= 1,
+            (Bit::Zero, false) => counts.zeroes += 1,
+            (Bit::Zero, true) => counts.zeroes -= 1,
+            (Bit::One, false) => counts.ones += 1,
+            (Bit::One, true) => counts.ones -= 1,
         }
-    }
-
-    fn count_bits<'a>(iter: GridLinearIter<'a, Option<Bit>>, count: usize) -> (isize, isize) {
-        let mut zeroes = count as isize;
-        let mut ones = count as isize;
-
-        for entry in iter.flatten() {
-            match entry {
-                Bit::Zero => zeroes -= 1,
-                Bit::One => ones -= 1,
-            }
-        }
-
-        (zeroes, ones)
     }
 }
 
@@ -150,7 +214,9 @@ impl Solve<Binario> for BinarioState {
         let (row, col) = pos.lines();
 
         // Update the remaining bits counts
-        if self.state.entry(pos).is_none_or(|prev| *prev != curr) {
+        if self.state.solution(pos).is_none()
+            && self.state.entry(pos).is_none_or(|prev| *prev != curr)
+        {
             self.update_count(row, curr, true);
             self.update_count(col, curr, true);
         }
@@ -176,10 +242,14 @@ impl Solve<Binario> for BinarioState {
         let (row, col) = pos.lines();
 
         // Update the remaining bits counts
-        if let Some(entry) = self.state.entry(pos).cloned() {
+        if self.state.solution(pos).is_none()
+            && let Some(entry) = self.state.entry(pos).cloned()
+        {
             self.update_count(row, entry, false);
             self.update_count(col, entry, false);
         }
+
+        let result = self.state.clear(pos);
 
         // Validate the neighboring cells
         for neighbor in self.state.entries.neighbor_indices(*pos) {
@@ -192,7 +262,7 @@ impl Solve<Binario> for BinarioState {
 
         tracing::info!("Clearing {pos}");
 
-        self.state.clear(pos)
+        result
     }
 
     delegate! {
