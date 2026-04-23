@@ -6,7 +6,7 @@ use puzzled_tui::{
 };
 use ratatui::{
     buffer::Buffer,
-    layout::{Rect, Size as AppSize},
+    layout::{HorizontalAlignment, Rect, Size as AppSize},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Widget},
@@ -106,7 +106,9 @@ impl EdgeRender<BinarioApp, Size> for bool {
         let width = state.rows.to_string().len() as u16;
         let area = center_area(area, AppSize::new(width, 1));
 
-        Text::styled((row + 1).to_string(), style).render(area, buf);
+        Text::styled((row + 1).to_string(), style)
+            .alignment(HorizontalAlignment::Right)
+            .render(area, buf);
     }
     fn render_col(
         &self,

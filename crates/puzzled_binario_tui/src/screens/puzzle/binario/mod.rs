@@ -6,7 +6,7 @@ use crossterm::event::{KeyCode, MouseButton};
 use puzzled_binario::{BinarioState, Bit, LineBits};
 use puzzled_core::{Entry, Grid, Solve};
 use puzzled_tui::{
-    Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction,
+    Action, AppCommand, AppContext, AppResolver, Command, EventMode, HandleBaseAction, Operator,
     SidedGridWidget, SidedGridWidgetState, Widget as AppWidget, handle_grid_command,
 };
 use ratatui::prelude::{Buffer, Rect, Size};
@@ -90,31 +90,34 @@ impl AppWidget<BinarioApp> for BinarioWidget {
             }
             Command::Action { action, .. } => {
                 let pos = state.render.grid.cursor;
+                let mut custom_state = ();
 
                 match action {
-                    Action::Click { button, pos } => {
+                    Action::Click { button, .. } => {
                         let bit = match button {
                             MouseButton::Left => Bit::Zero,
                             _ => Bit::One,
                         };
 
-                        match state.render.grid.to_grid(pos) {
-                            Some(pos) => {
-                                let entry = &state.solve.state.entries[pos];
-
-                                match entry.entry() {
-                                    None => state.solve.enter(&pos, bit),
-                                    Some(other) if *other == bit => state.solve.enter(&pos, !bit),
-                                    _ => state.solve.clear(&pos),
-                                };
-
+                        let command = Command::new_operator(Operator::Fill);
+                        match handle_grid_command(
+                            command,
+                            resolver,
+                            &mut state.render.grid,
+                            &mut state.solve.state,
+                            &mut custom_state,
+                            Some(bit),
+                        ) {
+                            Some(action) => {
+                                state.history.execute(action, &mut state.solve);
                                 true
                             }
-                            None => false,
+                            _ => false,
                         }
                     }
                     Action::Literal(KeyCode::Char(' ')) => {
                         let bit = &state.solve.state.entries[pos];
+                        tracing::info!("Space bit: {bit}");
 
                         match bit.entry() {
                             None => state.solve.enter(&pos, Bit::Zero),

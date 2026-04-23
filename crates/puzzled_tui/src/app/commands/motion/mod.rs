@@ -42,9 +42,6 @@ pub enum Motion<M> {
     Forwards,
     Backwards,
 
-    // Word
-    Search(SearchMotion),
-
     WordEndBackwards,
     WordEndForwards,
     WordStartBackwards,
@@ -54,6 +51,17 @@ pub enum Motion<M> {
     #[serde(untagged)]
     #[debug("{_0:?}")]
     Custom(M),
+
+    // Word
+    #[serde(untagged)]
+    #[debug("{_0:?}")]
+    Search(SearchMotion),
+}
+
+impl<M> Motion<M> {
+    pub fn is_search(&self) -> bool {
+        matches!(self, Motion::Search(_))
+    }
 }
 
 impl<M> Ord for Motion<M>
@@ -62,14 +70,14 @@ where
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let variants = Self::variants();
-        let lhs = variants
-            .iter()
-            .position(|m| m == self)
-            .expect("All variants should be included");
-        let rhs = variants
-            .iter()
-            .position(|m| m == other)
-            .expect("All variants should be included");
+
+        let lhs = variants.iter().position(|m| m == self).unwrap_or_else(|| {
+            panic!("Unfound motion: {self:?} (variants: {variants:?})");
+        });
+
+        let rhs = variants.iter().position(|m| m == other).unwrap_or_else(|| {
+            panic!("Unfound motion: {other:?} (variants: {variants:?})");
+        });
 
         lhs.cmp(&rhs)
     }

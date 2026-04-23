@@ -1,9 +1,10 @@
 use std::fmt;
 
-use derive_more::Debug;
+use derive_more::{Debug, Eq, PartialEq};
+use puzzled_core::Direction;
 use serde::{
     Deserialize, Deserializer,
-    de::{self, Visitor},
+    de::{self, IntoDeserializer, Visitor},
 };
 
 use crate::{Description, MotionBehavior};
@@ -11,7 +12,13 @@ use crate::{Description, MotionBehavior};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SearchMotion {
     pub searched: Searched,
+
+    #[partial_eq(skip)]
+    #[eq(skip)]
     pub inclusive: bool,
+
+    #[partial_eq(skip)]
+    #[eq(skip)]
     pub forwards: bool,
 }
 
@@ -57,9 +64,8 @@ impl<'de> Deserialize<'de> for SearchMotion {
                 let forwards = strip_end("_backwards");
 
                 // Determine what to search based on the remaining string
-                // let deserializer = motion.into_deserializer();
-                // let searched = Searched::<M>::deserialize(deserializer)?;
-                let searched = Searched::WordStart;
+                let deserializer = motion.into_deserializer();
+                let searched = Searched::deserialize(deserializer)?;
 
                 Ok(SearchMotion {
                     inclusive,
@@ -79,17 +85,41 @@ impl MotionBehavior for SearchMotion {
     }
 
     fn variants() -> Vec<Self> {
-        vec![]
+        Searched::variants()
+            .into_iter()
+            .map(|searched| SearchMotion {
+                searched,
+                inclusive: true,
+                forwards: true,
+            })
+            .collect()
+    }
+
+    fn apply_to_dir(&self, dir: Direction) -> Direction {
+        if self.forwards { dir } else { !dir }
+    }
+}
+
+impl MotionBehavior for Searched {
+    fn variants() -> Vec<Self> {
+        vec![Searched::WordStart, Searched::WordEnd]
+    }
+}
+
+impl Description<()> for Searched {
+    fn description(&self, _state: &()) -> Option<String> {
+        let description = match self {
+            Searched::WordStart => "start of the word",
+            Searched::WordEnd => "end of the word",
+        };
+
+        Some(description.to_string())
     }
 }
 
 impl Description<()> for SearchMotion {
-    fn description(&self, _state: &()) -> Option<String> {
-        let searched = match self.searched {
-            Searched::WordStart => "start of the word",
-            Searched::WordEnd => "start of the word",
-        };
-
+    fn description(&self, state: &()) -> Option<String> {
+        let searched = self.searched.description(state)?;
         let direction_str = if self.forwards {
             "forwards"
         } else {
@@ -102,7 +132,7 @@ impl Description<()> for SearchMotion {
         };
 
         Some(format!(
-            "Find the {searched} {direction_str}{exclusion_str}"
+            "Find the {searched} {direction_str}{exclusion_str}",
         ))
     }
 }

@@ -26,6 +26,15 @@ impl LineBits {
         }
     }
 
+    pub fn update(&mut self, bit: Bit, is_added: bool) {
+        match (bit, is_added) {
+            (Bit::Zero, false) => self.zeroes -= 1,
+            (Bit::Zero, true) => self.zeroes += 1,
+            (Bit::One, false) => self.ones -= 1,
+            (Bit::One, true) => self.ones += 1,
+        }
+    }
+
     pub fn from_bits<I>(iter: I) -> Self
     where
         I: Iterator<Item = Option<Bit>>,
@@ -168,7 +177,7 @@ impl BinarioState {
         }
     }
 
-    pub fn update_count(&mut self, line: Line, bit: Bit, is_added: bool) {
+    pub fn update_count(&mut self, line: Line, curr: Option<Bit>, prev: Option<Bit>) {
         let counts = if line.is_row() {
             self.valid.right.as_mut()
         } else {
@@ -178,11 +187,11 @@ impl BinarioState {
         .get_mut(line.line())
         .expect("Should be defined");
 
-        match (bit, is_added) {
-            (Bit::Zero, false) => counts.zeroes += 1,
-            (Bit::Zero, true) => counts.zeroes -= 1,
-            (Bit::One, false) => counts.ones += 1,
-            (Bit::One, true) => counts.ones -= 1,
+        if let Some(curr) = curr {
+            counts.update(curr, true);
+        }
+        if let Some(prev) = prev {
+            counts.update(prev, false);
         }
     }
 }
@@ -214,11 +223,9 @@ impl Solve<Binario> for BinarioState {
         let (row, col) = pos.lines();
 
         // Update the remaining bits counts
-        if self.state.solution(pos).is_none()
-            && self.state.entry(pos).is_none_or(|prev| *prev != curr)
-        {
-            self.update_count(row, curr, true);
-            self.update_count(col, curr, true);
+        if self.state.solution(pos).is_none() {
+            let prev = self.state.entry(pos).cloned();
+            self.update_count(row, Some(curr), prev);
         }
 
         tracing::info!("Setting {pos} -> {curr}");
@@ -242,11 +249,9 @@ impl Solve<Binario> for BinarioState {
         let (row, col) = pos.lines();
 
         // Update the remaining bits counts
-        if self.state.solution(pos).is_none()
-            && let Some(entry) = self.state.entry(pos).cloned()
-        {
-            self.update_count(row, entry, false);
-            self.update_count(col, entry, false);
+        if self.state.solution(pos).is_none() {
+            let prev = self.state.entry(pos).cloned();
+            self.update_count(row, None, prev);
         }
 
         let result = self.state.clear(pos);

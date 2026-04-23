@@ -257,6 +257,13 @@ where
             grid_word_motion(grid, iter, target, count)
         }
 
+        Motion::Search(search) => {
+            let iter = GridIndexedIter::new(iter_direction(dir));
+            let target = &grid[cursor];
+
+            iter_empty()
+        }
+
         Motion::Custom(custom) => {
             let positions: Vec<_> = grid
                 .handle_custom_motion(count, custom, state, custom_state)

@@ -1,6 +1,6 @@
 use puzzled_core::Direction;
 
-use crate::{AppTypeTraits, Motion};
+use crate::{AppTypeTraits, Motion, SearchMotion};
 
 pub trait MotionBehavior: AppTypeTraits {
     fn variants() -> Vec<Self>;
@@ -51,6 +51,9 @@ where
 
         let other_variants = M::variants().into_iter().map(Motion::Custom);
         variants.extend(other_variants);
+
+        let search_variants = SearchMotion::variants().into_iter().map(Motion::Search);
+        variants.extend(search_variants);
 
         variants
     }
@@ -103,8 +106,9 @@ where
                 }
             }
 
-            // Custom -> apply inner behavior
+            // Custom/Search -> apply inner behavior
             Motion::Custom(custom) => custom.apply_to_dir(dir),
+            Motion::Search(search) => search.apply_to_dir(dir),
 
             // Neither -> keep direction
             _ => dir,
